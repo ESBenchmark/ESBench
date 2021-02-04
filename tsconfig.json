@@ -1,0 +1,15 @@
+{
+	"compilerOptions":{
+		"target": "ESNext",
+		"module": "CommonJS",
+		"lib": [
+			"ESNext",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"sourceMap": true,
+		"strict": true,
+		"allowJs": true,
+	},
+	"exclude": ["node_modules"]
+}
