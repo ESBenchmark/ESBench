@@ -1,0 +1,7 @@
+function reportConsole() {
+
+}
+
+function reportHtml() {
+
+}
