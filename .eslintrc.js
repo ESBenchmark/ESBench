@@ -4,8 +4,8 @@ module.exports = {
 		node: true,
 	},
 	extends: [
-		"@kaciras/typescript",
 		"@kaciras/core",
+		"@kaciras/typescript",
 	],
 	overrides: [
 		{
