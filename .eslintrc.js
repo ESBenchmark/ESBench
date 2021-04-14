@@ -1,19 +1,18 @@
+const jestConfig = require("./jest.config");
+
 module.exports = {
 	root: true,
-	env: {
-		node: true,
-	},
 	extends: [
 		"@kaciras/core",
 		"@kaciras/typescript",
 	],
+	env: {
+		node: true,
+	},
 	overrides: [
 		{
-			files: require("./jest.config").testMatch,
-			extends: [
-				"plugin:jest/style",
-				"plugin:jest/recommended",
-			],
+			files: jestConfig.testMatch,
+			extends: ["@kaciras/jest"],
 		},
 	],
 };
