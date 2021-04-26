@@ -1,17 +1,16 @@
 {
-	"compilerOptions":{
+	"include": [
+		"lib"
+	],
+	"compilerOptions": {
 		"target": "ESNext",
 		"module": "CommonJS",
 		"moduleResolution": "Node",
-		"lib": [
-			"ESNext",
-			"DOM",
-			"DOM.Iterable"
-		],
+		"lib": ["ESNext"],
+		"outDir": "dist/cjs",
 		"sourceMap": true,
 		"strict": true,
 		"allowJs": true,
-		"esModuleInterop": true,
-	},
-	"exclude": ["node_modules"]
+		"esModuleInterop": true
+	}
 }
