@@ -10,18 +10,29 @@ interface BenchmarkCase {
 	fn: BenchmarkFn;
 }
 
-export class BenchmarkSuite {
+export interface CaseResult {
+	name: string;
+	time: number;
+}
+
+export interface SuiteResult {
+	name: string;
+	platform: string;
+	cases: CaseResult[];
+}
+
+export class BenchmarkContext {
 
 	readonly benchmarks: BenchmarkCase[] = [];
 
 	setupHook: () => any = NOOP;
 	teardownHook: () => any = NOOP;
 
-	beforeAll(fn: () => any) {
+	beforeEach(fn: () => any) {
 		this.setupHook = fn;
 	}
 
-	afterAll(fn: () => any) {
+	afterEach(fn: () => any) {
 		this.teardownHook = fn;
 	}
 
@@ -36,10 +47,17 @@ export class BenchmarkSuite {
 
 export type ParamsConfig = Record<string, any[]>;
 
+export interface SuiteOptions {
+	params?: ParamsConfig;
+	// targets:
+}
+
+export type ConfigData = Record<string, any>;
+
 export function createParamsIter(config: ParamsConfig) {
 	type ParamList = Array<[string, any[]]>;
 
-	function* cartesian(ctx: object, array: ParamList): Iterable<object> {
+	function* cartesian(ctx: ConfigData, array: ParamList): Iterable<ConfigData> {
 		const [head, ...tail] = array;
 		const remainder = tail.length > 0 ? cartesian(ctx, tail) : [{}];
 		const [key, values] = head;
@@ -75,41 +93,90 @@ async function runAsync(fn: BenchmarkFn, count: number) {
 	return performance.now() - start;
 }
 
-export async function getIterations(fn: IterateFn, threshold: number) {
+async function getIterations(fn: IterateFn, threshold: number) {
 	let count = 1;
 	let time = 0;
 
 	while (time < threshold) {
 		time = await fn(count);
+		console.log(`Pilot: ${count} op, ${time.toFixed(2)} ms`);
 		count *= 2;
-		console.log(count);
 	}
 
 	return count / 2;
 }
 
-type MainFn = (suite: BenchmarkSuite, config: object) => void;
+type MainFn = (suite: BenchmarkContext, config: ConfigData) => void;
 
-export async function create(paramConfig: ParamsConfig, mainFn: MainFn) {
-	paramConfig ??= {};
+interface Channel {
 
-	for (const config of createParamsIter(paramConfig)) {
-		const suite = new BenchmarkSuite();
+	sendMessage(message: any): void;
+}
+
+class NodeProcessRunner {
+
+	sendMessage(message: any) {
+		process.send!(message);
+	}
+}
+
+class BrowserRunner {
+
+	sendMessage(message: any) {
+		console.log(message);
+	}
+}
+
+enum MessageType {
+	Log,
+	Result,
+}
+
+interface Message {
+	type: MessageType;
+	data: any;
+}
+
+async function runSuite(params: ParamsConfig, mainFn: MainFn, channel: Channel) {
+
+	for (const config of createParamsIter(params)) {
+		const suite = new BenchmarkContext();
 		mainFn(suite, config);
 
 		suite.setupHook();
 		for (const case_ of suite.benchmarks) {
 			const runFn = (case_.async ? runAsync : runSync).bind(null, case_.fn);
-			const count = await getIterations(runFn, 10_000);
+
+			const count = await getIterations(runFn, 5_000);
+			console.log();
 
 			const times: number[] = [];
 			for (let i = 0; i < 5; i++) {
-				times.push(await runFn(count));
+				const time = await runFn(count);
+				times.push(time);
+				console.log(`Actual ${time.toFixed(2)}ms`);
 			}
 
-			const mean = times.reduce((s, c) => s + c, 0) / times.length;
-			console.log(mean.toFixed(3) + " ms");
+			channel.sendMessage({
+				type: MessageType.Result,
+				data: times,
+			});
+			const mean = times.reduce((s, c) => s + c, 0) / times.length / count;
+			console.log();
+			console.log(mean.toFixed(3) + " ms/op");
 		}
 		suite.teardownHook();
+	}
+}
+
+export async function create(options: SuiteOptions, mainFn: MainFn) {
+	options.params ??= {};
+
+	if (typeof window !== "undefined") {
+		return runSuite(options.params, mainFn, new BrowserRunner());
+	} else if (process.env.BENCHMARK_CHILD) {
+		return runSuite(options.params, mainFn, new NodeProcessRunner());
+	} else {
+		return options;
 	}
 }

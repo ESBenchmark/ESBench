@@ -6,7 +6,7 @@
 		"target": "ESNext",
 		"module": "CommonJS",
 		"moduleResolution": "Node",
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "DOM"],
 		"outDir": "dist/cjs",
 		"sourceMap": true,
 		"strict": true,

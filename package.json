@@ -15,7 +15,8 @@
 		"compile": "tsc && tsc --project tsconfig.esm.json"
 	},
 	"dependencies": {
-		"bytes": "^3.1.0",
+		"esbuild": "^0.11.20",
+		"fast-glob": "^3.2.5",
 		"koa": "^2.13.1",
 		"playwright": "^1.10.0"
 	},
@@ -23,7 +24,6 @@
 		"@kaciras/eslint-config-core": "^1.4.0",
 		"@kaciras/eslint-config-jest": "^1.4.0",
 		"@kaciras/eslint-config-typescript": "^1.4.0",
-		"@types/bytes": "^3.1.0",
 		"@types/jest": "^26.0.22",
 		"@types/koa": "^2.13.1",
 		"eslint": "^7.25.0",

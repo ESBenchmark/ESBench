@@ -1,24 +1,8 @@
 import ChildProcess from "child_process";
 import v8 from "v8";
 import { performance } from "perf_hooks";
-import bytes from "bytes";
 
 export type BenchmarkFunction = (controller: BenchmarkController, config: any) => void | Promise<void>;
-
-interface BenchmarkResult {
-
-	/** Name of the benchmark case or target */
-	name: any;
-
-	/** Used for result grouping */
-	category?: any;
-
-	/** Time usage in milliseconds */
-	time: number;
-
-	/** Used heap size in bytes */
-	memory: number;
-}
 
 export class BenchmarkController {
 
@@ -51,27 +35,4 @@ async function runBenchmark(fn: BenchmarkFunction) {
 	}
 
 	return process.exit(0); // Force exit, ignore any running task
-}
-
-export function runBenchmarks(fn: BenchmarkFunction, configs: any[]): Promise<BenchmarkResult[]> {
-	if (process.env.BENCHMARK_CHILD) {
-		return runBenchmark(fn);
-	} else {
-		const childEnv = Object.assign({}, process.env);
-		childEnv.BENCHMARK_CHILD = "true";
-
-		const child = ChildProcess.fork(require.main!.filename, [], {
-			env: childEnv,
-			execArgv: ["--expose-gc"],
-		});
-		child.send(configs);
-		const results: BenchmarkResult[] = [];
-
-		child.on("message", (result: BenchmarkResult) => {
-			results.push(result);
-			console.debug(`${result.name} - Time：${result.time.toFixed(2)}ms，Memory：${bytes(result.memory)}`);
-		});
-
-		return new Promise(resolve => child.on("exit", () => resolve(results)));
-	}
 }
