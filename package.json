@@ -15,10 +15,10 @@
 		"compile": "tsc && tsc --project tsconfig.esm.json"
 	},
 	"dependencies": {
-		"esbuild": "^0.12.6",
+		"esbuild": "^0.12.8",
 		"fast-glob": "^3.2.5",
 		"koa": "^2.13.1",
-		"playwright": "^1.11.1"
+		"playwright": "^1.12.2"
 	},
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^1.5.0",
