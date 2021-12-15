@@ -15,20 +15,20 @@
 		"compile": "tsc && tsc --project tsconfig.esm.json"
 	},
 	"dependencies": {
-		"esbuild": "^0.12.15",
+		"esbuild": "^0.14.5",
 		"fast-glob": "^3.2.7",
-		"koa": "^2.13.1",
-		"playwright": "^1.12.3"
+		"koa": "^2.13.4",
+		"playwright": "^1.17.1"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^1.5.0",
-		"@kaciras/eslint-config-jest": "^1.5.0",
-		"@kaciras/eslint-config-typescript": "^1.5.0",
-		"@types/jest": "^26.0.24",
+		"@kaciras/eslint-config-core": "^2.2.0",
+		"@kaciras/eslint-config-jest": "^2.2.0",
+		"@kaciras/eslint-config-typescript": "^2.2.0",
+		"@types/jest": "^27.0.3",
 		"@types/koa": "^2.13.4",
-		"eslint": "^7.30.0",
-		"jest": "^27.0.6",
-		"ts-jest": "^27.0.3",
-		"typescript": "^4.3.5"
+		"eslint": "^8.4.1",
+		"jest": "^27.4.5",
+		"ts-jest": "^27.1.1",
+		"typescript": "^4.5.4"
 	}
 }
