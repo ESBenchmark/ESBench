@@ -8,11 +8,10 @@ module.exports = {
 	],
 	env: {
 		node: true,
+		browser: true,
 	},
-	overrides: [
-		{
-			files: jestConfig.testMatch,
-			extends: ["@kaciras/jest"],
-		},
-	],
+	overrides: [{
+		files: jestConfig.testMatch,
+		extends: ["@kaciras/jest"],
+	}],
 };
