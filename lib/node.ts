@@ -1,13 +1,5 @@
-import ChildProcess from "child_process";
-import v8 from "v8";
-import { performance } from "perf_hooks";
-
-export type BenchmarkFunction = (controller: BenchmarkController, config: any) => void | Promise<void>;
-
-export class BenchmarkController {
-
-	private heapSize?: number;
-	private startTime?: number;
+import { fork } from "child_process";
+import { CaseResult } from "./core.js";
 
 	start() {
 		global.gc();

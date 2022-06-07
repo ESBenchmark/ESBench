@@ -4,12 +4,13 @@
 	"description": "JavaScript benchmark library",
 	"author": "Kaciras <Kaciras@protonmail.com>",
 	"license": "MIT",
-	"engines": {
-		"node": ">=14"
-	},
 	"keywords": [
 		"benchmark"
 	],
+	"type": "module",
+	"engines": {
+		"node": ">=14"
+	},
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
 	"bin": {

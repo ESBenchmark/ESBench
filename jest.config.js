@@ -1,4 +1,4 @@
-module.exports = {
+export default {
 	testMatch: [
 		"**/__tests__/*.spec.[jt]s",
 	],

@@ -4,13 +4,15 @@
 	],
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "CommonJS",
+		"module": "ESNext",
 		"moduleResolution": "Node",
-		"lib": ["ESNext", "DOM"],
-		"outDir": "dist/cjs",
-		"sourceMap": true,
+		"lib": [
+			"ESNext",
+			"DOM",
+			"DOM.Iterable"
+		],
 		"strict": true,
-		"allowJs": true,
-		"esModuleInterop": true
+		"sourceMap": true,
+		"skipLibCheck": true
 	}
 }

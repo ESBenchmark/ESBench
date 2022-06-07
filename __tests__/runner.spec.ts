@@ -1,4 +1,4 @@
-import { createParamsIter } from "../lib/core";
+import { createParamsIter } from "../lib/utils";
 
 describe("createParamsIter", () => {
 

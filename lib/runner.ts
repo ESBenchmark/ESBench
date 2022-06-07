@@ -1,6 +1,7 @@
 import ChildProcess from "child_process";
+import { resolve } from "path";
 import glob from "fast-glob";
-import { CaseResult, SuiteOptions, SuiteResult } from "./core";
+import { CaseResult, SuiteOptions, SuiteResult } from "./core.js";
 
 interface BenchmarkScript {
 	default: SuiteOptions;

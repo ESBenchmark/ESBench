@@ -1,3 +1,3 @@
-export { create } from "./core";
+export { create } from "./core.js";
 
-export { runBenchmarks } from "./runner";
+export { runBenchmarks } from "./runner.js";
