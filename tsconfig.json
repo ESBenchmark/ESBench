@@ -13,6 +13,7 @@
 		],
 		"strict": true,
 		"sourceMap": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"allowSyntheticDefaultImports": true
 	}
 }

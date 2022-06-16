@@ -1,5 +1,7 @@
 import { ConfigData, ParamsConfig } from "./core.js";
 
+export const NOOP = () => {};
+
 export function createParamsIter(config: ParamsConfig) {
 	type ParamList = Array<[string, any[]]>;
 

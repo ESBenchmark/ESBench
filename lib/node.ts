@@ -1,30 +1,59 @@
 import { fork } from "child_process";
-import { CaseResult } from "./core.js";
+import { argv, env } from "process";
+import { CaseResult, Channel, runSuite } from "./core.js";
+import { BenchmarkRunner } from "./runner.js";
+import { fileURLToPath, pathToFileURL } from "url";
+import { resolve } from "path";
 
-	start() {
-		global.gc();
-		this.heapSize = v8.getHeapStatistics().used_heap_size;
-		this.startTime = performance.now();
+const __filename = fileURLToPath(import.meta.url);
+
+export class NodeRunner implements BenchmarkRunner {
+
+	private readonly executable?: string;
+
+	constructor(executable?: string) {
+		this.executable = executable;
 	}
 
-	end(name: any, category?: any) {
-		const time = performance.now() - this.startTime!;
-		const memory = v8.getHeapStatistics().used_heap_size - this.heapSize!;
+	start() {}
 
-		if (!this.heapSize) {
-			throw new Error("called end() without start");
+	close() {}
+
+	run(file: string, name?: string) {
+		const args = [file];
+		if (name) {
+			args.push(name);
 		}
-		process.send!({ name, category, memory, time });
+		const child = fork (__filename, args, {
+			execPath: this.executable,
+			env: { ...env, BENCHMARK_CHILD: "true" },
+		});
+
+		const results: CaseResult[] = [];
+
+		child.on("message", (result: CaseResult) => {
+			results.push(result);
+
+			const { name, times, iterations } = result;
+			const mean = times.reduce((s, c) => s + c, 0) / times.length / iterations;
+			console.debug(`${name} - Time：${mean.toFixed(2)}ms`);
+		});
+
+		return new Promise(resolve => child.on("exit", () => resolve(results)));
 	}
 }
 
-async function runBenchmark(fn: BenchmarkFunction) {
-	const configs = await new Promise<any[]>(resolve => process.once("message", resolve));
+class NodeProcessRunner implements Channel {
 
-	for (const config of configs) {
-		const controller = new BenchmarkController();
-		await fn(controller, config);
+	sendMessage(message: any) {
+		process.send!(message);
 	}
+}
 
-	return process.exit(0); // Force exit, ignore any running task
+if (env.BENCHMARK_CHILD === "true") {
+	const [,, file, name] = argv;
+
+	const module = pathToFileURL(resolve(file)).toString();
+	const { options, build } = (await import(module)).default;
+	await runSuite(options, build, new NodeProcessRunner());
 }

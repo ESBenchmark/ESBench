@@ -1,7 +1,7 @@
 import { SuiteResult } from "./core.js";
 
-function reportConsole(result: SuiteResult[]) {
-
+export function reportConsole(result: SuiteResult[]) {
+	console.log(result);
 }
 
 function reportHtml() {

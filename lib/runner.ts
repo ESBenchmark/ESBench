@@ -1,35 +1,53 @@
-import ChildProcess from "child_process";
-import { resolve } from "path";
 import glob from "fast-glob";
-import { CaseResult, SuiteOptions, SuiteResult } from "./core.js";
+import { SuiteOptions } from "./core.js";
+import { NodeRunner } from "./node.js";
+import { reportConsole } from "./report.js";
 
-interface BenchmarkScript {
+export interface BenchmarkScript {
 	default: SuiteOptions;
 }
 
-function node(file: string) {
-	const childEnv = Object.assign({}, process.env);
-	childEnv.BENCHMARK_CHILD = "true";
-
-	const child = ChildProcess.fork(file, [], {
-		env: childEnv,
-		execArgv: ["--expose-gc"],
-	});
-	// child.send(configs);
-	const results: CaseResult[] = [];
-
-	child.on("message", (result: CaseResult) => {
-		results.push(result);
-		console.debug(`${result.name} - Time：${result.time.toFixed(2)}ms`);
-	});
-
-	return new Promise(resolve => child.on("exit", () => resolve(results)));
+export interface RunnerOptions {
+	files: string[];
+	runner?: BenchmarkRunner;
+	reporter?: any;
 }
 
-export async function runBenchmarks(pattern: string) {
-	const files = await glob(pattern);
+export interface BenchmarkRunner {
 
-	for (const file of files) {
-		const script = await import(file) as BenchmarkScript;
+	start(): Promise<void> | void;
+
+	close(): Promise<void> | void;
+
+	run(file: string, name?: string): any;
+}
+
+export class BenchmarkTool {
+
+	private readonly options: RunnerOptions;
+
+	constructor(options: RunnerOptions) {
+		this.options = options;
+	}
+
+	async runSuites(files: string[]) {
+		const {
+			runner = new NodeRunner(),
+			reporter = reportConsole,
+		} = this.options;
+
+		await runner.start();
+
+		const results = [];
+		for (const file of await glob(files)) {
+			results.push(await runner.run(file));
+		}
+
+		reporter(results);
+		await runner.close();
+	}
+
+	async run(suite: string, name: string) {
+
 	}
 }
