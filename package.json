@@ -25,6 +25,7 @@
 		"@swc/core": "^1.2.197",
 		"fast-glob": "^3.2.11",
 		"koa": "^2.13.4",
+		"parse-duration": "^1.0.2",
 		"playwright": "^1.22.2",
 		"yargs": "^17.5.1"
 	},

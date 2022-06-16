@@ -11,6 +11,7 @@ specifiers:
   fast-glob: ^3.2.11
   jest: ^28.1.1
   koa: ^2.13.4
+  parse-duration: ^1.0.2
   playwright: ^1.22.2
   ts-jest: ^28.0.4
   typescript: ^4.7.3
@@ -20,6 +21,7 @@ dependencies:
   '@swc/core': 1.2.197
   fast-glob: 3.2.11
   koa: 2.13.4
+  parse-duration: 1.0.2
   playwright: 1.22.2
   yargs: 17.5.1
 
@@ -2955,6 +2957,10 @@ packages:
     dependencies:
       callsites: 3.1.0
     dev: true
+
+  /parse-duration/1.0.2:
+    resolution: {integrity: sha512-Dg27N6mfok+ow1a2rj/nRjtCfaKrHUZV2SJpEn/s8GaVUSlf4GGRCRP1c13Hj+wfPKVMrFDqLMLITkYKgKxyyg==}
+    dev: false
 
   /parse-json/5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
