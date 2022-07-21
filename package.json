@@ -22,7 +22,7 @@
 		"compile": "tsc && tsc --project tsconfig.esm.json"
 	},
 	"dependencies": {
-		"@swc/core": "^1.2.208",
+		"@swc/core": "^1.2.218",
 		"fast-glob": "^3.2.11",
 		"koa": "^2.13.4",
 		"parse-duration": "^1.0.2",
@@ -32,11 +32,11 @@
 		"@kaciras/eslint-config-core": "^2.4.1",
 		"@kaciras/eslint-config-jest": "^2.4.1",
 		"@kaciras/eslint-config-typescript": "^2.4.1",
-		"@types/jest": "^28.1.4",
-		"@types/koa": "^2.13.4",
-		"eslint": "^8.19.0",
-		"jest": "^28.1.2",
-		"ts-jest": "^28.0.5",
+		"@types/jest": "^28.1.6",
+		"@types/koa": "^2.13.5",
+		"eslint": "^8.20.0",
+		"jest": "^28.1.3",
+		"ts-jest": "^28.0.7",
 		"typescript": "^4.7.4"
 	}
 }
