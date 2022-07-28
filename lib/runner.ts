@@ -1,16 +1,44 @@
 import glob from "fast-glob";
 import { SuiteOptions } from "./core.js";
 import { NodeRunner } from "./node.js";
-import { reportConsole } from "./report.js";
+import consoleReporter from "./report.js";
 
 export interface BenchmarkScript {
 	default: SuiteOptions;
 }
 
+type Reporter = (result: SuiteResult) => void | Promise<void>;
+
 export interface RunnerOptions {
 	files: string[];
 	runner?: BenchmarkRunner;
-	reporter?: any;
+	reporter?: Reporter;
+}
+
+interface Metrics {
+	unit: string;
+}
+
+export interface SuiteResult {
+	file: string;
+	metrics: Record<string, Metrics>;
+	runners: RunnerResult[];
+}
+
+interface RunnerResult {
+	name: string;
+	options: Record<string, any>;
+	cases: CaseResult[];
+}
+
+interface CaseResult {
+	params: Record<string, any>;
+	iterations: Record<string, IterationResult[]>;
+}
+
+interface IterationResult {
+	time: number;
+	memory?: number;
 }
 
 export interface BenchmarkRunner {
@@ -33,7 +61,7 @@ export class BenchmarkTool {
 	async runSuites(files: string[]) {
 		const {
 			runner = new NodeRunner(),
-			reporter = reportConsole,
+			reporter = consoleReporter(),
 		} = this.options;
 
 		await runner.start();
@@ -42,9 +70,9 @@ export class BenchmarkTool {
 		for (const file of await glob(files)) {
 			results.push(await runner.run(file));
 		}
-
-		reporter(results);
 		await runner.close();
+
+		await reporter(results);
 	}
 
 	async run(suite: string, name: string) {

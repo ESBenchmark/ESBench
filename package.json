@@ -23,15 +23,20 @@
 	},
 	"dependencies": {
 		"@swc/core": "^1.2.218",
+		"chalk": "^5.0.1",
+		"console-table-printer": "^2.11.0",
+		"envinfo": "^7.8.1",
 		"fast-glob": "^3.2.11",
 		"koa": "^2.13.4",
 		"parse-duration": "^1.0.2",
+		"simple-statistics": "^7.7.5",
 		"yargs": "^17.5.1"
 	},
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^2.4.1",
 		"@kaciras/eslint-config-jest": "^2.4.1",
 		"@kaciras/eslint-config-typescript": "^2.4.1",
+		"@types/envinfo": "^7.8.1",
 		"@types/jest": "^28.1.6",
 		"@types/koa": "^2.13.5",
 		"eslint": "^8.20.0",
