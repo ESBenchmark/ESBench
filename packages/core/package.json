@@ -1,0 +1,29 @@
+{
+	"name": "core",
+	"version": "1.0.0",
+	"description": "JavaScript benchmark library",
+	"author": "Kaciras <Kaciras@protonmail.com>",
+	"license": "MIT",
+	"keywords": [
+		"benchmark"
+	],
+	"type": "module",
+	"engines": {
+		"node": ">=14"
+	},
+	"bin": {
+		"benchmark-tool": "bin/cli.js"
+	},
+	"dependencies": {
+		"chalk": "^5.0.1",
+		"console-table-printer": "^2.11.0",
+		"envinfo": "^7.8.1",
+		"fast-glob": "^3.2.11",
+		"parse-duration": "^1.0.2",
+		"simple-statistics": "^7.7.5",
+		"yargs": "^17.5.1"
+	},
+	"devDependencies": {
+		"@types/envinfo": "^7.8.1"
+	}
+}

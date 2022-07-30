@@ -1,0 +1,11 @@
+{
+	"name": "example",
+	"version": "1.0.0",
+	"license": "MIT",
+	"scripts": {
+		"run": "nuxt"
+	},
+	"dependencies": {
+		"hash-wasm": "^4.9.0"
+	}
+}

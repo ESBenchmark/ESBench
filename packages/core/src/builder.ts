@@ -1,13 +1,4 @@
 import { NOOP } from "./utils.js";
-import { ConfigData } from "./core.js";
-
-export type BenchmarkFn = () => any;
-
-interface BenchmarkCase {
-	name: string;
-	async: boolean;
-	fn: BenchmarkFn;
-}
 
 export class BenchmarkContext {
 
@@ -35,13 +26,6 @@ export class BenchmarkContext {
 
 export type ParamsConfig = Record<string, any[]>;
 
-export interface SuiteOptions {
-	params?: ParamsConfig;
-	time?: number;
-	iterations?: number | string;
-}
-
-type MainFn = (suite: BenchmarkContext, params: ConfigData) => void;
 
 export function defineBenchmark(options: SuiteOptions, build: MainFn) {
 	return { options, build };
