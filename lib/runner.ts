@@ -7,7 +7,7 @@ export interface BenchmarkScript {
 	default: SuiteOptions;
 }
 
-type Reporter = (result: SuiteResult) => void | Promise<void>;
+type Reporter = (result: SuiteResult[]) => void | Promise<void>;
 
 export interface RunnerOptions {
 	files: string[];
@@ -25,13 +25,13 @@ export interface SuiteResult {
 	runners: RunnerResult[];
 }
 
-interface RunnerResult {
+export interface RunnerResult {
 	name: string;
 	options: Record<string, any>;
 	cases: CaseResult[];
 }
 
-interface CaseResult {
+export interface CaseResult {
 	params: Record<string, any>;
 	iterations: Record<string, IterationResult[]>;
 }
@@ -47,7 +47,7 @@ export interface BenchmarkRunner {
 
 	close(): Promise<void> | void;
 
-	run(file: string, name?: string): any;
+	run(file: string, name?: string): RunnerResult | Promise<RunnerResult>;
 }
 
 export class BenchmarkTool {
@@ -64,14 +64,21 @@ export class BenchmarkTool {
 			reporter = consoleReporter(),
 		} = this.options;
 
+		const results: SuiteResult[] = [];
 		await runner.start();
 
-		const results = [];
 		for (const file of await glob(files)) {
-			results.push(await runner.run(file));
+			const rr = await runner.run(file);
+			results.push({
+				file,
+				runners: [rr],
+				metrics: {
+					time: { unit: "ms" },
+				},
+			});
 		}
-		await runner.close();
 
+		await runner.close();
 		await reporter(results);
 	}
 

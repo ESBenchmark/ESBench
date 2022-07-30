@@ -1,59 +1,74 @@
-import { fork } from "child_process";
-import { argv, env } from "process";
-import { CaseResult, Channel, runSuite } from "./core.js";
-import { BenchmarkRunner } from "./runner.js";
 import { fileURLToPath, pathToFileURL } from "url";
 import { resolve } from "path";
+import { ChildProcess, fork } from "child_process";
+import { argv, env } from "process";
+import { BenchmarkSuite, CaseMessage, MessageType, TurnMessage } from "./core.js";
+import { BenchmarkRunner, CaseResult, RunnerResult } from "./runner.js";
 
 const __filename = fileURLToPath(import.meta.url);
+
+export interface NodeRunnerOptions {
+	parallel?: number;
+	executable?: string;
+}
 
 export class NodeRunner implements BenchmarkRunner {
 
 	private readonly executable?: string;
+	private readonly parallel: number;
 
-	constructor(executable?: string) {
-		this.executable = executable;
+	private readonly processes: ChildProcess[] = [];
+
+	constructor(options: NodeRunnerOptions = {}) {
+		this.executable = options.executable;
+		this.parallel = options.parallel ?? 1;
 	}
 
 	start() {}
 
-	close() {}
-
-	run(file: string, name?: string) {
-		const args = [file];
-		if (name) {
-			args.push(name);
-		}
-		const child = fork (__filename, args, {
-			execPath: this.executable,
-			env: { ...env, BENCHMARK_CHILD: "true" },
-		});
-
-		const results: CaseResult[] = [];
-
-		child.on("message", (result: CaseResult) => {
-			results.push(result);
-
-			const { name, times, iterations } = result;
-			const mean = times.reduce((s, c) => s + c, 0) / times.length / iterations;
-			console.debug(`${name} - Time：${mean.toFixed(2)}ms`);
-		});
-
-		return new Promise(resolve => child.on("exit", () => resolve(results)));
+	close() {
+		this.processes.forEach(p => p.kill());
 	}
-}
 
-class NodeProcessRunner implements Channel {
+	run(file: string, name?: string): Promise<RunnerResult> {
+		const workerEnv = { ...env, BENCHMARK_CHILD: "true" };
+		const args = name ? [file, name] : [file];
 
-	sendMessage(message: any) {
-		process.send!(message);
+		const cases: CaseResult[] = [];
+		const results: RunnerResult = {
+			name: "node",
+			cases,
+			options: {},
+		};
+
+		const child = fork(__filename, args, {
+			env: workerEnv,
+			execPath: this.executable,
+			execArgv: ["--expose_gc"],
+		});
+
+		this.processes.push(child);
+
+		let currentCase: CaseResult;
+		child.on("message", (message: TurnMessage | CaseMessage) => {
+			if (message.type === MessageType.Case) {
+				currentCase = { params: message.params, iterations: {} };
+				cases.push(currentCase);
+			} else {
+				const { name, metrics } = message;
+				(currentCase.iterations[name] ??= []).push(metrics);
+			}
+		});
+
+		return new Promise((resolve, reject) => child.on("exit", () => resolve(results)).on("error", reject));
 	}
 }
 
 if (env.BENCHMARK_CHILD === "true") {
-	const [,, file, name] = argv;
+	const [, , file, name] = argv;
 
 	const module = pathToFileURL(resolve(file)).toString();
 	const { options, build } = (await import(module)).default;
-	await runSuite(options, build, new NodeProcessRunner());
+
+	await new BenchmarkSuite(options, build, e => process.send!(e)).bench(name);
 }

@@ -22,8 +22,36 @@ function transpose(names: string[], table: Array<Record<string, any>>) {
 	return o;
 }
 
+function reportSuite(result: SuiteResult) {
+	stdout.write(chalk.yellowBright("\nSuite: "));
+	console.log(result.file);
+
+	const names = Object.keys(result.metrics);
+
+	for (const platform of result.runners) {
+		for (const case_ of platform.cases) {
+			stdout.write(chalk.yellowBright("\nParams: "));
+			console.log(JSON.stringify(case_.params));
+			const table  = new Table();
+
+			for (const [bench, records] of Object.entries(case_.iterations)) {
+				const rows = transpose(names, records);
+
+				const tableRow: Record<string, string> = { bench };
+				for (const [column, values] of Object.entries(rows)) {
+					tableRow[column] = mean(values) + " " + result.metrics[column].unit;
+				}
+
+				table.addRow(tableRow);
+			}
+
+			table.printTable();
+		}
+	}
+}
+
 export default function consoleReporter(options: ConsoleReporterOptions = {}) {
-	return async (result: SuiteResult) => {
+	return async (results: SuiteResult[]) => {
 		stdout.write(chalk.blueBright("OS: "));
 		console.log((await envinfo.helpers.getOSInfo())[1]);
 
@@ -33,35 +61,11 @@ export default function consoleReporter(options: ConsoleReporterOptions = {}) {
 		stdout.write(chalk.blueBright("Memory: "));
 		console.log((await envinfo.helpers.getMemoryInfo())[1]);
 
-		stdout.write(chalk.yellowBright("\nSuite: "));
-		console.log(result.file);
-
-		const names = Object.keys(result.metrics);
-
-		for (const platform of result.runners) {
-			for (const case_ of platform.cases) {
-				stdout.write(chalk.yellowBright("\nParams: "));
-				console.log(JSON.stringify(case_.params));
-				const table  = new Table();
-
-				for (const [bench, records] of Object.entries(case_.iterations)) {
-					const rows = transpose(names, records);
-
-					const tableRow: Record<string, string> = { bench };
-					for (const [column, values] of Object.entries(rows)) {
-						tableRow[column] = mean(values) + " " + result.metrics[column].unit;
-					}
-
-					table.addRow(tableRow);
-				}
-
-				table.printTable();
-			}
-		}
+		for (const result of results) reportSuite(result);
 	};
 }
 
-consoleReporter()({
+consoleReporter()([{
 	file: "/benchmark/map-vs-object.js",
 	metrics: {
 		time: {
@@ -85,4 +89,4 @@ consoleReporter()({
 			},
 		}],
 	}],
-});
+}]);

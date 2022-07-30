@@ -1,9 +1,25 @@
 import { performance } from "perf_hooks";
 import parseDuration from "parse-duration";
 import { createParamsIter } from "./utils.js";
-import { BenchmarkContext, BenchmarkFn, SuiteOptions } from "./builder.js";
+import { BenchmarkContext, ParamsConfig } from "./builder.js";
 
-export type ConfigData = Record<string, any>;
+export enum MessageType {
+	Turn,
+	Case,
+}
+
+export interface CaseMessage {
+	type: MessageType.Case;
+	params: Record<string, any>;
+}
+
+export interface TurnMessage {
+	type: MessageType.Turn;
+	name: string;
+	metrics: Record<string, any>;
+}
+
+export type Channel = (message: any) => void;
 
 type IterateFn = (count: number) => Promise<number>;
 
@@ -35,70 +51,71 @@ async function getIterations(fn: IterateFn, targetMS: number) {
 	return Math.ceil(count / 2 * targetMS / time);
 }
 
-export interface SuiteResult {
-	file: string;
-	platform: string;
-	cases: CaseResult[];
+export interface SuiteOptions {
+	params?: ParamsConfig;
+	time?: number;
+	iterations?: number | string;
 }
 
-export interface CaseResult {
-	type: MessageType.Result;
+type MainFn = (suite: BenchmarkContext, params: ConfigData) => void;
+
+export type ConfigData = Record<string, any>;
+
+export type BenchmarkFn = () => any;
+
+export interface BenchmarkCase {
 	name: string;
-	times: number[];
-	iterations: number;
+	async: boolean;
+	fn: BenchmarkFn;
 }
 
-export interface Channel {
+export class BenchmarkSuite {
 
-	sendMessage(message: any): void;
-}
+	private readonly options: SuiteOptions;
+	private readonly mainFn: MainFn;
+	private readonly channel: Channel;
 
+	constructor(options: SuiteOptions, mainFn: MainFn, channel: Channel) {
+		this.options = options;
+		this.mainFn = mainFn;
+		this.channel = channel;
+	}
 
-enum MessageType {
-	Log,
-	Result,
-}
+	async bench(name?: string) {
+		const { params = {} } = this.options;
 
-interface Message {
-	type: MessageType;
-	data: any;
-}
+		for (const config of createParamsIter(params)) {
+			const suite = new BenchmarkContext();
+			await this.mainFn(suite, config);
 
-export function bench() {
+			this.channel({ type: MessageType.Case, params: config });
 
-}
-
-export async function runSuite(options: SuiteOptions, mainFn: MainFn, channel: Channel) {
-	const { params = {}, time = 5, iterations = 10_000 } = options;
-
-	for (const config of createParamsIter(params)) {
-		const suite = new BenchmarkContext();
-		await mainFn(suite, config);
-
-		suite.setupHook();
-		for (const case_ of suite.benchmarks) {
-			const runFn = (case_.async ? runAsync : runSync).bind(null, case_.fn);
-
-			const count = typeof iterations === "number"
-				? iterations
-				: await getIterations(runFn, parseDuration(iterations));
-
-			console.log("Count:" + count);
-
-			const times: number[] = [];
-			for (let i = 0; i < time; i++) {
-				const time = await runFn(count);
-				times.push(time);
-				console.log(`Actual ${time.toFixed(2)}ms`);
+			suite.setupHook();
+			for (const case_ of suite.benchmarks) {
+				if (name && case_.name !== name) {
+					continue;
+				}
+				await this.run(case_);
 			}
-
-			channel.sendMessage({
-				type: MessageType.Result,
-				name: case_.name,
-				times,
-				iterations,
-			});
+			suite.teardownHook();
 		}
-		suite.teardownHook();
+	}
+
+	private async run(case_: BenchmarkCase) {
+		const { time = 5, iterations = 10_000 } = this.options;
+		const { name, fn, async } = case_;
+
+		const runFn = (async ? runAsync : runSync).bind(null, fn);
+
+		const count = typeof iterations === "number"
+			? iterations
+			: await getIterations(runFn, parseDuration(iterations));
+
+		console.log("Count:" + count);
+
+		for (let i = 0; i < time; i++) {
+			const time = await runFn(count);
+			this.channel({ type: MessageType.Turn, name, metrics: { time } });
+		}
 	}
 }
