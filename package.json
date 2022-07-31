@@ -8,12 +8,14 @@
 		"compile": "tsc && tsc --project tsconfig.esm.json"
 	},
 	"devDependencies": {
+		"eslint-plugin-svelte3": "^4.0.0",
 		"@kaciras/eslint-config-core": "^2.4.1",
 		"@kaciras/eslint-config-jest": "^2.4.1",
 		"@kaciras/eslint-config-typescript": "^2.4.1",
 		"@types/jest": "^28.1.6",
 		"eslint": "^8.20.0",
 		"jest": "^28.1.3",
+		"svelte": "^3.44.0",
 		"ts-jest": "^28.0.7",
 		"typescript": "^4.7.4"
 	}
