@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+.svelte-kit
 /dist
 /debug.[jt]s
 
@@ -21,5 +22,5 @@ yarn-error.log*
 *.sln
 *.sw?
 
-lib/*.js
-*.js.map
+packages/core/lib
+packages/reporter-html/build

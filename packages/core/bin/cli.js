@@ -3,7 +3,7 @@ import { isAbsolute, join } from "path";
 import { pathToFileURL } from "url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { BenchmarkTool } from "../src/runner.js";
+import { BenchmarkTool } from "../lib/runtime.js";
 
 const parsed = yargs(hideBin(argv))
 	.option("config", { type: "string" })
