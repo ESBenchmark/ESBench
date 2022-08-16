@@ -1,6 +1,6 @@
 import { stdout } from "process";
 import chalk from "chalk";
-import { SuiteResult } from "./runner.js";
+import { SuiteResult } from "./runtime.js";
 import envinfo from "envinfo";
 import { Table } from "console-table-printer";
 import { mean } from "simple-statistics";
@@ -65,28 +65,28 @@ export default function consoleReporter(options: ConsoleReporterOptions = {}) {
 	};
 }
 
-consoleReporter()([{
-	file: "/benchmark/map-vs-object.js",
-	metrics: {
-		time: {
-			unit: "ms",
-		},
-	},
-	runners: [{
-		name: "node",
-		options: {},
-		cases: [{
-			params: { size: 1000 },
-			iterations: {
-				map: [{ time: 123 }, { time: 321 }],
-				object: [{ time: 66 }, { time: 88 }],
-			},
-		},{
-			params: { size: 88888 },
-			iterations: {
-				map: [{ time: 500 }, { time: 651 }],
-				object: [{ time: 122 }, { time: 154 }],
-			},
-		}],
-	}],
-}]);
+// consoleReporter()([{
+// 	file: "/benchmark/map-vs-object.js",
+// 	metrics: {
+// 		time: {
+// 			unit: "ms",
+// 		},
+// 	},
+// 	runners: [{
+// 		name: "node",
+// 		options: {},
+// 		cases: [{
+// 			params: { size: 1000 },
+// 			iterations: {
+// 				map: [{ time: 123 }, { time: 321 }],
+// 				object: [{ time: 66 }, { time: 88 }],
+// 			},
+// 		},{
+// 			params: { size: 88888 },
+// 			iterations: {
+// 				map: [{ time: 500 }, { time: 651 }],
+// 				object: [{ time: 122 }, { time: 154 }],
+// 			},
+// 		}],
+// 	}],
+// }]);

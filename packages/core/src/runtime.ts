@@ -1,7 +1,8 @@
 import glob from "fast-glob";
-import { SuiteOptions } from "./core.js";
+import { CaseMessage, MessageType, SuiteOptions, TurnMessage } from "./core.js";
 import { NodeRunner } from "./node.js";
 import consoleReporter from "./report.js";
+import { Awaitable } from "./utils.js";
 
 export interface BenchmarkScript {
 	default: SuiteOptions;
@@ -41,13 +42,20 @@ interface IterationResult {
 	memory?: number;
 }
 
+export interface RunOptions {
+	file: string;
+	name?: string;
+
+	handleMessage(message: any): void;
+}
+
 export interface BenchmarkRunner {
 
-	start(): Promise<void> | void;
+	start(): Awaitable<void>;
 
-	close(): Promise<void> | void;
+	close(): Awaitable<void>;
 
-	run(file: string, name?: string): RunnerResult | Promise<RunnerResult>;
+	run(options: RunOptions): Awaitable<void>;
 }
 
 export class BenchmarkTool {
@@ -64,14 +72,35 @@ export class BenchmarkTool {
 			reporter = consoleReporter(),
 		} = this.options;
 
-		const results: SuiteResult[] = [];
+		const suiteResults: SuiteResult[] = [];
 		await runner.start();
 
 		for (const file of await glob(files)) {
-			const rr = await runner.run(file);
-			results.push({
+			const cases: CaseResult[] = [];
+			const results: RunnerResult = {
+				name: "node",
+				cases,
+				options: {},
+			};
+			let currentCase: CaseResult;
+			
+			await runner.run({
+				file, 
+				name: undefined,
+				handleMessage(message:  TurnMessage | CaseMessage) {
+					if (message.type === MessageType.Case) {
+						currentCase = { params: message.params, iterations: {} };
+						cases.push(currentCase);
+					} else {
+						const { name, metrics } = message;
+						(currentCase.iterations[name] ??= []).push(metrics);
+					}
+				},
+			});
+
+			suiteResults.push({
 				file,
-				runners: [rr],
+				runners: [results],
 				metrics: {
 					time: { unit: "ms" },
 				},
@@ -79,7 +108,7 @@ export class BenchmarkTool {
 		}
 
 		await runner.close();
-		await reporter(results);
+		await reporter(suiteResults);
 	}
 
 	async run(suite: string, name: string) {

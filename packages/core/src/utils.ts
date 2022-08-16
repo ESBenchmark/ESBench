@@ -1,5 +1,7 @@
 import { ConfigData, ParamsConfig } from "./core.js";
 
+export type Awaitable<T> = T | PromiseLike<T>;
+
 export const NOOP = () => {};
 
 export function createParamsIter(config: ParamsConfig) {
