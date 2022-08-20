@@ -11,8 +11,15 @@
 	"engines": {
 		"node": ">=14"
 	},
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"files": [
+		"bin",
+		"lib",
+		"!lib/*.js.map"
+	],
 	"bin": {
-		"benchmark-tool": "bin/cli.js"
+		"esbench": "bin/cli.js"
 	},
 	"dependencies": {
 		"chalk": "^5.0.1",
@@ -22,6 +29,9 @@
 		"parse-duration": "^1.0.2",
 		"simple-statistics": "^7.7.5",
 		"yargs": "^17.5.1"
+	},
+	"optionalDependencies": {
+		"playwright-core": "^1.24.2"
 	},
 	"devDependencies": {
 		"@types/envinfo": "^7.8.1"
