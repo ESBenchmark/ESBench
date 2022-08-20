@@ -30,9 +30,6 @@
 		"simple-statistics": "^7.7.5",
 		"yargs": "^17.5.1"
 	},
-	"optionalDependencies": {
-		"playwright-core": "^1.24.2"
-	},
 	"devDependencies": {
 		"@types/envinfo": "^7.8.1"
 	}

@@ -34,7 +34,6 @@ importers:
       envinfo: ^7.8.1
       fast-glob: ^3.2.11
       parse-duration: ^1.0.2
-      playwright-core: ^1.24.2
       simple-statistics: ^7.7.5
       yargs: ^17.5.1
     dependencies:
@@ -45,8 +44,6 @@ importers:
       parse-duration: 1.0.2
       simple-statistics: 7.7.5
       yargs: 17.5.1
-    optionalDependencies:
-      playwright-core: 1.24.2
     devDependencies:
       '@types/envinfo': 7.8.1
 
@@ -57,6 +54,14 @@ importers:
     dependencies:
       '@esbench/core': link:../core
       hash-wasm: 4.9.0
+
+  packages/playwright:
+    specifiers:
+      '@esbench/core': workspace:^
+      playwright-core: ^1.24.2
+    dependencies:
+      '@esbench/core': link:../core
+      playwright-core: 1.24.2
 
   packages/reporter-html:
     specifiers:
@@ -3052,7 +3057,6 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
     dev: false
-    optional: true
 
   /postcss/8.4.14:
     resolution: {integrity: sha512-E398TUmfAYFPBSdzgeieK2Y1+1cpdxJx8yXbK/m57nRhKSmk1GB2tO4lbLBtlkfPQTDKfe4Xqv1ASWPpayPEig==}

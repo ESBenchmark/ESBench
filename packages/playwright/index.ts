@@ -1,5 +1,5 @@
-import { BenchmarkRunner, RunOptions } from "./runtime.js";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
+import { BenchmarkRunner, RunOptions } from "@esbench/core/lib/runtime.js";
 
 export { chromium, firefox, webkit } from "playwright-core";
 
