@@ -1,6 +1,6 @@
 {
-	"name": "@benchmark-tool/reporter-html",
-	"version": "0.0.1",
+	"name": "@esbench/reporter-html",
+	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",

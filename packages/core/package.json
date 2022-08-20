@@ -1,5 +1,5 @@
 {
-	"name": "core",
+	"name": "@esbench/core",
 	"version": "1.0.0",
 	"description": "JavaScript benchmark library",
 	"author": "Kaciras <Kaciras@protonmail.com>",

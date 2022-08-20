@@ -3,9 +3,10 @@
 	"version": "1.0.0",
 	"license": "MIT",
 	"scripts": {
-		"run": "nuxt"
+		"run": "esbench run.js"
 	},
 	"dependencies": {
+		"@esbench/core": "workspace:^",
 		"hash-wasm": "^4.9.0"
 	}
 }

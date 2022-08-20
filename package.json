@@ -1,5 +1,4 @@
 {
-	"name": "benchmark-tool",
 	"private": true,
 	"type": "module",
 	"scripts": {
