@@ -2,8 +2,9 @@
 	"name": "example",
 	"version": "1.0.0",
 	"license": "MIT",
+	"type": "module",
 	"scripts": {
-		"run": "esbench run.js"
+		"run": "esbench src/run.js"
 	},
 	"dependencies": {
 		"@esbench/core": "workspace:^",
