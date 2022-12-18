@@ -39,6 +39,6 @@
 		"@types/envinfo": "^7.8.1"
 	},
 	"optionalDependencies": {
-		"vite": "^4.0.0"
+		"vite": "^4.0.1"
 	}
 }
