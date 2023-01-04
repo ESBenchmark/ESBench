@@ -1,8 +1,8 @@
 import glob from "fast-glob";
 import { CaseMessage, MessageType, SuiteOptions, TurnMessage } from "./core.js";
-import { NodeRunner } from "./node.js";
 import consoleReporter from "./report.js";
 import { Awaitable } from "./utils.js";
+import { createServer, Plugin } from "vite";
 
 export interface BenchmarkScript {
 	default: SuiteOptions;
@@ -10,9 +10,14 @@ export interface BenchmarkScript {
 
 type Reporter = (result: SuiteResult[]) => void | Promise<void>;
 
+export interface Scene {
+	name: string;
+	runner: BenchmarkRunner;
+}
+
 export interface RunnerOptions {
 	files: string[];
-	runner?: BenchmarkRunner;
+	scenes?: Scene[];
 	reporter?: Reporter;
 }
 
@@ -47,6 +52,8 @@ export interface RunOptions {
 	name?: string;
 
 	handleMessage(message: any): void;
+
+	importModule(specifier: string): Promise<string>;
 }
 
 export interface BenchmarkRunner {
@@ -56,6 +63,29 @@ export interface BenchmarkRunner {
 	close(): Awaitable<void>;
 
 	run(options: RunOptions): Awaitable<void>;
+}
+
+const code = `
+import { BenchmarkSuite } from "@esbench/core/lib/core.js";
+import deff from __FILE__;
+const { options, build } = deff;
+await new BenchmarkSuite(options, build, sendBenchmarkMessage).bench(__NAME__);
+`;
+
+const VMID = "/esbench__loader";
+
+function vitePlugin(file, name) : Plugin {
+	return {
+		name: "esbench",
+
+		load(id) {
+			if(id === VMID) {
+				return code
+					.replace("__FILE__", "'/"+file+"'")
+					.replace("__NAME__", name);
+			}
+		},
+	};
 }
 
 export class BenchmarkTool {
@@ -68,12 +98,23 @@ export class BenchmarkTool {
 
 	async runSuites(files: string[]) {
 		const {
-			runner = new NodeRunner(),
+			scenes,
 			reporter = consoleReporter(),
 		} = this.options;
 
+		const { runner } = scenes![0];
+
 		const suiteResults: SuiteResult[] = [];
 		await runner.start();
+
+		const vite = await createServer({
+			server: {
+				hmr: false,
+			},
+			plugins: [
+				vitePlugin(files[0], undefined),
+			],
+		});
 
 		for (const file of await glob(files)) {
 			const cases: CaseResult[] = [];
@@ -83,11 +124,11 @@ export class BenchmarkTool {
 				options: {},
 			};
 			let currentCase: CaseResult;
-			
+
 			await runner.run({
-				file, 
+				file,
 				name: undefined,
-				handleMessage(message:  TurnMessage | CaseMessage) {
+				handleMessage(message: TurnMessage | CaseMessage) {
 					if (message.type === MessageType.Case) {
 						currentCase = { params: message.params, iterations: {} };
 						cases.push(currentCase);
@@ -95,6 +136,14 @@ export class BenchmarkTool {
 						const { name, metrics } = message;
 						(currentCase.iterations[name] ??= []).push(metrics);
 					}
+				},
+				async importModule(specifier: string) {
+					const r = await vite.transformRequest(specifier);
+					if (r) {
+						return r.code;
+					}
+					throw new Error("Can not load module: " + specifier);
+					// return readFileSync(specifier, "utf8");
 				},
 			});
 

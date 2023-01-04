@@ -10,12 +10,13 @@ interface BenchmarkRequest {
 	name?: string;
 }
 
-async function runBenchmarks({ file, name }: BenchmarkRequest) {
-	const { BenchmarkSuite } = await import("@esbench/core/lib/core.js");
-	const { options, build } = (await import(file)).default;
+const PageURL = "http://esbench/";
 
-	await new BenchmarkSuite(options, build, sendBenchmarkMessage).bench(name);
-}
+// noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
+const BlankHTML = {
+	contentType: "text/html",
+	body: "<html><head></head><body></body></html>",
+};
 
 export class PlaywrightRunner implements BenchmarkRunner {
 
@@ -45,14 +46,34 @@ export class PlaywrightRunner implements BenchmarkRunner {
 		const context = await this.browser.newContext();
 		await context.exposeFunction("sendBenchmarkMessage", handleMessage);
 
-		await context.route("core.js", (route, request) => {
-			route.fulfill({
-				body: importModule(request.url()),
-				contentType: "text/javascript",
-			});
+		await context.route("**/*", async (route, request) => {
+			const path = decodeURIComponent(request.url().slice(PageURL.length - 1));
+			if (request.url() === PageURL) {
+				return route.fulfill(BlankHTML);
+			// } else if (path === "/__esbench_job") {
+			// 	return route.fulfill({ json: { file, name } });
+			} else {
+				return route.fulfill({
+					body: await importModule(path),
+					contentType: "text/javascript",
+				});
+			}
 		});
 
 		const page = await context.newPage();
-		await page.evaluate(runBenchmarks, { file, name });
+		await page.goto(PageURL);
+		// await page.addScriptTag({ type: "module", url: "/esbench__loader" });
+		await page.evaluate(rtl2, { file, name });
+
+		console.log("Evaluate finishd");
+		// page.waitForEvent();
+		// await page.close();
 	}
+}
+
+async function rtl2({ file, name }: BenchmarkRequest) {
+	await import("/esbench__loader");
+	// const { BenchmarkSuite } = await import("esbench:loader");
+	// const { options, build } = (await import(file)).default;
+	// await new BenchmarkSuite(options, build, sendBenchmarkMessage).bench(name);
 }
