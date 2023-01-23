@@ -32,13 +32,13 @@
 		"envinfo": "^7.8.1",
 		"fast-glob": "^3.2.12",
 		"parse-duration": "^1.0.2",
-		"simple-statistics": "^7.8.0",
+		"simple-statistics": "^7.8.2",
 		"yargs": "^17.6.2"
 	},
 	"devDependencies": {
 		"@types/envinfo": "^7.8.1"
 	},
 	"optionalDependencies": {
-		"vite": "^4.0.1"
+		"vite": "^4.0.4"
 	}
 }
