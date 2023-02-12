@@ -14,6 +14,6 @@
 	"types": "index.d.ts",
 	"dependencies": {
 		"@esbench/core": "workspace:^",
-		"playwright-core": "^1.29.2"
+		"playwright-core": "^1.30.0"
 	}
 }
