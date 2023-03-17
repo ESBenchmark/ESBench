@@ -3,19 +3,18 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite",
 		"build": "vite build",
-		"package": "svelte-kit package",
 		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch"
+		"check": "svelte-check --tsconfig ./tsconfig.json"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "2.0.1",
-		"@sveltejs/kit": "1.5.5",
+		"@sveltejs/vite-plugin-svelte": "^2.0.3",
+		"@tsconfig/svelte": "^3.0.0",
 		"svelte": "^3.55.1",
-		"svelte-check": "^3.0.3",
-		"svelte-preprocess": "^5.0.1",
-		"vite": "^4.1.1"
+		"svelte-check": "^2.10.3",
+		"tslib": "^2.5.0",
+		"typescript": "^4.9.3",
+		"vite": "^4.2.0"
 	}
 }
