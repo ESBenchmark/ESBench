@@ -6,7 +6,7 @@
 	"author": "Kaciras <Kaciras@protonmail.com>",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Kaciras/benchmark-tool",
+		"url": "https://github.com/Kaciras/esbench",
 		"directory": "packages/playwright"
 	},
 	"type": "module",

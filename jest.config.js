@@ -6,8 +6,7 @@ export default {
 		"ts", "js", "mjs", "node", "json",
 	],
 	preset: "ts-jest",
-	testEnvironment: "node",
 	clearMocks: true,
-	coverageDirectory: "coverage",
 	coverageProvider: "v8",
+	coverageDirectory: "coverage",
 };

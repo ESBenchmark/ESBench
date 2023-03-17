@@ -22,5 +22,6 @@ yarn-error.log*
 *.sln
 *.sw?
 
+# Generated files
 packages/core/lib
 packages/reporter-html/build

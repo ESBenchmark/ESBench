@@ -1,6 +1,11 @@
 {
 	"name": "@esbench/reporter-html",
 	"version": "0.1.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Kaciras/esbench",
+		"directory": "packages/reporter-html"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
