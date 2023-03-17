@@ -1,9 +1,6 @@
 module.exports = {
 	root: true,
-	extends: [
-		"@kaciras/core",
-		"@kaciras/typescript",
-	],
+	extends: ["@kaciras/core", "@kaciras/typescript"],
 	env: {
 		node: true,
 		browser: true,
@@ -11,12 +8,16 @@ module.exports = {
 	overrides: [{
 		files: "**/__tests__/*.spec.[jt]s",
 		extends: ["@kaciras/jest"],
-	},{
-		settings: {
-			'svelte3/typescript': () => require('typescript')
+	}, {
+		files: ["*.svelte"],
+		extends: ["@kaciras/typescript/base"],
+		plugins: ["svelte3"],
+		processor: "svelte3/svelte3",
+		parserOptions: {
+			extraFileExtensions: [".svelte"],
 		},
-		plugins: ['svelte3'],
-		files: ['*.svelte'],
-		processor: 'svelte3/svelte3'
+		settings: {
+			"svelte3/typescript": () => require("typescript"),
+		},
 	}],
 };
