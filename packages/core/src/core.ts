@@ -1,6 +1,5 @@
-import { performance } from "perf_hooks";
 import parseDuration from "parse-duration";
-import { createParamsIter } from "./utils.js";
+import { cartesianProductObj } from "@kaciras/utilities/node";
 import { BenchmarkContext, ParamsConfig } from "./builder.js";
 
 export enum MessageType {

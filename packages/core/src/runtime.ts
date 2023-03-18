@@ -1,8 +1,8 @@
 import glob from "fast-glob";
 import { CaseMessage, MessageType, SuiteOptions, TurnMessage } from "./core.js";
 import consoleReporter from "./report.js";
-import { Awaitable } from "./utils.js";
-import { createServer, Plugin } from "vite";
+import { Awaitable } from "@kaciras/utilities/node";
+import { ViteAdapter } from "./vite.js";
 
 export interface BenchmarkScript {
 	default: SuiteOptions;
