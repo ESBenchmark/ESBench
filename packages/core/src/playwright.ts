@@ -1,9 +1,7 @@
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
-import { BenchmarkRunner, RunOptions } from "@esbench/core/lib/runtime.js";
+import { BenchmarkRunner, RunOptions } from "./runtime.js";
 
 export { chromium, firefox, webkit } from "playwright-core";
-
-declare function sendBenchmarkMessage(message: any): void;
 
 interface BenchmarkRequest {
 	file: string;
@@ -44,14 +42,14 @@ export class PlaywrightRunner implements BenchmarkRunner {
 		console.log("Running benchmark suite: " + file);
 
 		const context = await this.browser.newContext();
-		await context.exposeFunction("sendBenchmarkMessage", handleMessage);
+		await context.exposeFunction("$SEND_MESSAGE", handleMessage);
 
 		await context.route("**/*", async (route, request) => {
 			const path = decodeURIComponent(request.url().slice(PageURL.length - 1));
 			if (request.url() === PageURL) {
 				return route.fulfill(BlankHTML);
-			// } else if (path === "/__esbench_job") {
-			// 	return route.fulfill({ json: { file, name } });
+				// } else if (path === "/__esbench_job") {
+				// 	return route.fulfill({ json: { file, name } });
 			} else {
 				return route.fulfill({
 					body: await importModule(path),
@@ -72,7 +70,7 @@ export class PlaywrightRunner implements BenchmarkRunner {
 }
 
 async function rtl2({ file, name }: BenchmarkRequest) {
-	await import("/esbench__loader");
+	await import("/ESBench_Main.js");
 	// const { BenchmarkSuite } = await import("esbench:loader");
 	// const { options, build } = (await import(file)).default;
 	// await new BenchmarkSuite(options, build, sendBenchmarkMessage).bench(name);

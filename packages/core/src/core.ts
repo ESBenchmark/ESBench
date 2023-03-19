@@ -1,10 +1,11 @@
 import parseDuration from "parse-duration";
-import { cartesianProductObj } from "@kaciras/utilities/node";
+import { cartesianProductObj } from "@kaciras/utilities/browser";
 import { BenchmarkContext, ParamsConfig } from "./builder.js";
 
 export enum MessageType {
 	Turn,
 	Case,
+	Finished,
 }
 
 export interface CaseMessage {
@@ -83,7 +84,7 @@ export class BenchmarkSuite {
 	async bench(name?: string) {
 		const { params = {} } = this.options;
 
-		for (const config of createParamsIter(params)) {
+		for (const config of cartesianProductObj(params)) {
 			const suite = new BenchmarkContext();
 			await this.mainFn(suite, config);
 
@@ -116,5 +117,21 @@ export class BenchmarkSuite {
 			const time = await runFn(count);
 			this.channel({ type: MessageType.Turn, name, metrics: { time } });
 		}
+
+		this.channel({ type: MessageType.Finished });
+	}
+}
+
+export interface BenchmarkModule {
+	default: MainFn;
+	options: SuiteOptions;
+}
+
+type Suites = Record<string, () => Promise<BenchmarkModule>>;
+
+export default async function runSuites(suites: Suites, name: string, channel: Channel) {
+	for (const [file, import_] of Object.entries(suites)) {
+		const { options, default: mainFn } = await import_();
+		await new BenchmarkSuite(options, mainFn, channel).bench(name);
 	}
 }
