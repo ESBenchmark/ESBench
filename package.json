@@ -4,7 +4,7 @@
 	"scripts": {
 		"lint": "eslint --fix .",
 		"test": "jest",
-		"compile": "tsc && tsc --project tsconfig.esm.json"
+		"compile": "tsc --watch"
 	},
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^2.5.1",

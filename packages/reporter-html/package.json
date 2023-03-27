@@ -1,6 +1,8 @@
 {
 	"name": "@esbench/reporter-html",
 	"version": "0.1.0",
+	"license": "MIT",
+	"description": "HTML reporter for ESBench",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Kaciras/esbench",
@@ -8,17 +10,18 @@
 	},
 	"type": "module",
 	"scripts": {
+		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json"
+		"preview": "vite preview"
 	},
 	"devDependencies": {
+		"@esbench/core": "workspace:^",
 		"@sveltejs/vite-plugin-svelte": "^2.0.3",
-		"@tsconfig/svelte": "^3.0.0",
+		"@tsconfig/svelte": "^4.0.0",
 		"svelte": "^3.57.0",
 		"svelte-check": "^3.1.4",
 		"tslib": "^2.5.0",
-		"vite": "^4.2.0"
+		"vite": "^4.2.1"
 	}
 }
