@@ -34,7 +34,6 @@ importers:
       console-table-printer: ^2.11.1
       envinfo: ^7.8.1
       fast-glob: ^3.2.12
-      parse-duration: ^1.0.3
       playwright-core: ^1.32.1
       simple-statistics: ^7.8.3
       vite: ^4.2.1
@@ -45,7 +44,6 @@ importers:
       console-table-printer: 2.11.1
       envinfo: 7.8.1
       fast-glob: 3.2.12
-      parse-duration: 1.0.3
       simple-statistics: 7.8.3
       yargs: 17.7.1
     optionalDependencies:
@@ -2977,10 +2975,6 @@ packages:
     dependencies:
       callsites: 3.1.0
     dev: true
-
-  /parse-duration/1.0.3:
-    resolution: {integrity: sha512-o6NAh12na5VvR6nFejkU0gpQ8jmOY9Y9sTU2ke3L3G/d/3z8jqmbBbeyBGHU73P4JLXfc7tJARygIK3WGIkloA==}
-    dev: false
 
   /parse-json/5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}

@@ -1,19 +1,21 @@
-import { build, Plugin, Rollup } from "vite";
+import { build, Plugin } from "vite";
+import { Processor } from "./processor.js";
 
-const VMID = "ESBench_Main.js";
+const VMID = "./ESBench_Main.js";
 
 const mainCode = `
-import runSuites from "@esbench/core/src/core.js";
+import runSuite from "@esbench/core/src/core.js";
 
-const suites = { __IMPORTS__ };
+const suites = {__IMPORTS__\n};
 
-runSuites(suites, __NAME__, $SEND_MESSAGE);
-`;
+export default function (file, name, channel) {
+	return runSuite(suites[file](), name, channel);
+}`;
 
 function createEntry(files: string[], name: string) {
 	let imports = "";
 	for (const file of files) {
-		imports += `\n\t"${file}": () => import("/${file}"),`;
+		imports += `\n\t"${file}": () => import("${file}"),`;
 	}
 	return mainCode
 		.replace("__IMPORTS__", imports)
@@ -24,49 +26,38 @@ function vitePlugin(files: string[], name: string): Plugin {
 	return {
 		name: "ESBench-entry",
 		resolveId(id) {
-			if (id === VMID)
+			if (id === VMID) {
 				return VMID;
+			}
 		},
 		load(id) {
-			if (id !== VMID) {
-				return;
+			if (id === VMID) {
+				return createEntry(files, name);
 			}
-			return createEntry(files, name);
 		},
 	};
 }
 
-export class ViteAdapter {
-
-	private bundle!: Rollup.RollupOutput;
-
-	constructor() {
-
-	}
-
-	async start(files: string[]) {
-		this.bundle = await build({
+export default function viteProcessor(): Processor {
+	return  async (ctx) => {
+		await build({
 			build: {
+				outDir: ctx.tempDir(),
+				target: "esnext",
+				minify: false,
+				modulePreload: false,
 				rollupOptions: {
+					preserveEntrySignatures: "strict",
 					input: VMID,
 					output: {
 						entryFileNames: "[name].js",
 					},
 				},
-				write: false,
 			},
 			plugins: [
-				vitePlugin(files, "TODO"),
+				vitePlugin(ctx.files, "TODO"),
 			],
 		});
-	}
-
-	async importModule(specifier: string) {
-		specifier = specifier.slice(1);
-		const r = this.bundle.output.find(c => c.fileName === specifier);
-		if (r) {
-			return r.code;
-		}
-		throw new Error("Can not load module: " + specifier);
-	}
+		return VMID;
+	};
 }

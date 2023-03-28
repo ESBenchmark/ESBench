@@ -1,59 +1,76 @@
+import { mkdtempSync, rmSync } from "fs";
+import { cwd } from "process";
 import glob from "fast-glob";
-import { CaseMessage, MessageType, SuiteOptions, TurnMessage } from "./core.js";
+import { Awaitable, MultiMap } from "@kaciras/utilities/node";
+import { CaseMessage, MessageType, TurnMessage } from "./core.js";
 import consoleReporter from "./report.js";
-import { Awaitable } from "@kaciras/utilities/node";
-import { ViteAdapter } from "./vite.js";
-
-export interface BenchmarkScript {
-	default: SuiteOptions;
-}
+import { noProcess, Processor } from "./processor.js";
+import DirectRunner from "./runner/direct.js";
 
 type Reporter = (result: SuiteResult[]) => void | Promise<void>;
 
 export interface Scene {
-	name: string;
-	runner: BenchmarkRunner;
+	processor?: Processor;
+	runtimes?: BenchmarkRunner[];
 }
 
-export interface RunnerOptions {
-	files: string[];
+export interface ESBenchConfig {
+	include: string[];
 	scenes?: Scene[];
-	reporter?: Reporter;
+	reporters?: Reporter[];
 }
+
+type NormalizedESBenchConfig = Readonly<ESBenchConfig & {
+	reporters: Reporter[];
+	scenes: Array<Required<Scene>>;
+}>
+
+function normalizeConfig(config: ESBenchConfig) {
+	config.scenes ??= [];
+
+	for (const scene of config.scenes) {
+		scene.processor ??= noProcess;
+		scene.runtimes ??= [new DirectRunner()];
+
+		if (scene.runtimes.length === 0) {
+			throw new Error("No runtime.");
+		}
+	}
+
+	config.reporters ??= [consoleReporter()];
+
+	return config as NormalizedESBenchConfig;
+}
+
+// =============================================================
 
 interface Metrics {
-	unit: string;
-}
-
-export interface SuiteResult {
-	file: string;
-	metrics: Record<string, Metrics>;
-	runners: RunnerResult[];
-}
-
-export interface RunnerResult {
-	name: string;
-	options: Record<string, any>;
-	cases: CaseResult[];
+	time: number[];
 }
 
 export interface CaseResult {
+	name: string;
+	processor: string;
+	runtime: string;
 	params: Record<string, any>;
-	iterations: Record<string, IterationResult[]>;
+	metrics: Metrics;
 }
 
-interface IterationResult {
-	time: number;
-	memory?: number;
+export interface SuiteResult {
+	path: string;
+	cases: CaseResult[];
 }
+
+// =============================================================
 
 export interface RunOptions {
-	file: string;
+	root: string;
+	entry: string;
+
+	files: string[];
 	name?: string;
 
 	handleMessage(message: any): void;
-
-	importModule(specifier: string): Promise<string>;
 }
 
 export interface BenchmarkRunner {
@@ -65,102 +82,83 @@ export interface BenchmarkRunner {
 	run(options: RunOptions): Awaitable<void>;
 }
 
-const code = `
-import { BenchmarkSuite } from "@esbench/core/lib/core.js";
-import deff from __FILE__;
-const { options, build } = deff;
-await new BenchmarkSuite(options, build, sendBenchmarkMessage).bench(__NAME__);
-`;
+export class ESBench {
 
-const VMID = "/esbench__loader";
+	private readonly config: NormalizedESBenchConfig;
 
-function vitePlugin(file, name) : Plugin {
-	return {
-		name: "esbench",
-
-		load(id) {
-			if(id === VMID) {
-				return code
-					.replace("__FILE__", "'/"+file+"'")
-					.replace("__NAME__", name);
-			}
-		},
-	};
-}
-
-export class BenchmarkTool {
-
-	private readonly options: RunnerOptions;
-
-	constructor(options: RunnerOptions) {
-		this.options = options;
+	constructor(options: ESBenchConfig) {
+		this.config = normalizeConfig(options);
 	}
 
-	async runSuites(files: string[]) {
-		const {
-			scenes,
-			reporter = consoleReporter(),
-		} = this.options;
+	async run(name?: string) {
+		const { include, scenes, reporters } = this.config;
+		const files = await glob(include);
+		const tempDirs: string[] = [];
+		let currentTempDir: string;
 
-		const { runner } = scenes![0];
-
-		const suiteResults: SuiteResult[] = [];
-		await runner.start();
-
-		const vite = await createServer({
-			server: {
-				hmr: false,
-			},
-			plugins: [
-				vitePlugin(files[0], undefined),
-			],
-		});
-
-		for (const file of await glob(files)) {
-			const cases: CaseResult[] = [];
-			const results: RunnerResult = {
-				name: "node",
-				cases,
-				options: {},
-			};
-			let currentCase: CaseResult;
-
-			await runner.run({
-				file,
-				name: undefined,
-				handleMessage(message: TurnMessage | CaseMessage) {
-					if (message.type === MessageType.Case) {
-						currentCase = { params: message.params, iterations: {} };
-						cases.push(currentCase);
-					} else {
-						const { name, metrics } = message;
-						(currentCase.iterations[name] ??= []).push(metrics);
-					}
-				},
-				async importModule(specifier: string) {
-					const r = await vite.transformRequest(specifier);
-					if (r) {
-						return r.code;
-					}
-					throw new Error("Can not load module: " + specifier);
-					// return readFileSync(specifier, "utf8");
-				},
-			});
-
-			suiteResults.push({
-				file,
-				runners: [results],
-				metrics: {
-					time: { unit: "ms" },
-				},
-			});
+		function tempDir() {
+			const dir = mkdtempSync("ESBench-");
+			tempDirs.push(dir);
+			return currentTempDir = dir;
 		}
 
-		await runner.close();
-		await reporter(suiteResults);
-	}
+		const map = new MultiMap<BenchmarkRunner, { root: string; entry: string }>();
+		for (const scene of scenes) {
+			const { processor, runtimes } = scene;
+			currentTempDir = cwd();
+			const entry = await processor({ tempDir, files });
 
-	async run(suite: string, name: string) {
+			for (const rt of runtimes) {
+				map.add(rt, { root: currentTempDir, entry });
+			}
+		}
 
+		// const suiteResults: SuiteResult[] = [];
+		//
+		// const cases: CaseResult[] = [];
+		// const results: RunnerResult = {
+		// 	name: "node",
+		// 	cases,
+		// 	options: {},
+		// };
+		// let currentCase: CaseResult;
+		//
+		// suiteResults.push({
+		// 	file,
+		// 	runners: [results],
+		// 	metrics: {
+		// 		time: { unit: "ms" },
+		// 	},
+		// });
+
+
+		for (const [runtime, builds] of map) {
+			await runtime.start();
+
+			for (const { root, entry } of builds) {
+				await runtime.run({
+					root, entry, files, name,
+					handleMessage(message: TurnMessage | CaseMessage) {
+						console.log(message);
+						// if (message.type === MessageType.Case) {
+						// 	currentCase = { params: message.params, iterations: {} };
+						// 	cases.push(currentCase);
+						// } else {
+						// 	const { name, metrics } = message;
+						// 	(currentCase.iterations[name] ??= []).push(metrics);
+						// }
+					},
+				});
+			}
+			await runtime.close();
+		}
+
+		for (const dir of tempDirs) {
+			// rmSync(dir, { recursive: true });
+		}
+
+		// for (const reporter of reporters) {
+		// 	await reporter(suiteResults);
+		// }
 	}
 }

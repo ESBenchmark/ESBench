@@ -1,9 +1,9 @@
 import { stdout } from "process";
 import chalk from "chalk";
-import { SuiteResult } from "./runtime.js";
 import envinfo from "envinfo";
 import { Table } from "console-table-printer";
 import { mean } from "simple-statistics";
+import { SuiteResult } from "./runtime.js";
 
 interface ConsoleReporterOptions {
 	metrics?: any[];
@@ -51,6 +51,7 @@ function reportSuite(result: SuiteResult) {
 }
 
 export default function consoleReporter(options: ConsoleReporterOptions = {}) {
+
 	return async (results: SuiteResult[]) => {
 		stdout.write(chalk.blueBright("OS: "));
 		console.log((await envinfo.helpers.getOSInfo())[1]);
@@ -64,29 +65,3 @@ export default function consoleReporter(options: ConsoleReporterOptions = {}) {
 		for (const result of results) reportSuite(result);
 	};
 }
-
-// consoleReporter()([{
-// 	file: "/benchmark/map-vs-object.js",
-// 	metrics: {
-// 		time: {
-// 			unit: "ms",
-// 		},
-// 	},
-// 	runners: [{
-// 		name: "node",
-// 		options: {},
-// 		cases: [{
-// 			params: { size: 1000 },
-// 			iterations: {
-// 				map: [{ time: 123 }, { time: 321 }],
-// 				object: [{ time: 66 }, { time: 88 }],
-// 			},
-// 		},{
-// 			params: { size: 88888 },
-// 			iterations: {
-// 				map: [{ time: 500 }, { time: 651 }],
-// 				object: [{ time: 122 }, { time: 154 }],
-// 			},
-// 		}],
-// 	}],
-// }]);
