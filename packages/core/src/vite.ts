@@ -1,7 +1,7 @@
-import { build, Plugin } from "vite";
-import { Processor } from "./processor.js";
+import { build, InlineConfig, mergeConfig, Plugin } from "vite";
+import { ProcessContext, Processor } from "./processor.js";
 
-const VMID = "./ESBench_Main.js";
+const ENTRY_ID = "./ESBench_Main.js";
 
 const mainCode = `
 import runSuite from "@esbench/core/src/core.js";
@@ -12,52 +12,65 @@ export default function (file, name, channel) {
 	return runSuite(suites[file](), name, channel);
 }`;
 
-function createEntry(files: string[], name: string) {
+function createEntry(files: string[]) {
 	let imports = "";
 	for (const file of files) {
 		imports += `\n\t"${file}": () => import("${file}"),`;
 	}
-	return mainCode
-		.replace("__IMPORTS__", imports)
-		.replace("__NAME__", JSON.stringify(name));
+	return mainCode.replace("__IMPORTS__", imports);
 }
 
-function vitePlugin(files: string[], name: string): Plugin {
+function vitePlugin(files: string[]): Plugin {
 	return {
 		name: "ESBench-entry",
 		resolveId(id) {
-			if (id === VMID) {
-				return VMID;
+			if (id === ENTRY_ID) {
+				return ENTRY_ID;
 			}
 		},
 		load(id) {
-			if (id === VMID) {
-				return createEntry(files, name);
+			if (id === ENTRY_ID) {
+				return createEntry(files);
 			}
 		},
 	};
 }
 
-export default function viteProcessor(): Processor {
-	return  async (ctx) => {
-		await build({
+const defaults: InlineConfig = {
+	build: {
+		target: "esnext",
+		minify: false,
+		modulePreload: false,
+		rollupOptions: {
+			preserveEntrySignatures: "strict",
+			input: ENTRY_ID,
+			output: {
+				entryFileNames: "[name].js",
+			},
+		},
+	},
+};
+
+export default class ViteProcessor implements Processor {
+
+	private readonly config: InlineConfig;
+
+	readonly name: string;
+
+	constructor(config: InlineConfig) {
+		this.name = "Vite";
+		this.config = mergeConfig(defaults, config);
+	}
+
+	process(ctx: ProcessContext) {
+		const config = mergeConfig(this.config, {
 			build: {
 				outDir: ctx.tempDir(),
-				target: "esnext",
-				minify: false,
-				modulePreload: false,
-				rollupOptions: {
-					preserveEntrySignatures: "strict",
-					input: VMID,
-					output: {
-						entryFileNames: "[name].js",
-					},
-				},
 			},
 			plugins: [
-				vitePlugin(ctx.files, "TODO"),
+				vitePlugin(ctx.files),
 			],
 		});
-		return VMID;
-	};
+		return build(config).then(() => ENTRY_ID);
+	}
 }

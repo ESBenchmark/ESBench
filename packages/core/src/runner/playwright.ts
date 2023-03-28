@@ -15,10 +15,10 @@ const BlankHTML = {
 	body: "<html><head></head><body></body></html>",
 };
 
-async function runBenchmarks({ files, name, entry }: any) {
+async function client({ files, task, entry }: any) {
 	const mod = await import(entry);
 	for (const file of files)
-		await mod.default(file, name, _ESBenchChannel);
+		await mod.default(file, task, _ESBenchChannel);
 }
 
 export class PlaywrightRunner implements BenchmarkRunner {
@@ -34,8 +34,11 @@ export class PlaywrightRunner implements BenchmarkRunner {
 	}
 
 	async start() {
+		const { type, options } = this;
+		this.browser = await type.launch(options);
+
 		console.log("Launching browser...");
-		this.browser = await this.type.launch(this.options);
+		return `${type.name()} - ${this.browser.version()}`;
 	}
 
 	close() {
@@ -43,31 +46,25 @@ export class PlaywrightRunner implements BenchmarkRunner {
 	}
 
 	async run(options: RunOptions) {
-		const { files, name, root, entry, handleMessage } = options;
-		// console.log("Running benchmark suite: " + file);
+		const { files, task, root, entry, handleMessage } = options;
 
 		const context = await this.browser.newContext();
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
 
-		await context.route("**/*", async (route, request) => {
+		await context.route("**/*", (route, request) => {
 			if (request.url() === PageURL) {
 				return route.fulfill(BlankHTML);
 			}
 			const path = decodeURIComponent(request.url().slice(PageURL.length - 1));
-			const body = importModule(root, path);
+			const body = readFileSync(join(root, path));
 			return route.fulfill({ body, contentType: "text/javascript" });
 		});
 
 		const page = await context.newPage();
 		await page.goto(PageURL);
-		await page.evaluate(runBenchmarks, { files, name, entry });
+		await page.evaluate(client, { files, task, entry });
 
 		console.log("Evaluate finishd");
-		// page.waitForEvent();
 		await page.close();
 	}
-}
-
-function importModule(root: string, path: string) {
-	return readFileSync(join(root, path));
 }

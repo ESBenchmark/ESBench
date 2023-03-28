@@ -1,10 +1,10 @@
-import { mkdtempSync, rmSync } from "fs";
+import { mkdtempSync } from "fs";
 import { cwd } from "process";
 import glob from "fast-glob";
 import { Awaitable, MultiMap } from "@kaciras/utilities/node";
-import { CaseMessage, MessageType, TurnMessage } from "./core.js";
+import { CaseMessage, TurnMessage } from "./core.js";
 import consoleReporter from "./report.js";
-import { noProcess, Processor } from "./processor.js";
+import { nopProcessor, Processor } from "./processor.js";
 import DirectRunner from "./runner/direct.js";
 
 type Reporter = (result: SuiteResult[]) => void | Promise<void>;
@@ -29,7 +29,7 @@ function normalizeConfig(config: ESBenchConfig) {
 	config.scenes ??= [];
 
 	for (const scene of config.scenes) {
-		scene.processor ??= noProcess;
+		scene.processor ??= nopProcessor;
 		scene.runtimes ??= [new DirectRunner()];
 
 		if (scene.runtimes.length === 0) {
@@ -68,18 +68,24 @@ export interface RunOptions {
 	entry: string;
 
 	files: string[];
-	name?: string;
+	task?: string;
 
 	handleMessage(message: any): void;
 }
 
 export interface BenchmarkRunner {
 
-	start(): Awaitable<void>;
+	start(): Awaitable<string>;
 
 	close(): Awaitable<void>;
 
 	run(options: RunOptions): Awaitable<void>;
+}
+
+interface Build {
+	name: string;
+	root: string;
+	entry: string;
 }
 
 export class ESBench {
@@ -90,7 +96,7 @@ export class ESBench {
 		this.config = normalizeConfig(options);
 	}
 
-	async run(name?: string) {
+	async run(task?: string) {
 		const { include, scenes, reporters } = this.config;
 		const files = await glob(include);
 		const tempDirs: string[] = [];
@@ -102,14 +108,18 @@ export class ESBench {
 			return currentTempDir = dir;
 		}
 
-		const map = new MultiMap<BenchmarkRunner, { root: string; entry: string }>();
+		const map = new MultiMap<BenchmarkRunner, Build>();
 		for (const scene of scenes) {
 			const { processor, runtimes } = scene;
 			currentTempDir = cwd();
-			const entry = await processor({ tempDir, files });
+			const entry = await processor.process({ tempDir, files });
 
-			for (const rt of runtimes) {
-				map.add(rt, { root: currentTempDir, entry });
+			for (const runtime of runtimes) {
+				map.add(runtime, {
+					entry,
+					name: processor.name,
+					root: currentTempDir,
+				});
 			}
 		}
 
@@ -131,13 +141,12 @@ export class ESBench {
 		// 	},
 		// });
 
-
 		for (const [runtime, builds] of map) {
 			await runtime.start();
 
-			for (const { root, entry } of builds) {
+			for (const { name, root, entry } of builds) {
 				await runtime.run({
-					root, entry, files, name,
+					root, entry, files, task,
 					handleMessage(message: TurnMessage | CaseMessage) {
 						console.log(message);
 						// if (message.type === MessageType.Case) {
