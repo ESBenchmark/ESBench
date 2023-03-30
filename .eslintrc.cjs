@@ -5,10 +5,10 @@ module.exports = {
 		node: true,
 		browser: true,
 	},
+	rules: {
+		"@kaciras/import-group-sort": "warn",
+	},
 	overrides: [{
-		files: "**/__tests__/*.spec.[jt]s",
-		extends: ["@kaciras/jest"],
-	}, {
 		files: ["*.svelte"],
 		extends: ["@kaciras/typescript/base"],
 		plugins: ["svelte3"],
