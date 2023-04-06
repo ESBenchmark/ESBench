@@ -27,7 +27,7 @@
 		"esbench": "bin/cli.js"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.8.0",
+		"@kaciras/utilities": "^0.8.1",
 		"chalk": "^5.2.0",
 		"console-table-printer": "^2.11.1",
 		"envinfo": "^7.8.1",
@@ -39,7 +39,7 @@
 		"@types/envinfo": "^7.8.1"
 	},
 	"optionalDependencies": {
-		"playwright-core": "^1.32.1",
+		"playwright-core": "^1.32.2",
 		"vite": "^4.2.1"
 	}
 }
