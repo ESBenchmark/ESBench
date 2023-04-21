@@ -1,4 +1,4 @@
-import { Awaitable, cartesianProductObj, durationConvertor } from "@kaciras/utilities/browser";
+import { Awaitable, cartesianProductObj, durationFmt } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkContext, BenchmarkFn, MainFn, SuiteOptions } from "./builder.js";
 
 export enum MessageType {
@@ -10,6 +10,7 @@ export enum MessageType {
 
 export interface SuiteMessage {
 	type: MessageType.Suite;
+	file: string;
 	paramDefs: Record<string, any[]>;
 }
 
@@ -24,9 +25,15 @@ export interface TurnMessage {
 	metrics: Record<string, any>;
 }
 
+export interface FinishMessage {
+	type: MessageType.Finished;
+}
+
+export type WorkerMessage = SuiteMessage | CaseMessage | TurnMessage | FinishMessage;
+
 // =========================================================================
 
-export type Channel = (message: any) => void;
+export type Channel = (message: WorkerMessage) => Awaitable<void>;
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -58,8 +65,7 @@ async function getIterations(fn: IterateFn, targetMS: number) {
 	return Math.ceil(count / 2 * targetMS / time);
 }
 
-
-export class BenchmarkSuite {
+export class SuiteRunner {
 
 	private readonly options: SuiteOptions;
 	private readonly mainFn: MainFn;
@@ -71,14 +77,20 @@ export class BenchmarkSuite {
 		this.channel = channel;
 	}
 
-	async bench(name?: string) {
+	async bench(file: string, name?: string) {
 		const { params = {} } = this.options;
+
+		await this.channel({
+			type: MessageType.Suite,
+			paramDefs: serializable(params),
+			file,
+		});
 
 		for (const config of cartesianProductObj(params)) {
 			const suite = new BenchmarkContext();
 			await this.mainFn(suite, config);
 
-			this.channel({ type: MessageType.Case, params: config });
+			await this.channel({ type: MessageType.Case, params: config });
 
 			suite.setupHook();
 			for (const case_ of suite.benchmarks) {
@@ -102,16 +114,14 @@ export class BenchmarkSuite {
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
 			? iterations
-			: await getIterations(runFn, durationConvertor.parse(iterations, "ms"));
+			: await getIterations(runFn, durationFmt.parse(iterations, "ms"));
 
 		console.log("Count:" + count);
 
 		for (let i = 0; i < time; i++) {
 			const time = await runFn(count);
-			this.channel({ type: MessageType.Turn, name, metrics: { time } });
+			await this.channel({ type: MessageType.Turn, name, metrics: { time } });
 		}
-
-		this.channel({ type: MessageType.Finished });
 	}
 }
 
@@ -125,7 +135,7 @@ function short(value: any, length: number) {
 
 export function serializable(params: Record<string, Iterable<unknown>>) {
 	const entries = Object.entries(params);
-	const processed: Record<string, any> = {};
+	const processed: Record<string, any[]> = {};
 	const counters = new Array(entries.length).fill(0);
 
 	let current: any[];
@@ -159,13 +169,23 @@ export function serializable(params: Record<string, Iterable<unknown>>) {
 }
 
 export interface BenchmarkModule {
-	default: MainFn;
-	options: SuiteOptions;
+	default: {
+		mainFn: MainFn;
+		options: SuiteOptions;
+	};
 }
 
-export default async function runSuite(mod: Promise<BenchmarkModule>, name: string, channel: Channel) {
-	const { default: { options, mainFn } } = await mod;
-	console.error(options);
+export type Importer = (path: string) => Awaitable<BenchmarkModule>;
 
-	await new BenchmarkSuite(options, mainFn, channel).bench(name);
+export default async function runSuites(
+	channel: Channel,
+	importer: Importer,
+	files: string[],
+	name?: string,
+) {
+	for (const file of files) {
+		const { default: { options, mainFn } } = await importer(file);
+		await new SuiteRunner(options, mainFn, channel).bench(file, name);
+	}
+	await channel({ type: MessageType.Finished });
 }

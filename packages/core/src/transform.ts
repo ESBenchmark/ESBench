@@ -1,7 +1,6 @@
 import { join } from "path";
 import { writeFileSync } from "fs";
 import { Awaitable } from "@kaciras/utilities/node";
-import runSuite, { Channel } from "./worker.js";
 
 export interface TransformContext {
 	root: string;
@@ -15,23 +14,19 @@ export interface Transformer {
 	transform(ctx: TransformContext): Awaitable<string>;
 }
 
+const template = `
+import runSuites from "@esbench/core/src/worker.js";
+
+const doImport = file => import("../." + file);
+
+export default async function (channel, files, name) {
+	await runSuites(channel, doImport, files, name);
+}`;
+
 export const nopTransformer: Transformer = {
 	name: "None",
 	transform(ctx) {
-		writeFileSync(join(ctx.root, "nop-loader.js"), t);
+		writeFileSync(join(ctx.root, "nop-loader.js"), template);
 		return "nop-loader.js";
 	},
 };
-
-export default async function (channel: Channel, files: string[], name?: string) {
-	for (const file of files) {
-		await runSuite(channel, import("." + file), name);
-	}
-}
-
-const t = `
-export default async function (channel, files, name) {
-	for (const file of files) {
-		await runSuite(channel, import("." + file), name);
-	}
-}`;

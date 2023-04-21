@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { serializable } from "../src/core.ts";
+import { serializable } from "../src/worker.ts";
 
 describe("serializable", () => {
 	it("should works", () => {

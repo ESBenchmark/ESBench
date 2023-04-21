@@ -1,15 +1,19 @@
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { ProcessContext, Processor } from "./processor.js";
+import { TransformContext, Transformer } from "./transform.js";
 
 const ENTRY_ID = "./ESBench_Main.js";
 
 const mainCode = `
-import runSuite from "@esbench/core/src/core.js";
+import runSuites from "@esbench/core/src/worker.js";
 
-const suites = {__IMPORTS__\n};
+const modules = {__IMPORTS__\n};
 
-export default function (file, name, channel) {
-	return runSuite(suites[file](), name, channel);
+function dynamicImport(file) {
+	return suites[file]();
+}
+
+export default function (channel, files, name) {
+	return runSuites(channel, dynamicImport, files, name);
 }`;
 
 function createEntry(files: string[]) {
@@ -51,7 +55,7 @@ const defaults: InlineConfig = {
 	},
 };
 
-export default class ViteProcessor implements Processor {
+export default class ViteProcessor implements Transformer {
 
 	private readonly config: InlineConfig;
 
@@ -62,10 +66,10 @@ export default class ViteProcessor implements Processor {
 		this.config = mergeConfig(defaults, config);
 	}
 
-	process(ctx: ProcessContext) {
+	transform(ctx: TransformContext) {
 		const config = mergeConfig(this.config, {
 			build: {
-				outDir: ctx.tempDir(),
+				outDir: ctx.root,
 			},
 			plugins: [
 				vitePlugin(ctx.files),
