@@ -1,13 +1,13 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
-import { BenchmarkRunner, RunOptions } from "../runtime.js";
+import { BenchmarkEngine, RunOptions } from "../host.js";
 
 export { chromium, firefox, webkit } from "playwright-core";
 
 declare function _ESBenchChannel(message: any): void;
 
-const PageURL = "http://esbench/";
+const PageURL = "http://es-bench/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
 const BlankHTML = {
@@ -16,12 +16,11 @@ const BlankHTML = {
 };
 
 async function client({ files, task, entry }: any) {
-	const mod = await import(entry);
-	for (const file of files)
-		await mod.default(file, task, _ESBenchChannel);
+	const client = await import(entry);
+	return client.default(_ESBenchChannel, files, task);
 }
 
-export class PlaywrightRunner implements BenchmarkRunner {
+export class PlaywrightRunner implements BenchmarkEngine {
 
 	private readonly type: BrowserType;
 	private readonly options: LaunchOptions;
@@ -64,7 +63,7 @@ export class PlaywrightRunner implements BenchmarkRunner {
 		await page.goto(PageURL);
 		await page.evaluate(client, { files, task, entry });
 
-		console.log("Evaluate finishd");
 		await page.close();
+		console.log("Evaluate finishd");
 	}
 }

@@ -4,7 +4,7 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
-import { BenchmarkRunner, RunOptions } from "../runtime.js";
+import { BenchmarkEngine, RunOptions } from "../host.js";
 
 const template = `
 import runSuites from "__ENTRY__";
@@ -21,7 +21,7 @@ runSuites(postMessage, __FILES__, __NAME__);
 
 type GetCommand = (file: string) => string;
 
-export default class ProcessRunner implements BenchmarkRunner {
+export default class ProcessRunner implements BenchmarkEngine {
 
 	private readonly getCommand: GetCommand;
 

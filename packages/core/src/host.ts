@@ -1,23 +1,25 @@
-import { mkdirSync, mkdtempSync } from "fs";
+import { mkdirSync, mkdtempSync, rmSync } from "fs";
+import { join } from "path/posix";
 import glob from "fast-glob";
 import { Awaitable, MultiMap } from "@kaciras/utilities/node";
 import { cartesianProductObj } from "@kaciras/utilities/browser";
 import { MessageType, WorkerMessage } from "./worker.js";
-import consoleReporter from "./report.js";
+import { Reporter, saveResult } from "./report.js";
 import { nopTransformer, Transformer } from "./transform.js";
 import NodeRunner from "./runner/node.js";
 
-type Reporter = (result: Map<string, CaseResult[]>) => void | Promise<void>;
-
 export interface Scene {
-	processor?: Transformer;
-	runtimes?: BenchmarkRunner[];
+	transformer?: Transformer;
+	engines?: BenchmarkEngine[];
 }
 
 export interface ESBenchConfig {
 	include: string[];
 	scenes?: Scene[];
 	reporters?: Reporter[];
+
+	tempDir?: string;
+	cleanTempDir?: boolean;
 }
 
 type NormalizedESBenchConfig = Readonly<ESBenchConfig & {
@@ -29,15 +31,15 @@ function normalizeConfig(config: ESBenchConfig) {
 	config.scenes ??= [];
 
 	for (const scene of config.scenes) {
-		scene.processor ??= nopTransformer;
-		scene.runtimes ??= [new NodeRunner()];
+		scene.transformer ??= nopTransformer;
+		scene.engines ??= [new NodeRunner()];
 
-		if (scene.runtimes.length === 0) {
-			throw new Error("No runtime.");
+		if (scene.engines.length === 0) {
+			throw new Error("No engine.");
 		}
 	}
 
-	config.reporters ??= [consoleReporter()];
+	config.reporters ??= [saveResult()];
 
 	return config as NormalizedESBenchConfig;
 }
@@ -51,7 +53,7 @@ interface Metrics {
 export interface CaseResult {
 	name: string;
 	transformer: string;
-	runner: string;
+	engine: string;
 	params: Record<string, any>;
 	metrics: Metrics;
 }
@@ -63,13 +65,13 @@ function newResultCollector() {
 	let params: Record<string, any>;
 	let file: string;
 	let transformer: string;
-	let runner: string;
+	let engine: string;
 
 	let resolve: any;
 	let reject: any;
 
 	function setEnv(t: string, r: string) {
-		runner = r;
+		engine = r;
 		transformer = t;
 		return new Promise((resolve1, reject1) => {
 			resolve = resolve1;
@@ -88,7 +90,7 @@ function newResultCollector() {
 		} else if (message.type === MessageType.Turn) {
 			result.add(file, {
 				params,
-				runner,
+				engine,
 				transformer,
 				name: message.name,
 				metrics: message.metrics,
@@ -115,7 +117,7 @@ export interface RunOptions {
 	handleMessage(message: any): void;
 }
 
-export interface BenchmarkRunner {
+export interface BenchmarkEngine {
 
 	start(): Awaitable<string>;
 
@@ -139,46 +141,44 @@ export class ESBench {
 	}
 
 	async run(task?: string) {
-		const { include, scenes, reporters } = this.config;
+		const { include, scenes, reporters, tempDir = ".esbench-tmp", cleanTempDir = true } = this.config;
 		const files = await glob(include);
 
-		mkdirSync(".esbench-tmp", { recursive: true });
+		mkdirSync(tempDir, { recursive: true });
 
-		const map = new MultiMap<BenchmarkRunner, Build>();
+		const map = new MultiMap<BenchmarkEngine, Build>();
 		for (const scene of scenes) {
-			const { processor, runtimes } = scene;
-			const root = mkdtempSync(".esbench-tmp/t");
+			const { transformer, engines } = scene;
+			const root = mkdtempSync(join(tempDir, "build-"));
 
-			const entry = await processor.transform({ root, files });
+			const entry = await transformer.transform({ root, files });
 
-			for (const runtime of runtimes) {
-				map.add(runtime, { entry, name: processor.name, root });
+			for (const engine of engines) {
+				map.add(engine, { entry, name: transformer.name, root });
 			}
 		}
 
 		const { result, setEnv, handleMessage } = newResultCollector();
 
-		for (const [runner, builds] of map) {
-			const runnerName = await runner.start();
+		for (const [engine, builds] of map) {
+			const runnerName = await engine.start();
 			for (const { name, root, entry } of builds) {
 				const p = setEnv(name, runnerName);
-				await runner.run({
-					tempDir: ".esbench-tmp", root,
-					entry, files, task, handleMessage,
+				await engine.run({
+					tempDir, root, entry, files, task, handleMessage,
 				});
 				await p;
 			}
-			await runner.close();
+			await engine.close();
 		}
 
 		console.log(result);
-
-		// for (const dir of tempDirs) {
-		// 	rmSync(dir, { recursive: true });
-		// }
-
 		for (const reporter of reporters) {
-			// 	await reporter(suiteResults);
+			await reporter(result);
+		}
+
+		if (cleanTempDir) {
+			rmSync(tempDir, { recursive: true });
 		}
 	}
 }
