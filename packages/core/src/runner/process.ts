@@ -1,12 +1,12 @@
 import { ChildProcess, exec } from "child_process";
-import * as http from "http";
+import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
 import { BenchmarkEngine, RunOptions } from "../host.js";
 
-const template = `
+const template = `\
 import runSuites from "__ENTRY__";
 
 function postMessage(message) {
@@ -16,8 +16,7 @@ function postMessage(message) {
     });
 }
 
-runSuites(postMessage, __FILES__, __NAME__);
-`;
+runSuites(postMessage, __FILES__, __NAME__);`;
 
 type GetCommand = (file: string) => string;
 
@@ -26,7 +25,7 @@ export default class ProcessRunner implements BenchmarkEngine {
 	private readonly getCommand: GetCommand;
 
 	private process!: ChildProcess;
-	private server!: http.Server;
+	private server!: Server;
 
 	constructor(command: string | GetCommand) {
 		this.getCommand = typeof command === "function"
@@ -47,7 +46,7 @@ export default class ProcessRunner implements BenchmarkEngine {
 		const { getCommand } = this;
 		const { tempDir, root, entry, files, task, handleMessage } = options;
 
-		this.server = http.createServer((request, response) => {
+		this.server = createServer((request, response) => {
 			json(request).then(handleMessage);
 			response.end();
 		});
@@ -68,9 +67,7 @@ export default class ProcessRunner implements BenchmarkEngine {
 		writeFileSync(script, loaderCode);
 
 		this.process?.kill();
-
 		this.process = exec(getCommand(script));
-
 		this.process.on("message", handleMessage);
 	}
 }

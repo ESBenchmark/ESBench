@@ -6,7 +6,7 @@ const ENTRY_ID = "./ESBench_Main.js";
 const mainCode = `
 import runSuites from "@esbench/core/src/worker.js";
 
-const modules = {__IMPORTS__\n};
+const suites = {__IMPORTS__\n};
 
 function dynamicImport(file) {
 	return suites[file]();
@@ -55,7 +55,7 @@ const defaults: InlineConfig = {
 	},
 };
 
-export default class ViteProcessor implements Transformer {
+export default class ViteTransformer implements Transformer {
 
 	private readonly config: InlineConfig;
 

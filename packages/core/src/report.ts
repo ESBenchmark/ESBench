@@ -1,9 +1,12 @@
 import { stdout } from "process";
+import { writeFileSync } from "fs";
 import chalk from "chalk";
 import envinfo from "envinfo";
 import { Table } from "console-table-printer";
 import { mean } from "simple-statistics";
-import { SuiteResult } from "./runtime.js";
+import { CaseResult } from "./host.js";
+
+export type Reporter = (result: Map<string, CaseResult[]>) => void | Promise<void>;
 
 interface ConsoleReporterOptions {
 	metrics?: any[];
@@ -32,7 +35,7 @@ function reportSuite(result: SuiteResult) {
 		for (const case_ of platform.cases) {
 			stdout.write(chalk.yellowBright("\nParams: "));
 			console.log(JSON.stringify(case_.params));
-			const table  = new Table();
+			const table = new Table();
 
 			for (const [bench, records] of Object.entries(case_.iterations)) {
 				const rows = transpose(names, records);
@@ -50,9 +53,9 @@ function reportSuite(result: SuiteResult) {
 	}
 }
 
-export default function consoleReporter(options: ConsoleReporterOptions = {}) {
+export function consoleReporter(options: ConsoleReporterOptions = {}): Reporter {
 
-	return async (results: SuiteResult[]) => {
+	return async results => {
 		stdout.write(chalk.blueBright("OS: "));
 		console.log((await envinfo.helpers.getOSInfo())[1]);
 

@@ -1,5 +1,5 @@
 import { Awaitable, cartesianProductObj, durationFmt } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkContext, BenchmarkFn, MainFn, SuiteOptions } from "./builder.js";
+import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions } from "./builder.js";
 
 export enum MessageType {
 	Suite,
@@ -37,7 +37,7 @@ export type Channel = (message: WorkerMessage) => Awaitable<void>;
 
 type IterateFn = (count: number) => Awaitable<number>;
 
-function runSync(fn: BenchmarkFn, count: number) {
+function runSync(fn: Workload, count: number) {
 	const start = performance.now();
 	while (count-- > 0) {
 		fn();
@@ -45,7 +45,7 @@ function runSync(fn: BenchmarkFn, count: number) {
 	return performance.now() - start;
 }
 
-async function runAsync(fn: BenchmarkFn, count: number) {
+async function runAsync(fn: Workload, count: number) {
 	const start = performance.now();
 	while (count-- > 0) {
 		await fn();
@@ -105,11 +105,11 @@ export class SuiteRunner {
 
 	private async run(case_: BenchmarkCase) {
 		const { time = 5, iterations = 10_000 } = this.options;
-		const { name, fn, async } = case_;
+		const { name, workload, async } = case_;
 
 		const runFn: IterateFn = async
-			? runAsync.bind(null, fn)
-			: runSync.bind(null, fn);
+			? runAsync.bind(null, workload)
+			: runSync.bind(null, workload);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"

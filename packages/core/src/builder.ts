@@ -1,6 +1,10 @@
 import { noop } from "@kaciras/utilities/browser";
 
-export type BenchmarkFn = () => any;
+export type AsyncWorkload = () => Promise<unknown>;
+
+export type SyncWorkload = () => unknown;
+
+export type Workload = AsyncWorkload | SyncWorkload;
 
 export interface SuiteOptions {
 	params?: ParamsConfig;
@@ -8,14 +12,10 @@ export interface SuiteOptions {
 	iterations?: number | string;
 }
 
-export type MainFn = (suite: BenchmarkContext, params: ConfigData) => void;
-
-export type ConfigData = Record<string, any>;
-
 export interface BenchmarkCase {
 	name: string;
 	async: boolean;
-	fn: BenchmarkFn;
+	workload: Workload;
 }
 
 export class BenchmarkContext {
@@ -33,16 +33,20 @@ export class BenchmarkContext {
 		this.teardownHook = fn;
 	}
 
-	add(name: string, fn: BenchmarkFn) {
-		this.benchmarks.push({ name, fn, async: false });
+	add(name: string, fn: SyncWorkload) {
+		this.benchmarks.push({ name, workload: fn, async: false });
 	}
 
-	addAsync(name: string, fn: BenchmarkFn) {
-		this.benchmarks.push({ name, fn, async: true });
+	addAsync(name: string, fn: AsyncWorkload) {
+		this.benchmarks.push({ name, workload: fn, async: true });
 	}
 }
 
 export type ParamsConfig = Record<string, any[]>;
+
+export type MainFn = (suite: BenchmarkContext, params: ConfigData) => void;
+
+export type ConfigData = Record<string, any>;
 
 export function defineBenchmark(options: SuiteOptions, mainFn: MainFn) {
 	return { options, mainFn };

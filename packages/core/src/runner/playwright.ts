@@ -20,7 +20,7 @@ async function client({ files, task, entry }: any) {
 	return client.default(_ESBenchChannel, files, task);
 }
 
-export class PlaywrightRunner implements BenchmarkEngine {
+export default class PlaywrightEngine implements BenchmarkEngine {
 
 	private readonly type: BrowserType;
 	private readonly options: LaunchOptions;
