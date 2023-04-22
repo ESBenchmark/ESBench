@@ -1,8 +1,9 @@
+import { join } from "path/posix";
+import { pathToFileURL } from "url";
 import envinfo from "envinfo";
-import { BenchmarkRunner, RunOptions } from "../runtime.js";
-import runBenchmarks from "../processor.js";
+import { BenchmarkEngine, RunOptions } from "../host.js";
 
-export default class DirectRunner implements BenchmarkRunner {
+export default class DirectEngine implements BenchmarkEngine {
 
 	start() {
 		return envinfo.helpers.getNodeInfo();
@@ -10,8 +11,9 @@ export default class DirectRunner implements BenchmarkRunner {
 
 	close() {}
 
-	async run({ files, task, handleMessage }: RunOptions) {
-		for (const file of files)
-			await runBenchmarks(handleMessage, file, task);
+	async run({ root, entry, files, task, handleMessage }: RunOptions) {
+		const url = pathToFileURL(join(root, entry));
+		const module = await import(url.toString());
+		return module.default(handleMessage, files, task);
 	}
 }
