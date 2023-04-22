@@ -6,7 +6,7 @@ import { cartesianProductObj } from "@kaciras/utilities/browser";
 import { MessageType, WorkerMessage } from "./worker.js";
 import { Reporter, saveResult } from "./report.js";
 import { nopTransformer, Transformer } from "./transform.js";
-import NodeRunner from "./runner/node.js";
+import NodeRunner from "./engine/node.js";
 
 export interface Scene {
 	transformer?: Transformer;
