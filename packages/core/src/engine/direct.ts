@@ -1,12 +1,14 @@
+import { execArgv, version } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import envinfo from "envinfo";
 import { BenchmarkEngine, RunOptions } from "../host.js";
 
 export default class DirectEngine implements BenchmarkEngine {
 
 	start() {
-		return envinfo.helpers.getNodeInfo();
+		return execArgv.length
+			? `NodeJS ${version} (${execArgv.join(" ")})`
+			: `NodeJS ${version}`;
 	}
 
 	close() {}
