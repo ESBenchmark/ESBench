@@ -3,8 +3,6 @@ import { join } from "path";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import { BenchmarkEngine, RunOptions } from "../host.js";
 
-export { chromium, firefox, webkit } from "playwright-core";
-
 declare function _ESBenchChannel(message: any): void;
 
 const PageURL = "http://es-bench/";
@@ -20,7 +18,7 @@ async function client({ files, task, entry }: any) {
 	return client.default(_ESBenchChannel, files, task);
 }
 
-export class PlaywrightEngine implements BenchmarkEngine {
+export default class PlaywrightEngine implements BenchmarkEngine {
 
 	private readonly type: BrowserType;
 	private readonly options: LaunchOptions;
@@ -44,10 +42,14 @@ export class PlaywrightEngine implements BenchmarkEngine {
 		return this.browser.close();
 	}
 
+	launchContext() {
+		return this.browser.newContext();
+	}
+
 	async run(options: RunOptions) {
 		const { files, task, root, entry, handleMessage } = options;
 
-		const context = await this.browser.newContext();
+		const context = await this.launchContext();
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
 
 		await context.route("**/*", (route, request) => {
