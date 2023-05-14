@@ -30,7 +30,7 @@
 		"@kaciras/utilities": "^0.8.2",
 		"chalk": "^5.2.0",
 		"console-table-printer": "^2.11.1",
-		"csv-stringify": "^6.3.4",
+		"csv-stringify": "^6.4.0",
 		"envinfo": "^7.8.1",
 		"fast-glob": "^3.2.12",
 		"simple-statistics": "^7.8.3",
