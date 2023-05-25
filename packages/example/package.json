@@ -9,6 +9,6 @@
 	"dependencies": {
 		"@esbench/core": "workspace:^",
 		"hash-wasm": "^4.9.0",
-		"playwright-core": "^1.33.0"
+		"playwright-core": "^1.34.3"
 	}
 }
