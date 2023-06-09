@@ -1,11 +1,11 @@
 import { ChildProcess, exec } from "child_process";
+import { once } from "events";
 import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
-import { BenchmarkEngine, RunOptions } from "../host.js";
-import { once } from "events";
+import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const template = `\
 import runSuites from "__ENTRY__";

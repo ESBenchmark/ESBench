@@ -4,7 +4,7 @@ import { ChildProcess, fork } from "child_process";
 import { env } from "process";
 import { once } from "events";
 import envinfo from "envinfo";
-import { BenchmarkEngine, RunOptions } from "../host.js";
+import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 

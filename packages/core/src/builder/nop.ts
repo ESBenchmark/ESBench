@@ -1,18 +1,6 @@
-import { join } from "path";
 import { writeFileSync } from "fs";
-import { Awaitable } from "@kaciras/utilities/node";
-
-export interface TransformContext {
-	root: string;
-	files: string[];
-}
-
-export interface Transformer {
-
-	name: string;
-
-	transform(ctx: TransformContext): Awaitable<string>;
-}
+import { join } from "path";
+import { Builder } from "../stage.js";
 
 const template = `
 import runSuites from "@esbench/core/src/worker.js";
@@ -23,7 +11,7 @@ export default async function (channel, files, name) {
 	await runSuites(channel, doImport, files, name);
 }`;
 
-export const nopTransformer: Transformer = {
+export const nopTransformer: Builder = {
 	name: "None",
 	transform(ctx) {
 		writeFileSync(join(ctx.root, "nop-loader.js"), template);

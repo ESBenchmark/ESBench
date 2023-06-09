@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import { Browser, BrowserType, LaunchOptions } from "playwright-core";
-import { BenchmarkEngine, RunOptions } from "../host.js";
+import { Browser, BrowserContext, BrowserType, LaunchOptions, Worker } from "playwright-core";
+import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 

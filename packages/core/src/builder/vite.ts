@@ -1,9 +1,9 @@
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { TransformContext, Transformer } from "./transform.js";
+import { Builder, BuildContext } from "../stage.js";
 
 const ENTRY_ID = "./ESBench_Main.js";
 
-const mainCode = `
+const mainCode = `\
 import runSuites from "@esbench/core/src/worker.js";
 
 const suites = {__IMPORTS__\n};
@@ -55,7 +55,7 @@ const defaults: InlineConfig = {
 	},
 };
 
-export default class ViteTransformer implements Transformer {
+export default class ViteTransformer implements Builder {
 
 	private readonly config: InlineConfig;
 
@@ -66,7 +66,7 @@ export default class ViteTransformer implements Transformer {
 		this.config = mergeConfig(defaults, config);
 	}
 
-	transform(ctx: TransformContext) {
+	transform(ctx: BuildContext) {
 		const config = mergeConfig(this.config, {
 			build: {
 				outDir: ctx.root,

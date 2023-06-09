@@ -1,51 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
 import { join } from "path/posix";
 import glob from "fast-glob";
-import { Awaitable, cartesianObject, MultiMap } from "@kaciras/utilities/node";
+import { cartesianObject, MultiMap } from "@kaciras/utilities/node";
 import { MessageType, SuiteMessage, WorkerMessage, WorkloadMessage } from "./worker.js";
-import { fileReporter, Reporter } from "./report.js";
-import { nopTransformer, Transformer } from "./transform.js";
-import NodeRunner from "./engine/node.js";
-
-export interface Scene {
-	transformer?: Transformer;
-	engines?: BenchmarkEngine[];
-}
-
-export interface ESBenchConfig {
-	include: string[];
-	scenes?: Scene[];
-	reporters?: Reporter[];
-
-	tempDir?: string;
-	cleanTempDir?: boolean;
-}
-
-type NormalizedESBenchConfig = Readonly<ESBenchConfig & {
-	reporters: Reporter[];
-	scenes: Array<Required<Scene>>;
-	tempDir: string;
-	cleanTempDir: boolean;
-}>
-
-function normalizeConfig(config: ESBenchConfig) {
-	config.scenes ??= [];
-
-	for (const scene of config.scenes) {
-		scene.transformer ??= nopTransformer;
-		scene.engines ??= [new NodeRunner()];
-
-		if (scene.engines.length === 0) {
-			throw new Error("No engine.");
-		}
-	}
-
-	config.tempDir ??= ".esbench-tmp";
-	config.cleanTempDir ??= true;
-	config.reporters ??= [fileReporter()];
-
-	return config as NormalizedESBenchConfig;
-}
+import { BenchmarkEngine } from "./stage.js";
+import { ESBenchConfig, normalizeConfig, NormalizedESConfig } from "./config.js";
 
 // =============================================================
 
@@ -106,27 +65,6 @@ class ESBenchResultCollector {
 
 // =============================================================
 
-export interface RunOptions {
-	tempDir: string;
-
-	root: string;
-	entry: string;
-
-	files: string[];
-	task?: string;
-
-	handleMessage(message: any): void;
-}
-
-export interface BenchmarkEngine {
-
-	start(): Awaitable<string>;
-
-	close(): Awaitable<void>;
-
-	run(options: RunOptions): Awaitable<unknown>;
-}
-
 interface Build {
 	name: string;
 	root: string;
@@ -135,7 +73,7 @@ interface Build {
 
 export class ESBench {
 
-	private readonly config: NormalizedESBenchConfig;
+	private readonly config: NormalizedESConfig;
 
 	constructor(options: ESBenchConfig) {
 		this.config = normalizeConfig(options);

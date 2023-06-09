@@ -1,5 +1,5 @@
 import { Awaitable, cartesianObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions, BenchmarkModule } from "./builder.js";
+import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions, BenchmarkModule } from "./suite.js";
 
 export enum MessageType {
 	Suite,

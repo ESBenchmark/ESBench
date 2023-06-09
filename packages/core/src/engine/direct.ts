@@ -1,7 +1,7 @@
 import { execArgv, version } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { BenchmarkEngine, RunOptions } from "../host.js";
+import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 export default class DirectEngine implements BenchmarkEngine {
 
