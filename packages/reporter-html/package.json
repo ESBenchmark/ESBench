@@ -22,7 +22,7 @@
 		"@tsconfig/svelte": "^4.0.1",
 		"svelte": "^3.59.1",
 		"svelte-check": "^3.4.3",
-		"tslib": "^2.5.2",
+		"tslib": "^2.5.3",
 		"vite": "^4.3.9"
 	}
 }

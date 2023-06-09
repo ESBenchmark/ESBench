@@ -1,5 +1,5 @@
-import { Awaitable, cartesianProductObj, durationFmt } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions } from "./builder.js";
+import { Awaitable, cartesianObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
+import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions, BenchmarkModule } from "./builder.js";
 
 export enum MessageType {
 	Suite,
@@ -86,7 +86,7 @@ export class SuiteRunner {
 			file,
 		});
 
-		for (const config of cartesianProductObj(params)) {
+		for (const config of cartesianObject(params)) {
 			const suite = new BenchmarkContext();
 			await this.mainFn(suite, config);
 

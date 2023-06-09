@@ -1,8 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
 import { join } from "path/posix";
 import glob from "fast-glob";
-import { Awaitable, MultiMap } from "@kaciras/utilities/node";
-import { cartesianProductObj } from "@kaciras/utilities/browser";
+import { Awaitable, MultiMap, cartesianObject } from "@kaciras/utilities/node";
 import { MessageType, WorkerMessage } from "./worker.js";
 import { Reporter, saveResult } from "./report.js";
 import { nopTransformer, Transformer } from "./transform.js";
@@ -83,7 +82,7 @@ function newResultCollector() {
 		console.log(message);
 
 		if (message.type === MessageType.Suite) {
-			paramsIter = cartesianProductObj(message.paramDefs)[Symbol.iterator]();
+			paramsIter = cartesianObject(message.paramDefs)[Symbol.iterator]();
 			file = message.file;
 		} else if (message.type === MessageType.Case) {
 			params = paramsIter.next().value;
