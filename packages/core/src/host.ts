@@ -1,9 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
 import { join } from "path/posix";
 import glob from "fast-glob";
-import { Awaitable, MultiMap, cartesianObject } from "@kaciras/utilities/node";
-import { MessageType, WorkerMessage } from "./worker.js";
-import { Reporter, saveResult } from "./report.js";
+import { Awaitable, cartesianObject, MultiMap } from "@kaciras/utilities/node";
+import { MessageType, SuiteMessage, WorkerMessage, WorkloadMessage } from "./worker.js";
+import { fileReporter, Reporter } from "./report.js";
 import { nopTransformer, Transformer } from "./transform.js";
 import NodeRunner from "./engine/node.js";
 
@@ -24,6 +24,8 @@ export interface ESBenchConfig {
 type NormalizedESBenchConfig = Readonly<ESBenchConfig & {
 	reporters: Reporter[];
 	scenes: Array<Required<Scene>>;
+	tempDir: string;
+	cleanTempDir: boolean;
 }>
 
 function normalizeConfig(config: ESBenchConfig) {
@@ -38,16 +40,16 @@ function normalizeConfig(config: ESBenchConfig) {
 		}
 	}
 
-	config.reporters ??= [saveResult()];
+	config.tempDir ??= ".esbench-tmp";
+	config.cleanTempDir ??= true;
+	config.reporters ??= [fileReporter()];
 
 	return config as NormalizedESBenchConfig;
 }
 
 // =============================================================
 
-interface Metrics {
-	time: number[];
-}
+type Metrics = Record<string, any[]>;
 
 export interface CaseResult {
 	name: string;
@@ -57,49 +59,49 @@ export interface CaseResult {
 	metrics: Metrics;
 }
 
-function newResultCollector() {
-	const result = new MultiMap<string, CaseResult>();
+export type ESBenchResult = Record<string, CaseResult[]>;
 
-	let paramsIter: Iterator<Record<string, any>>;
-	let params: Record<string, any>;
-	let file: string;
-	let transformer: string;
-	let engine: string;
+class ESBenchResultCollector {
 
-	let resolve: any;
-	let reject: any;
+	public readonly result: ESBenchResult = {};
 
-	function setEnv(t: string, r: string) {
-		engine = r;
-		transformer = t;
-		return new Promise((resolve1, reject1) => {
-			resolve = resolve1;
-			reject = reject1;
-		});
+	private paramsIter!: Iterator<Record<string, any>>;
+	private engine!: string;
+	private transformer!: string;
+	private file!: string;
+	private params!: Record<string, any>;
+
+	env(engine: string, transformer: string) {
+		this.engine = engine;
+		this.transformer = transformer;
 	}
 
-	function handleMessage(message: WorkerMessage) {
-		console.log(message);
-
-		if (message.type === MessageType.Suite) {
-			paramsIter = cartesianObject(message.paramDefs)[Symbol.iterator]();
-			file = message.file;
-		} else if (message.type === MessageType.Case) {
-			params = paramsIter.next().value;
-		} else if (message.type === MessageType.Turn) {
-			result.add(file, {
-				params,
-				engine,
-				transformer,
-				name: message.name,
-				metrics: message.metrics,
-			});
-		} else {
-			resolve();
+	handleMessage(message: WorkerMessage) {
+		switch (message.type) {
+			case MessageType.Suite:
+				return this.suite(message);
+			case MessageType.Case:
+				return this.case();
+			case MessageType.Workload:
+				return this.workload(message);
 		}
 	}
 
-	return { result, setEnv, handleMessage };
+	suite({ paramDefs, file }: SuiteMessage) {
+		this.file = file;
+		this.result[file] = [];
+		this.paramsIter = cartesianObject(paramDefs)[Symbol.iterator]();
+	}
+
+	case() {
+		this.params = this.paramsIter.next().value;
+	}
+
+	workload({ name, metrics }: WorkloadMessage) {
+		const { file, engine, transformer, params } = this;
+		const suite = this.result[file];
+		suite.push({ params, engine, transformer, name, metrics });
+	}
 }
 
 // =============================================================
@@ -122,7 +124,7 @@ export interface BenchmarkEngine {
 
 	close(): Awaitable<void>;
 
-	run(options: RunOptions): Awaitable<void>;
+	run(options: RunOptions): Awaitable<unknown>;
 }
 
 interface Build {
@@ -140,7 +142,7 @@ export class ESBench {
 	}
 
 	async run(task?: string) {
-		const { include, scenes, reporters, tempDir = ".esbench-tmp", cleanTempDir = true } = this.config;
+		const { include, scenes, reporters, tempDir, cleanTempDir } = this.config;
 		const files = await glob(include);
 
 		mkdirSync(tempDir, { recursive: true });
@@ -157,17 +159,19 @@ export class ESBench {
 			}
 		}
 
-		const { result, setEnv, handleMessage } = newResultCollector();
+		const collector = new ESBenchResultCollector();
+		const handleMessage = collector.handleMessage.bind(collector);
 
 		for (const [engine, builds] of map) {
 			const runnerName = await engine.start();
+
 			for (const { name, root, entry } of builds) {
-				const p = setEnv(name, runnerName);
+				collector.env(runnerName, name);
 				await engine.run({
 					tempDir, root, entry, files, task, handleMessage,
 				});
-				await p;
 			}
+
 			await engine.close();
 		}
 

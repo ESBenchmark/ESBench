@@ -5,6 +5,7 @@ import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
 import { BenchmarkEngine, RunOptions } from "../host.js";
+import { once } from "events";
 
 const template = `\
 import runSuites from "__ENTRY__";
@@ -69,5 +70,6 @@ export default class ProcessRunner implements BenchmarkEngine {
 		this.process?.kill();
 		this.process = exec(getCommand(script));
 		this.process.on("message", handleMessage);
+		return once(this.process, "exit");
 	}
 }

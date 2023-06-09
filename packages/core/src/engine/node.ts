@@ -2,6 +2,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { resolve } from "path";
 import { ChildProcess, fork } from "child_process";
 import { env } from "process";
+import { once } from "events";
 import envinfo from "envinfo";
 import { BenchmarkEngine, RunOptions } from "../host.js";
 
@@ -34,11 +35,12 @@ export default class NodeRunner implements BenchmarkEngine {
 	}
 
 	run(options: RunOptions) {
-		const { root, entry, files, task, handleMessage } = options;
+		const { entry, files, task, handleMessage } = options;
 
 		this.process.removeAllListeners("message");
 		this.process.on("message", handleMessage);
 		this.process.send({ entry, task, files });
+		return once(this.process, "exit");
 	}
 }
 

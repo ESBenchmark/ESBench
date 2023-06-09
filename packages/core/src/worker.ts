@@ -4,7 +4,7 @@ import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions, Benchm
 export enum MessageType {
 	Suite,
 	Case,
-	Turn,
+	Workload,
 	Finished,
 }
 
@@ -19,17 +19,17 @@ export interface CaseMessage {
 	params: Record<string, any>;
 }
 
-export interface TurnMessage {
-	type: MessageType.Turn;
+export interface WorkloadMessage {
+	type: MessageType.Workload;
 	name: string;
-	metrics: Record<string, any>;
+	metrics: Record<string, any[]>;
 }
 
 export interface FinishMessage {
 	type: MessageType.Finished;
 }
 
-export type WorkerMessage = SuiteMessage | CaseMessage | TurnMessage | FinishMessage;
+export type WorkerMessage = SuiteMessage | CaseMessage | WorkloadMessage | FinishMessage;
 
 // =========================================================================
 
@@ -82,8 +82,8 @@ export class SuiteRunner {
 
 		await this.channel({
 			type: MessageType.Suite,
-			paramDefs: serializable(params),
 			file,
+			paramDefs: serializable(params),
 		});
 
 		for (const config of cartesianObject(params)) {
@@ -92,19 +92,19 @@ export class SuiteRunner {
 
 			await this.channel({ type: MessageType.Case, params: config });
 
-			suite.setupHook();
+			suite.setupEach();
 			for (const case_ of suite.benchmarks) {
 				if (name && case_.name !== name) {
 					continue;
 				}
 				await this.run(case_);
 			}
-			suite.teardownHook();
+			suite.cleanEach();
 		}
 	}
 
 	private async run(case_: BenchmarkCase) {
-		const { time = 5, iterations = 10_000 } = this.options;
+		const { turns = 5, iterations = 10_000 } = this.options;
 		const { name, workload, async } = case_;
 
 		const runFn: IterateFn = async
@@ -118,19 +118,14 @@ export class SuiteRunner {
 
 		console.log("Count:" + count);
 
-		for (let i = 0; i < time; i++) {
-			const time = await runFn(count);
-			await this.channel({ type: MessageType.Turn, name, metrics: { time } });
-		}
-	}
-}
+		const metrics: Record<string, any[]> = { time: [] };
 
-function short(value: any, length: number) {
-	if (value.length < length) {
-		return value;
+		for (let i = 0; i < turns; i++) {
+			metrics.time.push(await runFn(count));
+		}
+
+		await this.channel({ type: MessageType.Workload, name, metrics });
 	}
-	const n = (length - 3) / 2;
-	return `${value.slice(0, Math.ceil(n))}...${value.slice(-Math.floor(n))}`;
 }
 
 export function serializable(params: Record<string, Iterable<unknown>>) {
@@ -152,15 +147,15 @@ export function serializable(params: Record<string, Iterable<unknown>>) {
 					break;
 				case "symbol":
 					current.push(v.description
-						? `symbol(${short(v.description, 10)}) #${k}`
+						? `symbol(${ellipsis(v.description, 10)}) #${k}`
 						: `symbol #${k}`,
 					);
 					break;
 				case "function":
-					current.push(`func ${short(v.name, 10)} #${k}`);
+					current.push(`func ${ellipsis(v.name, 10)} #${k}`);
 					break;
 				default:
-					current.push(short("" + v, 16));
+					current.push(ellipsis("" + v, 16));
 			}
 		}
 	}
@@ -168,14 +163,8 @@ export function serializable(params: Record<string, Iterable<unknown>>) {
 	return processed;
 }
 
-export interface BenchmarkModule {
-	default: {
-		mainFn: MainFn;
-		options: SuiteOptions;
-	};
-}
 
-export type Importer = (path: string) => Awaitable<BenchmarkModule>;
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule }>;
 
 export default async function runSuites(
 	channel: Channel,
