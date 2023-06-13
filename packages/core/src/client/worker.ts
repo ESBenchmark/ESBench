@@ -1,27 +1,59 @@
 import { Awaitable, cartesianObject, durationFmt } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkContext, Workload, MainFn, SuiteOptions, BenchmarkModule } from "./suite.js";
-import { WorkerMessage, MessageType, serializable } from "./message.js";
-
-// =========================================================================
+import { BenchmarkCase, Scene, BenchmarkModule, HookFn } from "./suite.js";
+import { MessageType, serializable, WorkerMessage } from "./message.js";
 
 export type Channel = (message: WorkerMessage) => Awaitable<void>;
 
 type IterateFn = (count: number) => Awaitable<number>;
 
-function runSync(fn: Workload, count: number) {
-	const start = performance.now();
-	while (count-- > 0) {
-		fn();
-	}
-	return performance.now() - start;
+function runHooks(hooks: HookFn[]) {
+	return Promise.all(hooks.map(hook => hook()));
 }
 
-async function runAsync(fn: Workload, count: number) {
-	const start = performance.now();
-	while (count-- > 0) {
-		await fn();
+function createRunner(ctx: Scene, case_: BenchmarkCase) {
+	const { workload, isAsync } = case_;
+	const { setupIteration, cleanIteration } = ctx;
+
+	async function noSetup(count: number) {
+		const start = performance.now();
+		if (isAsync) {
+			while (count-- > 0) await workload();
+		} else {
+			while (count-- > 0) workload();
+		}
+		return performance.now() - start;
 	}
-	return performance.now() - start;
+
+	async function syncWithSetup(count: number) {
+		let timeUsage = 0;
+		while (count-- > 0) {
+			await runHooks(setupIteration);
+
+			timeUsage -= performance.now();
+			workload();
+			timeUsage += performance.now();
+
+			await runHooks(cleanIteration);
+		}
+		return timeUsage;
+	}
+
+	async function asyncWithSetup(count: number) {
+		let timeUsage = 0;
+		while (count-- > 0) {
+			await runHooks(setupIteration);
+
+			timeUsage -= performance.now();
+			await workload();
+			timeUsage += performance.now();
+
+			await runHooks(cleanIteration);
+		}
+		return timeUsage;
+	}
+
+	const setup = setupIteration.length && cleanIteration.length;
+	return setup ? isAsync ? asyncWithSetup : syncWithSetup : noSetup;
 }
 
 async function getIterations(fn: IterateFn, targetMS: number) {
@@ -38,18 +70,16 @@ async function getIterations(fn: IterateFn, targetMS: number) {
 
 export class SuiteRunner {
 
-	private readonly options: SuiteOptions;
-	private readonly mainFn: MainFn;
+	private readonly suite: BenchmarkModule<any>;
 	private readonly channel: Channel;
 
-	constructor(options: SuiteOptions, mainFn: MainFn, channel: Channel) {
-		this.options = options;
-		this.mainFn = mainFn;
+	constructor(suite: BenchmarkModule<any>, channel: Channel) {
+		this.suite = suite;
 		this.channel = channel;
 	}
 
 	async bench(file: string, name?: string) {
-		const { params = {} } = this.options;
+		const { params = {}, main } = this.suite;
 
 		await this.channel({
 			type: MessageType.Suite,
@@ -58,29 +88,29 @@ export class SuiteRunner {
 		});
 
 		for (const config of cartesianObject(params)) {
-			const suite = new BenchmarkContext();
-			await this.mainFn(suite, config);
+			const context = new Scene();
+			await main(context, config);
 
-			await this.channel({ type: MessageType.Case, params: config });
+			await this.channel({
+				type: MessageType.Scene,
+				params: config,
+			});
 
-			suite.setupEach();
-			for (const case_ of suite.benchmarks) {
+			for (const case_ of context.benchmarks) {
 				if (name && case_.name !== name) {
 					continue;
 				}
-				await this.run(case_);
+				await this.run(context, case_);
 			}
-			suite.cleanEach();
+			await runHooks(context.cleanEach);
 		}
 	}
 
-	private async run(case_: BenchmarkCase) {
-		const { turns = 5, iterations = 10_000 } = this.options;
-		const { name, workload, async } = case_;
+	private async run(context: Scene, case_: BenchmarkCase) {
+		const { samples = 5, iterations = 10_000 } = this.suite.options;
+		const { name } = case_;
 
-		const runFn: IterateFn = async
-			? runAsync.bind(null, workload)
-			: runSync.bind(null, workload);
+		const runFn = createRunner(context, case_);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
@@ -90,8 +120,7 @@ export class SuiteRunner {
 		console.log("Count:" + count);
 
 		const metrics: Record<string, any[]> = { time: [] };
-
-		for (let i = 0; i < turns; i++) {
+		for (let i = 0; i < samples; i++) {
 			metrics.time.push(await runFn(count));
 		}
 
@@ -99,7 +128,7 @@ export class SuiteRunner {
 	}
 }
 
-export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule }>;
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule<any> }>;
 
 export async function runSuites(
 	channel: Channel,
@@ -108,8 +137,8 @@ export async function runSuites(
 	name?: string,
 ) {
 	for (const file of files) {
-		const { default: { options, mainFn } } = await importer(file);
-		await new SuiteRunner(options, mainFn, channel).bench(file, name);
+		const { default: suite } = await importer(file);
+		await new SuiteRunner(suite, channel).bench(file, name);
 	}
 	await channel({ type: MessageType.Finished });
 }

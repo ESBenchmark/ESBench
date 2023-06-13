@@ -6,26 +6,24 @@ export type SyncWorkload = () => unknown;
 
 export type Workload = AsyncWorkload | SyncWorkload;
 
-type HookFn = () => Awaitable<unknown>;
-
 export interface SuiteOptions {
-	turns?: number;
+	samples?: number;
 	iterations?: number | string;
 }
 
 export interface BenchmarkCase {
 	name: string;
-	async: boolean;
+	isAsync: boolean;
 	workload: Workload;
 }
 
-export class BenchmarkContext {
+export type HookFn = () => Awaitable<unknown>;
+
+export class Scene {
 
 	readonly benchmarks: BenchmarkCase[] = [];
 
-	// readonly cleanAll: HookFn[] = [];
 	readonly cleanEach: HookFn[] = [];
-
 	readonly setupIteration: HookFn[] = [];
 	readonly cleanIteration: HookFn[] = [];
 
@@ -41,32 +39,26 @@ export class BenchmarkContext {
 		this.cleanEach.push(fn);
 	}
 
-	// afterAll(fn: HookFn) {
-	// 	this.cleanAll.push(fn);
-	// }
-
 	add(name: string, workload: SyncWorkload) {
-		this.benchmarks.push({ name, workload, async: false });
+		this.benchmarks.push({ name, workload, isAsync: false });
 	}
 
 	addAsync(name: string, workload: AsyncWorkload) {
-		this.benchmarks.push({ name, workload, async: true });
+		this.benchmarks.push({ name, workload, isAsync: true });
 	}
 }
 
-export type MainFn<T extends CPSrcObject> = (suite: BenchmarkContext, params: CPRowObject<T>) => void;
-
-export type ConfigData = Record<string, any>;
+export type CreateScene<T extends CPSrcObject> = (suite: Scene, params: CPRowObject<T>) => void;
 
 export interface BenchmarkModule<T extends CPSrcObject> {
-	mainFn: MainFn<T>;
-	options: SuiteOptions;
+	main: CreateScene<T>;
 	params?: T;
 	afterAll?: HookFn;
+	options?: SuiteOptions;
 }
 
 type Empty = Record<string, never>;
 
-export function defineBenchmark<T extends CPSrcObject = Empty>(options: SuiteOptions<T>, mainFn: MainFn<T>) {
-	return { options, mainFn } as BenchmarkModule<T>;
+export function defineSuite<T extends CPSrcObject = Empty>(suite: BenchmarkModule<T>) {
+	return suite;
 }

@@ -2,7 +2,7 @@ import { ellipsis } from "@kaciras/utilities/browser";
 
 export enum MessageType {
 	Suite,
-	Case,
+	Scene,
 	Workload,
 	Finished,
 }
@@ -13,8 +13,8 @@ export interface SuiteMessage {
 	paramDefs: Record<string, any[]>;
 }
 
-export interface CaseMessage {
-	type: MessageType.Case;
+export interface SceneMessage {
+	type: MessageType.Scene;
 	params: Record<string, any>;
 }
 
@@ -28,7 +28,7 @@ export interface FinishMessage {
 	type: MessageType.Finished;
 }
 
-export type WorkerMessage = SuiteMessage | CaseMessage | WorkloadMessage | FinishMessage;
+export type WorkerMessage = SuiteMessage | SceneMessage | WorkloadMessage | FinishMessage;
 
 export function serializable(params: Record<string, Iterable<unknown>>) {
 	const entries = Object.entries(params);
