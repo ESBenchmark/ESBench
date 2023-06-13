@@ -1,31 +1,26 @@
 import { ellipsis } from "@kaciras/utilities/browser";
 
-export enum MessageType {
-	Suite,
-	Scene,
-	Workload,
-	Finished,
-}
+export type MessageType = "suite" | "scene" | "workload" | "finish";
 
 export interface SuiteMessage {
-	type: MessageType.Suite;
+	type: "suite";
 	file: string;
 	paramDefs: Record<string, any[]>;
 }
 
 export interface SceneMessage {
-	type: MessageType.Scene;
+	type: "scene";
 	params: Record<string, any>;
 }
 
 export interface WorkloadMessage {
-	type: MessageType.Workload;
+	type: "workload";
 	name: string;
 	metrics: Record<string, any[]>;
 }
 
 export interface FinishMessage {
-	type: MessageType.Finished;
+	type: "finish";
 }
 
 export type WorkerMessage = SuiteMessage | SceneMessage | WorkloadMessage | FinishMessage;

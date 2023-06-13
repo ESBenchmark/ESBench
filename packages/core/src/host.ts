@@ -36,14 +36,7 @@ class ESBenchResultCollector {
 	}
 
 	handleMessage(message: WorkerMessage) {
-		switch (message.type) {
-			case MessageType.Suite:
-				return this.suite(message);
-			case MessageType.Case:
-				return this.case();
-			case MessageType.Workload:
-				return this.workload(message);
-		}
+		this[message.type](message as any);
 	}
 
 	suite({ paramDefs, file }: SuiteMessage) {
@@ -52,7 +45,9 @@ class ESBenchResultCollector {
 		this.paramsIter = cartesianObject(paramDefs)[Symbol.iterator]();
 	}
 
-	case() {
+	finish() {}
+
+	scene() {
 		this.params = this.paramsIter.next().value;
 	}
 

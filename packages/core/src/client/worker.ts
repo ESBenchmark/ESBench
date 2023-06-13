@@ -1,6 +1,6 @@
 import { Awaitable, cartesianObject, durationFmt } from "@kaciras/utilities/browser";
-import { BenchmarkCase, Scene, BenchmarkModule, HookFn } from "./suite.js";
-import { MessageType, serializable, WorkerMessage } from "./message.js";
+import { BenchmarkCase, BenchmarkModule, HookFn, Scene } from "./suite.js";
+import { serializable, WorkerMessage } from "./message.js";
 
 export type Channel = (message: WorkerMessage) => Awaitable<void>;
 
@@ -82,7 +82,7 @@ export class SuiteRunner {
 		const { params = {}, main } = this.suite;
 
 		await this.channel({
-			type: MessageType.Suite,
+			type: "suite",
 			file,
 			paramDefs: serializable(params),
 		});
@@ -92,7 +92,7 @@ export class SuiteRunner {
 			await main(context, config);
 
 			await this.channel({
-				type: MessageType.Scene,
+				type: "scene",
 				params: config,
 			});
 
@@ -124,7 +124,7 @@ export class SuiteRunner {
 			metrics.time.push(await runFn(count));
 		}
 
-		await this.channel({ type: MessageType.Workload, name, metrics });
+		await this.channel({ type: "workload", name, metrics });
 	}
 }
 
@@ -140,5 +140,5 @@ export async function runSuites(
 		const { default: suite } = await importer(file);
 		await new SuiteRunner(suite, channel).bench(file, name);
 	}
-	await channel({ type: MessageType.Finished });
+	await channel({ type: "finish" });
 }
