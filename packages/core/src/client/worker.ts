@@ -101,7 +101,7 @@ export class SuiteRunner {
 
 export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule }>;
 
-export default async function runSuites(
+export async function runSuites(
 	channel: Channel,
 	importer: Importer,
 	files: string[],

@@ -13,15 +13,14 @@
 		"benchmark"
 	],
 	"type": "module",
-	"engines": {
-		"node": ">=14"
+	"exports": {
+		".": "./src/index.js",
+		"./client": "./src/client/index.js"
 	},
-	"main": "lib/index.js",
-	"types": "lib/index.d.ts",
 	"files": [
 		"bin",
 		"src",
-		"!lib/*.js.map"
+		"!src/*.js.map"
 	],
 	"bin": {
 		"esbench": "bin/cli.js"
