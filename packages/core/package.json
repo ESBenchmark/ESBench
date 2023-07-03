@@ -26,12 +26,12 @@
 		"esbench": "bin/cli.js"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.9.2",
-		"chalk": "^5.2.0",
-		"console-table-printer": "^2.11.1",
+		"@kaciras/utilities": "^0.9.3",
+		"chalk": "^5.3.0",
+		"console-table-printer": "^2.11.2",
 		"csv-stringify": "^6.4.0",
-		"envinfo": "^7.9.0",
-		"fast-glob": "^3.2.12",
+		"envinfo": "^7.10.0",
+		"fast-glob": "^3.3.0",
 		"simple-statistics": "^7.8.3",
 		"yargs": "^17.7.2"
 	},
