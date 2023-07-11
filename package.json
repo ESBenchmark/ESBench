@@ -11,8 +11,8 @@
 		"@kaciras/eslint-config-typescript": "^2.5.1",
 		"eslint": "^8.44.0",
 		"eslint-plugin-svelte": "^2.31.1",
-		"svelte": "^4.0.1",
+		"svelte": "^4.0.5",
 		"typescript": "^5.1.6",
-		"vitest": "^0.32.3"
+		"vitest": "^0.33.0"
 	}
 }
