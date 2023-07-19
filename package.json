@@ -7,9 +7,9 @@
 		"compile": "tsc --watch"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^2.5.1",
-		"@kaciras/eslint-config-typescript": "^2.5.1",
-		"eslint": "^8.44.0",
+		"@kaciras/eslint-config-core": "^2.6.0",
+		"@kaciras/eslint-config-typescript": "^2.6.0",
+		"eslint": "^8.45.0",
 		"eslint-plugin-svelte": "^2.31.1",
 		"svelte": "^4.0.5",
 		"typescript": "^5.1.6",
