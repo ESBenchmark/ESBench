@@ -40,6 +40,6 @@
 	},
 	"optionalDependencies": {
 		"playwright-core": "^1.36.2",
-		"vite": "^4.4.7"
+		"vite": "^4.4.8"
 	}
 }
