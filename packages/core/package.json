@@ -39,7 +39,7 @@
 		"@types/envinfo": "^7.8.1"
 	},
 	"optionalDependencies": {
-		"playwright-core": "^1.36.2",
-		"vite": "^4.4.8"
+		"playwright-core": "^1.37.0",
+		"vite": "^4.4.9"
 	}
 }
