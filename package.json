@@ -9,10 +9,10 @@
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^2.6.0",
 		"@kaciras/eslint-config-typescript": "^2.6.0",
-		"eslint": "^8.49.0",
-		"eslint-plugin-svelte": "^2.33.1",
-		"svelte": "^4.2.0",
+		"eslint": "^8.50.0",
+		"eslint-plugin-svelte": "^2.33.2",
+		"svelte": "^4.2.1",
 		"typescript": "^5.2.2",
-		"vitest": "^0.34.4"
+		"vitest": "^0.34.5"
 	}
 }
