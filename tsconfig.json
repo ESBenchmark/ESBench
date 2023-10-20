@@ -1,17 +1,16 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "Node",
-        "lib": ["ESNext"],
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "NodeNext",
+		"lib": ["ESNext"],
 
-        // Prevent WebStorm from compiling unexpected files.
-        "noEmit": true,
+		// Prevent WebStorm from compiling unexpected files.
 
-        "strict": true,
-        "resolveJsonModule": true,
-        "sourceMap": true,
-        "skipLibCheck": true,
-        "allowSyntheticDefaultImports": true
-    }
+		"strict": true,
+		"resolveJsonModule": true,
+		"sourceMap": true,
+		"skipLibCheck": true,
+		"allowSyntheticDefaultImports": true,
+	}
 }

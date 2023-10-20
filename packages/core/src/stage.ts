@@ -9,7 +9,7 @@ export interface Builder {
 
 	name: string;
 
-	transform(ctx: BuildContext): Awaitable<string>;
+	build(ctx: BuildContext): Awaitable<string>;
 }
 
 export interface RunOptions {

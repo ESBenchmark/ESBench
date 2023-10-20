@@ -1,16 +1,16 @@
 import { fileReporter, Reporter } from "./report.js";
 import NodeRunner from "./engine/node.js";
-import { nopTransformer } from "./builder/nop.js";
+import { nopBuilder } from "./builder/nop.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
 
-export interface Scene {
-	transformer?: Builder;
+export interface Stage {
+	builder?: Builder;
 	engines?: BenchmarkEngine[];
 }
 
 export interface ESBenchConfig {
 	include: string[];
-	scenes?: Scene[];
+	stages?: Stage[];
 	reporters?: Reporter[];
 
 	tempDir?: string;
@@ -21,18 +21,18 @@ export type NormalizedESConfig = ESBenchConfig & {
 	tempDir: string;
 	cleanTempDir: boolean;
 	reporters: Reporter[];
-	scenes: Array<Required<Scene>>;
+	stages: Array<Required<Stage>>;
 }
 
 export function normalizeConfig(config: ESBenchConfig) {
-	config.scenes ??= [];
+	config.stages ??= [];
 
-	for (const scene of config.scenes) {
-		scene.transformer ??= nopTransformer;
+	for (const scene of config.stages) {
+		scene.builder ??= nopBuilder;
 		scene.engines ??= [new NodeRunner()];
 
 		if (scene.engines.length === 0) {
-			throw new Error("No engine.");
+			throw new Error("No engines.");
 		}
 	}
 

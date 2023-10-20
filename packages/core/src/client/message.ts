@@ -1,31 +1,8 @@
-import { ellipsis } from "@kaciras/utilities/browser";
+import { Awaitable, CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
+import { SuiteResult, SuiteRunner } from "./worker.js";
+import { BenchmarkModule } from "./suite.js";
 
-export type MessageType = "suite" | "scene" | "workload" | "finish";
-
-export interface SuiteMessage {
-	type: "suite";
-	file: string;
-	paramDefs: Record<string, any[]>;
-}
-
-export interface SceneMessage {
-	type: "scene";
-	params: Record<string, any>;
-}
-
-export interface WorkloadMessage {
-	type: "workload";
-	name: string;
-	metrics: Record<string, any[]>;
-}
-
-export interface FinishMessage {
-	type: "finish";
-}
-
-export type WorkerMessage = SuiteMessage | SceneMessage | WorkloadMessage | FinishMessage;
-
-export function serializable(params: Record<string, Iterable<unknown>>) {
+export function serializable(params: CPSrcObject) {
 	const entries = Object.entries(params);
 	const processed: Record<string, any[]> = {};
 	const counters = new Array(entries.length).fill(0);
@@ -58,4 +35,23 @@ export function serializable(params: Record<string, Iterable<unknown>>) {
 	}
 
 	return processed;
+}
+
+export type ClientMessage = { log: string } | { file: string; result: SuiteResult };
+
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule<any> }>;
+
+export type Channel = (message: ClientMessage) => Awaitable<void>;
+
+export async function runSuites(
+	channel: Channel,
+	importer: Importer,
+	files: string[],
+	name?: string,
+) {
+	for (const file of files) {
+		const { default: suite } = await importer(file);
+		const runner = new SuiteRunner(suite, log => channel({ log }));
+		channel({ file, result: await runner.bench(name) });
+	}
 }

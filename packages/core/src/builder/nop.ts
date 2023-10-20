@@ -11,9 +11,9 @@ export default async function (channel, files, name) {
 	await runSuites(channel, doImport, files, name);
 }`;
 
-export const nopTransformer: Builder = {
+export const nopBuilder: Builder = {
 	name: "None",
-	transform(ctx) {
+	build(ctx) {
 		writeFileSync(join(ctx.root, "nop-loader.js"), template);
 		return "nop-loader.js";
 	},

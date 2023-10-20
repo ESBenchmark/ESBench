@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { serializable } from "../src/client/message.ts";
+import { serializable } from "../../src/client/message.js";
 
 describe("serializable", () => {
 	it("should works", () => {

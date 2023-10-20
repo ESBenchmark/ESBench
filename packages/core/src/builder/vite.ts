@@ -1,10 +1,10 @@
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { Builder, BuildContext } from "../stage.js";
+import { BuildContext, Builder } from "../stage.js";
 
 const ENTRY_ID = "./ESBench_Main.js";
 
 const mainCode = `\
-import runSuites from "@esbench/core/src/worker.js";
+import { runSuites } from "@esbench/core/src/client/index.js";
 
 const suites = {__IMPORTS__\n};
 
@@ -55,7 +55,7 @@ const defaults: InlineConfig = {
 	},
 };
 
-export default class ViteTransformer implements Builder {
+export default class ViteBuilder implements Builder {
 
 	private readonly config: InlineConfig;
 
@@ -66,7 +66,7 @@ export default class ViteTransformer implements Builder {
 		this.config = mergeConfig(defaults, config);
 	}
 
-	transform(ctx: BuildContext) {
+	build(ctx: BuildContext) {
 		const config = mergeConfig(this.config, {
 			build: {
 				outDir: ctx.root,

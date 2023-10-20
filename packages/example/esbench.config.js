@@ -1,16 +1,13 @@
 import PlaywrightEngine from "@esbench/core/src/engine/playwright.js";
-import { chromium, firefox, webkit } from "playwright-core";
-import NodeEngine from "@esbench/core/src/engine/node.js";
-import ProcessEngine from "@esbench/core/src/engine/process.js";
-import DirectEngine from "@esbench/core/src/engine/direct.js";
-import ViteTransformer from "@esbench/core/src/vite.js";
+import { chromium } from "playwright-core";
+import ViteTransformer from "@esbench/core/src/builder/vite.js";
 
 export default {
 	include: ["./src/run.js"],
-	scenes: [{
-		transformer: new ViteTransformer(),
+	stages: [{
+		builder: new ViteTransformer(),
 		engines: [
-			new DirectEngine(),
+			// new DirectEngine(),
 			new PlaywrightEngine(chromium, {
 				headless: false,
 				executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",

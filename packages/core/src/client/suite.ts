@@ -48,7 +48,7 @@ export class Scene {
 	}
 }
 
-export type CreateScene<T extends CPSrcObject> = (suite: Scene, params: CPRowObject<T>) => void;
+export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
 export interface BenchmarkModule<T extends CPSrcObject> {
 	main: CreateScene<T>;
@@ -59,6 +59,6 @@ export interface BenchmarkModule<T extends CPSrcObject> {
 
 type Empty = Record<string, never>;
 
-export function defineSuite<T extends CPSrcObject = Empty>(suite: BenchmarkModule<T>) {
+export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkModule<T>) {
 	return suite;
 }
