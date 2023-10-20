@@ -1,8 +1,6 @@
 import { Awaitable, cartesianObject, durationFmt } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkModule, HookFn, Scene } from "./suite.js";
-import { serializable, WorkerMessage } from "./message.js";
-
-export type Channel = (message: WorkerMessage) => Awaitable<void>;
+import { serializable } from "./message.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -68,46 +66,56 @@ async function getIterations(fn: IterateFn, targetMS: number) {
 	return Math.ceil(count / 2 * targetMS / time);
 }
 
-export class SuiteRunner {
+type ParamDefs = Record<string, any[]>;
+export type Metrics = Record<string, any[]>;
+
+type WorkloadResult = [string, Metrics];
+
+export type SuiteResult = {
+	paramDef: ParamDefs;
+	scenes: WorkloadResult[][];
+};
+
+type Logger = (message: string) => void;
+
+export class SuiteRunner  {
 
 	private readonly suite: BenchmarkModule<any>;
-	private readonly channel: Channel;
+	private readonly logger: Logger;
 
-	constructor(suite: BenchmarkModule<any>, channel: Channel) {
+	constructor(suite: BenchmarkModule<any>, logger: Logger = console.log) {
 		this.suite = suite;
-		this.channel = channel;
+		this.logger = logger;
 	}
 
-	async bench(file: string, name?: string) {
+	async bench(name?: string): Promise<SuiteResult> {
 		const { params = {}, main } = this.suite;
+		const scenes: WorkloadResult[][]= [];
 
-		await this.channel({
-			type: "suite",
-			file,
-			paramDefs: serializable(params),
-		});
-
+		let index = 0;
 		for (const config of cartesianObject(params)) {
-			const context = new Scene();
-			await main(context, config);
+			const scene = new Scene();
+			const result: WorkloadResult[] = [];
 
-			await this.channel({
-				type: "scene",
-				params: config,
-			});
+			await main(scene, config);
+			this.logger(`Scene ${index++}, ${scene.benchmarks.length} workloads found`);
 
-			for (const case_ of context.benchmarks) {
+			for (const case_ of scene.benchmarks) {
 				if (name && case_.name !== name) {
 					continue;
 				}
-				await this.run(context, case_);
+				result.push(await this.runWorkload(scene, case_));
 			}
-			await runHooks(context.cleanEach);
+
+			scenes.push(result);
+			await runHooks(scene.cleanEach);
 		}
+
+		return { paramDef: serializable(params), scenes };
 	}
 
-	private async run(context: Scene, case_: BenchmarkCase) {
-		const { samples = 5, iterations = 10_000 } = this.suite.options;
+	private async runWorkload(context: Scene, case_: BenchmarkCase) {
+		const { samples = 5, iterations = 10_000 } = this.suite.options ?? {};
 		const { name } = case_;
 
 		const runFn = createRunner(context, case_);
@@ -119,26 +127,11 @@ export class SuiteRunner {
 
 		console.log("Count:" + count);
 
-		const metrics: Record<string, any[]> = { time: [] };
+		const metrics: Metrics = { time: [] };
 		for (let i = 0; i < samples; i++) {
 			metrics.time.push(await runFn(count));
 		}
 
-		await this.channel({ type: "workload", name, metrics });
+		return [name, metrics] as WorkloadResult;
 	}
-}
-
-export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule<any> }>;
-
-export async function runSuites(
-	channel: Channel,
-	importer: Importer,
-	files: string[],
-	name?: string,
-) {
-	for (const file of files) {
-		const { default: suite } = await importer(file);
-		await new SuiteRunner(suite, channel).bench(file, name);
-	}
-	await channel({ type: "finish" });
 }
