@@ -5,7 +5,7 @@ import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 
-const PageURL = "http://es-bench/";
+const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
 const BlankHTML = {
@@ -43,7 +43,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 	}
 
 	launchContext() {
-		return this.browser.newContext();
+		return this.browser.newContext({ baseURL });
 	}
 
 	async run(options: RunOptions) {
@@ -53,16 +53,16 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
 
 		await context.route("**/*", (route, request) => {
-			if (request.url() === PageURL) {
+			if (request.url() === baseURL) {
 				return route.fulfill(BlankHTML);
 			}
-			const path = decodeURIComponent(request.url().slice(PageURL.length - 1));
+			const path = decodeURIComponent(request.url().slice(baseURL.length - 1));
 			const body = readFileSync(join(root, path));
 			return route.fulfill({ body, contentType: "text/javascript" });
 		});
 
 		const page = await context.newPage();
-		await page.goto(PageURL);
+		await page.goto("/");
 		await page.evaluate(client, { files, task, entry });
 
 		await page.close();
