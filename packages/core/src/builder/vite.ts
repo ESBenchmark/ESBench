@@ -4,7 +4,7 @@ import { BuildContext, Builder } from "../stage.js";
 const ENTRY_ID = "./ESBench_Main.js";
 
 const mainCode = `\
-import { runSuites } from "@esbench/core/src/client/index.js";
+import { connect } from "@esbench/core/client";
 
 const suites = {__IMPORTS__\n};
 
@@ -13,7 +13,7 @@ function dynamicImport(file) {
 }
 
 export default function (channel, files, name) {
-	return runSuites(channel, dynamicImport, files, name);
+	return connect(channel, dynamicImport, files, name);
 }`;
 
 function createEntry(files: string[]) {

@@ -1,6 +1,40 @@
-import { Awaitable, cartesianObject, durationFmt } from "@kaciras/utilities/browser";
+import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkModule, HookFn, Scene } from "./suite.js";
-import { serializable } from "./message.js";
+
+function serializable(params: CPSrcObject) {
+	const entries = Object.entries(params);
+	const processed: Record<string, any[]> = {};
+	const counters = new Array(entries.length).fill(0);
+
+	let current: any[];
+
+	for (let i = 0; i < entries.length; i++) {
+		const [key, values] = entries[i];
+		processed[key] = current = [];
+
+		for (const v of values) {
+			const k = counters[i]++;
+			switch (typeof v) {
+				case "object":
+					current.push(v === null ? "null" : `object #${k}`);
+					break;
+				case "symbol":
+					current.push(v.description
+						? `symbol(${ellipsis(v.description, 10)}) #${k}`
+						: `symbol #${k}`,
+					);
+					break;
+				case "function":
+					current.push(`func ${ellipsis(v.name, 10)} #${k}`);
+					break;
+				default:
+					current.push(ellipsis("" + v, 16));
+			}
+		}
+	}
+
+	return processed;
+}
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -78,7 +112,7 @@ export type SuiteResult = {
 
 type Logger = (message: string) => void;
 
-export class SuiteRunner  {
+export class SuiteRunner {
 
 	private readonly suite: BenchmarkModule<any>;
 	private readonly logger: Logger;
@@ -88,9 +122,9 @@ export class SuiteRunner  {
 		this.logger = logger;
 	}
 
-	async bench(name?: string): Promise<SuiteResult> {
+	async run(name?: string): Promise<SuiteResult> {
 		const { params = {}, main } = this.suite;
-		const scenes: WorkloadResult[][]= [];
+		const scenes: WorkloadResult[][] = [];
 
 		let index = 0;
 		for (const config of cartesianObject(params)) {

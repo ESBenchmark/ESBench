@@ -3,7 +3,7 @@ import { isAbsolute, join } from "path";
 import { pathToFileURL } from "url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { ESBench } from "../src/host.js";
+import { ESBench } from "../lib/host.js";
 
 const parsed = yargs(hideBin(argv))
 	.option("config", { type: "string" })

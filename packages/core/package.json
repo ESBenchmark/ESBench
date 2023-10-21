@@ -13,6 +13,10 @@
 		"benchmark"
 	],
 	"type": "module",
+	"exports": {
+		".": "./lib/index.js",
+		"./client": "./lib/client/index.js"
+	},
 	"files": [
 		"bin",
 		"lib/**/*.{js,d.ts}"
