@@ -1,11 +1,11 @@
-import PlaywrightEngine from "@esbench/core/src/engine/playwright.js";
 import { chromium } from "playwright-core";
-import ViteTransformer from "@esbench/core/src/builder/vite.js";
+import { PlaywrightEngine, ViteBuilder } from "@esbench/core";
+import htmlReporter from "@esbench/reporter-html";
 
 export default {
 	include: ["./src/run.js"],
 	stages: [{
-		builder: new ViteTransformer(),
+		builder: new ViteBuilder(),
 		engines: [
 			// new DirectEngine(),
 			new PlaywrightEngine(chromium, {
@@ -16,5 +16,7 @@ export default {
 			// new ProcessEngine("node"),
 		],
 	}],
-	// reporter: "console",
+	reporters: [
+		htmlReporter(),
+	],
 };

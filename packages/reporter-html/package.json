@@ -8,7 +8,12 @@
 		"url": "https://github.com/Kaciras/esbench",
 		"directory": "packages/reporter-html"
 	},
+	"files": [
+		"dist",
+		"lib/**/*.{js,d.ts}"
+	],
 	"type": "module",
+	"types": "lib/index.d.ts",
 	"main": "lib/index.js",
 	"scripts": {
 		"check": "svelte-check --tsconfig ./tsconfig.json",

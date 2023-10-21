@@ -8,6 +8,7 @@
 	},
 	"dependencies": {
 		"@esbench/core": "workspace:^",
+		"@esbench/reporter-html": "workspace:^",
 		"hash-wasm": "^4.10.0",
 		"playwright-core": "^1.39.0"
 	}
