@@ -22,7 +22,9 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"chart.js": "^4.4.0"
+		"chart.js": "^4.4.0",
+		"open": "^9.1.0",
+		"vite-plugin-singlefile": "^0.13.5"
 	},
 	"devDependencies": {
 		"@esbench/core": "workspace:^",
