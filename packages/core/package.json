@@ -15,8 +15,7 @@
 	"type": "module",
 	"files": [
 		"bin",
-		"src",
-		"!src/*.js.map"
+		"lib/**/*.{js,d.ts}"
 	],
 	"bin": {
 		"esbench": "bin/cli.js"
