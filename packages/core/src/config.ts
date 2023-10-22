@@ -1,3 +1,4 @@
+import { identity } from "@kaciras/utilities/node";
 import { fileReporter, Reporter } from "./report.js";
 import NodeRunner from "./engine/node.js";
 import { nopBuilder } from "./builder/nop.js";
@@ -16,6 +17,8 @@ export interface ESBenchConfig {
 	tempDir?: string;
 	cleanTempDir?: boolean;
 }
+
+export const defineConfig = identity<ESBenchConfig>;
 
 export type NormalizedESConfig = ESBenchConfig & {
 	tempDir: string;

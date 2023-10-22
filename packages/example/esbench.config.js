@@ -1,8 +1,8 @@
 import { chromium } from "playwright-core";
-import { PlaywrightEngine, ViteBuilder } from "@esbench/core";
+import { defineConfig, PlaywrightEngine, ViteBuilder } from "@esbench/core";
 import htmlReporter from "@esbench/reporter-html";
 
-export default {
+export default defineConfig({
 	include: ["./src/run.js"],
 	stages: [{
 		builder: new ViteBuilder(),
@@ -17,6 +17,6 @@ export default {
 		],
 	}],
 	reporters: [
-		htmlReporter(),
+		htmlReporter({ file: "temp/report.html", open: true }),
 	],
-};
+});
