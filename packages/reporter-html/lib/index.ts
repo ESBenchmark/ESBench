@@ -30,6 +30,6 @@ export default function htmlReporter(options: HtmlReporterOptions = {}) {
 		if (open) {
 			await openBrowser(url);
 		}
-		console.info("Your report can be found at: " + url);
+		console.info("HTML report can be found at: " + url);
 	};
 }

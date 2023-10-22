@@ -1,39 +1,40 @@
 import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkModule, HookFn, Scene } from "./suite.js";
 
+function toDisplay(v: unknown, i: number) {
+	switch (typeof v) {
+		case "object":
+			return v === null ? "null" : `object #${i}`;
+		case "symbol":
+			return v.description
+				? `symbol(${ellipsis(v.description, 10)}) #${i}`
+				: `symbol #${i}`;
+		case "function":
+			return `func ${ellipsis(v.name, 10)} #${i}`;
+		default:
+			return ellipsis("" + v, 16) + `#${i}`;
+	}
+}
+
 function serializable(params: CPSrcObject) {
 	const entries = Object.entries(params);
-	const processed: Record<string, any[]> = {};
-	const counters = new Array(entries.length).fill(0);
-
-	let current: any[];
+	const processed: Record<string, string[]> = {};
+	let length = 0;
+	let current: string[];
 
 	for (let i = 0; i < entries.length; i++) {
 		const [key, values] = entries[i];
 		processed[key] = current = [];
 
 		for (const v of values) {
-			const k = counters[i]++;
-			switch (typeof v) {
-				case "object":
-					current.push(v === null ? "null" : `object #${k}`);
-					break;
-				case "symbol":
-					current.push(v.description
-						? `symbol(${ellipsis(v.description, 10)}) #${k}`
-						: `symbol #${k}`,
-					);
-					break;
-				case "function":
-					current.push(`func ${ellipsis(v.name, 10)} #${k}`);
-					break;
-				default:
-					current.push(ellipsis("" + v, 16));
-			}
+			const k = current.length;
+			current.push(toDisplay(v, k));
 		}
+
+		length += current.length;
 	}
 
-	return processed;
+	return { length, processed };
 }
 
 type IterateFn = (count: number) => Awaitable<number>;
@@ -125,6 +126,7 @@ export class SuiteRunner {
 	async run(name?: string): Promise<SuiteResult> {
 		const { params = {}, main } = this.suite;
 		const scenes: WorkloadResult[][] = [];
+		const x = serializable(params);
 
 		let index = 0;
 		for (const config of cartesianObject(params)) {
@@ -132,9 +134,11 @@ export class SuiteRunner {
 			const result: WorkloadResult[] = [];
 
 			await main(scene, config);
-			this.logger(`Scene ${index++}, ${scene.benchmarks.length} workloads found`);
 
-			for (const case_ of scene.benchmarks) {
+			this.logger(`Scene ${++index} of ${x.length}, `
+				+ `${scene.cases.length} workloads found`);
+
+			for (const case_ of scene.cases) {
 				if (name && case_.name !== name) {
 					continue;
 				}
@@ -145,25 +149,29 @@ export class SuiteRunner {
 			await runHooks(scene.cleanEach);
 		}
 
-		return { paramDef: serializable(params), scenes };
+		return { paramDef: x.processed, scenes };
 	}
 
-	private async runWorkload(context: Scene, case_: BenchmarkCase) {
+	private async runWorkload(scene: Scene, case_: BenchmarkCase) {
 		const { samples = 5, iterations = 10_000 } = this.suite.options ?? {};
 		const { name } = case_;
 
-		const runFn = createRunner(context, case_);
+		const runFn = createRunner(scene, case_);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
 			? iterations
 			: await getIterations(runFn, durationFmt.parse(iterations, "ms"));
 
-		console.log("Count:" + count);
+		this.logger(`Iterations of ${name}: ${count}\n`);
 
 		const metrics: Metrics = { time: [] };
 		for (let i = 0; i < samples; i++) {
-			metrics.time.push(await runFn(count));
+			const time = await runFn(count);
+			metrics.time.push(time);
+
+			const one = time / count;
+			this.logger(`Sample ${i}, ${durationFmt.formatDiv(time, "ms")}, ${durationFmt.formatDiv(one, "ms")}/op`);
 		}
 
 		return [name, metrics] as WorkloadResult;

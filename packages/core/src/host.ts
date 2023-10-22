@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
 import { join } from "path/posix";
+import { performance } from "perf_hooks";
 import glob from "fast-glob";
-import { MultiMap } from "@kaciras/utilities/node";
+import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { BenchmarkEngine } from "./stage.js";
 import { ESBenchConfig, normalizeConfig, NormalizedESConfig } from "./config.js";
 import { ClientMessage, ESBenchResult, ResultCollector } from "./client/index.js";
@@ -22,14 +23,16 @@ export class ESBench {
 
 	async run(task?: string) {
 		const { include, stages, reporters, tempDir, cleanTempDir } = this.config;
-		const files = await glob(include);
+		const startTime = performance.now();
 
 		mkdirSync(tempDir, { recursive: true });
-
+		const files = await glob(include);
 		const map = new MultiMap<BenchmarkEngine, Build>();
+
 		for (const { builder, engines } of stages) {
 			const root = mkdtempSync(join(tempDir, "build-"));
 
+			console.log(`Building with ${builder.name}...`);
 			const entry = await builder.build({ root, files });
 
 			for (const engine of engines) {
@@ -41,6 +44,7 @@ export class ESBench {
 
 		for (const [engine, builds] of map) {
 			const engineName = await engine.start();
+			console.log(`Running suites on ${engineName}.`);
 
 			for (const { name, root, entry } of builds) {
 				const collector = new ResultCollector(result, engineName, name);
@@ -61,13 +65,16 @@ export class ESBench {
 			await engine.close();
 		}
 
-		console.log(result);
+		console.log(); // Add an empty line between running & reporting phase.
+
 		for (const reporter of reporters) {
 			await reporter(result);
 		}
-
 		if (cleanTempDir) {
 			rmSync(tempDir, { recursive: true });
 		}
+
+		const timeUsage = performance.now() - startTime;
+		console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 	}
 }

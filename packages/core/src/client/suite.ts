@@ -21,7 +21,7 @@ export type HookFn = () => Awaitable<unknown>;
 
 export class Scene {
 
-	readonly benchmarks: BenchmarkCase[] = [];
+	readonly cases: BenchmarkCase[] = [];
 
 	readonly cleanEach: HookFn[] = [];
 	readonly setupIteration: HookFn[] = [];
@@ -40,11 +40,11 @@ export class Scene {
 	}
 
 	add(name: string, workload: SyncWorkload) {
-		this.benchmarks.push({ name, workload, isAsync: false });
+		this.cases.push({ name, workload, isAsync: false });
 	}
 
 	addAsync(name: string, workload: AsyncWorkload) {
-		this.benchmarks.push({ name, workload, isAsync: true });
+		this.cases.push({ name, workload, isAsync: true });
 	}
 }
 
