@@ -1,13 +1,15 @@
 import type { ESBenchResult } from "@esbench/core/client";
-import { join } from "path";
-import { fileURLToPath } from "url";
-import { cpSync, existsSync, readFileSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath, pathToFileURL } from "url";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import openBrowser from "open";
 
 export interface HtmlReporterOptions {
-	outDir?: string;
+	file?: string;
+	open?: boolean;
 }
 
-const dist = join(fileURLToPath(import.meta.url), "../../dist");
+const dist = join(fileURLToPath(import.meta.url), "../../dist/index.html");
 
 export function interpolate(html: string, data: ESBenchResult) {
 	const code = JSON.stringify(data);
@@ -15,19 +17,19 @@ export function interpolate(html: string, data: ESBenchResult) {
 }
 
 export default function htmlReporter(options: HtmlReporterOptions = {}) {
-	const { outDir = "esbench" } = options;
-	const template = readFileSync(join(dist, "index.html"), "utf8");
+	const { file = "benchmark.html", open } = options;
+	const template = readFileSync(dist, "utf8");
 
-	return (result: ESBenchResult) => {
+	return async (result: ESBenchResult) => {
 		const html = interpolate(template, result);
 
-		const assets = join(outDir, "assets");
-		if (!existsSync(assets)) {
-			cpSync(join(dist, "assets"), assets, { recursive: true });
-		}
-
-		const file = join(outDir, "benchmark.html");
+		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, html);
-		console.info("HTML report saved to " + file);
+
+		const url = pathToFileURL(file).toString();
+		if (open) {
+			await openBrowser(url);
+		}
+		console.info("Your report can be found at: " + url);
 	};
 }
