@@ -1,5 +1,5 @@
-import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkModule, HookFn, Scene } from "./suite.js";
+import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis, noop } from "@kaciras/utilities/browser";
+import { BenchmarkCase, BenchmarkSuite, HookFn, Scene, SuiteOptions } from "./suite.js";
 
 function toDisplay(v: unknown, i: number) {
 	switch (typeof v) {
@@ -47,6 +47,13 @@ function createRunner(ctx: Scene, case_: BenchmarkCase) {
 	const { workload, isAsync } = case_;
 	const { setupIteration, cleanIteration } = ctx;
 
+	async function run() {
+		await runHooks(setupIteration);
+		const returnValue = await workload();
+		await runHooks(cleanIteration);
+		return returnValue;
+	}
+
 	async function noSetup(count: number) {
 		const start = performance.now();
 		if (isAsync) {
@@ -86,7 +93,11 @@ function createRunner(ctx: Scene, case_: BenchmarkCase) {
 	}
 
 	const setup = setupIteration.length && cleanIteration.length;
-	return setup ? isAsync ? asyncWithSetup : syncWithSetup : noSetup;
+	const iterate: IterateFn = setup
+		? isAsync
+			? asyncWithSetup : syncWithSetup : noSetup;
+
+	return { run, iterate };
 }
 
 async function getIterations(fn: IterateFn, targetMS: number) {
@@ -113,17 +124,26 @@ export type SuiteResult = {
 
 type Logger = (message: string) => void;
 
+type NormalizedSuite = BenchmarkSuite<any> & {
+	afterAll: HookFn;
+	options: SuiteOptions;
+}
+
+const NONE_VALUE = Symbol();
+
 export class SuiteRunner {
 
-	private readonly suite: BenchmarkModule<any>;
+	private readonly suite: NormalizedSuite;
 	private readonly logger: Logger;
 
-	constructor(suite: BenchmarkModule<any>, logger: Logger = console.log) {
-		this.suite = suite;
+	constructor(suite: BenchmarkSuite<any>, logger: Logger = console.log) {
 		this.logger = logger;
+		this.suite = { afterAll: noop, options: {}, ...suite };
 	}
 
 	async run(name?: string): Promise<SuiteResult> {
+		await this.validate();
+
 		const { params = {}, main } = this.suite;
 		const scenes: WorkloadResult[][] = [];
 		const x = serializable(params);
@@ -152,22 +172,57 @@ export class SuiteRunner {
 		return { paramDef: x.processed, scenes };
 	}
 
+	private async validate(name?: string) {
+		const { params = {}, main, options } = this.suite;
+		let { validateExecution, validateReturnValue } = options;
+
+		if (!validateExecution && !validateReturnValue) {
+			return;
+		}
+		if (validateReturnValue === true) {
+			validateReturnValue = (a, b) => a === b;
+		} else if (!validateReturnValue) {
+			validateReturnValue = () => true;
+		}
+
+		let firstValue: any = NONE_VALUE;
+
+		for (const config of cartesianObject(params)) {
+			const scene = new Scene();
+			await main(scene, config);
+			for (const case_ of scene.cases) {
+				if (name && case_.name !== name) {
+					continue;
+				}
+				const { run } = createRunner(scene, case_);
+
+				if (firstValue === NONE_VALUE) {
+					firstValue = await run();
+				} else if (!validateReturnValue(firstValue, await run())) {
+					throw new Error(`Return value of ${name} and ${scene.cases[0].name} are different.`);
+				}
+
+				await runHooks(scene.cleanEach);
+			}
+		}
+	}
+
 	private async runWorkload(scene: Scene, case_: BenchmarkCase) {
 		const { samples = 5, iterations = 10_000 } = this.suite.options ?? {};
 		const { name } = case_;
 
-		const runFn = createRunner(scene, case_);
+		const { iterate } = createRunner(scene, case_);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
 			? iterations
-			: await getIterations(runFn, durationFmt.parse(iterations, "ms"));
+			: await getIterations(iterate, durationFmt.parse(iterations, "ms"));
 
 		this.logger(`Iterations of ${name}: ${count}\n`);
 
 		const metrics: Metrics = { time: [] };
 		for (let i = 0; i < samples; i++) {
-			const time = await runFn(count);
+			const time = await iterate(count);
 			metrics.time.push(time);
 
 			const one = time / count;
