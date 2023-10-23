@@ -155,8 +155,12 @@ export class SuiteRunner {
 
 			await main(scene, config);
 
-			this.logger(`Scene ${++index} of ${x.length}, `
-				+ `${scene.cases.length} workloads found`);
+			if (scene.cases.length === 0) {
+				this.logger(`No workload found from scene ${++index}.`);
+			} else {
+				this.logger(`Scene ${++index} of ${x.length}, `
+					+ `${scene.cases.length} workloads.`);
+			}
 
 			for (const case_ of scene.cases) {
 				if (name && case_.name !== name) {

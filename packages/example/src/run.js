@@ -1,4 +1,4 @@
-import { defineSuite } from "@esbench/core/src/client/index.js";
+import { defineSuite } from "@esbench/core/client";
 
 export default defineSuite({
 	options: {

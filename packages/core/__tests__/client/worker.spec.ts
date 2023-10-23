@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { defineSuite, ResultCollector, SuiteRunner } from "../../src/client/index.js";
+import { CPSrcObject, noop } from "@kaciras/utilities/browser";
+import { BenchmarkSuite, defineSuite, ResultCollector, SuiteRunner } from "../../src/client/index.js";
 
 function fib(n: number) {
 	let a = 0;
@@ -11,28 +12,29 @@ function fib(n: number) {
 	return b;
 }
 
+function run<T extends CPSrcObject>(suite: BenchmarkSuite<T>) {
+	return new SuiteRunner(suite, noop).run();
+}
+
 it("should works", async () => {
-	const runner = new SuiteRunner(defineSuite({
+	const result = await run({
 		params: {
 			n: [10, 100, 1000],
 		},
 		main(scene, params) {
 			scene.add("Test", () => fib(params.n));
 		},
-	}));
-
-	const result = await runner.run();
+	});
 
 	const allResult = {};
 	const collector = new ResultCollector(allResult);
 	collector.collect("Foo", result);
-
 	console.log(JSON.stringify(allResult, null, "\t"));
 });
 
 it("should validate executions", async () => {
 	const fn = vi.fn();
-	const runner = new SuiteRunner(defineSuite({
+	const suite = defineSuite({
 		options: {
 			validateExecution: true,
 		},
@@ -46,14 +48,14 @@ it("should validate executions", async () => {
 				scene.add("Test", () => {throw new Error("x");});
 			}
 		},
-	}));
+	});
 
-	await expect(runner.run()).rejects.toThrow();
+	await expect(run(suite)).rejects.toThrow();
 	expect(fn).toHaveBeenCalledTimes(2);
 });
 
 it("should validate return values", () => {
-	const runner = new SuiteRunner(defineSuite({
+	const suite = defineSuite({
 		options: {
 			validateReturnValue: true,
 		},
@@ -61,13 +63,13 @@ it("should validate return values", () => {
 			scene.add("A", () => 11);
 			scene.add("B", () => 22);
 		},
-	}));
+	});
 
-	return expect(runner.run()).rejects.toThrow();
+	return expect(run(suite)).rejects.toThrow();
 });
 
 it("should support custom validator", () => {
-	const runner = new SuiteRunner(defineSuite({
+	const suite = defineSuite({
 		options: {
 			validateReturnValue: a => a === 11,
 		},
@@ -75,7 +77,7 @@ it("should support custom validator", () => {
 			scene.add("A", () => 11);
 			scene.add("B", () => 22);
 		},
-	}));
+	});
 
-	return expect(runner.run()).resolves.toBeTruthy();
+	return expect(run(suite)).resolves.toBeTruthy();
 });

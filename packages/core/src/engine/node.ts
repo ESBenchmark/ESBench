@@ -8,7 +8,7 @@ import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 
-export default class NodeRunner implements BenchmarkEngine {
+export default class NodeEngine implements BenchmarkEngine {
 
 	private readonly executable?: string;
 

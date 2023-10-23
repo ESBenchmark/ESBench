@@ -1,6 +1,6 @@
 import { identity } from "@kaciras/utilities/node";
 import { fileReporter, Reporter } from "./report.js";
-import NodeRunner from "./engine/node.js";
+import NodeEngine from "./engine/node.js";
 import { nopBuilder } from "./builder/nop.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
 
@@ -32,7 +32,7 @@ export function normalizeConfig(config: ESBenchConfig) {
 
 	for (const scene of config.stages) {
 		scene.builder ??= nopBuilder;
-		scene.engines ??= [new NodeRunner()];
+		scene.engines ??= [new NodeEngine()];
 
 		if (scene.engines.length === 0) {
 			throw new Error("No engines.");

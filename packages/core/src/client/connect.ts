@@ -1,10 +1,10 @@
 import { Awaitable } from "@kaciras/utilities/browser";
-import { BenchmarkModule } from "./suite.js";
+import { BenchmarkSuite } from "./suite.js";
 import { SuiteResult, SuiteRunner } from "./worker.js";
 
 export type ClientMessage = { log: string } | { file: string; result: SuiteResult };
 
-export type Importer = (path: string) => Awaitable<{ default: BenchmarkModule<any> }>;
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite<any> }>;
 
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 

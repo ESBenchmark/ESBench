@@ -1,11 +1,6 @@
 {
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"lint": "eslint --fix .",
-		"test": "jest",
-		"compile": "tsc --watch"
-	},
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^2.6.1",
 		"@kaciras/eslint-config-typescript": "^2.6.2",
