@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import { Browser, BrowserContext, BrowserType, LaunchOptions, Worker } from "playwright-core";
+import { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
@@ -21,11 +21,11 @@ async function client({ files, task, entry }: any) {
 export default class PlaywrightEngine implements BenchmarkEngine {
 
 	private readonly type: BrowserType;
-	private readonly options: LaunchOptions;
+	private readonly options?: LaunchOptions;
 
 	private browser!: Browser;
 
-	constructor(type: BrowserType, options: LaunchOptions) {
+	constructor(type: BrowserType, options?: LaunchOptions) {
 		this.type = type;
 		this.options = options;
 	}
@@ -47,7 +47,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 	}
 
 	async run(options: RunOptions) {
-		const { files, task, root, entry, handleMessage } = options;
+		const { files, pattern, root, entry, handleMessage } = options;
 
 		const context = await this.launchContext();
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
@@ -63,7 +63,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 
 		const page = await context.newPage();
 		await page.goto("/");
-		await page.evaluate(client, { files, task, entry });
+		await page.evaluate(client, { files, pattern, entry });
 
 		await page.close();
 		console.log("Evaluate finishd");

@@ -21,7 +21,7 @@ export class ESBench {
 		this.config = normalizeConfig(options);
 	}
 
-	async run(task?: string) {
+	async run(pattern?: RegExp) {
 		const { include, stages, reporters, tempDir, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
@@ -58,7 +58,7 @@ export class ESBench {
 				};
 
 				await engine.run({
-					tempDir, root, entry, files, task, handleMessage,
+					tempDir, root, entry, files, pattern: pattern?.source, handleMessage,
 				});
 			}
 

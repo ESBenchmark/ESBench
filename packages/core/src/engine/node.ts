@@ -35,11 +35,11 @@ export default class NodeEngine implements BenchmarkEngine {
 	}
 
 	run(options: RunOptions) {
-		const { entry, files, task, handleMessage } = options;
+		const { entry, files, pattern, handleMessage } = options;
 
 		this.process.removeAllListeners("message");
 		this.process.on("message", handleMessage);
-		this.process.send({ entry, task, files });
+		this.process.send({ entry, pattern, files });
 		return once(this.process, "exit");
 	}
 }

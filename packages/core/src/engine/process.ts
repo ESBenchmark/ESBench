@@ -17,7 +17,7 @@ function postMessage(message) {
     });
 }
 
-runSuites(postMessage, __FILES__, __NAME__);`;
+runSuites(postMessage, __FILES__, __PATTERN__);`;
 
 type GetCommand = (file: string) => string;
 
@@ -45,7 +45,7 @@ export default class ProcessRunner implements BenchmarkEngine {
 
 	run(options: RunOptions) {
 		const { getCommand } = this;
-		const { tempDir, root, entry, files, task, handleMessage } = options;
+		const { tempDir, root, entry, files, pattern, handleMessage } = options;
 
 		this.server = createServer((request, response) => {
 			json(request).then(handleMessage);
@@ -60,7 +60,7 @@ export default class ProcessRunner implements BenchmarkEngine {
 
 		const loaderCode = template
 			.replace("__FILES__", JSON.stringify(files))
-			.replace("__NAME__", JSON.stringify(task))
+			.replace("__PATTERN__", JSON.stringify(pattern))
 			.replace("__ADDRESS__", JSON.stringify(address))
 			.replace("__ENTRY__", "./" + ee);
 

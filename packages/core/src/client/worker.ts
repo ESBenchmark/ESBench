@@ -141,7 +141,20 @@ export class SuiteRunner {
 		this.suite = { afterAll: noop, options: {}, ...suite };
 	}
 
-	async run(name?: string): Promise<SuiteResult> {
+	private async *generate() {
+		const { params = {}, main } = this.suite;
+
+		for (const config of cartesianObject(params)) {
+			const scene = new Scene();
+			await main(scene, config);
+			yield scene;
+			await runHooks(scene.cleanEach);
+		}
+	}
+
+	async run(pattern?: RegExp): Promise<SuiteResult> {
+		const isMatch = pattern ? pattern.test.bind(pattern) : () => true;
+
 		await this.validate();
 
 		const { params = {}, main } = this.suite;
@@ -163,7 +176,7 @@ export class SuiteRunner {
 			}
 
 			for (const case_ of scene.cases) {
-				if (name && case_.name !== name) {
+				if (!isMatch(case_.name)) {
 					continue;
 				}
 				result.push(await this.runWorkload(scene, case_));
@@ -177,7 +190,7 @@ export class SuiteRunner {
 		return { paramDef: x.processed, scenes };
 	}
 
-	private async validate(name?: string) {
+	private async validate(pattern?: RegExp) {
 		const { params = {}, main, options } = this.suite;
 		let { validateExecution, validateReturnValue } = options;
 
@@ -190,13 +203,14 @@ export class SuiteRunner {
 			validateReturnValue = () => true;
 		}
 
+		const isMatch = pattern ? pattern.test.bind(pattern) : () => true;
 		let firstValue: any = NONE_VALUE;
 
 		for (const config of cartesianObject(params)) {
 			const scene = new Scene();
 			await main(scene, config);
 			for (const case_ of scene.cases) {
-				if (name && case_.name !== name) {
+				if (!isMatch(case_.name)) {
 					continue;
 				}
 				const { run } = createRunner(scene, case_);
@@ -204,7 +218,7 @@ export class SuiteRunner {
 				if (firstValue === NONE_VALUE) {
 					firstValue = await run();
 				} else if (!validateReturnValue(firstValue, await run())) {
-					throw new Error(`Return value of ${name} and ${scene.cases[0].name} are different.`);
+					throw new Error(`Return value of ${case_.name} and ${scene.cases[0].name} are different.`);
 				}
 
 				await runHooks(scene.cleanEach);

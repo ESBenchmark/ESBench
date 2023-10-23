@@ -12,8 +12,8 @@ function fib(n: number) {
 	return b;
 }
 
-function run<T extends CPSrcObject>(suite: BenchmarkSuite<T>) {
-	return new SuiteRunner(suite, noop).run();
+function run<T extends CPSrcObject>(suite: BenchmarkSuite<T>, pattern?: RegExp) {
+	return new SuiteRunner(suite, noop).run(pattern);
 }
 
 it("should works", async () => {
@@ -109,4 +109,20 @@ it("should call lifecycle hooks", async () => {
 		beforeEach, beforeIter, workload, afterIter, afterEach,
 		beforeEach, beforeIter, workload, afterIter, afterEach, afterAll,
 	]);
+});
+
+it("should filter workloads with pattern",async () => {
+	const foo = vi.fn();
+	const bar = vi.fn();
+
+	await run({
+		params: { n: [10, 100] },
+		main(scene) {
+			scene.add("test foo", foo);
+			scene.add("bar test", bar);
+		},
+	}, /^test/);
+
+	expect(foo).toHaveBeenCalled();
+	expect(bar).not.toHaveBeenCalled();
 });

@@ -14,12 +14,10 @@ export interface Builder {
 
 export interface RunOptions {
 	tempDir: string;
-
 	root: string;
 	entry: string;
-
 	files: string[];
-	task?: string;
+	pattern?: string;
 
 	handleMessage(message: any): void;
 }
