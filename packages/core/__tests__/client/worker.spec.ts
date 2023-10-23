@@ -81,3 +81,32 @@ it("should support custom validator", () => {
 
 	return expect(run(suite)).resolves.toBeTruthy();
 });
+
+it("should call lifecycle hooks", async () => {
+	const invocations: any[] = [];
+
+	const beforeEach = () => invocations.push(beforeEach);
+	const beforeIter = () => invocations.push(beforeIter);
+	const workload = () => invocations.push(workload);
+	const afterIter = () => invocations.push(afterIter);
+	const afterEach = () => invocations.push(afterEach);
+	const afterAll = () => invocations.push(afterAll);
+
+	await run({
+		options: { iterations: 1, samples: 1 },
+		params: { n: [10, 100] },
+		afterAll,
+		main(scene) {
+			beforeEach();
+			scene.afterEach(afterEach);
+			scene.beforeIteration(beforeIter);
+			scene.afterIteration(afterIter);
+			scene.add("Foo", workload);
+		},
+	});
+
+	expect(invocations).toStrictEqual([
+		beforeEach, beforeIter, workload, afterIter, afterEach,
+		beforeEach, beforeIter, workload, afterIter, afterEach, afterAll,
+	]);
+});

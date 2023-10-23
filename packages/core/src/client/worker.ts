@@ -173,6 +173,7 @@ export class SuiteRunner {
 			await runHooks(scene.cleanEach);
 		}
 
+		await this.suite.afterAll();
 		return { paramDef: x.processed, scenes };
 	}
 
