@@ -6,9 +6,13 @@ export type SyncWorkload = () => unknown;
 
 export type Workload = AsyncWorkload | SyncWorkload;
 
+type CheckEquality = (a: any, b: any) => boolean;
+
 export interface SuiteOptions {
 	samples?: number;
 	iterations?: number | string;
+	validateExecution?: boolean;
+	validateReturnValue?: boolean | CheckEquality;
 }
 
 export interface BenchmarkCase {
@@ -40,17 +44,25 @@ export class Scene {
 	}
 
 	add(name: string, workload: SyncWorkload) {
+		this.check(name);
 		this.cases.push({ name, workload, isAsync: false });
 	}
 
 	addAsync(name: string, workload: AsyncWorkload) {
+		this.check(name);
 		this.cases.push({ name, workload, isAsync: true });
+	}
+
+	private check(name: string) {
+		if (this.cases.some(c => c.name === name)) {
+			throw new Error(`Workload "${name}" already exists.`);
+		}
 	}
 }
 
 export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
-export interface BenchmarkModule<T extends CPSrcObject> {
+export interface BenchmarkSuite<T extends CPSrcObject> {
 	main: CreateScene<T>;
 	params?: T;
 	afterAll?: HookFn;
@@ -59,6 +71,6 @@ export interface BenchmarkModule<T extends CPSrcObject> {
 
 type Empty = Record<string, never>;
 
-export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkModule<T>) {
+export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkSuite<T>) {
 	return suite;
 }
