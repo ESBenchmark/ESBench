@@ -1,7 +1,9 @@
 export * from "./config.js";
 export * from "./stage.js";
 export * from "./host.js";
-export * from "./report.js";
+
+export { default as consoleReporter } from "./reporter/console.js";
+export { default as fileReporter } from "./reporter/file.js";
 
 export { default as ViteBuilder } from "./builder/vite.js";
 

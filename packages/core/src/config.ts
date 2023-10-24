@@ -1,5 +1,6 @@
-import { identity } from "@kaciras/utilities/node";
-import { fileReporter, Reporter } from "./report.js";
+import { Awaitable, identity } from "@kaciras/utilities/node";
+import { fileReporter } from "./reporter/file.js";
+import { ESBenchResult } from "./client/index.js";
 import NodeEngine from "./engine/node.js";
 import noBuild from "./builder/default.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
@@ -8,6 +9,8 @@ export interface Stage {
 	builder?: Builder;
 	engines?: BenchmarkEngine[];
 }
+
+export type Reporter = (result: ESBenchResult) => Awaitable<unknown>;
 
 export interface ESBenchConfig {
 	include: string[];
