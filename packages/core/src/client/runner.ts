@@ -65,18 +65,6 @@ function createInvoker(ctx: Scene, case_: BenchmarkCase) {
 	return { run: invoke, iterate, name: case_.name };
 }
 
-async function getIterations(fn: IterateFn, targetMS: number) {
-	let count = 1;
-	let time = 0;
-
-	while (time < targetMS) {
-		time = await fn(count);
-		console.log(`Pilot: ${timeDetail(time, count)}`);
-		count *= 2;
-	}
-	return Math.ceil(count / 2 * targetMS / time);
-}
-
 type ParamDefs = Record<string, any[]>;
 export type Metrics = Record<string, any[]>;
 
@@ -154,27 +142,44 @@ class WorkloadRunner implements BenchmarkWorker {
 		const index = suiteResult.push(x);
 
 		if (length === 0) {
-			logger(`Warning: No workload found from scene #${index}.`);
+			logger(`\nWarning: No workload found from scene #${index}.`);
 		} else {
-			logger(`Scene ${index} of ${total}, ${length} workloads.`);
+			logger(`\nScene ${index} of ${total}, ${length} workloads.`);
 		}
 	}
 
 	async onCase(scene: Scene, case_: BenchmarkCase) {
 		const { samples = 5, iterations = 10_000 } = this.config;
 		const { iterate } = createInvoker(scene, case_);
+		this.logger(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
 			? iterations
-			: await getIterations(iterate, durationFmt.parse(iterations, "ms"));
+			: await this.getIterations(iterate, iterations);
 
 		const metrics: Metrics = { time: [] };
+
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			metrics.time.push(time);
 			this.logger(`Actual: ${timeDetail(time, count)}`);
 		}
+	}
+
+	async getIterations(fn: IterateFn, target: string) {
+		const targetMS = durationFmt.parse(target, "ms");
+
+		let count = 1;
+		let time = 0;
+		while (time < targetMS) {
+			time = await fn(count);
+			this.logger(`Pilot: ${timeDetail(time, count)}`);
+			count *= 2;
+		}
+
+		this.logger("");
+		return Math.ceil(count / 2 * targetMS / time);
 	}
 }
 
