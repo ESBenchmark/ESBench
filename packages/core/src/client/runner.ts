@@ -1,41 +1,6 @@
-import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis, noop } from "@kaciras/utilities/browser";
+import { Awaitable, cartesianObject, durationFmt, noop } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkSuite, CheckEquality, HookFn, Scene, SuiteConfig } from "./suite.js";
-
-function toDisplay(v: unknown, i: number) {
-	switch (typeof v) {
-		case "object":
-			return v === null ? "null" : `object #${i}`;
-		case "symbol":
-			return v.description
-				? `symbol(${ellipsis(v.description, 10)}) #${i}`
-				: `symbol #${i}`;
-		case "function":
-			return `func ${ellipsis(v.name, 10)} #${i}`;
-		default:
-			return ellipsis("" + v, 16) + `#${i}`;
-	}
-}
-
-function serializable(params: CPSrcObject) {
-	const entries = Object.entries(params);
-	const processed: Record<string, string[]> = {};
-	let length = 0;
-	let current: string[];
-
-	for (let i = 0; i < entries.length; i++) {
-		const [key, values] = entries[i];
-		processed[key] = current = [];
-
-		for (const v of values) {
-			const k = current.length;
-			current.push(toDisplay(v, k));
-		}
-
-		length += current.length;
-	}
-
-	return { length, processed };
-}
+import { serializable, timeDetail } from "./message.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -106,7 +71,7 @@ async function getIterations(fn: IterateFn, targetMS: number) {
 
 	while (time < targetMS) {
 		time = await fn(count);
-		console.log(`Pilot: ${count} op, ${time.toFixed(2)} ms`);
+		console.log(`Pilot: ${timeDetail(time, count)}`);
 		count *= 2;
 	}
 	return Math.ceil(count / 2 * targetMS / time);
@@ -149,9 +114,11 @@ class Validator implements BenchmarkWorker {
 		const { value, isEqual } = this;
 		const { run } = createInvoker(scene, case_);
 
+		const current = await run();
+
 		if (value === Validator.NONE) {
-			this.value = await run();
-		} else if (!isEqual(value, await run())) {
+			this.value = current;
+		} else if (!isEqual(value, current)) {
 			const { name } = scene.cases[0];
 			throw new Error(`${case_.name} and ${name} returns different value.`);
 		}
@@ -164,8 +131,8 @@ class WorkloadRunner implements BenchmarkWorker {
 	private readonly logger: Logger;
 	private readonly total: number;
 
-	scenes: WorkloadResult[][] = [];
-	result: WorkloadResult[] = [];
+	suiteResult: WorkloadResult[][] = [];
+	sceneResult: WorkloadResult[] = [];
 
 	constructor(config: SuiteConfig, logger: Logger, total: number) {
 		this.config = config;
@@ -174,9 +141,11 @@ class WorkloadRunner implements BenchmarkWorker {
 	}
 
 	onScene(scene: Scene) {
-		const { scenes, logger, total } = this;
+		const { suiteResult, logger, total } = this;
 		const { length } = scene.cases;
-		const index = scenes.push(this.result = []);
+
+		const x = this.sceneResult = [];
+		const index = suiteResult.push(x);
 
 		if (length === 0) {
 			logger(`Warning: No workload found from scene #${index}.`);
@@ -187,8 +156,6 @@ class WorkloadRunner implements BenchmarkWorker {
 
 	async onCase(scene: Scene, case_: BenchmarkCase) {
 		const { samples = 5, iterations = 10_000 } = this.config;
-		const { name } = case_;
-
 		const { iterate } = createInvoker(scene, case_);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
@@ -196,15 +163,11 @@ class WorkloadRunner implements BenchmarkWorker {
 			? iterations
 			: await getIterations(iterate, durationFmt.parse(iterations, "ms"));
 
-		this.logger(`Iterations of ${name}: ${count}\n`);
-
 		const metrics: Metrics = { time: [] };
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			metrics.time.push(time);
-
-			const one = time / count;
-			this.logger(`Sample ${i}, ${durationFmt.formatDiv(time, "ms")}, ${durationFmt.formatDiv(one, "ms")}/op`);
+			this.logger(`Actual: ${timeDetail(time, count)}`);
 		}
 	}
 }
@@ -261,5 +224,5 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 	await run(workloadRunner);
 	await afterAll();
 
-	return { paramDef: x.processed, scenes: workloadRunner.scenes };
+	return { paramDef: x.processed, scenes: workloadRunner.suiteResult };
 }

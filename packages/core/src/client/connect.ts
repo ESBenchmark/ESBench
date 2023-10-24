@@ -1,6 +1,6 @@
 import { Awaitable } from "@kaciras/utilities/browser";
 import { BenchmarkSuite } from "./suite.js";
-import { runSuite, RunSuiteOption, SuiteResult } from "./worker.js";
+import { runSuite, RunSuiteOption, SuiteResult } from "./runner.js";
 
 export type ClientMessage = { log: string } | { file: string; result: SuiteResult };
 

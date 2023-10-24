@@ -1,7 +1,7 @@
 import { defineSuite } from "@esbench/core/client";
 
 export default defineSuite({
-	options: {
+	config: {
 		iterations: "1s",
 	},
 	main(suite, params) {

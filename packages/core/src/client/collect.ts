@@ -1,5 +1,5 @@
 import { cartesianObject } from "@kaciras/utilities/browser";
-import { Metrics, SuiteResult } from "./worker.js";
+import { Metrics, SuiteResult } from "./runner.js";
 
 export interface SceneResult {
 	name: string;
