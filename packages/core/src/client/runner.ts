@@ -104,8 +104,14 @@ class Validator implements BenchmarkWorker {
 
 	private value: any = Validator.NONE;
 
-	constructor(isEqual: CheckEquality) {
-		this.isEqual = isEqual;
+	constructor(option?: boolean | CheckEquality) {
+		if (option === true) {
+			this.isEqual = (a, b) => a === b;
+		} else if (option) {
+			this.isEqual = option;
+		} else {
+			this.isEqual = () => true;
+		}
 	}
 
 	onScene = noop;
@@ -198,31 +204,15 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		}
 	}
 
-	function validate() {
-		const { validateExecution, validateReturnValue } = config;
-
-		if (!validateExecution && !validateReturnValue) {
-			return;
-		}
-
-		let isEqual: CheckEquality;
-		if (validateReturnValue === true) {
-			isEqual = (a, b) => a === b;
-		} else if (validateReturnValue) {
-			isEqual = validateReturnValue;
-		} else {
-			isEqual = () => true;
-		}
-
-		return run(new Validator(isEqual));
+	const { validateExecution, validateReturnValue } = config;
+	if (validateExecution || validateReturnValue) {
+		await run(new Validator(validateReturnValue));
 	}
 
-	await validate();
-
-	const x = serializable(params);
-	const workloadRunner = new WorkloadRunner(config, logger, x.length);
+	const { length, processed } = serializable(params);
+	const workloadRunner = new WorkloadRunner(config, logger, length);
 	await run(workloadRunner);
-	await afterAll();
 
-	return { paramDef: x.processed, scenes: workloadRunner.suiteResult };
+	await afterAll();
+	return { paramDef: processed, scenes: workloadRunner.suiteResult };
 }

@@ -1,7 +1,7 @@
 import { identity } from "@kaciras/utilities/node";
 import { fileReporter, Reporter } from "./report.js";
 import NodeEngine from "./engine/node.js";
-import { nopBuilder } from "./builder/nop.js";
+import noBuild from "./builder/default.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
 
 export interface Stage {
@@ -31,7 +31,7 @@ export function normalizeConfig(config: ESBenchConfig) {
 	config.stages ??= [];
 
 	for (const scene of config.stages) {
-		scene.builder ??= nopBuilder;
+		scene.builder ??= noBuild;
 		scene.engines ??= [new NodeEngine()];
 
 		if (scene.engines.length === 0) {

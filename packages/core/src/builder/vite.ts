@@ -1,19 +1,19 @@
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { BuildContext, Builder } from "../stage.js";
 
-const ENTRY_ID = "./ESBench_Main.js";
+const entryId = "./ESBench_Main.js";
 
-const mainCode = `\
+const template = `\
 import { connect } from "@esbench/core/client";
 
 const suites = {__IMPORTS__\n};
 
-function dynamicImport(file) {
+function doImport(file) {
 	return suites[file]();
 }
 
 export default function (channel, files, name) {
-	return connect(channel, dynamicImport, files, name);
+	return connect(channel, doImport, files, name);
 }`;
 
 function createEntry(files: string[]) {
@@ -21,19 +21,19 @@ function createEntry(files: string[]) {
 	for (const file of files) {
 		imports += `\n\t"${file}": () => import("${file}"),`;
 	}
-	return mainCode.replace("__IMPORTS__", imports);
+	return template.replace("__IMPORTS__", imports);
 }
 
 function vitePlugin(files: string[]): Plugin {
 	return {
 		name: "ESBench-entry",
 		resolveId(id) {
-			if (id === ENTRY_ID) {
-				return ENTRY_ID;
+			if (id === entryId) {
+				return entryId;
 			}
 		},
 		load(id) {
-			if (id === ENTRY_ID) {
+			if (id === entryId) {
 				return createEntry(files);
 			}
 		},
@@ -41,17 +41,11 @@ function vitePlugin(files: string[]): Plugin {
 }
 
 const defaults: InlineConfig = {
+	configFile: false,
 	build: {
 		target: "esnext",
 		minify: false,
 		modulePreload: false,
-		rollupOptions: {
-			preserveEntrySignatures: "strict",
-			input: ENTRY_ID,
-			output: {
-				entryFileNames: "[name].js",
-			},
-		},
 	},
 };
 
@@ -70,11 +64,16 @@ export default class ViteBuilder implements Builder {
 		const config = mergeConfig(this.config, {
 			build: {
 				outDir: ctx.root,
+				rollupOptions: {
+					preserveEntrySignatures: "strict",
+					input: entryId,
+					output: {
+						entryFileNames: "[name].js",
+					},
+				},
 			},
-			plugins: [
-				vitePlugin(ctx.files),
-			],
+			plugins: [vitePlugin(ctx.files)],
 		});
-		return build(config).then(() => ENTRY_ID);
+		return build(config).then(() => entryId);
 	}
 }
