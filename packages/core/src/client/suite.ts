@@ -6,9 +6,9 @@ export type SyncWorkload = () => unknown;
 
 export type Workload = AsyncWorkload | SyncWorkload;
 
-type CheckEquality = (a: any, b: any) => boolean;
+export type CheckEquality = (a: any, b: any) => boolean;
 
-export interface SuiteOptions {
+export interface SuiteConfig {
 	samples?: number;
 	iterations?: number | string;
 	validateExecution?: boolean;
@@ -54,6 +54,9 @@ export class Scene {
 	}
 
 	private check(name: string) {
+		if (/^\s*$/.test(name)) {
+			throw new Error("Workload name cannot be a blank string.");
+		}
 		if (this.cases.some(c => c.name === name)) {
 			throw new Error(`Workload "${name}" already exists.`);
 		}
@@ -66,7 +69,7 @@ export interface BenchmarkSuite<T extends CPSrcObject> {
 	main: CreateScene<T>;
 	params?: T;
 	afterAll?: HookFn;
-	options?: SuiteOptions;
+	config?: SuiteConfig;
 }
 
 type Empty = Record<string, never>;

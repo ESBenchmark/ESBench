@@ -1,5 +1,5 @@
 import { Awaitable, cartesianObject, CPSrcObject, durationFmt, ellipsis, noop } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkSuite, HookFn, Scene, SuiteOptions } from "./suite.js";
+import { BenchmarkCase, BenchmarkSuite, CheckEquality, HookFn, Scene, SuiteConfig } from "./suite.js";
 
 function toDisplay(v: unknown, i: number) {
 	switch (typeof v) {
@@ -43,11 +43,11 @@ function runHooks(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
 }
 
-function createRunner(ctx: Scene, case_: BenchmarkCase) {
+function createInvoker(ctx: Scene, case_: BenchmarkCase) {
 	const { workload, isAsync } = case_;
 	const { setupIteration, cleanIteration } = ctx;
 
-	async function run() {
+	async function invoke() {
 		await runHooks(setupIteration);
 		const returnValue = await workload();
 		await runHooks(cleanIteration);
@@ -97,7 +97,7 @@ function createRunner(ctx: Scene, case_: BenchmarkCase) {
 		? isAsync
 			? asyncWithSetup : syncWithSetup : noSetup;
 
-	return { run, iterate };
+	return { run: invoke, iterate, name: case_.name };
 }
 
 async function getIterations(fn: IterateFn, targetMS: number) {
@@ -124,113 +124,72 @@ export type SuiteResult = {
 
 type Logger = (message: string) => void;
 
-type NormalizedSuite = BenchmarkSuite<any> & {
-	afterAll: HookFn;
-	options: SuiteOptions;
+interface BenchmarkWorker {
+
+	onScene(scene: Scene): Awaitable<void>;
+
+	onCase(scene: Scene, case_: BenchmarkCase): Awaitable<void>;
 }
 
-const NONE_VALUE = Symbol();
+class Validator implements BenchmarkWorker {
 
-export class SuiteRunner {
+	private static NONE = Symbol();
 
-	private readonly suite: NormalizedSuite;
+	private readonly isEqual: CheckEquality;
+
+	private value: any = Validator.NONE;
+
+	constructor(isEqual: CheckEquality) {
+		this.isEqual = isEqual;
+	}
+
+	onScene = noop;
+
+	async onCase(scene: Scene, case_: BenchmarkCase) {
+		const { value, isEqual } = this;
+		const { run } = createInvoker(scene, case_);
+
+		if (value === Validator.NONE) {
+			this.value = await run();
+		} else if (!isEqual(value, await run())) {
+			const { name } = scene.cases[0];
+			throw new Error(`${case_.name} and ${name} returns different value.`);
+		}
+	}
+}
+
+class WorkloadRunner implements BenchmarkWorker {
+
+	private readonly config: SuiteConfig;
 	private readonly logger: Logger;
+	private readonly total: number;
 
-	constructor(suite: BenchmarkSuite<any>, logger: Logger = console.log) {
+	scenes: WorkloadResult[][] = [];
+	result: WorkloadResult[] = [];
+
+	constructor(config: SuiteConfig, logger: Logger, total: number) {
+		this.config = config;
 		this.logger = logger;
-		this.suite = { afterAll: noop, options: {}, ...suite };
+		this.total = total;
 	}
 
-	private async *generate() {
-		const { params = {}, main } = this.suite;
+	onScene(scene: Scene) {
+		const { scenes, logger, total } = this;
+		const { length } = scene.cases;
+		const index = scenes.push(this.result = []);
 
-		for (const config of cartesianObject(params)) {
-			const scene = new Scene();
-			await main(scene, config);
-			yield scene;
-			await runHooks(scene.cleanEach);
-		}
-	}
-
-	async run(pattern?: RegExp): Promise<SuiteResult> {
-		const isMatch = pattern ? pattern.test.bind(pattern) : () => true;
-
-		await this.validate();
-
-		const { params = {}, main } = this.suite;
-		const scenes: WorkloadResult[][] = [];
-		const x = serializable(params);
-
-		let index = 0;
-		for (const config of cartesianObject(params)) {
-			const scene = new Scene();
-			const result: WorkloadResult[] = [];
-
-			await main(scene, config);
-
-			if (scene.cases.length === 0) {
-				this.logger(`No workload found from scene ${++index}.`);
-			} else {
-				this.logger(`Scene ${++index} of ${x.length}, `
-					+ `${scene.cases.length} workloads.`);
-			}
-
-			for (const case_ of scene.cases) {
-				if (!isMatch(case_.name)) {
-					continue;
-				}
-				result.push(await this.runWorkload(scene, case_));
-			}
-
-			scenes.push(result);
-			await runHooks(scene.cleanEach);
-		}
-
-		await this.suite.afterAll();
-		return { paramDef: x.processed, scenes };
-	}
-
-	private async validate(pattern?: RegExp) {
-		const { params = {}, main, options } = this.suite;
-		let { validateExecution, validateReturnValue } = options;
-
-		if (!validateExecution && !validateReturnValue) {
-			return;
-		}
-		if (validateReturnValue === true) {
-			validateReturnValue = (a, b) => a === b;
-		} else if (!validateReturnValue) {
-			validateReturnValue = () => true;
-		}
-
-		const isMatch = pattern ? pattern.test.bind(pattern) : () => true;
-		let firstValue: any = NONE_VALUE;
-
-		for (const config of cartesianObject(params)) {
-			const scene = new Scene();
-			await main(scene, config);
-			for (const case_ of scene.cases) {
-				if (!isMatch(case_.name)) {
-					continue;
-				}
-				const { run } = createRunner(scene, case_);
-
-				if (firstValue === NONE_VALUE) {
-					firstValue = await run();
-				} else if (!validateReturnValue(firstValue, await run())) {
-					throw new Error(`Return value of ${case_.name} and ${scene.cases[0].name} are different.`);
-				}
-
-				await runHooks(scene.cleanEach);
-			}
+		if (length === 0) {
+			logger(`Warning: No workload found from scene #${index}.`);
+		} else {
+			logger(`Scene ${index} of ${total}, ${length} workloads.`);
 		}
 	}
 
-	private async runWorkload(scene: Scene, case_: BenchmarkCase) {
-		const { samples = 5, iterations = 10_000 } = this.suite.options ?? {};
+	async onCase(scene: Scene, case_: BenchmarkCase) {
+		const { samples = 5, iterations = 10_000 } = this.config;
 		const { name } = case_;
 
-		const { iterate } = createRunner(scene, case_);
+		const { iterate } = createInvoker(scene, case_);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
@@ -247,7 +206,60 @@ export class SuiteRunner {
 			const one = time / count;
 			this.logger(`Sample ${i}, ${durationFmt.formatDiv(time, "ms")}, ${durationFmt.formatDiv(one, "ms")}/op`);
 		}
-
-		return [name, metrics] as WorkloadResult;
 	}
+}
+
+export interface RunSuiteOption {
+	logger?: Logger;
+	pattern?: RegExp;
+}
+
+export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
+	const { main, afterAll = noop, config = {}, params = {} } = suite;
+	const logger = options.logger ?? console.log;
+	const pattern = options.pattern ?? new RegExp("");
+
+	async function run(action: BenchmarkWorker) {
+		for (const comb of cartesianObject(params)) {
+			const scene = new Scene();
+			await main(scene, comb);
+			await action.onScene(scene);
+
+			for (const case_ of scene.cases) {
+				if (!pattern.test(case_.name)) {
+					continue;
+				}
+				await action.onCase(scene, case_);
+			}
+			await runHooks(scene.cleanEach);
+		}
+	}
+
+	function validate() {
+		const { validateExecution, validateReturnValue } = config;
+
+		if (!validateExecution && !validateReturnValue) {
+			return;
+		}
+
+		let isEqual: CheckEquality;
+		if (validateReturnValue === true) {
+			isEqual = (a, b) => a === b;
+		} else if (validateReturnValue) {
+			isEqual = validateReturnValue;
+		} else {
+			isEqual = () => true;
+		}
+
+		return run(new Validator(isEqual));
+	}
+
+	await validate();
+
+	const x = serializable(params);
+	const workloadRunner = new WorkloadRunner(config, logger, x.length);
+	await run(workloadRunner);
+	await afterAll();
+
+	return { paramDef: x.processed, scenes: workloadRunner.scenes };
 }

@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { BenchmarkSuite, defineSuite, ResultCollector, SuiteRunner } from "../../src/client/index.js";
+import { CPSrcObject } from "@kaciras/utilities/browser";
+import { BenchmarkSuite, defineSuite, ResultCollector, runSuite } from "../../src/client/index.js";
 
 function fib(n: number) {
 	let a = 0;
@@ -13,7 +13,7 @@ function fib(n: number) {
 }
 
 function run<T extends CPSrcObject>(suite: BenchmarkSuite<T>, pattern?: RegExp) {
-	return new SuiteRunner(suite, noop).run(pattern);
+	return runSuite(suite, { pattern });
 }
 
 it("should works", async () => {
@@ -35,7 +35,7 @@ it("should works", async () => {
 it("should validate executions", async () => {
 	const fn = vi.fn();
 	const suite = defineSuite({
-		options: {
+		config: {
 			validateExecution: true,
 		},
 		params: {
@@ -56,7 +56,7 @@ it("should validate executions", async () => {
 
 it("should validate return values", () => {
 	const suite = defineSuite({
-		options: {
+		config: {
 			validateReturnValue: true,
 		},
 		main(scene) {
@@ -70,7 +70,7 @@ it("should validate return values", () => {
 
 it("should support custom validator", () => {
 	const suite = defineSuite({
-		options: {
+		config: {
 			validateReturnValue: a => a === 11,
 		},
 		main(scene) {
@@ -93,7 +93,7 @@ it("should call lifecycle hooks", async () => {
 	const afterAll = () => invocations.push(afterAll);
 
 	await run({
-		options: { iterations: 1, samples: 1 },
+		config: { iterations: 1, samples: 1 },
 		params: { n: [10, 100] },
 		afterAll,
 		main(scene) {
