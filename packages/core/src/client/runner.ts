@@ -165,6 +165,8 @@ class WorkloadRunner implements BenchmarkWorker {
 			metrics.time.push(time);
 			this.logger(`Actual: ${timeDetail(time, count)}`);
 		}
+
+		this.sceneResult.push([case_.name, metrics]);
 	}
 
 	async getIterations(fn: IterateFn, target: string) {

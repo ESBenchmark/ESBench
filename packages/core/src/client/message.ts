@@ -11,7 +11,7 @@ function toDisplay(v: unknown, i: number) {
 		case "function":
 			return `func ${ellipsis(v.name, 10)} #${i}`;
 		default:
-			return ellipsis("" + v, 16) + `#${i}`;
+			return ellipsis("" + v, 16) + ` #${i}`;
 	}
 }
 
