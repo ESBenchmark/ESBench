@@ -149,7 +149,7 @@ class WorkloadRunner implements BenchmarkWorker {
 	}
 
 	async onCase(scene: Scene, case_: BenchmarkCase) {
-		const { samples = 5, iterations = 10_000 } = this.config;
+		const { samples = 10, iterations = "1s" } = this.config;
 		const { iterate } = createInvoker(scene, case_);
 		this.logger(`\nBenchmark: ${case_.name}`);
 
