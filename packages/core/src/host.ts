@@ -31,16 +31,23 @@ export class ESBench {
 
 		for (const { builder, engines } of stages) {
 			const root = mkdtempSync(join(tempDir, "build-"));
+			const { name } = builder;
 
-			console.log(`Building with ${builder.name}...`);
+			console.log(`Building with ${name}...`);
 			const entry = await builder.build({ root, files });
+			const value = { entry, name, root };
 
 			for (const engine of engines) {
-				map.add(engine, { entry, name: builder.name, root });
+				map.add(engine, value);
 			}
 		}
 
 		const result: ESBenchResult = {};
+		const context: Partial<RunOptions> = {
+			tempDir,
+			files,
+			pattern: pattern?.source,
+		};
 
 		for (const [engine, builds] of map) {
 			const engineName = await engine.start();
@@ -48,8 +55,10 @@ export class ESBench {
 
 			for (const { name, root, entry } of builds) {
 				const collector = new ResultCollector(result, engineName, name);
+				context.root = root;
+				context.entry = entry;
 
-				const handleMessage = (message: ClientMessage) => {
+				context.handleMessage = (message: ClientMessage) => {
 					if ("log" in message) {
 						console.log(message.log);
 					} else {
@@ -57,9 +66,7 @@ export class ESBench {
 					}
 				};
 
-				await engine.run({
-					tempDir, root, entry, files, pattern: pattern?.source, handleMessage,
-				});
+				await engine.run(context as RunOptions);
 			}
 
 			await engine.close();
