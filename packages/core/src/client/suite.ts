@@ -1,19 +1,10 @@
 import { Awaitable, CPRowObject, CPSrcObject } from "@kaciras/utilities/browser";
 
-export type AsyncWorkload = () => Promise<unknown>;
+type AsyncWorkload = () => Promise<unknown>;
 
-export type SyncWorkload = () => unknown;
+type SyncWorkload = () => unknown;
 
-export type Workload = AsyncWorkload | SyncWorkload;
-
-export type CheckEquality = (a: any, b: any) => boolean;
-
-export interface SuiteConfig {
-	samples?: number;
-	iterations?: number | string;
-	validateExecution?: boolean;
-	validateReturnValue?: boolean | CheckEquality;
-}
+type Workload = AsyncWorkload | SyncWorkload;
 
 export interface BenchmarkCase {
 	name: string;
@@ -65,7 +56,17 @@ export class Scene {
 
 export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
+export type CheckEquality = (a: any, b: any) => boolean;
+
+export interface SuiteConfig {
+	samples?: number;
+	iterations?: number | string;
+	validateExecution?: boolean;
+	validateReturnValue?: boolean | CheckEquality;
+}
+
 export interface BenchmarkSuite<T extends CPSrcObject> {
+	name: string;
 	main: CreateScene<T>;
 	params?: T;
 	afterAll?: HookFn;

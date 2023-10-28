@@ -3,9 +3,9 @@ import { join } from "path/posix";
 import { performance } from "perf_hooks";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
-import { BenchmarkEngine } from "./stage.js";
+import { BenchmarkEngine, RunOptions } from "./stage.js";
 import { ESBenchConfig, normalizeConfig, NormalizedESConfig } from "./config.js";
-import { ClientMessage, ESBenchResult, ResultCollector } from "./client/index.js";
+import { ClientMessage, ESBenchResult } from "./client/index.js";
 
 interface Build {
 	name: string;
@@ -17,8 +17,8 @@ export class ESBench {
 
 	private readonly config: NormalizedESConfig;
 
-	constructor(options: ESBenchConfig) {
-		this.config = normalizeConfig(options);
+	constructor(config: ESBenchConfig) {
+		this.config = normalizeConfig(config);
 	}
 
 	async run(pattern?: RegExp) {
@@ -35,11 +35,7 @@ export class ESBench {
 
 			console.log(`Building with ${name}...`);
 			const entry = await builder.build({ root, files });
-			const value = { entry, name, root };
-
-			for (const engine of engines) {
-				map.add(engine, value);
-			}
+			map.distribute(engines, { entry, name, root });
 		}
 
 		const result: ESBenchResult = {};
@@ -49,23 +45,27 @@ export class ESBench {
 			pattern: pattern?.source,
 		};
 
+		function setHandler(engine: string, builder: string) {
+			context.handleMessage = (message: ClientMessage) => {
+				if ("log" in message) {
+					console.log(message.log);
+				} else {
+					const { name, scenes, paramDef } = message;
+					(result[name] ??= []).push({
+						scenes, paramDef, engine, builder,
+					});
+				}
+			};
+		}
+
 		for (const [engine, builds] of map) {
 			const engineName = await engine.start();
 			console.log(`Running suites on ${engineName}.`);
 
 			for (const { name, root, entry } of builds) {
-				const collector = new ResultCollector(result, engineName, name);
+				setHandler(engineName, name);
 				context.root = root;
 				context.entry = entry;
-
-				context.handleMessage = (message: ClientMessage) => {
-					if ("log" in message) {
-						console.log(message.log);
-					} else {
-						collector.collect(message.file, message.result);
-					}
-				};
-
 				await engine.run(context as RunOptions);
 			}
 

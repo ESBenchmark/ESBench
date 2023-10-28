@@ -1,6 +1,7 @@
 import { Awaitable, cartesianObject, durationFmt, noop } from "@kaciras/utilities/browser";
 import { BenchmarkCase, BenchmarkSuite, CheckEquality, HookFn, Scene, SuiteConfig } from "./suite.js";
 import { serializable, timeDetail } from "./message.js";
+import { Metrics, WorkloadResult } from "./collect.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -65,19 +66,9 @@ function createInvoker(ctx: Scene, case_: BenchmarkCase) {
 	return { run: invoke, iterate, name: case_.name };
 }
 
-type ParamDefs = Record<string, any[]>;
-export type Metrics = Record<string, any[]>;
-
-type WorkloadResult = [string, Metrics];
-
-export type SuiteResult = {
-	paramDef: ParamDefs;
-	scenes: WorkloadResult[][];
-};
-
 type Logger = (message: string) => void;
 
-interface BenchmarkWorker {
+export interface BenchmarkWorker {
 
 	onScene(scene: Scene): Awaitable<void>;
 
@@ -125,8 +116,8 @@ class WorkloadRunner implements BenchmarkWorker {
 	private readonly logger: Logger;
 	private readonly total: number;
 
-	suiteResult: WorkloadResult[][] = [];
-	sceneResult: WorkloadResult[] = [];
+	result: WorkloadResult[][] = [];
+	sceneRecords: WorkloadResult[] = [];
 
 	constructor(config: SuiteConfig, logger: Logger, total: number) {
 		this.config = config;
@@ -135,11 +126,11 @@ class WorkloadRunner implements BenchmarkWorker {
 	}
 
 	onScene(scene: Scene) {
-		const { suiteResult, logger, total } = this;
+		const { result, logger, total } = this;
 		const { length } = scene.cases;
 
-		const x = this.sceneResult = [];
-		const index = suiteResult.push(x);
+		const x = this.sceneRecords = [];
+		const index = result.push(x);
 
 		if (length === 0) {
 			logger(`\nWarning: No workload found from scene #${index}.`);
@@ -166,7 +157,7 @@ class WorkloadRunner implements BenchmarkWorker {
 			this.logger(`Actual: ${timeDetail(time, count)}`);
 		}
 
-		this.sceneResult.push([case_.name, metrics]);
+		this.sceneRecords.push({ name: case_.name, metrics });
 	}
 
 	async getIterations(fn: IterateFn, target: string) {
@@ -190,8 +181,14 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
+export interface RunSuiteResult {
+	name: string;
+	paramDef: Record<string, string[]>;
+	scenes: WorkloadResult[][];
+}
+
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
-	const { main, afterAll = noop, config = {}, params = {} } = suite;
+	const { name, main, afterAll = noop, config = {}, params = {} } = suite;
 	const logger = options.logger ?? console.log;
 	const pattern = options.pattern ?? new RegExp("");
 
@@ -216,10 +213,11 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		await run(new Validator(validateReturnValue));
 	}
 
-	const { length, processed } = serializable(params);
+	const { length, paramDef } = serializable(params);
 	const workloadRunner = new WorkloadRunner(config, logger, length);
 	await run(workloadRunner);
 
 	await afterAll();
-	return { paramDef: processed, scenes: workloadRunner.suiteResult };
+
+	return { name, paramDef, scenes: workloadRunner.result } as RunSuiteResult;
 }

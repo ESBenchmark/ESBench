@@ -17,13 +17,13 @@ function toDisplay(v: unknown, i: number) {
 
 export function serializable(params: CPSrcObject) {
 	const entries = Object.entries(params);
-	const processed: Record<string, string[]> = {};
+	const paramDef: Record<string, string[]> = {};
 	let length = 0;
 	let current: string[];
 
 	for (let i = 0; i < entries.length; i++) {
 		const [key, values] = entries[i];
-		processed[key] = current = [];
+		paramDef[key] = current = [];
 
 		for (const v of values) {
 			const k = current.length;
@@ -33,7 +33,7 @@ export function serializable(params: CPSrcObject) {
 		length += current.length;
 	}
 
-	return { length, processed };
+	return { length, paramDef };
 }
 
 export function timeDetail(time: number, count: number) {

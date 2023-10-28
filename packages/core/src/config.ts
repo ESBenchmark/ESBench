@@ -1,9 +1,9 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
-import { fileReporter } from "./reporter/file.js";
-import { ESBenchResult } from "./client/index.js";
+import { ESBenchResult } from "./client/collect.js";
 import NodeEngine from "./engine/node.js";
-import noBuild from "./builder/default.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
+import noBuild from "./builder/default.js";
+import consoleReporter from "./reporter/console.js";
 
 export interface Stage {
 	builder?: Builder;
@@ -33,18 +33,18 @@ export type NormalizedESConfig = ESBenchConfig & {
 export function normalizeConfig(config: ESBenchConfig) {
 	config.stages ??= [];
 
-	for (const scene of config.stages) {
-		scene.builder ??= noBuild;
-		scene.engines ??= [new NodeEngine()];
+	for (const stage of config.stages) {
+		stage.builder ??= noBuild;
+		stage.engines ??= [new NodeEngine()];
 
-		if (scene.engines.length === 0) {
+		if (stage.engines.length === 0) {
 			throw new Error("No engines.");
 		}
 	}
 
 	config.tempDir ??= ".esbench-tmp";
 	config.cleanTempDir ??= true;
-	config.reporters ??= [fileReporter()];
+	config.reporters ??= [consoleReporter()];
 
 	return config as NormalizedESConfig;
 }

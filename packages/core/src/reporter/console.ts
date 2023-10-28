@@ -1,20 +1,19 @@
 import { stdout } from "process";
 import chalk from "chalk";
 import envinfo from "envinfo";
+import { StageResult } from "../client/collect.js";
 import { Reporter } from "../config.js";
-import { SceneResult } from "../client/collect.js";
 
 interface ConsoleReporterOptions {
 	metrics?: any[];
 }
 
-// suite -> stage -> scene -> case
-function reportSuite(results: SceneResult[], options: ConsoleReporterOptions) {
-	// TODO
+function reportSuite(results: StageResult[], options: ConsoleReporterOptions) {
+
 }
 
 export default function (options: ConsoleReporterOptions = {}): Reporter {
-	return async results => {
+	return async result => {
 		stdout.write(chalk.blueBright("OS: "));
 		console.log((await envinfo.helpers.getOSInfo())[1]);
 
@@ -24,10 +23,10 @@ export default function (options: ConsoleReporterOptions = {}): Reporter {
 		stdout.write(chalk.blueBright("Memory: "));
 		console.log((await envinfo.helpers.getMemoryInfo())[1]);
 
-		for (const [file, scenes] of Object.entries(results)) {
+		for (const [name, stages] of Object.entries(result)) {
 			stdout.write(chalk.yellowBright("\nSuite: "));
-			console.log(file);
-			reportSuite(scenes, options);
+			console.log(name);
+			reportSuite(stages, options);
 		}
 	};
 }
