@@ -38,9 +38,6 @@ importers:
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
-      csv-stringify:
-        specifier: ^6.4.4
-        version: 6.4.4
       envinfo:
         specifier: ^7.10.0
         version: 7.10.0
@@ -1044,10 +1041,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
     dev: true
-
-  /csv-stringify@6.4.4:
-    resolution: {integrity: sha512-NDshLupGa7gp4UG4sSNIqwYJqgSwvds0SvENntxoVoVvTzXcrHvd5gG2MWpbRpSNvk59dlmIe1IwNvSxN4IVmg==}
-    dev: false
 
   /debug@4.3.4:
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}

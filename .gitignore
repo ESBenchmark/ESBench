@@ -27,3 +27,4 @@ pnpm-debug.log*
 packages/core/lib
 packages/reporter-html/build
 .esbench-tmp
+benchmark.json
