@@ -24,6 +24,7 @@ pnpm-debug.log*
 *.sw?
 
 # Generated files
+packages/core/html
 packages/core/lib
 packages/reporter-html/build
 .esbench-tmp
