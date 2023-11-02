@@ -66,7 +66,11 @@ function createInvoker(ctx: Scene, case_: BenchmarkCase) {
 	return { run: invoke, iterate, name: case_.name };
 }
 
-type Logger = (message: string) => void;
+/**
+ * A function that intercepts log messages. If not supplied, logs are printed to the console.
+ * Calling this function always requires `await` in order to send the message as soon as possible.
+ */
+type Logger = (message: string) => Awaitable<void>;
 
 export interface BenchmarkWorker {
 
@@ -125,7 +129,7 @@ class WorkloadRunner implements BenchmarkWorker {
 		this.total = total;
 	}
 
-	onScene(scene: Scene) {
+	async onScene(scene: Scene) {
 		const { result, logger, total } = this;
 		const { length } = scene.cases;
 
@@ -133,16 +137,16 @@ class WorkloadRunner implements BenchmarkWorker {
 		const index = result.push(x);
 
 		if (length === 0) {
-			logger(`\nWarning: No workload found from scene #${index}.`);
+			await logger(`\nWarning: No workload found from scene #${index}.`);
 		} else {
-			logger(`\nScene ${index} of ${total}, ${length} workloads.`);
+			await logger(`\nScene ${index} of ${total}, ${length} workloads.`);
 		}
 	}
 
 	async onCase(scene: Scene, case_: BenchmarkCase) {
 		const { warmup = 5, samples = 10, iterations = "1s" } = this.config;
 		const { iterate } = createInvoker(scene, case_);
-		this.logger(`\nBenchmark: ${case_.name}`);
+		await this.logger(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
@@ -151,16 +155,16 @@ class WorkloadRunner implements BenchmarkWorker {
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
-			this.logger(`Wramup: ${timeDetail(time, count)}`);
+			await this.logger(`Wramup: ${timeDetail(time, count)}`);
 		}
 
 		const metrics: Metrics = { time: [] };
-		this.logger("");
+		await this.logger("");
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			metrics.time.push(time);
-			this.logger(`Actual: ${timeDetail(time, count)}`);
+			await this.logger(`Actual: ${timeDetail(time, count)}`);
 		}
 
 		this.sceneRecords.push({ name: case_.name, metrics });
@@ -173,11 +177,11 @@ class WorkloadRunner implements BenchmarkWorker {
 		let time = 0;
 		while (time < targetMS) {
 			time = await fn(count);
-			this.logger(`Pilot: ${timeDetail(time, count)}`);
+			await this.logger(`Pilot: ${timeDetail(time, count)}`);
 			count *= 2;
 		}
 
-		this.logger("");
+		await this.logger("");
 		return Math.ceil(count / 2 * targetMS / time);
 	}
 }
