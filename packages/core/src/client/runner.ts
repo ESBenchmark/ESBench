@@ -1,5 +1,5 @@
 import { Awaitable, cartesianObject, durationFmt, noop } from "@kaciras/utilities/browser";
-import { BenchmarkCase, BenchmarkSuite, CheckEquality, HookFn, Scene, SuiteConfig } from "./suite.js";
+import { BenchmarkCase, BenchmarkSuite, EqualityFn, HookFn, Scene, SuiteConfig } from "./suite.js";
 import { serializable, timeDetail } from "./message.js";
 import { Metrics, WorkloadResult } from "./collect.js";
 
@@ -79,11 +79,11 @@ class Validator implements BenchmarkWorker {
 
 	private static NONE = Symbol();
 
-	private readonly isEqual: CheckEquality;
+	private readonly isEqual: EqualityFn;
 
 	private value: any = Validator.NONE;
 
-	constructor(option?: boolean | CheckEquality) {
+	constructor(option?: boolean | EqualityFn) {
 		if (option === true) {
 			this.isEqual = (a, b) => a === b;
 		} else if (option) {
@@ -140,7 +140,7 @@ class WorkloadRunner implements BenchmarkWorker {
 	}
 
 	async onCase(scene: Scene, case_: BenchmarkCase) {
-		const { samples = 10, iterations = "1s" } = this.config;
+		const { warmup = 5, samples = 10, iterations = "1s" } = this.config;
 		const { iterate } = createInvoker(scene, case_);
 		this.logger(`\nBenchmark: ${case_.name}`);
 
@@ -149,7 +149,13 @@ class WorkloadRunner implements BenchmarkWorker {
 			? iterations
 			: await this.getIterations(iterate, iterations);
 
+		for (let i = 0; i < warmup; i++) {
+			const time = await iterate(count);
+			this.logger(`Wramup: ${timeDetail(time, count)}`);
+		}
+
 		const metrics: Metrics = { time: [] };
+		this.logger("");
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);

@@ -56,13 +56,43 @@ export class Scene {
 
 export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
-export type CheckEquality = (a: any, b: any) => boolean;
+export type EqualityFn = (a: any, b: any) => boolean;
 
 export interface SuiteConfig {
+
+	/**
+	 * How many target iterations should be performed.
+	 * @default 10
+	 */
 	samples?: number;
+
+	/**
+	 * How many warmup iterations should be performed.
+	 * @default 5
+	 */
+	warmup?: number;
+
+	/**
+	 * Invocation count or time in a single iteration.
+	 *
+	 * If the value is a number it used as invocation count.
+	 *
+	 * It is a duration string, it used by Pilot stage to
+	 * estimate the number of invocations per iteration.
+	 *
+	 * @default "1s"
+	 */
 	iterations?: number | string;
+
+	/**
+	 * Checks if it is possible to run your benchmarks by executing each of them once.
+	 */
 	validateExecution?: boolean;
-	validateReturnValue?: boolean | CheckEquality;
+
+	/**
+	 * Checks if benchmarks return equal values.
+	 */
+	validateReturnValue?: boolean | EqualityFn;
 }
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
