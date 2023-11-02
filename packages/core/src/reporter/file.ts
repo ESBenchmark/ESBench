@@ -11,7 +11,7 @@ import { Reporter } from "../config.js";
  *
  * @param name The pattern to use for naming result file.
  */
-export default function (name = "result_[date]_[time].json"): Reporter {
+export default function (name = "reports/benchmark_[date]_[time].json"): Reporter {
 	const zoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
 
 	return result => {

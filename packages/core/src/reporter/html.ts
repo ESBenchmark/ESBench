@@ -13,7 +13,7 @@ export interface HtmlReporterOptions {
 const dist = join(fileURLToPath(import.meta.url), "../../html/index.html");
 
 export default function htmlReporter(options: HtmlReporterOptions = {}) {
-	const { file = "benchmark.html", open } = options;
+	const { file = "reports/benchmark.html", open } = options;
 	const template = readFileSync(dist, "utf8");
 
 	return async (result: ESBenchResult) => {
