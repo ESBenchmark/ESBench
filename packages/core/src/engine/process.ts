@@ -8,7 +8,7 @@ import { writeFileSync } from "fs";
 import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const template = `\
-import runSuites from "__ENTRY__";
+import connect from "__ENTRY__";
 
 function postMessage(message) {
     return fetch(__ADDRESS__, {
@@ -17,11 +17,14 @@ function postMessage(message) {
     });
 }
 
-runSuites(postMessage, __FILES__, __PATTERN__);`;
+connect(postMessage, __FILES__, __PATTERN__);`;
 
 type GetCommand = (file: string) => string;
 
-export default class ProcessRunner implements BenchmarkEngine {
+/**
+ * Call an external JS runtime to run suites, the runtime must support the fetch API.
+ */
+export default class ProcessEngine implements BenchmarkEngine {
 
 	private readonly getCommand: GetCommand;
 
@@ -44,32 +47,31 @@ export default class ProcessRunner implements BenchmarkEngine {
 	}
 
 	run(options: RunOptions) {
-		const { getCommand } = this;
 		const { tempDir, root, entry, files, pattern, handleMessage } = options;
+		const { getCommand } = this;
 
 		this.server = createServer((request, response) => {
-			json(request).then(handleMessage);
 			response.end();
+			json(request).then(handleMessage);
 		});
 
 		this.server.listen();
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 
-		const ee = relative(tempDir, join(root, entry));
+		const specifier = relative(tempDir, join(root, entry));
 
 		const loaderCode = template
 			.replace("__FILES__", JSON.stringify(files))
 			.replace("__PATTERN__", JSON.stringify(pattern))
 			.replace("__ADDRESS__", JSON.stringify(address))
-			.replace("__ENTRY__", "./" + ee);
+			.replace("__ENTRY__", "./" + specifier);
 
 		const script = join(tempDir, "main.js");
 		writeFileSync(script, loaderCode);
 
 		this.process?.kill();
 		this.process = exec(getCommand(script));
-		this.process.on("message", handleMessage);
 		return once(this.process, "exit");
 	}
 }

@@ -8,6 +8,9 @@ import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 
+/**
+ * This class is used to support legacy Node without fetch API.
+ */
 export default class NodeEngine implements BenchmarkEngine {
 
 	private readonly executable?: string;
