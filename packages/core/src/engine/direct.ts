@@ -3,6 +3,9 @@ import { join } from "path/posix";
 import { pathToFileURL } from "url";
 import { BenchmarkEngine, RunOptions } from "../stage.js";
 
+/**
+ * Run suites directly in the current context.
+ */
 export default class DirectEngine implements BenchmarkEngine {
 
 	start() {

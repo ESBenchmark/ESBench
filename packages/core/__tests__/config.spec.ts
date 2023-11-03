@@ -5,7 +5,7 @@ it.each<ESBenchConfig>([
 	{ stages: [{ engines: [] }] },
 	{ stages: [] },
 	{ include: [] },
-])("should fail when required option is empty #%", config => {
+])("should fail when required option is empty", config => {
 	expect(() => normalizeConfig(config)).toThrow();
 });
 
@@ -27,5 +27,5 @@ it("should not modify the user config", () => {
 	expect(config.stages).toHaveLength(1);
 	expect(config.stages[0].builder.name).toBe("NoBuild");
 	expect(config.stages[0].engines).toHaveLength(1);
-	expect(input).toStrictEqual( { stages: [{}] });
+	expect(input).toStrictEqual({ stages: [{}] });
 });

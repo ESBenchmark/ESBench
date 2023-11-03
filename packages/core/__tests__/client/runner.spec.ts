@@ -14,7 +14,12 @@ function fib(n: number) {
 
 function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pattern?: RegExp) {
 	suite.name ??= "Test Suite";
-	suite.config ??= { iterations: 1, samples: 1, warmup: 0 };
+	suite.config = {
+		iterations: 1,
+		samples: 1,
+		warmup: 0,
+		...suite.config,
+	};
 	return runSuite(suite as any, { logger: noop, pattern });
 }
 

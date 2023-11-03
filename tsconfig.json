@@ -4,6 +4,7 @@
 		"module": "ESNext",
 		"moduleResolution": "NodeNext",
 		"lib": ["ESNext"],
+		"noEmit": true,
 		"declaration": true,
 		"sourceMap": true,
 		"strict": true,

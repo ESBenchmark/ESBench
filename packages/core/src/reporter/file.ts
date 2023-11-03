@@ -23,5 +23,6 @@ export default function (name = "reports/benchmark_[date]_[time].json"): Reporte
 
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, JSON.stringify(result));
+		console.info("Benchmark result saved to: " + file);
 	};
 }
