@@ -153,6 +153,13 @@ class WorkloadRunner implements BenchmarkWorker {
 			? iterations
 			: await this.getIterations(iterate, iterations);
 
+		if (samples <= 0) {
+			throw new Error("The number of samples must be at least 1.");
+		}
+		if (count <= 0) {
+			throw new Error("The number of iterations cannot be 0 or negative.");
+		}
+
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
 			await this.logger(`Wramup: ${timeDetail(time, count)}`);
