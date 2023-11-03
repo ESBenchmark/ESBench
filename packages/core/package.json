@@ -24,6 +24,9 @@
 	"bin": {
 		"esbench": "bin/cli.js"
 	},
+	"scripts": {
+		"test": "vitest run"
+	},
 	"dependencies": {
 		"@kaciras/utilities": "^0.10.2",
 		"chalk": "^5.3.0",
