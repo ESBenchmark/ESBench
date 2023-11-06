@@ -13,7 +13,7 @@ interface Build {
 	entry: string;
 }
 
-export class ESBench {
+export class ESBenchHost {
 
 	private readonly config: NormalizedESConfig;
 
@@ -21,13 +21,22 @@ export class ESBench {
 		this.config = normalizeConfig(config);
 	}
 
-	async run(pattern?: RegExp) {
+	async run(filename?: string, nameRegex?: RegExp) {
 		const { include, stages, reporters, tempDir, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
 		mkdirSync(tempDir, { recursive: true });
 		const files = await glob(include);
 		const map = new MultiMap<BenchmarkEngine, Build>();
+
+		if (filename) {
+			if (files.includes(filename)) {
+				files.length = 1;
+				files[0] = filename;
+			} else {
+				throw new Error(`File "${filename}" does not match any stage`);
+			}
+		}
 
 		for (const { builder, engines } of stages) {
 			const root = mkdtempSync(join(tempDir, "build-"));
@@ -42,7 +51,7 @@ export class ESBench {
 		const context: Partial<RunOptions> = {
 			tempDir,
 			files,
-			pattern: pattern?.source,
+			pattern: nameRegex?.source,
 		};
 
 		function setHandler(engine: string, builder: string) {
@@ -58,9 +67,11 @@ export class ESBench {
 			};
 		}
 
+		console.log(`${map.count} stages for ${map.size} engines.`);
+
 		for (const [engine, builds] of map) {
 			const engineName = await engine.start();
-			console.log(`Running suites on ${engineName}.`);
+			console.log(`Running suites with: ${engineName}.`);
 
 			for (const { name, root, entry } of builds) {
 				setHandler(engineName, name);
