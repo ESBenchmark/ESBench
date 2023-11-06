@@ -14,8 +14,12 @@ export async function connect(channel: Channel, importer: Importer, files: strin
 		pattern: regex ? new RegExp(regex) : undefined,
 	};
 
-	for (const file of files) {
-		const { default: suite } = await importer(file);
-		channel(await runSuite(suite, option));
+	try {
+		for (const file of files) {
+			const { default: suite } = await importer(file);
+			channel(await runSuite(suite, option));
+		}
+	} catch (e) {
+		channel({ log: `Suite execution failed: ${e.message}` });
 	}
 }

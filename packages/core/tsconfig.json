@@ -9,9 +9,10 @@
 		"outDir": "lib",
 		"strict": true,
 		"resolveJsonModule": true,
+		"declaration": true,
 		"sourceMap": true,
 		"skipLibCheck": true,
 		"allowSyntheticDefaultImports": true,
-		"declaration": true
+		"useUnknownInCatchVariables": false
 	}
 }
