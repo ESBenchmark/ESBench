@@ -8,7 +8,11 @@ declare function _ESBenchChannel(message: any): void;
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
-const BlankHTML = {
+const PageHTML = {
+	headers: {
+		"Cross-Origin-Opener-Policy": "same-origin",
+		"Cross-Origin-Embedder-Policy": "require-corp",
+	},
 	contentType: "text/html",
 	body: "<html><head></head><body></body></html>",
 };
@@ -53,10 +57,11 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
 
 		await context.route("**/*", (route, request) => {
-			if (request.url() === baseURL) {
-				return route.fulfill(BlankHTML);
+			const url = request.url();
+			if (url === baseURL) {
+				return route.fulfill(PageHTML);
 			}
-			const path = decodeURIComponent(request.url().slice(baseURL.length - 1));
+			const path = decodeURIComponent(url.slice(baseURL.length - 1));
 			const body = readFileSync(join(root, path));
 			return route.fulfill({ body, contentType: "text/javascript" });
 		});
