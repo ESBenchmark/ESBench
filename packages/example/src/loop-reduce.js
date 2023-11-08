@@ -5,7 +5,7 @@ export default defineSuite({
 	params: {
 		length: [0, 1000, 1000_000],
 	},
-	main(scene, params) {
+	setup(scene, params) {
 		const values = new Array(params.length);
 		for (let i = 0; i < params.length; i++) {
 			values.push(Math.random());

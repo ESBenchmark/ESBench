@@ -205,14 +205,14 @@ export interface RunSuiteResult {
 }
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
-	const { name, main, afterAll = noop, config = {}, params = {} } = suite;
+	const { name, setup, afterAll = noop, config = {}, params = {} } = suite;
 	const logger = options.logger ?? console.log;
 	const pattern = options.pattern ?? new RegExp("");
 
 	async function run(action: BenchmarkWorker) {
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene();
-			await main(scene, comb);
+			await setup(scene, comb);
 			await action.onScene(scene);
 
 			for (const case_ of scene.cases) {

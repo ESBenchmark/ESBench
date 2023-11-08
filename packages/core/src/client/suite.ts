@@ -97,7 +97,7 @@ export interface SuiteConfig {
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
 	name: string;
-	main: CreateScene<T>;
+	setup: CreateScene<T>;
 	params?: T;
 	afterAll?: HookFn;
 	config?: SuiteConfig;
