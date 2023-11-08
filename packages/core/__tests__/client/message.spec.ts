@@ -1,16 +1,32 @@
-import { describe, it } from "vitest";
-import { serializable } from "../../src/client/message.js";
+import { describe, expect, it } from "vitest";
+import { process } from "../../src/client/message.js";
 
-describe("serializable", () => {
-	it("should works", () => {
+describe("process", () => {
+	it.each([
+		["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
+		["", ""],
+
+		[Object.create(null), "[object]"],
+		[{}, "[object Object]"],
+		[{ foo: 11 }, "[object Object]"],
+
+		[123, "123"],
+		[undefined, "undefined"],
+		[null, "null"],
+		[true, "true"],
+
+		[Symbol(), "symbol"],
+		[Symbol("foo"), "symbol(foo)"],
+	])("should get display name of values %#", (value, expected) => {
+		expect(process({ _: [value] }).paramDef._[0]).toBe(expected);
+	});
+
+	it("should return the number of cartesian cells", () => {
 		const params = {
-			a: ["loooooooooooooooooooooooooooooooooooooooooooooooooooong"],
-			b: [{}, Object.create(null), []],
-			c: [123, undefined, null, true],
-			s: [Symbol(), Symbol("foo"), Symbol.for("bar")],
+			foo: [1, 2, 3, 4],
+			bar: [null],
+			baz: ["a", "b"],
 		};
-
-		const s = serializable(params);
-		console.log(s);
+		expect(process(params).length).toBe(8);
 	});
 });

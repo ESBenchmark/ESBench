@@ -1,36 +1,43 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
 
-function toDisplay(v: unknown, i: number) {
+function displayName(v: unknown) {
+	if (Array.isArray(v)) {
+		return ellipsis(`[${v}]`, 16);
+	}
+	if (v === null) {
+		return "null";
+	}
 	switch (typeof v) {
 		case "object":
-			return v === null ? "null" : `object #${i}`;
+			return typeof v.toString === "function"
+				? ellipsis(v.toString(), 16)
+				: "[object]";
 		case "symbol":
 			return v.description
-				? `symbol(${ellipsis(v.description, 10)}) #${i}`
-				: `symbol #${i}`;
+				? `symbol(${ellipsis(v.description, 10)})`
+				: "symbol";
 		case "function":
-			return `func ${ellipsis(v.name, 10)} #${i}`;
+			return v.name
+				? `${ellipsis(v.name, 11)}(...)`
+				: "Anonymous fn";
 		default:
-			return ellipsis("" + v, 16) + ` #${i}`;
+			return ellipsis("" + v, 16);
 	}
 }
 
-export function serializable(params: CPSrcObject) {
+export function process(params: CPSrcObject) {
 	const entries = Object.entries(params);
 	const paramDef: Record<string, string[]> = {};
-	let length = 0;
-	let current: string[];
+	let length = 1;
 
-	for (let i = 0; i < entries.length; i++) {
-		const [key, values] = entries[i];
-		paramDef[key] = current = [];
+	for (const [key, values] of entries) {
+		const current: string[] = [];
+		paramDef[key] = current;
 
 		for (const v of values) {
-			const k = current.length;
-			current.push(toDisplay(v, k));
+			current.push(displayName(v));
 		}
-
-		length += current.length;
+		length *= current.length;
 	}
 
 	return { length, paramDef };
