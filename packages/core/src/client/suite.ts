@@ -1,4 +1,5 @@
 import { Awaitable, CPRowObject, CPSrcObject } from "@kaciras/utilities/browser";
+import { runHooks } from "./utils.js";
 
 type AsyncWorkload = () => Promise<unknown>;
 
@@ -6,21 +7,47 @@ type SyncWorkload = () => unknown;
 
 type Workload = AsyncWorkload | SyncWorkload;
 
-export interface BenchmarkCase {
-	name: string;
-	isAsync: boolean;
-	workload: Workload;
+export class BenchCase {
+
+	readonly setupHooks: HookFn[];
+	readonly cleanHooks: HookFn[];
+
+	readonly name: string;
+	readonly fn: Workload;
+	readonly isAsync: boolean;
+
+	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
+		this.name = name;
+		this.fn = fn;
+		this.isAsync = isAsync;
+		this.setupHooks = scene.setupIteration;
+		this.cleanHooks = scene.cleanIteration;
+	}
+
+	async invoke() {
+		await runHooks(this.setupHooks);
+		try {
+			return this.fn();
+		} finally {
+			await runHooks(this.cleanHooks);
+		}
+	}
 }
 
 export type HookFn = () => Awaitable<unknown>;
 
 export class Scene {
 
-	readonly cases: BenchmarkCase[] = [];
-
-	readonly cleanEach: HookFn[] = [];
 	readonly setupIteration: HookFn[] = [];
 	readonly cleanIteration: HookFn[] = [];
+	readonly cleanEach: HookFn[] = [];
+	readonly cases: BenchCase[] = [];
+
+	private readonly namePattern: RegExp;
+
+	constructor(pattern: RegExp) {
+		this.namePattern = pattern;
+	}
 
 	beforeIteration(fn: HookFn) {
 		this.setupIteration.push(fn);
@@ -34,14 +61,16 @@ export class Scene {
 		this.cleanEach.push(fn);
 	}
 
-	add(name: string, workload: SyncWorkload) {
-		this.check(name);
-		this.cases.push({ name, workload, isAsync: false });
+	bench(name: string, workload: SyncWorkload) {
+		if (this.check(name)) {
+			this.cases.push(new BenchCase(this, name, workload, false));
+		}
 	}
 
-	addAsync(name: string, workload: AsyncWorkload) {
-		this.check(name);
-		this.cases.push({ name, workload, isAsync: true });
+	benchAsync(name: string, workload: AsyncWorkload) {
+		if (this.check(name)) {
+			this.cases.push(new BenchCase(this, name, workload, true));
+		}
 	}
 
 	private check(name: string) {
@@ -51,6 +80,7 @@ export class Scene {
 		if (this.cases.some(c => c.name === name)) {
 			throw new Error(`Workload "${name}" already exists.`);
 		}
+		return this.namePattern.test(name);
 	}
 }
 

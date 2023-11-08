@@ -1,4 +1,5 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
+import { HookFn } from "./suite.js";
 
 function displayName(v: unknown) {
 	if (Array.isArray(v)) {
@@ -41,6 +42,10 @@ export function process(params: CPSrcObject) {
 	}
 
 	return { length, paramDef };
+}
+
+export function runHooks(hooks: HookFn[]) {
+	return Promise.all(hooks.map(hook => hook()));
 }
 
 export function timeDetail(time: number, count: number) {

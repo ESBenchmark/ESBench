@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { process } from "../../src/client/message.js";
+import { process } from "../../src/client/utils.js";
 
 describe("process", () => {
 	it.each([

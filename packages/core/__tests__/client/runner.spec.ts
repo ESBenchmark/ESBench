@@ -28,8 +28,8 @@ it("should works", async () => {
 		params: {
 			n: [10, 100, 1000],
 		},
-		main(scene, params) {
-			scene.add("Test", () => fib(params.n));
+		setup(scene, params) {
+			scene.bench("Test", () => fib(params.n));
 		},
 	});
 
@@ -41,7 +41,7 @@ it("should works", async () => {
 it("should validate sample count", () => {
 	const promise = run({
 		config: { samples: 0 },
-		main: (scene) => scene.add("Test", noop),
+		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
 });
@@ -49,7 +49,7 @@ it("should validate sample count", () => {
 it("should validate iteration count", () => {
 	const promise = run({
 		config: { iterations: 0 },
-		main: (scene) => scene.add("Test", noop),
+		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
 });
@@ -57,7 +57,7 @@ it("should validate iteration count", () => {
 it("should validate iteration time", () => {
 	const promise = run({
 		config: { iterations: "0m" },
-		main: (scene) => scene.add("Test", noop),
+		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
 });
@@ -72,11 +72,11 @@ it("should validate executions", async () => {
 		params: {
 			n: [10, 100, 1000],
 		},
-		main(scene, params) {
-			scene.add("Success", fn);
+		setup(scene, params) {
+			scene.bench("Success", fn);
 
 			if (params.n === 100) {
-				scene.add("Test", () => {throw new Error("x");});
+				scene.bench("Test", () => {throw new Error("x");});
 			}
 		},
 	});
@@ -91,9 +91,9 @@ it("should validate return values", () => {
 		config: {
 			validateReturnValue: true,
 		},
-		main(scene) {
-			scene.add("A", () => 11);
-			scene.add("B", () => 22);
+		setup(scene) {
+			scene.bench("A", () => 11);
+			scene.bench("B", () => 22);
 		},
 	});
 
@@ -106,9 +106,9 @@ it("should support custom validator", () => {
 		config: {
 			validateReturnValue: a => a === 11,
 		},
-		main(scene) {
-			scene.add("A", () => 11);
-			scene.add("B", () => 22);
+		setup(scene) {
+			scene.bench("A", () => 11);
+			scene.bench("B", () => 22);
 		},
 	});
 
@@ -129,12 +129,12 @@ it("should call lifecycle hooks", async () => {
 		config: { iterations: 1, samples: 1 },
 		params: { n: [10, 100] },
 		afterAll,
-		main(scene) {
+		setup(scene) {
 			beforeEach();
 			scene.afterEach(afterEach);
 			scene.beforeIteration(beforeIter);
 			scene.afterIteration(afterIter);
-			scene.add("Foo", workload);
+			scene.bench("Foo", workload);
 		},
 	});
 
@@ -150,9 +150,9 @@ it("should filter workloads with pattern", async () => {
 
 	await run({
 		params: { n: [10, 100] },
-		main(scene) {
-			scene.add("test foo", foo);
-			scene.add("bar test", bar);
+		setup(scene) {
+			scene.bench("test foo", foo);
+			scene.bench("bar test", bar);
 		},
 	}, /^test/);
 
