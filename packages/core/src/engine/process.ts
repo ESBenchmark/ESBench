@@ -38,7 +38,7 @@ export default class ProcessEngine implements BenchmarkEngine {
 	}
 
 	start() {
-		return this.getCommand("<file>");
+		return `External runtime (${this.getCommand("<file>")})`;
 	}
 
 	close() {
@@ -67,6 +67,7 @@ export default class ProcessEngine implements BenchmarkEngine {
 			.replace("__ADDRESS__", JSON.stringify(address))
 			.replace("__ENTRY__", "./" + specifier);
 
+		// No need to make the filename unique because only one engine can run at the same time.
 		const script = join(tempDir, "main.js");
 		writeFileSync(script, loaderCode);
 

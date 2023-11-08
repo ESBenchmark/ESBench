@@ -55,8 +55,8 @@ export default class ViteBuilder implements Builder {
 
 	readonly name: string;
 
-	constructor(config: InlineConfig = {}) {
-		this.name = "Vite";
+	constructor(name = "Vite", config: InlineConfig = {}) {
+		this.name = name;
 		this.config = mergeConfig(defaults, config);
 	}
 

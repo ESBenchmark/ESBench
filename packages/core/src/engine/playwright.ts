@@ -71,6 +71,6 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 		await page.evaluate(client, { files, pattern, entry });
 
 		await page.close();
-		console.log("Evaluate finishd");
+		await context.close();
 	}
 }

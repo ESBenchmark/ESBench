@@ -5,9 +5,6 @@ export default defineSuite({
 	params: {
 		existingSize: [0, 1000, 1000_000],
 	},
-	config: {
-		iterations: "1s",
-	},
 	main(scene, params) {
 		const map = new Map();
 		const obj = {};

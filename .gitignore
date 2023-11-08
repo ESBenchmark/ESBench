@@ -28,4 +28,5 @@ packages/core/html
 packages/core/lib
 packages/reporter-html/build
 .esbench-tmp
+reports
 benchmark.json
