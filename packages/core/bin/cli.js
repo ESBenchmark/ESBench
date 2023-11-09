@@ -21,4 +21,4 @@ config = pathToFileURL(config).toString();
 
 const options = (await import(config)).default;
 
-await new ESBenchHost(options).run(file, name);
+await new ESBenchHost(options).run(file, new RegExp(name));
