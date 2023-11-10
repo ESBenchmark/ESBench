@@ -26,7 +26,7 @@ export interface BenchmarkWorker {
 
 	onSuite?: (ctx: WorkerContext) => Awaitable<void>;
 
-	onScene?: (ctx: WorkerContext, scene: Scene) => Awaitable<void>;
+	onScene?: (ctx: WorkerContext, scene: Scene, params: object) => Awaitable<void>;
 
 	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
@@ -69,6 +69,9 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 			const scene = new Scene(pattern);
 			await setup(scene, comb);
 			try {
+				for (const worker of workers) {
+					await worker.onScene?.(ctx, scene, comb);
+				}
 				await handleScene(scene, workers);
 			} finally {
 				await runHooks(scene.cleanEach);
@@ -85,10 +88,6 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 			await logger(`\nWarning: No workload found from scene #${index}.`);
 		} else {
 			await logger(`\nScene ${index} of ${length}, ${caseCount} workloads.`);
-		}
-
-		for (const worker of workers) {
-			await worker.onScene?.(ctx, scene);
 		}
 
 		for (const case_ of scene.cases) {

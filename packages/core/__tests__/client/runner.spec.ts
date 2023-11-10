@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { BenchmarkSuite, defineSuite, runSuite } from "../../src/client/index.js";
+import { BenchmarkSuite, runSuite } from "../../src/client/index.js";
 
 function fib(n: number) {
 	let a = 0;
@@ -12,7 +12,7 @@ function fib(n: number) {
 	return b;
 }
 
-function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pattern?: RegExp) {
+export function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pattern?: RegExp) {
 	suite.name ??= "Test Suite";
 	suite.config = {
 		iterations: 1,
@@ -60,76 +60,6 @@ it("should validate iteration time", () => {
 		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
-});
-
-it("should validate executions", async () => {
-	const fn = vi.fn();
-	const suite = defineSuite({
-		name: "Test Suite",
-		config: {
-			validate: {},
-		},
-		params: {
-			n: [10, 100, 1000],
-		},
-		setup(scene, params) {
-			scene.bench("Success", fn);
-
-			if (params.n === 100) {
-				scene.bench("Test", () => {throw new Error("x");});
-			}
-		},
-	});
-
-	await expect(run(suite)).rejects.toThrow();
-	expect(fn).toHaveBeenCalledTimes(2);
-});
-
-it("should validate return values", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		config: {
-			validate: { equality: true },
-		},
-		setup(scene) {
-			scene.bench("A", () => 11);
-			scene.bench("B", () => 22);
-		},
-	});
-
-	return expect(run(suite)).rejects.toThrow();
-});
-
-it("should support check the return value", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		config: {
-			validate: {
-				correctness: () => {throw new Error("Test");},
-			},
-		},
-		setup(scene) {
-			scene.bench("A", () => 11);
-			scene.bench("B", () => 22);
-		},
-	});
-
-	return expect(run(suite)).rejects.toThrow();
-});
-
-it("should support custom equality function", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		config: {
-			validate: { equality: () => true },
-		},
-		setup(scene) {
-			scene.bench("A", () => 11);
-			scene.bench("B", () => 22);
-		},
-	});
-
-	return expect(run(suite)).resolves.toBeTruthy();
 });
 
 it("should call lifecycle hooks", async () => {
