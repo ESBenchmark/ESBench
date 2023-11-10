@@ -17,6 +17,5 @@ export default <Builder>{
 		const root = relative(outDir, process.cwd());
 		const code = template.replace("__ROOT__", root.replaceAll("\\", "/"));
 		writeFileSync(join(outDir, "index.js"), code);
-		return "./index.js";
 	},
 };

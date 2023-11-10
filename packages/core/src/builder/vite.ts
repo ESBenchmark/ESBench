@@ -1,7 +1,7 @@
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { BuildContext, Builder } from "../stage.js";
 
-const entryId = "./ESBench_Main.js";
+const entryId = "./index.js";
 
 const template = `\
 import { connect } from "@esbench/core/client";
@@ -24,7 +24,7 @@ function createEntry(files: string[]) {
 	return template.replace("__IMPORTS__", imports);
 }
 
-function vitePlugin(files: string[]): Plugin {
+function esbenchEntryPlugin(files: string[]): Plugin {
 	return {
 		name: "ESBench-entry",
 		resolveId(id) {
@@ -60,8 +60,8 @@ export default class ViteBuilder implements Builder {
 		this.config = mergeConfig(defaults, config);
 	}
 
-	build(outDir: string, files: string[]) {
-		const config = mergeConfig(this.config, {
+	async build(outDir: string, files: string[]) {
+		await build(mergeConfig(this.config, {
 			build: {
 				outDir,
 				rollupOptions: {
@@ -72,8 +72,7 @@ export default class ViteBuilder implements Builder {
 					},
 				},
 			},
-			plugins: [esbenchPlugin(files)],
-		});
-		return build(config).then(() => entryId);
+			plugins: [esbenchEntryPlugin(files)],
+		}));
 	}
 }

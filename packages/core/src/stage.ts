@@ -4,7 +4,13 @@ export interface Builder {
 
 	name: string;
 
-	build(outDir: string, files: string[]): Awaitable<string>;
+	/**
+	 * The entry filename must be [outDir]/index.js
+	 *
+	 * @param outDir
+	 * @param files
+	 */
+	build(outDir: string, files: string[]): Awaitable<void>;
 }
 
 export interface RunOptions {

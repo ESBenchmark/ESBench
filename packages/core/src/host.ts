@@ -69,7 +69,7 @@ export class ESBenchHost {
 		const result: ESBenchResult = {};
 		const context: Partial<RunOptions> = {
 			tempDir,
-			files,
+			entry: "./index.js",
 			pattern: nameRegex?.source,
 		};
 
@@ -90,11 +90,10 @@ export class ESBenchHost {
 			const engineName = await engine.start();
 			console.log(`Running suites with: ${engineName}.`);
 
-			for (const { name, root, entry } of builds) {
+			for (const { files, name, root } of builds) {
 				setHandler(engineName, name);
 				context.files = files;
 				context.root = root;
-				context.entry = entry;
 				await engine.run(context as RunOptions);
 			}
 
