@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
+import mime from "mime";
 import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
@@ -63,7 +64,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 			}
 			const path = decodeURIComponent(url.slice(baseURL.length - 1));
 			const body = readFileSync(join(root, path));
-			return route.fulfill({ body, contentType: "text/javascript" });
+			return route.fulfill({ body, contentType: mime.getType(path)! });
 		});
 
 		const page = await context.newPage();
