@@ -1,32 +1,49 @@
-import { BenchCase, EqualityFn, Scene } from "./suite.js";
+import { noop } from "@kaciras/utilities/browser";
+import { BenchCase } from "./suite.js";
 import { BenchmarkWorker, WorkerContext } from "./runner.js";
+
+export type CheckFn = (value: any) => void;
+
+export type EqualityFn = (a: any, b: any) => boolean;
+
+export interface ValidateOptions {
+	/**
+	 * Check the return value of benchmarks, throw an error if it's invalid.
+	 */
+	correctness?: CheckFn;
+	/**
+	 * Check to make sure the values returned by the benchmarks are equal.
+	 */
+	equality?: boolean | EqualityFn;
+}
 
 const NONE = Symbol();
 
 class PreValidateWorker implements BenchmarkWorker {
 
 	private readonly isEqual: EqualityFn;
+	private readonly check: CheckFn;
 
-	private scene!: Scene;
-	private value: any = NONE;
+	private nameA!: string;
+	private valueA: any = NONE;
 
-	constructor(isEqual: EqualityFn) {
+	constructor(check: CheckFn, isEqual: EqualityFn) {
+		this.check = check;
 		this.isEqual = isEqual;
 	}
 
-	onScene(_: WorkerContext, scene: Scene) {
-		this.scene = scene;
-	}
-
 	async onCase(_: WorkerContext, case_: BenchCase) {
-		const { scene, value, isEqual } = this;
-		const current = await case_.invoke();
+		const { nameA, valueA, isEqual, check } = this;
+		const { name } = case_;
+		const returnValue = await case_.invoke();
 
-		if (value === NONE) {
-			this.value = current;
-		} else if (!isEqual(value, current)) {
-			const { name } = scene.cases[0];
-			throw new Error(`${case_.name} and ${name} returns different value.`);
+		check(returnValue);
+
+		if (valueA === NONE) {
+			this.valueA = returnValue;
+			this.nameA = name;
+		} else if (!isEqual(valueA, returnValue)) {
+			throw new Error(`"${name}" and "${nameA}" returns different value.`);
 		}
 	}
 }
@@ -34,18 +51,20 @@ class PreValidateWorker implements BenchmarkWorker {
 export class ValidateWorker implements BenchmarkWorker {
 
 	private readonly isEqual: EqualityFn;
+	private readonly check: CheckFn;
 
-	constructor(option?: boolean | EqualityFn) {
-		if (option === true) {
+	constructor({ equality, correctness }: ValidateOptions) {
+		this.check = correctness ?? noop;
+		if (equality === true) {
 			this.isEqual = (a, b) => a === b;
-		} else if (option) {
-			this.isEqual = option;
+		} else if (equality) {
+			this.isEqual = equality;
 		} else {
 			this.isEqual = () => true;
 		}
 	}
 
 	onSuite(ctx: WorkerContext) {
-		return ctx.run([new PreValidateWorker(this.isEqual)]);
+		return ctx.run([new PreValidateWorker(this.check, this.isEqual)]);
 	}
 }

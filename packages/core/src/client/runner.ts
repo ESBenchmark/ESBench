@@ -49,12 +49,10 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	const workers: BenchmarkWorker[] = [];
 
-	const { validateExecution, validateReturnValue } = config;
-	if (validateExecution || validateReturnValue) {
-		workers.push(new ValidateWorker(validateReturnValue));
-	}
-
 	workers.push(new TimeWorker(config));
+	if (config.validate) {
+		workers.push(new ValidateWorker(config.validate));
+	}
 
 	const { length, paramDef } = process(params);
 	const scenes: WorkloadResult[][] = [];

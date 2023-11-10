@@ -67,7 +67,7 @@ it("should validate executions", async () => {
 	const suite = defineSuite({
 		name: "Test Suite",
 		config: {
-			validateExecution: true,
+			validate: {},
 		},
 		params: {
 			n: [10, 100, 1000],
@@ -89,7 +89,7 @@ it("should validate return values", () => {
 	const suite = defineSuite({
 		name: "Test Suite",
 		config: {
-			validateReturnValue: true,
+			validate: { equality: true },
 		},
 		setup(scene) {
 			scene.bench("A", () => 11);
@@ -100,11 +100,28 @@ it("should validate return values", () => {
 	return expect(run(suite)).rejects.toThrow();
 });
 
-it("should support custom validator", () => {
+it("should support check the return value", () => {
 	const suite = defineSuite({
 		name: "Test Suite",
 		config: {
-			validateReturnValue: a => a === 11,
+			validate: {
+				correctness: () => {throw new Error("Test");},
+			},
+		},
+		setup(scene) {
+			scene.bench("A", () => 11);
+			scene.bench("B", () => 22);
+		},
+	});
+
+	return expect(run(suite)).rejects.toThrow();
+});
+
+it("should support custom equality function", () => {
+	const suite = defineSuite({
+		name: "Test Suite",
+		config: {
+			validate: { equality: () => true },
 		},
 		setup(scene) {
 			scene.bench("A", () => 11);

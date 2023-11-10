@@ -1,5 +1,6 @@
 import { Awaitable, CPRowObject, CPSrcObject } from "@kaciras/utilities/browser";
 import { runHooks } from "./utils.js";
+import { ValidateOptions } from "./validate.js";
 
 type AsyncWorkload = () => Promise<unknown>;
 
@@ -86,8 +87,6 @@ export class Scene {
 
 export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
-export type EqualityFn = (a: any, b: any) => boolean;
-
 export interface SuiteConfig {
 
 	/**
@@ -115,14 +114,12 @@ export interface SuiteConfig {
 	iterations?: number | string;
 
 	/**
-	 * Checks if it is possible to run your benchmarks by executing each of them once.
+	 * Checks if it is possible to run your benchmarks. If set,
+	 * all scenes and their benchmarks will be run once to ensure no exceptions.
+	 *
+	 * Additional checks can be configured in the options.
 	 */
-	validateExecution?: boolean;
-
-	/**
-	 * Checks if benchmarks return equal values.
-	 */
-	validateReturnValue?: boolean | EqualityFn;
+	validate?: ValidateOptions;
 }
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
