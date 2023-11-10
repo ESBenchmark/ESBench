@@ -1,5 +1,6 @@
+import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { BuildContext, Builder } from "../stage.js";
+import { Builder } from "../stage.js";
 
 const entryId = "./index.js";
 
@@ -49,7 +50,33 @@ const defaults: InlineConfig = {
 	},
 };
 
-export default class ViteBuilder implements Builder {
+export class RollupBuilder implements Builder {
+
+	private readonly config: RollupOptions;
+
+	readonly name: string;
+
+	constructor(name = "Rollup", config: RollupOptions = {}) {
+		this.name = name;
+		this.config = config;
+	}
+
+	async build(dir: string, files: string[]) {
+		let plugins = (await this.config.plugins) || [];
+		if (!Array.isArray(plugins)) {
+			plugins = [plugins];
+		}
+		const bundle = await rollup({
+			...this.config,
+			preserveEntrySignatures: "strict",
+			input: entryId,
+			plugins: [...plugins, esbenchEntryPlugin(files)],
+		});
+		await bundle.write({ dir, generatedCode: "es2015" });
+	}
+}
+
+export class ViteBuilder implements Builder {
 
 	private readonly config: InlineConfig;
 

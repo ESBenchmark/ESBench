@@ -44,7 +44,7 @@
 	},
 	"optionalDependencies": {
 		"playwright-core": "^1.39.0",
-		"rollup": "^4.4.0",
+		"rollup": "^4.3.0",
 		"vite": "^4.5.0"
 	}
 }
