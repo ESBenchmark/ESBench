@@ -16,8 +16,8 @@ export default class DirectEngine implements BenchmarkEngine {
 
 	close() {}
 
-	async run({ root, entry, files, pattern, handleMessage }: RunOptions) {
-		const url = pathToFileURL(join(root, entry));
+	async run({ root, files, pattern, handleMessage }: RunOptions) {
+		const url = pathToFileURL(join(root, "index.js"));
 		const module = await import(url.toString());
 		return module.default(handleMessage, files, pattern);
 	}

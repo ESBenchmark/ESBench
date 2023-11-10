@@ -18,9 +18,10 @@ const PageHTML = {
 	body: "<html><head></head><body></body></html>",
 };
 
-async function client({ files, task, entry }: any) {
-	const client = await import(entry);
-	return client.default(_ESBenchChannel, files, task);
+async function client({ files, pattern }: any) {
+	// @ts-ignore This module resolved by the custom router.
+	const connect = await import("./index.js");
+	return connect.default(_ESBenchChannel, files, pattern);
 }
 
 export default class PlaywrightEngine implements BenchmarkEngine {
@@ -52,7 +53,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 	}
 
 	async run(options: RunOptions) {
-		const { files, pattern, root, entry, handleMessage } = options;
+		const { files, pattern, root, handleMessage } = options;
 
 		const context = await this.launchContext();
 		await context.exposeFunction("_ESBenchChannel", handleMessage);
@@ -69,7 +70,7 @@ export default class PlaywrightEngine implements BenchmarkEngine {
 
 		const page = await context.newPage();
 		await page.goto("/");
-		await page.evaluate(client, { files, pattern, entry });
+		await page.evaluate(client, { files, pattern });
 
 		await page.close();
 		await context.close();

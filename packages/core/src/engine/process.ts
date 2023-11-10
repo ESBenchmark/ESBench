@@ -47,7 +47,7 @@ export default class ProcessEngine implements BenchmarkEngine {
 	}
 
 	run(options: RunOptions) {
-		const { tempDir, root, entry, files, pattern, handleMessage } = options;
+		const { tempDir, root, files, pattern, handleMessage } = options;
 		const { getCommand } = this;
 
 		this.server = createServer((request, response) => {
@@ -59,7 +59,7 @@ export default class ProcessEngine implements BenchmarkEngine {
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 
-		const specifier = relative(tempDir, join(root, entry));
+		const specifier = relative(tempDir, join(root, "index.js"));
 
 		const loaderCode = template
 			.replace("__FILES__", JSON.stringify(files))

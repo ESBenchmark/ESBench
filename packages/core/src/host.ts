@@ -69,7 +69,6 @@ export class ESBenchHost {
 		const result: ESBenchResult = {};
 		const context: Partial<RunOptions> = {
 			tempDir,
-			entry: "./index.js",
 			pattern: nameRegex?.source,
 		};
 

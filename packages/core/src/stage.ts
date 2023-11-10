@@ -16,7 +16,6 @@ export interface Builder {
 export interface RunOptions {
 	tempDir: string;
 	root: string;
-	entry: string;
 	files: string[];
 	pattern?: string;
 

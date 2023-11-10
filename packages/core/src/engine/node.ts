@@ -1,5 +1,5 @@
 import { fileURLToPath, pathToFileURL } from "url";
-import { resolve } from "path";
+import { join } from "path/posix";
 import { ChildProcess, fork } from "child_process";
 import { env } from "process";
 import { once } from "events";
@@ -38,24 +38,25 @@ export default class NodeEngine implements BenchmarkEngine {
 	}
 
 	run(options: RunOptions) {
-		const { entry, files, pattern, handleMessage } = options;
+		const { root, files, pattern, handleMessage } = options;
 
 		this.process.removeAllListeners("message");
 		this.process.on("message", handleMessage);
-		this.process.send({ entry, pattern, files });
+		this.process.send({ root, pattern, files });
 		return once(this.process, "exit");
 	}
 }
 
 if (env.ES_BENCH_WORKER === "true") {
-	process.send!(envinfo.helpers.getNodeInfo());
+	const postMessage = process.send!.bind(process);
+	postMessage(envinfo.helpers.getNodeInfo());
 
-	process.on("message", async message => {
-		const { entry, task, files } = message as any;
+	process.on("message", async (message: any) => {
+		const { root, pattern, files } = message;
 
-		const module = pathToFileURL(resolve(entry));
+		const module = pathToFileURL(join(root, "index.js"));
 		const client = await import(module.toString());
 
-		client.default(process.send!, files, task);
+		client.default(postMessage, files, pattern);
 	});
 }
