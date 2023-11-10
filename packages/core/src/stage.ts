@@ -1,15 +1,10 @@
 import { Awaitable } from "@kaciras/utilities/node";
 
-export interface BuildContext {
-	root: string;
-	files: string[];
-}
-
 export interface Builder {
 
 	name: string;
 
-	build(ctx: BuildContext): Awaitable<string>;
+	build(outDir: string, files: string[]): Awaitable<string>;
 }
 
 export interface RunOptions {

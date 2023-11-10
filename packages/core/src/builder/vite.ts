@@ -60,10 +60,10 @@ export default class ViteBuilder implements Builder {
 		this.config = mergeConfig(defaults, config);
 	}
 
-	build(ctx: BuildContext) {
+	build(outDir: string, files: string[]) {
 		const config = mergeConfig(this.config, {
 			build: {
-				outDir: ctx.root,
+				outDir,
 				rollupOptions: {
 					preserveEntrySignatures: "strict",
 					input: entryId,
@@ -72,7 +72,7 @@ export default class ViteBuilder implements Builder {
 					},
 				},
 			},
-			plugins: [vitePlugin(ctx.files)],
+			plugins: [esbenchPlugin(files)],
 		});
 		return build(config).then(() => entryId);
 	}

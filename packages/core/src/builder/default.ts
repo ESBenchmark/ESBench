@@ -13,8 +13,8 @@ export default function (channel, files, name) {
 
 export default <Builder>{
 	name: "NoBuild",
-	build({ root }) {
-		writeFileSync(join(root, "index.js"), code);
+	build(outDir) {
+		writeFileSync(join(outDir, "index.js"), code);
 		return "./index.js";
 	},
 };
