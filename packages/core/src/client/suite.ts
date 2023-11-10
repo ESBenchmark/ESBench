@@ -45,7 +45,7 @@ export class Scene {
 
 	private readonly namePattern: RegExp;
 
-	constructor(pattern: RegExp) {
+	constructor(pattern = new RegExp("")) {
 		this.namePattern = pattern;
 	}
 

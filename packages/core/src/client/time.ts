@@ -1,6 +1,6 @@
 import { Awaitable, durationFmt } from "@kaciras/utilities/browser";
 import { BenchCase, SuiteConfig } from "./suite.js";
-import { BenchmarkWorker, Logger } from "./runner.js";
+import { BenchmarkWorker, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 import { Metrics } from "./collect.js";
 
@@ -59,15 +59,15 @@ export class TimeWorker implements BenchmarkWorker {
 		this.config = config;
 	}
 
-	async onCase(case_: BenchCase, metrics: Metrics, logger: Logger) {
+	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
 		const { warmup = 5, samples = 10, iterations = "1s" } = this.config;
 		const iterate = createInvoker(case_);
-		await logger(`\nBenchmark: ${case_.name}`);
+		await ctx.info(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)
 		const count = typeof iterations === "number"
 			? iterations
-			: await this.getIterations(iterate, iterations, logger);
+			: await this.getIterations(iterate, iterations, ctx);
 
 		if (samples <= 0) {
 			throw new Error("The number of samples must be at least 1.");
@@ -78,32 +78,32 @@ export class TimeWorker implements BenchmarkWorker {
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
-			await logger(`Wramup: ${timeDetail(time, count)}`);
+			await ctx.info(`Wramup: ${timeDetail(time, count)}`);
 		}
 
 		// noinspection JSMismatchedCollectionQueryUpdate
 		const values: number[] = metrics.time = [];
-		await logger("");
+		await ctx.info("");
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			values.push(time / count);
-			await logger(`Actual: ${timeDetail(time, count)}`);
+			await ctx.info(`Actual: ${timeDetail(time, count)}`);
 		}
 	}
 
-	async getIterations(fn: IterateFn, target: string, logger: Logger) {
+	async getIterations(fn: IterateFn, target: string, ctx: WorkerContext) {
 		const targetMS = durationFmt.parse(target, "ms");
 
 		let count = 1;
 		let time = 0;
 		while (time < targetMS) {
 			time = await fn(count);
-			await logger(`Pilot: ${timeDetail(time, count)}`);
+			await ctx.info(`Pilot: ${timeDetail(time, count)}`);
 			count *= 2;
 		}
 
-		await logger("");
+		await ctx.info("");
 		return Math.ceil(count / 2 * targetMS / time);
 	}
 }

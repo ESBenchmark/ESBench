@@ -1,9 +1,9 @@
 import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
-import { process, runHooks } from "./utils.js";
-import { Metrics, WorkloadResult } from "./collect.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
+import { process, runHooks } from "./utils.js";
+import { Metrics, WorkloadResult } from "./collect.js";
 
 /**
  * A function that intercepts log messages. If not supplied, logs are printed to the console.
@@ -11,17 +11,24 @@ import { TimeWorker } from "./time.js";
  */
 export type Logger = (message: string) => Awaitable<void>;
 
-type HandleScene = (scene: Scene) => Awaitable<void>;
+export interface WorkerContext {
 
-export type ForEachScene = (handler: HandleScene) => Promise<void>;
+	run(workers: Array<Omit<BenchmarkWorker, "onSuite">>): Promise<void>;
+
+	warn(message: string): Awaitable<void>;
+
+	info(message: string): Awaitable<void>;
+
+	debug(message: string): Awaitable<void>;
+}
 
 export interface BenchmarkWorker {
 
-	onSuite?(forEach: ForEachScene, logger: Logger): Awaitable<void>;
+	onSuite?: (ctx: WorkerContext) => Awaitable<void>;
 
-	onScene?(scene: Scene, logger: Logger): Awaitable<void>;
+	onScene?: (ctx: WorkerContext, scene: Scene) => Awaitable<void>;
 
-	onCase?(case_: BenchCase, metrics: Metrics, logger: Logger): Awaitable<void>;
+	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
 
 export interface RunSuiteOption {
@@ -52,19 +59,26 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 	const { length, paramDef } = process(params);
 	const scenes: WorkloadResult[][] = [];
 
-	async function forEachScene(handler: HandleScene) {
+	const ctx: WorkerContext = {
+		warn: logger,
+		info: logger,
+		debug: logger,
+		run: newWorkflow,
+	};
+
+	async function newWorkflow(workers: BenchmarkWorker[]) {
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(pattern);
 			await setup(scene, comb);
 			try {
-				await handler(scene);
+				await handleScene(scene, workers);
 			} finally {
 				await runHooks(scene.cleanEach);
 			}
 		}
 	}
 
-	async function handleScene(scene: Scene) {
+	async function handleScene(scene: Scene, workers: BenchmarkWorker[]) {
 		const workloads: WorkloadResult[] = [];
 		const caseCount = scene.cases.length;
 		const index = scenes.push(workloads);
@@ -76,23 +90,23 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		}
 
 		for (const worker of workers) {
-			await worker.onScene?.(scene, logger);
+			await worker.onScene?.(ctx, scene);
 		}
 
 		for (const case_ of scene.cases) {
 			const metrics: Metrics = {};
 			for (const worker of workers) {
-				await worker.onCase?.(case_, metrics, logger);
+				await worker.onCase?.(ctx, case_, metrics);
 			}
 			workloads.push({ name: case_.name, metrics });
 		}
 	}
 
 	for (const worker of workers) {
-		await worker.onSuite?.(forEachScene, logger);
+		await worker.onSuite?.(ctx);
 	}
 
-	await forEachScene(handleScene);
+	await newWorkflow(workers);
 	await afterAll();
 
 	return { name, paramDef, scenes } as RunSuiteResult;
