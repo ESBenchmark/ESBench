@@ -9,17 +9,18 @@ import { Metrics, WorkloadResult } from "./collect.js";
  * A function that intercepts log messages. If not supplied, logs are printed to the console.
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
-export type Logger = (message: string) => Awaitable<void>;
-
-export interface WorkerContext {
-
-	run(workers: Array<Omit<BenchmarkWorker, "onSuite">>): Promise<void>;
+export interface Logger {
 
 	warn(message: string): Awaitable<void>;
 
 	info(message: string): Awaitable<void>;
 
 	debug(message: string): Awaitable<void>;
+}
+
+export interface WorkerContext extends Logger {
+
+	run(workers: Array<Omit<BenchmarkWorker, "onSuite">>): Promise<void>;
 }
 
 export interface BenchmarkWorker {
@@ -44,7 +45,7 @@ export interface RunSuiteResult {
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
 	const { name, setup, afterAll = noop, config = {}, params = {} } = suite;
-	const logger = options.logger ?? console.log;
+	const logger = options.logger ?? console;
 	const pattern = options.pattern ?? new RegExp("");
 
 	const workers: BenchmarkWorker[] = [];
@@ -58,10 +59,10 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 	const scenes: WorkloadResult[][] = [];
 
 	const ctx: WorkerContext = {
-		warn: logger,
-		info: logger,
-		debug: logger,
 		run: newWorkflow,
+		warn: logger.warn,
+		info: logger.info,
+		debug: logger.debug,
 	};
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
@@ -85,9 +86,9 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		const index = scenes.push(workloads);
 
 		if (caseCount === 0) {
-			await logger(`\nWarning: No workload found from scene #${index}.`);
+			await ctx.warn(`\nNo workload found from scene #${index}.`);
 		} else {
-			await logger(`\nScene ${index} of ${length}, ${caseCount} workloads.`);
+			await ctx.info(`\nScene ${index} of ${length}, ${caseCount} workloads.`);
 		}
 
 		for (const case_ of scene.cases) {

@@ -5,7 +5,7 @@ import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { BenchmarkEngine, RunOptions } from "./stage.js";
 import { ESBenchConfig, normalizeConfig, NormalizedESConfig } from "./config.js";
-import { ClientMessage, ESBenchResult } from "./client/index.js";
+import { ClientMessage, ESBenchResult, LogLevel } from "./client/index.js";
 
 interface Build {
 	files: string[];
@@ -75,7 +75,8 @@ export class ESBenchHost {
 		function setHandler(engine: string, builder: string) {
 			context.handleMessage = (message: ClientMessage) => {
 				if ("log" in message) {
-					console.log(message.log);
+					const method = LogLevel[message.level] as keyof typeof LogLevel;
+					console[method](message.log);
 				} else {
 					const { name, scenes, paramDef } = message;
 					(result[name] ??= []).push({
