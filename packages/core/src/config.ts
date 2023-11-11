@@ -30,7 +30,7 @@ export interface ESBenchConfig {
 	/**
 	 * Which files will be run as benchmark suites under which scenarios.
 	 */
-	stages: Stage[];
+	stages?: Stage[];
 
 	/**
 	 * Choose dir that ESBench uses for mutation testing.
@@ -56,13 +56,7 @@ export interface ESBenchConfig {
 
 export const defineConfig = identity<ESBenchConfig>;
 
-export type NormalizedESConfig = ESBenchConfig & {
-	include: string[];
-	tempDir: string;
-	cleanTempDir: boolean;
-	reporters: Reporter[];
-	stages: Array<Required<Stage>>;
-}
+export type NormalizedESConfig = Required<ESBenchConfig>;
 
 export function normalizeConfig(input: ESBenchConfig) {
 	if (input.stages?.length === 0) {
