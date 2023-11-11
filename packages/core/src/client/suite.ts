@@ -37,17 +37,20 @@ export class BenchCase {
 
 export type HookFn = () => Awaitable<unknown>;
 
-export class Scene {
+export class Scene<P = any> {
 
 	readonly setupIteration: HookFn[] = [];
 	readonly cleanIteration: HookFn[] = [];
 	readonly cleanEach: HookFn[] = [];
 	readonly cases: BenchCase[] = [];
 
-	private readonly namePattern: RegExp;
+	readonly params: P;
 
-	constructor(pattern = new RegExp("")) {
-		this.namePattern = pattern;
+	private readonly include: RegExp;
+
+	constructor(params: P, include = new RegExp("")) {
+		this.params = params;
+		this.include = include;
 	}
 
 	beforeIteration(fn: HookFn) {
@@ -62,30 +65,27 @@ export class Scene {
 		this.cleanEach.push(fn);
 	}
 
-	bench(name: string, workload: SyncWorkload) {
-		if (this.check(name)) {
-			this.cases.push(new BenchCase(this, name, workload, false));
-		}
+	bench(name: string, fn: SyncWorkload) {
+		this.add(name, fn, false);
 	}
 
-	benchAsync(name: string, workload: AsyncWorkload) {
-		if (this.check(name)) {
-			this.cases.push(new BenchCase(this, name, workload, true));
-		}
+	benchAsync(name: string, fn: AsyncWorkload) {
+		this.add(name, fn, true);
 	}
 
-	private check(name: string) {
+	private add(name: string, fn: Workload, isAsync: boolean) {
 		if (/^\s*$/.test(name)) {
 			throw new Error("Workload name cannot be a blank string.");
 		}
 		if (this.cases.some(c => c.name === name)) {
 			throw new Error(`Workload "${name}" already exists.`);
 		}
-		return this.namePattern.test(name);
+		if (!this.include.test(name)) {
+			return;
+		}
+		this.cases.push(new BenchCase(this, name, fn, isAsync));
 	}
 }
-
-export type CreateScene<T extends CPSrcObject> = (scene: Scene, params: CPRowObject<T>) => Awaitable<void>;
 
 export interface SuiteConfig {
 
@@ -122,9 +122,11 @@ export interface SuiteConfig {
 	validate?: ValidateOptions;
 }
 
+export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPRowObject<T>>) => Awaitable<void>;
+
 export interface BenchmarkSuite<T extends CPSrcObject> {
 	name: string;
-	setup: CreateScene<T>;
+	setup: SetupScene<T>;
 	params?: T;
 	afterAll?: HookFn;
 	config?: SuiteConfig;

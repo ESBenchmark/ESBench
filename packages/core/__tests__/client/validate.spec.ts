@@ -47,10 +47,10 @@ it("should validate executions", async () => {
 		params: {
 			n: [10, 100, 1000],
 		},
-		setup(scene, params) {
+		setup(scene) {
 			scene.bench("foo", previous);
 
-			if (params.n === 100) {
+			if (scene.params.n === 100) {
 				scene.bench("bar", () => {throw cause;});
 			}
 		},

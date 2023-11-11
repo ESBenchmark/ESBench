@@ -28,8 +28,8 @@ it("should works", async () => {
 		params: {
 			n: [10, 100, 1000],
 		},
-		setup(scene, params) {
-			scene.bench("Test", () => fib(params.n));
+		setup(scene) {
+			scene.bench("Test", () => fib(scene.params.n));
 		},
 	});
 

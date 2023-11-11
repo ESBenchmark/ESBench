@@ -51,8 +51,8 @@ class PreValidateWorker implements BenchmarkWorker {
 		this.isEqual = isEqual;
 	}
 
-	onScene(_: WorkerContext, __: Scene, params: object) {
-		this.params = params;
+	onScene(_: WorkerContext, scene: Scene) {
+		this.params = scene.params;
 	}
 
 	async onCase(_: WorkerContext, case_: BenchCase) {

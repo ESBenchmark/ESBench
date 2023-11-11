@@ -26,7 +26,7 @@ export interface BenchmarkWorker {
 
 	onSuite?: (ctx: WorkerContext) => Awaitable<void>;
 
-	onScene?: (ctx: WorkerContext, scene: Scene, params: object) => Awaitable<void>;
+	onScene?: (ctx: WorkerContext, scene: Scene) => Awaitable<void>;
 
 	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
@@ -66,11 +66,11 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
 		for (const comb of cartesianObject(params)) {
-			const scene = new Scene(pattern);
-			await setup(scene, comb);
+			const scene = new Scene(comb, pattern);
+			await setup(scene);
 			try {
 				for (const worker of workers) {
-					await worker.onScene?.(ctx, scene, comb);
+					await worker.onScene?.(ctx, scene);
 				}
 				await handleScene(scene, workers);
 			} finally {
