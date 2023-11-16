@@ -1,3 +1,5 @@
+import { WorkloadResult } from "./runner.js";
+
 export type ESBenchResult = Record<string, StageResult[]>;
 
 export interface StageResult {
@@ -6,10 +8,3 @@ export interface StageResult {
 	paramDef: Record<string, string[]>;
 	scenes: WorkloadResult[][];
 }
-
-export interface WorkloadResult {
-	name: string;
-	metrics: Metrics;
-}
-
-export type Metrics = Record<string, any[]>;

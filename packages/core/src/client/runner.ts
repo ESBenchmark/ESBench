@@ -3,7 +3,6 @@ import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
 import { process, runHooks } from "./utils.js";
-import { Metrics, WorkloadResult } from "./collect.js";
 
 /**
  * A function that intercepts log messages. If not supplied, logs are printed to the console.
@@ -20,7 +19,7 @@ export interface Logger {
 
 export interface WorkerContext extends Logger {
 
-	run(workers: Array<Omit<BenchmarkWorker, "onSuite">>): Promise<void>;
+	run(workers: BenchmarkWorker[]): Promise<void>;
 }
 
 export interface BenchmarkWorker {
@@ -32,15 +31,23 @@ export interface BenchmarkWorker {
 	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
 
-export interface RunSuiteOption {
-	logger?: Logger;
-	pattern?: RegExp;
+
+export interface WorkloadResult {
+	name: string;
+	metrics: Metrics;
 }
+
+export type Metrics = Record<string, any[]>;
 
 export interface RunSuiteResult {
 	name: string;
 	paramDef: Record<string, string[]>;
 	scenes: WorkloadResult[][];
+}
+
+export interface RunSuiteOption {
+	logger?: Logger;
+	pattern?: RegExp;
 }
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
@@ -66,6 +73,9 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 	};
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
+		for (const worker of workers) {
+			await worker.onSuite?.(ctx);
+		}
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
 			await setup(scene);
@@ -100,12 +110,7 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		}
 	}
 
-	for (const worker of workers) {
-		await worker.onSuite?.(ctx);
-	}
-
-	await newWorkflow(workers);
-	await afterAll();
+	await newWorkflow(workers).finally(afterAll);
 
 	return { name, paramDef, scenes } as RunSuiteResult;
 }
