@@ -38,9 +38,6 @@ importers:
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
-      envinfo:
-        specifier: ^7.10.0
-        version: 7.11.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.2
@@ -73,9 +70,6 @@ importers:
         specifier: ^4.5.0
         version: 4.5.0(@types/node@20.9.0)
     devDependencies:
-      '@types/envinfo':
-        specifier: ^7.8.3
-        version: 7.8.3
       '@types/mime':
         specifier: ^3.0.4
         version: 3.0.4
@@ -617,10 +611,6 @@ packages:
     resolution: {integrity: sha512-of+ICnbqjmFCiixUnqRulbylyXQrPqIGf/B3Jax1wIF3DvSheysQxAWvqHhZiW3IQrycvokcLcFQlveGp+vyNg==}
     dev: true
 
-  /@types/envinfo@7.8.3:
-    resolution: {integrity: sha512-qzV1XMjmzgmndci6L5HlzExf4w9A5jQPNpW/t4sSljErKbS8y6231ToHO9ir2Xjf+2zG1C540+Wmh0zpUsGu0A==}
-    dev: true
-
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
@@ -1149,12 +1139,6 @@ packages:
 
   /emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
-    dev: false
-
-  /envinfo@7.11.0:
-    resolution: {integrity: sha512-G9/6xF1FPbIw0TtalAMaVPpiq2aDEuKLXM314jPVAO9r2fo2a4BLqMNkmRS7O/xPPZ+COAhGIz3ETvHEV3eUcg==}
-    engines: {node: '>=4'}
-    hasBin: true
     dev: false
 
   /es6-promise@3.3.1:

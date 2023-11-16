@@ -2,41 +2,20 @@ import { stdout } from "process";
 import { createWriteStream } from "fs";
 import { Writable } from "stream";
 import chalk, { Chalk, ChalkInstance } from "chalk";
-import envinfo from "envinfo";
 import { durationFmt } from "@kaciras/utilities/node";
 import { median } from "simple-statistics";
 import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
-import { ESBenchResult, flatSummary } from "../client/collect.js";
+import { ESBenchResult, flatSummary, FlattedResult } from "../client/collect.js";
 import { Reporter } from "../config.js";
 
-export interface ConsoleReporterOptions {
-	/**
-	 * Write the report to a text file.
-	 */
-	file?: string;
-
-	/**
-	 * Set to false to disable print the report to console.
-	 *
-	 * @default true
-	 */
-	console?: boolean;
-}
-
 async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance) {
-	out.write(chalk.blueBright("OS: "));
-	out.write((await envinfo.helpers.getOSInfo())[1]);
+	const entries = Object.entries(result);
+	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
-	out.write(chalk.blueBright("\nCPU: "));
-	out.write((await envinfo.helpers.getCPUInfo())[1]);
-
-	out.write(chalk.blueBright("\nMemory: "));
-	out.write((await envinfo.helpers.getMemoryInfo())[1]);
-
-	for (const [name, stages] of Object.entries(result)) {
+	for (const [name, stages] of entries) {
 		const flatted = flatSummary(stages);
-		const stageKeys = ["name"];
+		const stageKeys: Array<keyof FlattedResult> = ["name"];
 		if (flatted.builders.size > 1) {
 			stageKeys.push("builder");
 		}
@@ -44,7 +23,7 @@ async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance)
 			stageKeys.push("engine");
 		}
 
-		const header = [...stageKeys];
+		const header: string[] = [...stageKeys];
 		for (const key of flatted.pKeys) {
 			header.push(chalk.magentaBright(key));
 		}
@@ -69,11 +48,25 @@ async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance)
 		}
 
 		out.write("\n");
-		out.write(markdownTable(table, { stringLength }));
+		out.write(markdownTable(table, { stringLength, align: "r" }));
 	}
 }
 
-export default function (options: ConsoleReporterOptions = {}): Reporter {
+export interface TextReporterOptions {
+	/**
+	 * Write the report to a text file.
+	 */
+	file?: string;
+
+	/**
+	 * Set to false to disable print the report to console.
+	 *
+	 * @default true
+	 */
+	console?: boolean;
+}
+
+export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
 	return async result => {
 		if (console) {
