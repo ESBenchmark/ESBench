@@ -6,6 +6,7 @@ import envinfo from "envinfo";
 import { durationFmt } from "@kaciras/utilities/node";
 import { median } from "simple-statistics";
 import { markdownTable } from "markdown-table";
+import stringLength from "string-width";
 import { ESBenchResult, flatSummary } from "../client/collect.js";
 import { Reporter } from "../config.js";
 
@@ -68,7 +69,7 @@ async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance)
 		}
 
 		out.write("\n");
-		out.write(markdownTable(table));
+		out.write(markdownTable(table, { stringLength }));
 	}
 }
 
