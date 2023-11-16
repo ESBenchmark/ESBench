@@ -2,8 +2,8 @@ export * from "./config.js";
 export * from "./stage.js";
 export * from "./host.js";
 
-export { default as consoleReporter } from "./reporter/console.js";
-export { default as fileReporter } from "./reporter/file.js";
+export { default as textReporter } from "./reporter/text.js";
+export { default as rawReporter } from "./reporter/raw.js";
 export { default as htmlReporter } from "./reporter/html.js";
 
 export * from "./builder/rollup.js";

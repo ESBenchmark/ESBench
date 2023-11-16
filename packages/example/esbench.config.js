@@ -1,8 +1,8 @@
-import { defineConfig, DirectEngine, fileReporter } from "@esbench/core";
+import { defineConfig, DirectEngine, rawReporter } from "@esbench/core";
 
 export default defineConfig({
 	reporters: [
-		fileReporter(),
+		rawReporter(),
 	],
 	stages: [{
 		include: ["./src/*.js"],
