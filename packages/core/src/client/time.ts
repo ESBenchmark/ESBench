@@ -6,16 +6,26 @@ import { Metrics } from "./collect.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
-function createInvoker(case_: BenchCase): IterateFn {
-	const { fn, isAsync, setupHooks, cleanHooks } = case_;
+function unroll(fn: Workload, count: number) {
+	const call = "x = fn()";
+	const body = new Array(count).fill(call).join("\n");
+	return eval(`() => { let x; ${body}; return x }`);
+}
 
-	async function noSetup(count: number) {
+function createInvoker(case_: BenchCase, factor: number): IterateFn {
+	let { fn, isAsync, setupHooks, cleanHooks } = case_;
+
+	fn = unroll(fn, factor);
+
+	async function asyncNoSetup(count: number) {
 		const start = performance.now();
-		if (isAsync) {
-			while (count-- > 0) await fn();
-		} else {
-			while (count-- > 0) fn();
-		}
+		while (count-- > 0) await fn();
+		return performance.now() - start;
+	}
+
+	function syncNoSetup(count: number) {
+		const start = performance.now();
+		while (count-- > 0) fn();
 		return performance.now() - start;
 	}
 
@@ -47,8 +57,11 @@ function createInvoker(case_: BenchCase): IterateFn {
 		return timeUsage;
 	}
 
-	const setup = setupHooks.length && cleanHooks.length;
-	return setup ? isAsync ? asyncWithSetup : syncWithSetup : noSetup;
+	if (setupHooks.length | cleanHooks.length) {
+		return isAsync ? asyncWithSetup : syncWithSetup;
+	} else {
+		return isAsync ? asyncNoSetup : syncNoSetup;
+	}
 }
 
 export class TimeWorker implements BenchmarkWorker {
@@ -60,8 +73,8 @@ export class TimeWorker implements BenchmarkWorker {
 	}
 
 	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
-		const { warmup = 5, samples = 10, iterations = "1s" } = this.config;
-		const iterate = createInvoker(case_);
+		const { warmup = 5, samples = 10, unrollFactor = 16, iterations = "1s" } = this.config;
+		const iterate = createInvoker(case_, unrollFactor);
 		await ctx.info(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard (false positive)

@@ -6,7 +6,7 @@ type AsyncWorkload = () => Promise<unknown>;
 
 type SyncWorkload = () => unknown;
 
-type Workload = AsyncWorkload | SyncWorkload;
+export type Workload = AsyncWorkload | SyncWorkload;
 
 export class BenchCase {
 
@@ -91,31 +91,40 @@ export interface SuiteConfig {
 
 	/**
 	 * How many target iterations should be performed.
+	 *
 	 * @default 10
 	 */
 	samples?: number;
 
 	/**
 	 * How many warmup iterations should be performed.
+	 * The value can be 0, which disables warmup.
+	 *
 	 * @default 5
 	 */
 	warmup?: number;
 
 	/**
+	 * how many times the benchmark method will be invoked per one iteration of a generated loop.
+	 *
+	 * @default 16
+	 */
+	unrollFactor?: number;
+
+	/**
 	 * Invocation count or time in a single iteration.
 	 *
-	 * If the value is a number it used as invocation count.
+	 * If the value is a number it used as invocation count, must be a multiple of unrollFactor.
 	 *
-	 * It is a duration string, it used by Pilot stage to
-	 * estimate the number of invocations per iteration.
+	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
 	 *
 	 * @default "1s"
 	 */
 	iterations?: number | string;
 
 	/**
-	 * Checks if it is possible to run your benchmarks. If set,
-	 * all scenes and their benchmarks will be run once to ensure no exceptions.
+	 * Checks if it is possible to run your benchmarks.
+	 * If set, all scenes and their benchmarks will be run once to ensure no exceptions.
 	 *
 	 * Additional checks can be configured in the options.
 	 */
