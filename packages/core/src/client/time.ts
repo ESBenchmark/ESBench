@@ -1,21 +1,20 @@
 import { Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { median } from "simple-statistics";
-import { BenchCase, SuiteConfig, Workload } from "./suite.js";
+import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
-function unroll(fn: Workload, count: number) {
-	const call = "x = fn()";
-	const body = new Array(count).fill(call).join("\n");
-	return eval(`() => { let x; ${body}; return x }`);
+function unroll(count: number) {
+	const body = new Array(count).fill("f()");
+	return new Function("f", body.join("\n"));
 }
 
 function createInvoker(case_: BenchCase, factor: number): IterateFn {
 	let { fn, isAsync, setupHooks, cleanHooks } = case_;
 
-	fn = unroll(fn, factor);
+	fn = unroll(factor).bind(null, fn);
 
 	async function asyncNoSetup(count: number) {
 		const start = performance.now();
