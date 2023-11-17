@@ -1,8 +1,8 @@
-import { Awaitable, durationFmt } from "@kaciras/utilities/browser";
-import { BenchCase, SuiteConfig } from "./suite.js";
-import { BenchmarkWorker, WorkerContext } from "./runner.js";
+import { Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
+import { median } from "simple-statistics";
+import { BenchCase, SuiteConfig, Workload } from "./suite.js";
+import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
-import { Metrics } from "./collect.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
@@ -73,25 +73,55 @@ export class TimeWorker implements BenchmarkWorker {
 	}
 
 	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
-		const { warmup = 5, samples = 10, unrollFactor = 16, iterations = "1s" } = this.config;
-		const iterate = createInvoker(case_, unrollFactor);
-		await ctx.info(`\nBenchmark: ${case_.name}`);
+		const { warmup = 5, samples = 10, unrollFactor = 16 } = this.config;
+		let { iterations = "1s" } = this.config;
 
-		// noinspection SuspiciousTypeOfGuard (false positive)
-		const count = typeof iterations === "number"
-			? iterations
-			: await this.getIterations(iterate, iterations, ctx);
-
+		if (unrollFactor < 1) {
+			throw new Error("The unrollFactor option must be at least 1.");
+		}
 		if (samples <= 0) {
 			throw new Error("The number of samples must be at least 1.");
 		}
-		if (count <= 0) {
+
+		const iterate = createInvoker(case_, unrollFactor);
+		await ctx.info(`\nBenchmark: ${case_.name}`);
+
+		// noinspection SuspiciousTypeOfGuard
+		if (typeof iterations === "string") {
+			iterations = await this.getIterations(iterate, iterations, ctx);
+		} else if (iterations % unrollFactor === 0) {
+			iterations /= unrollFactor;
+		} else {
+			throw new Error("iterations must be a multiple of unrollFactor.");
+		}
+
+		if (iterations <= 0) {
 			throw new Error("The number of iterations cannot be 0 or negative.");
 		}
 
+		const iterateOverhead = createInvoker(<any>{
+			fn: noop,
+			isAsync: case_.isAsync,
+			setupHooks: [],
+			cleanHooks: [],
+		}, unrollFactor);
+		const overheadTimes = [];
+
 		for (let i = 0; i < warmup; i++) {
-			const time = await iterate(count);
-			await ctx.info(`Wramup: ${timeDetail(time, count)}`);
+			const time = await iterateOverhead(iterations);
+			await ctx.info(`Overhead Warmup: ${timeDetail(time, iterations)}`);
+		}
+
+		for (let i = 0; i < samples; i++) {
+			const time = await iterateOverhead(iterations);
+			overheadTimes.push(time);
+			await ctx.info(`Overhead: ${timeDetail(time, iterations)}`);
+		}
+		const overhead = median(overheadTimes);
+
+		for (let i = 0; i < warmup; i++) {
+			const time = await iterate(iterations);
+			await ctx.info(`Warmup: ${timeDetail(time, iterations)}`);
 		}
 
 		// noinspection JSMismatchedCollectionQueryUpdate
@@ -99,9 +129,9 @@ export class TimeWorker implements BenchmarkWorker {
 		await ctx.info("");
 
 		for (let i = 0; i < samples; i++) {
-			const time = await iterate(count);
-			values.push(time / count);
-			await ctx.info(`Actual: ${timeDetail(time, count)}`);
+			const time = await iterate(iterations) - overhead;
+			values.push(time / iterations);
+			await ctx.info(`Actual: ${timeDetail(time, iterations)}`);
 		}
 	}
 
