@@ -42,8 +42,8 @@
 		"@types/mime": "^3.0.4"
 	},
 	"optionalDependencies": {
-		"playwright-core": "^1.39.0",
-		"rollup": "^4.3.0",
-		"vite": "^4.5.0"
+		"playwright-core": "^1.40.0",
+		"rollup": "^4.4.1",
+		"vite": "^5.0.0"
 	}
 }
