@@ -3,7 +3,7 @@ import { ESBenchResult } from "./client/collect.js";
 import DirectEngine from "./engine/direct.js";
 import { BenchmarkEngine, Builder } from "./stage.js";
 import noBuild from "./builder/default.js";
-import consoleReporter from "./reporter/console.js";
+import textReporter from "./reporter/text.js";
 
 export interface Stage {
 	/**
@@ -56,7 +56,9 @@ export interface ESBenchConfig {
 
 export const defineConfig = identity<ESBenchConfig>;
 
-export type NormalizedESConfig = Required<ESBenchConfig>;
+export type NormalizedESConfig = Required<ESBenchConfig> & {
+	stages: Array<Required<Stage>>;
+}
 
 export function normalizeConfig(input: ESBenchConfig) {
 	if (input.stages?.length === 0) {
@@ -66,7 +68,7 @@ export function normalizeConfig(input: ESBenchConfig) {
 	const config: ESBenchConfig = {
 		tempDir: ".esbench-tmp",
 		cleanTempDir: true,
-		reporters: [consoleReporter()],
+		reporters: [textReporter()],
 		...input,
 		stages: [],
 	};

@@ -42,7 +42,7 @@ function esbenchEntryPlugin(files: string[]): Plugin {
 }
 
 const defaults: InlineConfig = {
-	configFile: false,
+	logLevel: "error",
 	build: {
 		target: "esnext",
 		minify: false,
@@ -72,7 +72,7 @@ export class RollupBuilder implements Builder {
 			input: entryId,
 			plugins: [...plugins, esbenchEntryPlugin(files)],
 		});
-		await bundle.write({ dir, generatedCode: "es2015" });
+		await bundle.write({ ...this.config.output, dir });
 	}
 }
 

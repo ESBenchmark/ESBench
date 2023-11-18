@@ -2,9 +2,9 @@ import { noop } from "@kaciras/utilities/browser";
 import { BenchCase, Scene } from "./suite.js";
 import { BenchmarkWorker, WorkerContext } from "./runner.js";
 
-export type CheckFn = (value: any) => void;
+type EqualityFn = (a: any, b: any) => boolean;
 
-export type EqualityFn = (a: any, b: any) => boolean;
+type CheckFn = (value: any) => void;
 
 export interface ValidateOptions {
 	/**
@@ -101,7 +101,11 @@ export class ValidateWorker implements BenchmarkWorker {
 		}
 	}
 
-	onSuite(ctx: WorkerContext) {
-		return ctx.run([new PreValidateWorker(this.check, this.isEqual)]);
+	/**
+	 * To catch errors as early as possible, we start a new workflow for the validator.
+	 */
+	async onSuite(ctx: WorkerContext) {
+		ctx.info("Validating benchmarks...");
+		await ctx.run([new PreValidateWorker(this.check, this.isEqual)]);
 	}
 }

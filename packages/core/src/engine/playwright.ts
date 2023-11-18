@@ -24,6 +24,23 @@ async function client({ files, pattern }: any) {
 	return connect.default(_ESBenchChannel, files, pattern);
 }
 
+/**
+ * Run suites on browsers with Playwright driver.
+ * Requires "playwright-core" or "playwright" installed.
+ *
+ * ESBench does not download browsers by default, you may need to specific
+ * `executablePath` or run `npx playwright install`.
+ *
+ * @example
+ * import { PlaywrightEngine } from "@esbench/core";
+ * import { firefox } from "playwright-core";
+ *
+ * export default defineConfig({
+ *     stages: [{
+ *         engines: [new PlaywrightEngine(firefox)]
+ *     }],
+ * });
+ */
 export default class PlaywrightEngine implements BenchmarkEngine {
 
 	private readonly type: BrowserType;

@@ -1,6 +1,14 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
 
+interface ProcessedParamDef {
+	length: number;
+	paramDef: Record<string, string[]>;
+}
+
+/**
+ * Convert the value to a short display string.
+ */
 function displayName(v: unknown) {
 	if (Array.isArray(v)) {
 		return ellipsis(`[${v}]`, 16);
@@ -12,7 +20,7 @@ function displayName(v: unknown) {
 		case "object":
 			return typeof v.toString === "function"
 				? ellipsis(v.toString(), 16)
-				: "[object]";
+				: "[object (null)]";
 		case "symbol":
 			return v.description
 				? `symbol(${ellipsis(v.description, 10)})`
@@ -41,7 +49,7 @@ export function process(params: CPSrcObject) {
 		length *= current.length;
 	}
 
-	return { length, paramDef };
+	return { length, paramDef } as ProcessedParamDef;
 }
 
 export function runHooks(hooks: HookFn[]) {
