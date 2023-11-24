@@ -120,12 +120,12 @@ export class TimeWorker implements BenchmarkWorker {
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(iterations);
-			await ctx.info(`Warmup: ${timeDetail(time, iterations)}`);
+			await ctx.info(`Actual Warmup: ${timeDetail(time, iterations)}`);
 		}
 
 		// noinspection JSMismatchedCollectionQueryUpdate
 		const values: number[] = metrics.time = [];
-		await ctx.info("");
+		await ctx.info();
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(iterations) - overhead;
@@ -145,7 +145,7 @@ export class TimeWorker implements BenchmarkWorker {
 			count *= 2;
 		}
 
-		await ctx.info("");
+		await ctx.info();
 		return Math.ceil(count / 2 * targetMS / time);
 	}
 }

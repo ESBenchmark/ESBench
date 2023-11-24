@@ -10,11 +10,11 @@ import { process, runHooks } from "./utils.js";
  */
 export interface Logger {
 
-	warn(message: string): Awaitable<void>;
+	warn(message?: string): Awaitable<void>;
 
-	info(message: string): Awaitable<void>;
+	info(message?: string): Awaitable<void>;
 
-	debug(message: string): Awaitable<void>;
+	debug(message?: string): Awaitable<void>;
 }
 
 export interface WorkerContext extends Logger {

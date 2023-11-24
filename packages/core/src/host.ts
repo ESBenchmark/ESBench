@@ -74,9 +74,13 @@ export class ESBenchHost {
 
 		function setHandler(engine: string, builder: string) {
 			context.handleMessage = (message: ClientMessage) => {
-				if ("log" in message) {
+				if ("level" in message) {
 					const method = LogLevel[message.level] as keyof typeof LogLevel;
-					console[method](message.log);
+					if (message.log) {
+						console[method](message.log);
+					} else {
+						console[method]();
+					}
 				} else {
 					const { name, scenes, paramDef } = message;
 					(result[name] ??= []).push({
