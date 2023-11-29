@@ -1,5 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
-import { join } from "path";
+import { join, relative } from "path";
+import { cwd } from "process";
 import { performance } from "perf_hooks";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
@@ -78,7 +79,8 @@ export class ESBenchHost {
 		const startTime = performance.now();
 
 		if (file) {
-			file = dotPrefixed(file);
+			file = relative(cwd(), file);
+			file = dotPrefixed(file.replaceAll("\\", "/"));
 		}
 
 		mkdirSync(tempDir, { recursive: true });
