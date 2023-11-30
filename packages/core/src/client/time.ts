@@ -1,32 +1,42 @@
 import { Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
-import { median } from "simple-statistics";
+import { medianSorted } from "simple-statistics";
 import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
 
-function unroll(count: number) {
-	const body = new Array(count).fill("f()");
-	return new Function("f", body.join("\n"));
+const AsyncFunction = async function () {}.constructor as typeof Function;
+
+function unroll(factor: number, isAsync: boolean) {
+	const call = isAsync ? "await f()" : "f()";
+	const body = `\
+		const start = performance.now();
+		while (count--) {
+			${new Array(factor).fill(call).join("\n")}
+		}
+		return performance.now() - start;
+	`;
+	return new AsyncFunction("f", "count", body);
 }
 
+/*
+ * One idea is treat iteration hooks as overhead, run them with an empty benchmark,
+ * then minus the time from result.
+ * but this cannot handle some cases. for example, consider the code:
+ *
+ * let data = null;
+ * scene.bench("foo", () => data = create());
+ * scene.afterIteration(() => {
+ *     if (data) heavyCleanup(data);
+ * });
+ *
+ * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called,
+ * we will get a wrong overhead time.
+ */
+
 function createInvoker(case_: BenchCase, factor: number): IterateFn {
-	let { fn, isAsync, setupHooks, cleanHooks } = case_;
-
-	fn = unroll(factor).bind(null, fn);
-
-	async function asyncNoSetup(count: number) {
-		const start = performance.now();
-		while (count-- > 0) await fn();
-		return performance.now() - start;
-	}
-
-	function syncNoSetup(count: number) {
-		const start = performance.now();
-		while (count-- > 0) fn();
-		return performance.now() - start;
-	}
+	const { fn, isAsync, setupHooks, cleanHooks } = case_;
 
 	async function syncWithSetup(count: number) {
 		let timeUsage = 0;
@@ -59,7 +69,7 @@ function createInvoker(case_: BenchCase, factor: number): IterateFn {
 	if (setupHooks.length | cleanHooks.length) {
 		return isAsync ? asyncWithSetup : syncWithSetup;
 	} else {
-		return isAsync ? asyncNoSetup : syncNoSetup;
+		return unroll(factor, isAsync).bind(null, fn);
 	}
 }
 
@@ -116,7 +126,7 @@ export class TimeWorker implements BenchmarkWorker {
 			overheadTimes.push(time);
 			await ctx.info(`Overhead: ${timeDetail(time, iterations)}`);
 		}
-		const overhead = median(overheadTimes);
+		const overhead = medianSorted(overheadTimes.sort());
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(iterations);
