@@ -1,4 +1,4 @@
-import { noop } from "@kaciras/utilities/browser";
+import { alwaysTrue, noop } from "@kaciras/utilities/browser";
 import { BenchCase, Scene } from "./suite.js";
 import { BenchmarkWorker, WorkerContext } from "./runner.js";
 
@@ -97,7 +97,7 @@ export class ValidateWorker implements BenchmarkWorker {
 		} else if (equality) {
 			this.isEqual = equality;
 		} else {
-			this.isEqual = () => true;
+			this.isEqual = alwaysTrue;
 		}
 	}
 

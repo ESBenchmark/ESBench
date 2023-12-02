@@ -1,12 +1,10 @@
-import { Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
+import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
 import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 
 type IterateFn = (count: number) => Awaitable<number>;
-
-const AsyncFunction = async function () {}.constructor as typeof Function;
 
 function unroll(factor: number, isAsync: boolean) {
 	const call = isAsync ? "await f()" : "f()";

@@ -1,4 +1,4 @@
-import { Awaitable, CPRowObject, CPSrcObject } from "@kaciras/utilities/browser";
+import { Awaitable, CPCellObject, CPSrcObject } from "@kaciras/utilities/browser";
 import { runHooks } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 
@@ -131,7 +131,7 @@ export interface SuiteConfig {
 	validate?: ValidateOptions;
 }
 
-export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPRowObject<T>>) => Awaitable<void>;
+export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
 	name: string;
