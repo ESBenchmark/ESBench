@@ -1,15 +1,16 @@
-import { stdout } from "process";
 import { createWriteStream } from "fs";
+import { stdout } from "process";
 import { Writable } from "stream";
 import chalk, { Chalk, ChalkInstance } from "chalk";
 import { durationFmt } from "@kaciras/utilities/node";
-import { median } from "simple-statistics";
+import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
 import { ESBenchResult, flatSummary, FlattedResult } from "../client/collect.js";
 import { Reporter } from "../config.js";
 
-async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance) {
+async function print(result: ESBenchResult, options: TextReporterOptions, out: Writable, chalk: ChalkInstance) {
+	const { stdDev = false, percentiles = [] } = options;
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
@@ -28,6 +29,12 @@ async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance)
 			header.push(chalk.magentaBright(key));
 		}
 		header.push("time");
+		if (stdDev) {
+			header.push("stdDev");
+		}
+		for (const k of percentiles) {
+			header.push("p" + k);
+		}
 
 		out.write(chalk.greenBright("\n\nSuite: "));
 		out.write(name);
@@ -38,18 +45,30 @@ async function print(result: ESBenchResult, out: Writable, chalk: ChalkInstance)
 			table.push(column);
 
 			for (const k of stageKeys) {
-				column.push(data[k]);
+				column.push(data[k] as string);
 			}
 			for (const k of flatted.pKeys) {
 				column.push("" + data.params[k]);
 			}
-			const time = median(data.metrics.time);
-			column.push(durationFmt.formatDiv(time, "ms") + "/op");
+
+			const time = data.metrics.time.sort();
+			column.push(fmtTime(mean(time)));
+
+			if (stdDev) {
+				column.push(fmtTime(standardDeviation(time)));
+			}
+			for (const k of percentiles) {
+				column.push(fmtTime(quantileSorted(time, k / 100)));
+			}
 		}
 
 		out.write("\n");
 		out.write(markdownTable(table, { stringLength, align: "r" }));
 	}
+}
+
+function fmtTime(ms: number) {
+	return durationFmt.formatDiv(ms, "ms");
 }
 
 export interface TextReporterOptions {
@@ -64,17 +83,41 @@ export interface TextReporterOptions {
 	 * @default true
 	 */
 	console?: boolean;
+
+	/**
+	 * Show standard deviation columns in the report.
+	 */
+	stdDev?: boolean;
+
+	/**
+	 * Show percentiles columns in the report.
+	 *
+	 * To make this value more accurate, you can increase `samples` and decrease `iterations` in suite config.
+	 *
+	 * @example
+	 * export default defineConfig({
+	 *     reporters: [
+	 *         textReporter({ percentiles: [75, 99] }),
+	 *     ],
+	 * });
+	 *
+	 * |   name |    size |      time |       p75 |       p99 |
+	 * | -----: | ------: | --------: | --------: | --------: |
+	 * | object |    1000 | 938.45 ms | 917.54 ms | 992.03 ms |
+	 * |    map |    1000 |    1.03 s |    1.08 s | 995.83 ms |
+	 */
+	percentiles?: number[];
 }
 
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
 	return async result => {
 		if (console) {
-			await print(result, stdout, chalk);
+			await print(result, options, stdout, chalk);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
-			await print(result, stream, new Chalk({ level: 0 }));
+			await print(result, options, stream, new Chalk({ level: 0 }));
 		}
 	};
 }
