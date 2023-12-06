@@ -1,9 +1,12 @@
+import type { ESBenchResult } from "@esbench/core/client";
 import "./app.css";
-import App from "./App.svelte";
+import { Page } from "./index.ts";
 
+declare global {
+	interface Window { ESBenchResult: ESBenchResult }
+}
 
-const app = new App({
+export default new Page({
 	target: document.body,
+	props: { result: window.ESBenchResult },
 });
-
-export default app;

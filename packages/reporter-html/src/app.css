@@ -11,10 +11,7 @@
 }
 
 body {
-    display: grid;
-    grid-template-areas: "nav header params" "nav main params";
-    grid-template-rows: auto 1fr;
-    grid-template-columns: 200px 1fr 300px;
+    display: flex;
     margin: 0;
     min-height: 100vh;
 }

@@ -6,8 +6,8 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 const debugDataPlugin: Plugin = {
 	name: "debug-data",
 	transformIndexHtml(html) {
-		const result = JSON.parse(readFileSync("../example/benchmark.json", "utf8"));
-		return html.replace("<!--ESBench-Result-->", `<script>window.ESBenchResult=${result}</script>`);
+		const data = readFileSync("./dev-data.json", "utf8");
+		return html.replace("<!--ESBench-Result-->", `<script>window.ESBenchResult=${data}</script>`);
 	},
 };
 
@@ -15,9 +15,10 @@ export default defineConfig(({ mode }) => ({
 	plugins: [
 		viteSingleFile(),
 		svelte(),
-		mode === "serve" && debugDataPlugin,
+		mode === "development" && debugDataPlugin,
 	],
 	build: {
+		emptyOutDir: false,
 		outDir: mode === "plugin" ? "../core/html" : undefined,
 	},
 }));

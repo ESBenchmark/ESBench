@@ -16,9 +16,9 @@
 	"types": "lib/index.d.ts",
 	"main": "lib/index.js",
 	"scripts": {
-		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"dev": "vite",
 		"build": "vite build",
+		"build-plugin": "vite build --mode plugin",
 		"preview": "vite preview"
 	},
 	"dependencies": {
