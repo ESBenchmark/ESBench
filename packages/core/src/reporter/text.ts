@@ -51,7 +51,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 				column.push("" + data.params[k]);
 			}
 
-			const time = data.metrics.time.sort();
+			const time = data.metrics.time.sort((a, b) => a - b);
 			column.push(fmtTime(mean(time)));
 
 			if (stdDev) {
@@ -101,10 +101,10 @@ export interface TextReporterOptions {
 	 *     ],
 	 * });
 	 *
-	 * |   name |    size |      time |       p75 |       p99 |
-	 * | -----: | ------: | --------: | --------: | --------: |
-	 * | object |    1000 | 938.45 ms | 917.54 ms | 992.03 ms |
-	 * |    map |    1000 |    1.03 s |    1.08 s | 995.83 ms |
+	 * |   name |    size |      time |       p75 |    p99 |
+	 * | -----: | ------: | --------: | --------: | -----: |
+	 * | object |    1000 | 938.45 ms | 992.03 ms | 1.08 s |
+	 * |    map |    1000 |    1.03 s |    1.07 s |  1.1 s |
 	 */
 	percentiles?: number[];
 }
