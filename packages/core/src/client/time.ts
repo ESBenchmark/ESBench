@@ -79,6 +79,14 @@ export class TimeWorker implements BenchmarkWorker {
 		this.config = config;
 	}
 
+	async onSuite(ctx: WorkerContext) {
+		// noinspection PointlessBooleanExpressionJS
+		if (globalThis.crossOriginIsolated === false) {
+			await ctx.warn("Context is non-isolated, performance.now() may work in low-precision mode. For more details, see:\n" +
+				"https://developer.mozilla.org/docs/Web/API/Performance/now#security_requirements");
+		}
+	}
+
 	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
 		const { samples = 10, unrollFactor = 16 } = this.config;
 		let { iterations = "1s" } = this.config;
