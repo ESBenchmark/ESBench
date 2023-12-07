@@ -127,10 +127,13 @@ export class TimeWorker implements BenchmarkWorker {
 		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
 
 		const overhead = medianSorted(overheads);
-		for (let i = 0; i < samples; i++) {
-			time[i] -= overhead;
+		const diff = time.map(ms => ms - overhead);
+		if (diff.every(ms => ms > 0)) {
+			metrics.time = diff;
+		} else {
+			metrics.time = time;
+			await ctx.warn("The function duration is indistinguishable from the empty function duration.");
 		}
-		metrics.time = time.sort((a, b) => a - b);
 	}
 
 	async estimate(ctx: WorkerContext, iterate: Iterate, target: string) {
@@ -155,6 +158,8 @@ export class TimeWorker implements BenchmarkWorker {
 			const time = await iterate(count);
 			await ctx.info(`${name} Warmup: ${timeDetail(time, count)}`);
 		}
+
+		await ctx.info();
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
