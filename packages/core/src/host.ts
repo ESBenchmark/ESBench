@@ -23,20 +23,20 @@ export class ESBenchHost {
 
 	private readonly config: NormalizedESConfig;
 
+	readonly result: ESBenchResult = {};
+
 	constructor(config: ESBenchConfig) {
 		this.config = normalizeConfig(config);
 	}
 
-	async buildStages(stages: Array<Required<Stage>>, outDir: string, file?: string) {
+	async build(stages: Array<Required<Stage>>, outDir: string, file?: string) {
 		const engineMap = new MultiMap<BenchmarkEngine, Builder>();
 		const builderMap = new MultiMap<Builder, string>();
 
 		for (const { include, builders, engines } of stages) {
-			for (let i = 0; i < include.length; i++) {
-				include[i] = dotPrefixed(include[i]);
-			}
+			const dotGlobs = include.map(dotPrefixed);
 			for (const builder of builders) {
-				builderMap.add(builder, ...include);
+				builderMap.add(builder, ...dotGlobs);
 				engineMap.distribute(engines, builder);
 			}
 		}
@@ -63,16 +63,25 @@ export class ESBenchHost {
 			assetMap.add(builder, { files, name, root });
 		}
 
-		const map = new MultiMap<BenchmarkEngine, Build>();
+		const tasks = [];
 		for (const [engine, builders] of engineMap) {
 			for (const builder of builders) {
 				const builds = assetMap.get(builder);
 				if (builds) {
-					map.add(engine, ...builds);
+					tasks.push([engine, builds]);
 				}
 			}
 		}
-		return map;
+		return tasks as Array<[BenchmarkEngine, Build[]]>;
+	}
+
+	private onMessage(engine: string, builder: string, message: ClientMessage) {
+		if ("level" in message) {
+			consoleLogHandler(message.level, message.log);
+		} else {
+			const { name, scenes, paramDef } = message;
+			(this.result[name] ??= []).push({ scenes, paramDef, engine, builder });
+		}
 	}
 
 	async run(file?: string, nameRegex?: RegExp) {
@@ -85,36 +94,26 @@ export class ESBenchHost {
 		}
 
 		mkdirSync(tempDir, { recursive: true });
-		const map = await this.buildStages(stages, tempDir, file);
+		const tasks = await this.build(stages, tempDir, file);
 
-		if (map.size === 0) {
+		if (tasks.length === 0) {
 			throw new Error("No file matching the include pattern of stages");
 		}
-		console.log(`${map.count} stages for ${map.size} engines.`);
 
-		const result: ESBenchResult = {};
+		const stageCount = tasks.reduce((s, t) => s + t[1].length, 0);
+		console.log(`${stageCount} stages for ${tasks.length} engines.`);
+
 		const context: Partial<RunOptions> = {
 			tempDir,
 			pattern: nameRegex?.source,
 		};
 
-		function setHandler(engine: string, builder: string) {
-			context.handleMessage = (message: ClientMessage) => {
-				if ("level" in message) {
-					consoleLogHandler(message.level, message.log);
-				} else {
-					const { name, scenes, paramDef } = message;
-					(result[name] ??= []).push({ scenes, paramDef, engine, builder });
-				}
-			};
-		}
-
-		for (const [engine, builds] of map) {
+		for (const [engine, builds] of tasks) {
 			const engineName = await engine.start();
 			console.log(`Running suites with: ${engineName}.`);
 
 			for (const { files, name, root } of builds) {
-				setHandler(engineName, name);
+				context.handleMessage = this.onMessage.bind(this, engineName, name);
 				context.files = files;
 				context.root = root;
 				await engine.run(context as RunOptions);
@@ -126,7 +125,7 @@ export class ESBenchHost {
 		console.log(); // Add an empty line between running & reporting phase.
 
 		for (const reporter of reporters) {
-			await reporter(result);
+			await reporter(this.result);
 		}
 		if (cleanTempDir) {
 			rmSync(tempDir, { recursive: true });
