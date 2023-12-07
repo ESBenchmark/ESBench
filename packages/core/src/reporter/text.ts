@@ -15,17 +15,17 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, stages] of entries) {
-		const flatted = flatSummary(stages);
+		const { list, builders, engines, pKeys } = flatSummary(stages);
 		const stageKeys: Array<keyof FlattedResult> = ["name"];
-		if (flatted.builders.size > 1) {
+		if (builders.size > 1) {
 			stageKeys.push("builder");
 		}
-		if (flatted.engines.size > 1) {
+		if (engines.size > 1) {
 			stageKeys.push("engine");
 		}
 
 		const header: string[] = [...stageKeys];
-		for (const key of flatted.pKeys) {
+		for (const key of pKeys) {
 			header.push(chalk.magentaBright(key));
 		}
 		header.push("time");
@@ -40,14 +40,14 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		out.write(name);
 
 		const table = [header];
-		for (const data of flatted.list) {
+		for (const data of list) {
 			const column: string[] = [];
 			table.push(column);
 
 			for (const k of stageKeys) {
 				column.push(data[k] as string);
 			}
-			for (const k of flatted.pKeys) {
+			for (const k of pKeys) {
 				column.push("" + data.params[k]);
 			}
 
@@ -85,7 +85,7 @@ export interface TextReporterOptions {
 	console?: boolean;
 
 	/**
-	 * Show standard deviation columns in the report.
+	 * Show standard deviation (SD) columns in the report.
 	 */
 	stdDev?: boolean;
 

@@ -3,6 +3,7 @@ node_modules
 .svelte-kit
 /dist
 /debug.[jt]s
+/packages/*/debug.[jt]s
 
 # local env files
 .env.local

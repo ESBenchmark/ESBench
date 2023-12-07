@@ -4,7 +4,7 @@ import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 
-type IterateFn = (count: number) => Awaitable<number>;
+type Iterate = (count: number) => Awaitable<number>;
 
 function unroll(factor: number, isAsync: boolean) {
 	const call = isAsync ? "await f()" : "f()";
@@ -33,10 +33,10 @@ function unroll(factor: number, isAsync: boolean) {
  * we will get a wrong overhead time.
  */
 
-function createInvoker(case_: BenchCase, factor: number): IterateFn {
+function createInvoker(factor: number, case_: BenchCase): Iterate {
 	const { fn, isAsync, setupHooks, cleanHooks } = case_;
 
-	async function syncWithSetup(count: number) {
+	async function syncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
 			await runHooks(setupHooks);
@@ -50,7 +50,7 @@ function createInvoker(case_: BenchCase, factor: number): IterateFn {
 		return timeUsage;
 	}
 
-	async function asyncWithSetup(count: number) {
+	async function asyncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
 			await runHooks(setupHooks);
@@ -65,7 +65,7 @@ function createInvoker(case_: BenchCase, factor: number): IterateFn {
 	}
 
 	if (setupHooks.length | cleanHooks.length) {
-		return isAsync ? asyncWithSetup : syncWithSetup;
+		return isAsync ? asyncWithHooks : syncWithHooks;
 	} else {
 		return unroll(factor, isAsync).bind(null, fn);
 	}
@@ -80,7 +80,7 @@ export class TimeWorker implements BenchmarkWorker {
 	}
 
 	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
-		const { warmup = 5, samples = 10, unrollFactor = 16 } = this.config;
+		const { samples = 10, unrollFactor = 16 } = this.config;
 		let { iterations = "1s" } = this.config;
 
 		if (unrollFactor < 1) {
@@ -90,12 +90,13 @@ export class TimeWorker implements BenchmarkWorker {
 			throw new Error("The number of samples must be at least 1.");
 		}
 
-		const iterate = createInvoker(case_, unrollFactor);
+		const iterateActual = createInvoker(unrollFactor, case_);
 		await ctx.info(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard
 		if (typeof iterations === "string") {
-			iterations = await this.getIterations(iterate, iterations, ctx);
+			iterations = await this.estimate(ctx, iterateActual, iterations);
+			await ctx.info();
 		} else if (iterations % unrollFactor === 0) {
 			iterations /= unrollFactor;
 		} else {
@@ -106,54 +107,53 @@ export class TimeWorker implements BenchmarkWorker {
 			throw new Error("The number of iterations cannot be 0 or negative.");
 		}
 
-		const iterateOverhead = createInvoker(<any>{
+		const iterateOverhead = createInvoker(unrollFactor, <any>{
 			fn: noop,
-			isAsync: case_.isAsync,
 			setupHooks: [],
 			cleanHooks: [],
-		}, unrollFactor);
-		const overheadTimes = [];
+			isAsync: case_.isAsync,
+		});
 
-		for (let i = 0; i < warmup; i++) {
-			const time = await iterateOverhead(iterations);
-			await ctx.info(`Overhead Warmup: ${timeDetail(time, iterations)}`);
-		}
-
-		for (let i = 0; i < samples; i++) {
-			const time = await iterateOverhead(iterations);
-			overheadTimes.push(time);
-			await ctx.info(`Overhead: ${timeDetail(time, iterations)}`);
-		}
-		const overhead = medianSorted(overheadTimes.sort());
-
-		for (let i = 0; i < warmup; i++) {
-			const time = await iterate(iterations);
-			await ctx.info(`Actual Warmup: ${timeDetail(time, iterations)}`);
-		}
-
-		// noinspection JSMismatchedCollectionQueryUpdate
-		const values: number[] = metrics.time = [];
+		const overheads = await this.measure(ctx, "Overhead", iterateOverhead, iterations);
 		await ctx.info();
+		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
 
+		const overhead = medianSorted(overheads);
 		for (let i = 0; i < samples; i++) {
-			const time = await iterate(iterations) - overhead;
-			values.push(time / iterations);
-			await ctx.info(`Actual: ${timeDetail(time, iterations)}`);
+			time[i] -= overhead;
 		}
+		metrics.time = time.sort((a, b) => a - b);
 	}
 
-	async getIterations(fn: IterateFn, target: string, ctx: WorkerContext) {
+	async estimate(ctx: WorkerContext, iterate: Iterate, target: string) {
 		const targetMS = durationFmt.parse(target, "ms");
 
-		let count = 1;
+		let iterations = 1;
 		let time = 0;
 		while (time < targetMS) {
-			time = await fn(count);
-			await ctx.info(`Pilot: ${timeDetail(time, count)}`);
-			count *= 2;
+			time = await iterate(iterations);
+			await ctx.info(`Pilot: ${timeDetail(time, iterations)}`);
+			iterations *= 2;
 		}
 
-		await ctx.info();
-		return Math.ceil(count / 2 * targetMS / time);
+		return Math.ceil(iterations / 2 * targetMS / time);
+	}
+
+	async measure(ctx: WorkerContext, name: string, iterate: Iterate, count: number) {
+		const { warmup = 5, samples = 10 } = this.config;
+		const timeUsageList = [];
+
+		for (let i = 0; i < warmup; i++) {
+			const time = await iterate(count);
+			await ctx.info(`${name} Warmup: ${timeDetail(time, count)}`);
+		}
+
+		for (let i = 0; i < samples; i++) {
+			const time = await iterate(count);
+			timeUsageList.push(time);
+			await ctx.info(`${name}: ${timeDetail(time, count)}`);
+		}
+
+		return timeUsageList.sort((a, b) => a - b);
 	}
 }
