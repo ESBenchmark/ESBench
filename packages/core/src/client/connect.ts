@@ -1,16 +1,9 @@
 import { Awaitable } from "@kaciras/utilities/browser";
 import { BenchmarkSuite } from "./suite.js";
-import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
-
-export enum LogLevel {
-	error = 5,
-	warn = 4,
-	info = 3,
-	debug = 2,
-}
+import { LogLevel, runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
 
 export type ClientMessage = RunSuiteResult | {
-	log: string;
+	log?: string;
 	level: LogLevel;
 };
 
@@ -20,11 +13,7 @@ export type Channel = (message: ClientMessage) => Awaitable<void>;
 
 export async function connect(channel: Channel, importer: Importer, files: string[], regex?: string) {
 	const option: RunSuiteOption = {
-		logger: {
-			warn: log => channel({ log, level: LogLevel.warn }),
-			info: log => channel({ log, level: LogLevel.info }),
-			debug: log => channel({ log, level: LogLevel.debug }),
-		},
+		log: (level, log) => channel({ level: level, log }),
 		pattern: regex ? new RegExp(regex) : undefined,
 	};
 
@@ -34,6 +23,6 @@ export async function connect(channel: Channel, importer: Importer, files: strin
 			channel(await runSuite(suite, option));
 		}
 	} catch (e) {
-		channel({ log: `Suite execution failed: ${e.message}`, level: LogLevel.error });
+		channel({ log: `Suite execution failed: ${e.message}`, level: "error" });
 	}
 }

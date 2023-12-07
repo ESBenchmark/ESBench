@@ -1,5 +1,8 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
+import { LogHandler } from "./runner.js";
+
+export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
 
 interface ProcessedParamDef {
 	length: number;
@@ -20,7 +23,7 @@ function displayName(v: unknown) {
 		case "object":
 			return typeof v.toString === "function"
 				? ellipsis(v.toString(), 16)
-				: "[object (null)]";
+				: "[object null]";
 		case "symbol":
 			return v.description
 				? `symbol(${ellipsis(v.description, 10)})`

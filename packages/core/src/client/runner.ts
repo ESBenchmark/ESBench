@@ -2,7 +2,15 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
-import { process, runHooks } from "./utils.js";
+import { consoleLogHandler, process, runHooks } from "./utils.js";
+
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+/**
+ * A function that intercepts log messages. If not supplied, logs are printed to the console.
+ * Calling this function always requires `await` in order to send the message as soon as possible.
+ */
+export type LogHandler = (level: LogLevel, message?: string) => Awaitable<void>;
 
 /**
  * A function that intercepts log messages. If not supplied, logs are printed to the console.
@@ -46,13 +54,13 @@ export interface RunSuiteResult {
 }
 
 export interface RunSuiteOption {
-	logger?: Logger;
+	log?: LogHandler;
 	pattern?: RegExp;
 }
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
 	const { name, setup, afterAll = noop, config = {}, params = {} } = suite;
-	const logger = options.logger ?? console;
+	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");
 
 	const workers: BenchmarkWorker[] = [];
@@ -67,9 +75,9 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	const ctx: WorkerContext = {
 		run: newWorkflow,
-		warn: logger.warn,
-		info: logger.info,
-		debug: logger.debug,
+		warn: message => log("warn", message),
+		info: message => log("info", message),
+		debug: message => log("debug", message),
 	};
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
