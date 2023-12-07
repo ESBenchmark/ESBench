@@ -1,9 +1,8 @@
+import { env, execArgv, version } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path/posix";
 import { ChildProcess, fork } from "child_process";
-import { env } from "process";
 import { once } from "events";
-import envinfo from "envinfo";
 import { BenchmarkEngine, RunOptions } from "../stage.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +16,9 @@ export default class NodeEngine implements BenchmarkEngine {
 
 	private process!: ChildProcess;
 
+	/**
+	 * @param executable Path of the Node executable file.
+	 */
 	constructor(executable?: string) {
 		this.executable = executable;
 	}
@@ -26,7 +28,6 @@ export default class NodeEngine implements BenchmarkEngine {
 		this.process = fork(__filename, {
 			env: workerEnv,
 			execPath: this.executable,
-			execArgv: ["--expose_gc"],
 		});
 		return new Promise<string>(resolve => {
 			this.process.once("message", resolve);
@@ -49,7 +50,7 @@ export default class NodeEngine implements BenchmarkEngine {
 
 if (env.ES_BENCH_WORKER === "true") {
 	const postMessage = process.send!.bind(process);
-	postMessage(envinfo.helpers.getNodeInfo());
+	postMessage(`NodeJS ${version} (${execArgv.join(" ")})`);
 
 	process.on("message", async (message: any) => {
 		const { root, pattern, files } = message;
@@ -57,6 +58,6 @@ if (env.ES_BENCH_WORKER === "true") {
 		const module = pathToFileURL(join(root, "index.js"));
 		const client = await import(module.toString());
 
-		client.default(postMessage, files, pattern);
+		await client.default(postMessage, files, pattern);
 	});
 }
