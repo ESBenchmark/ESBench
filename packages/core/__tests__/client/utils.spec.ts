@@ -6,7 +6,7 @@ describe("process", () => {
 		["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
 		["", ""],
 
-		[Object.create(null), "[object]"],
+		[Object.create(null), "[object null]"],
 		[{}, "[object Object]"],
 		[{ foo: 11 }, "[object Object]"],
 

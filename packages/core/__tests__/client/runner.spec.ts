@@ -18,9 +18,10 @@ export function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pa
 		iterations: 1,
 		samples: 1,
 		warmup: 0,
+		unrollFactor: 1,
 		...suite.config,
 	};
-	return runSuite(suite as any, { logger: noop, pattern });
+	return runSuite(suite as any, { log: noop, pattern });
 }
 
 it("should works", async () => {
