@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
 .svelte-kit
+.vitepress/cache
 /dist
 /debug.[jt]s
 /packages/*/debug.[jt]s

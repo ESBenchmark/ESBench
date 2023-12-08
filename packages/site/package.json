@@ -1,0 +1,23 @@
+{
+	"name": "@esbench/site",
+	"version": "1.0.0",
+	"description": "",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Kaciras/esbench.git"
+	},
+	"type": "module",
+	"scripts": {
+		"docs:dev": "vitepress dev",
+		"docs:build": "vitepress build",
+		"docs:preview": "vitepress preview"
+	},
+	"dependencies": {
+		"monaco-editor": "^0.44.0",
+		"vue": "^3.3.10"
+	},
+	"devDependencies": {
+		"vitepress": "1.0.0-rc.31"
+	}
+}
