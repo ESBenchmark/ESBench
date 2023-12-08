@@ -20,7 +20,7 @@ export interface FlattedResult {
 
 export function flatSummary(value: StageResult[]) {
 	const list: FlattedResult[] = [];
-	const pKeys = new Set<string>();
+	const params: Record<string, Set<string>> = {};
 	const builders = new Set<string>();
 	const engines = new Set<string>();
 
@@ -32,8 +32,11 @@ export function flatSummary(value: StageResult[]) {
 		if (engine) {
 			engines.add(engine);
 		}
-		for (const key of Object.keys(paramDef)) {
-			pKeys.add(key);
+		for (const [key, values] of Object.entries(paramDef)) {
+			const set = params[key] ??= new Set();
+			for (const value of values) {
+				set.add(value);
+			}
 		}
 		for (const scene of scenes) {
 			const params = paramsIter.next().value;
@@ -43,5 +46,5 @@ export function flatSummary(value: StageResult[]) {
 		}
 	}
 
-	return { list, builders, engines, pKeys };
+	return { list, builders, engines, params };
 }

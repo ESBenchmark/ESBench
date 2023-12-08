@@ -15,7 +15,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, stages] of entries) {
-		const { list, builders, engines, pKeys } = flatSummary(stages);
+		const { list, builders, engines, params } = flatSummary(stages);
 		const stageKeys: Array<keyof FlattedResult> = ["name"];
 		if (builders.size > 1) {
 			stageKeys.push("builder");
@@ -25,7 +25,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		}
 
 		const header: string[] = [...stageKeys];
-		for (const key of pKeys) {
+		for (const key of Object.keys(params)) {
 			header.push(chalk.magentaBright(key));
 		}
 		header.push("time");
@@ -47,7 +47,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			for (const k of stageKeys) {
 				column.push(data[k] as string);
 			}
-			for (const k of pKeys) {
+			for (const k of Object.keys(params)) {
 				column.push("" + data.params[k]);
 			}
 
