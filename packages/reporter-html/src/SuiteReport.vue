@@ -1,27 +1,35 @@
 <template>
 	<div :class='$style.container'>
 		<header>
-			Suite: {name}
+			<h2>{{ name }}</h2>
+
+			<LabeledSelect
+				v-model='errorBarType'
+				label='Error bar type'
+			>
+				<option>None</option>
+				<option>Value Range</option>
+				<option>StdDev</option>
+				<option>StdError</option>
+			</LabeledSelect>
 		</header>
 
 		<section :class='$style.main'>
 			<canvas ref='canvasRef'/>
-			<select>
-				<option>Mean</option>
-				<option>Median</option>
-			</select>
 		</section>
 
 		<section :class='$style.params'>
 			<h1>Parameters</h1>
+
 		</section>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { flatSummary, type StageResult } from "@esbench/core/client";
-import { Chart } from "chart.js";
-import { onMounted, shallowRef } from "vue";
+import { computed, onMounted, shallowRef, watch } from "vue";
+import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
+import LabeledSelect from "./LabeledSelect.vue";
 
 interface SuiteReportProps {
 	name: string;
@@ -30,8 +38,8 @@ interface SuiteReportProps {
 
 const props = defineProps<SuiteReportProps>();
 
-const flatted = flatSummary(props.stages);
 const canvasRef = shallowRef();
+const errorBarType = shallowRef();
 
 function mean(values: number[]) {
 	let sum = 0;
@@ -41,21 +49,25 @@ function mean(values: number[]) {
 	return sum / values.length;
 }
 
-function meaian(values: number[]) {
-	values.sort();
-	return values[Math.round(values.length / 2)];
-}
+const data = computed(() => {
+	const { list } = flatSummary(props.stages);
+	const labels = list.map(r => r.name);
+	const datasets = [{
+		label: "time",
+		data: list.map(r => ({
+			y: mean(r.metrics.time),
+			// yMin: 1000,
+			// yMax: 1300,
+		})),
+	}];
+	return { labels, datasets };
+});
+
+let chart;
 
 onMounted(() => {
-	new Chart(canvasRef.value, {
-		type: "bar",
-		data: {
-			labels: flatted.list.map(r => r.name),
-			datasets: [{
-				label: "time",
-				data: flatted.list.map(r => mean(r.metrics.time)),
-			}],
-		},
+	chart = new BarWithErrorBarsChart(canvasRef.value, {
+		data: data.value,
 		options: {
 			responsive: true,
 			plugins: {
@@ -66,6 +78,11 @@ onMounted(() => {
 		},
 	});
 });
+
+watch(data, v => {
+	chart.data = v;
+	chart.update();
+});
 </script>
 
 <style module>
@@ -74,6 +91,7 @@ onMounted(() => {
     grid-template-areas: "header params" "main params";
     grid-template-rows: auto 1fr;
     grid-template-columns: 1fr 400px;
+    gap: 20px;
 }
 
 header {

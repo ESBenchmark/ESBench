@@ -85,9 +85,24 @@ importers:
 
   packages/reporter-html:
     dependencies:
+      '@kaciras/utilities':
+        specifier: ^0.10.3
+        version: 0.10.3
+      '@tabler/icons-vue':
+        specifier: ^2.42.0
+        version: 2.42.0(vue@3.3.10)
+      '@vueuse/core':
+        specifier: ^10.7.0
+        version: 10.7.0(vue@3.3.10)
       chart.js:
         specifier: ^4.4.0
         version: 4.4.0
+      chartjs-chart-error-bars:
+        specifier: ^4.3.3
+        version: 4.3.3(chart.js@4.4.0)
+      simple-statistics:
+        specifier: ^7.8.3
+        version: 7.8.3
       vue:
         specifier: ^3.3.10
         version: 3.3.10(typescript@5.3.2)
@@ -928,6 +943,19 @@ packages:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
 
+  /@tabler/icons-vue@2.42.0(vue@3.3.10):
+    resolution: {integrity: sha512-JqYrWKsoOaCed2+ADNFoqQ965GmmI7m8XnuVVBGWWamvYpyM4qXF0QYBkLxfwXgBHIkmQP8g3vStY/d8MvSMVA==}
+    peerDependencies:
+      vue: '>=3.0.1'
+    dependencies:
+      '@tabler/icons': 2.42.0
+      vue: 3.3.10(typescript@5.3.2)
+    dev: false
+
+  /@tabler/icons@2.42.0:
+    resolution: {integrity: sha512-ynV4iaC1c1mUhuAr9HRaoq8KrWYmZ0bJEpOh7qTBE+OfdDsdvQUe+0S7FW+DHkJ4RuxQMdO8djrZK7HrUw9YMA==}
+    dev: false
+
   /@types/chai-subset@1.3.5:
     resolution: {integrity: sha512-c2mPnw+xHtXDoHmdtcCXGwyLMiauiAyxWMzhGpqHC4nqI/Y5G2XhTampslK2rb59kpcuHon03UH8W6iYUzw88A==}
     dependencies:
@@ -989,7 +1017,6 @@ packages:
 
   /@types/web-bluetooth@0.0.20:
     resolution: {integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==}
-    dev: true
 
   /@typescript-eslint/eslint-plugin@6.10.0(@typescript-eslint/parser@6.10.0)(eslint@8.55.0)(typescript@5.3.2):
     resolution: {integrity: sha512-uoLj4g2OTL8rfUQVx2AFO1hp/zja1wABJq77P6IclQs6I/m9GLrm7jCdgzZkvWdDCQf1uEvoa8s8CupsgWQgVg==}
@@ -1262,7 +1289,6 @@ packages:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
-    dev: true
 
   /@vueuse/integrations@10.7.0(focus-trap@7.5.4)(vue@3.3.10):
     resolution: {integrity: sha512-rxiMYgS+91n93qXpHZF9NbHhppWY6IJyVTDxt4acyChL0zZVx7P8FAAfpF1qVK8e4wfjerhpEiMJ0IZ1GWUZ2A==}
@@ -1316,7 +1342,6 @@ packages:
 
   /@vueuse/metadata@10.7.0:
     resolution: {integrity: sha512-GlaH7tKP2iBCZ3bHNZ6b0cl9g0CJK8lttkBNUX156gWvNYhTKEtbweWLm9rxCPIiwzYcr/5xML6T8ZUEt+DkvA==}
-    dev: true
 
   /@vueuse/shared@10.7.0(vue@3.3.10):
     resolution: {integrity: sha512-kc00uV6CiaTdc3i1CDC4a3lBxzaBE9AgYNtFN87B5OOscqeWElj/uza8qVDmk7/U8JbqoONLbtqiLJ5LGRuqlw==}
@@ -1325,7 +1350,6 @@ packages:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
-    dev: true
 
   /acorn-jsx@5.3.2(acorn@8.11.2):
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -1500,6 +1524,14 @@ packages:
     engines: {pnpm: '>=7'}
     dependencies:
       '@kurkle/color': 0.3.2
+    dev: false
+
+  /chartjs-chart-error-bars@4.3.3(chart.js@4.4.0):
+    resolution: {integrity: sha512-Hv2b+8InmNqfwYGgYW8uNO2VsY+BKdIiJZrfGrBwQjb7CY5kvr0hCCZ0QDNsSkEj8bxseAsv729ZddpC6PXTzQ==}
+    peerDependencies:
+      chart.js: ^4.1.0
+    dependencies:
+      chart.js: 4.4.0
     dev: false
 
   /check-error@1.0.3:
@@ -3194,7 +3226,6 @@ packages:
         optional: true
     dependencies:
       vue: 3.3.10(typescript@5.3.2)
-    dev: true
 
   /vue-eslint-parser@9.3.2(eslint@8.55.0):
     resolution: {integrity: sha512-q7tWyCVaV9f8iQyIA5Mkj/S6AoJ9KBN8IeUSf3XEmBrOtxOZnfTg5s4KClbZBCK3GtnT/+RyCLZyDHuZwTuBjg==}

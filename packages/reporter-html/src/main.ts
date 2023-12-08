@@ -7,4 +7,6 @@ declare global {
 	interface Window { ESBenchResult: ESBenchResult }
 }
 
-createApp(Page, { result: window.ESBenchResult }).mount(document.body);
+
+createApp(Page, { result: window.ESBenchResult })
+	.mount(document.body);

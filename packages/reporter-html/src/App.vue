@@ -1,18 +1,31 @@
 <template>
-	<nav>
+	<nav :class='$style.nav'>
+		<h2>Suite Name</h2>
 		<a
-			v-for='[file, stages] of suites'
-			:href='encodeURIComponent(file)'
+			v-for='name of names'
+			:key='name'
+			:class='[$style.link, selected == name && $style.active]'
+			:href='"#" + encodeURIComponent(name)'
 		>
-			{{file}}
+			{{ name }}
 		</a>
 	</nav>
 
-	<SuiteReport :class='$style.report' :name='name' :stages='stages'/>
+	<SuiteReport
+		v-if='stages'
+		:class='$style.report'
+		:name='selected'
+		:stages='stages'
+	/>
+
+	<main v-else>
+		<h1 :class='$style.error'>Suite Not Found</h1>
+	</main>
 </template>
 
 <script setup lang="ts">
 import type { ESBenchResult } from "@esbench/core/client";
+import { computed, shallowRef } from "vue";
 import SuiteReport from "./SuiteReport.vue";
 
 interface AppProps {
@@ -20,25 +33,47 @@ interface AppProps {
 }
 
 const props = defineProps<AppProps>();
+const names = Object.keys(props.result);
 
-const suites = Object.entries(props.result);
+function getSuiteName() {
+	return decodeURIComponent(location.hash.slice(1));
+}
 
-const [name, stages] = suites[0];
+const initName = getSuiteName() || names[0];
+
+const selected = shallowRef(initName);
+
+const stages = computed(() => props.result[selected.value]);
+
+window.addEventListener("hashchange", () => {
+	selected.value = getSuiteName();
+});
 </script>
 
 <style module>
-nav {
+.nav {
     width: 320px;
+    padding: 0 20px;
+    background: #f6f6f7;
 }
 
 .report {
     flex: 1;
+    margin-left: 20px;
 }
 
-a {
-    padding: 10px;
-
+.link {
+    display: block;
+    margin: 10px 0;
     text-decoration: none;
     color: inherit;
+}
+
+.active {
+    color: #0077ff;
+}
+
+.error {
+    color: #ef4848;
 }
 </style>
