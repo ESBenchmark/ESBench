@@ -27,6 +27,6 @@ const delegate = emit.bind(null, "update:modelValue");
 
 <style module>
 .select {
-    margin-top: 5px;
+    margin-top: 4px;
 }
 </style>

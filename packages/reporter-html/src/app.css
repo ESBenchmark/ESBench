@@ -10,6 +10,10 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     display: flex;
     margin: 0;

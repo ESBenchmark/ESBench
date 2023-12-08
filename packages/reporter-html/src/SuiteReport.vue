@@ -2,20 +2,20 @@
 	<div :class='$style.container'>
 		<header>
 			<h2>{{ name }}</h2>
+		</header>
+
+		<section :class='$style.main'>
+			<canvas ref='canvasRef'/>
 
 			<LabeledSelect
 				v-model='errorBarType'
 				label='Error bar type'
 			>
-				<option>None</option>
-				<option>Value Range</option>
-				<option>StdDev</option>
-				<option>StdError</option>
+				<option :value='none'>None</option>
+				<option :value='valueRange'>Value Range</option>
+				<option :value='stdDev'>Standard Deviation</option>
+				<option :value='stdErr'>Standard Error</option>
 			</LabeledSelect>
-		</header>
-
-		<section :class='$style.main'>
-			<canvas ref='canvasRef'/>
 		</section>
 
 		<section :class='$style.params'>
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { flatSummary, FlattedResult, type StageResult } from "@esbench/core/client";
 import { computed, onMounted, reactive, shallowRef, watch } from "vue";
-import { mean } from "simple-statistics";
+import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
 import LabeledSelect from "./LabeledSelect.vue";
 
@@ -54,7 +54,7 @@ const props = defineProps<SuiteReportProps>();
 const flatted = computed(() => flatSummary(props.stages));
 
 const canvasRef = shallowRef();
-const errorBarType = shallowRef();
+const errorBarType = shallowRef(valueRange);
 
 let chart: BarWithErrorBarsChart;
 
@@ -101,6 +101,27 @@ function resetFilterData() {
 
 watch(flatted, resetFilterData, { flush: "pre" });
 
+function none(values: number[]) {
+	return { y: mean(values) };
+}
+
+function stdDev(values: number[]) {
+	const e = standardDeviation(values);
+	const y = mean(values);
+	return { y, yMin: y - e, yMax: y + e };
+}
+
+function stdErr(values: number[]) {
+	const e = standardDeviation(values) / Math.sqrt(values.length);
+	const y = mean(values);
+	return { y, yMin: y - e, yMax: y + e };
+}
+
+function valueRange(values: number[]) {
+	const y = mean(values);
+	return { y, yMin: values.at(0), yMax: values.at(-1) };
+}
+
 const data = computed(() => {
 	const { list } = flatted.value;
 
@@ -117,18 +138,14 @@ const data = computed(() => {
 	const labels = matches.map(r => r.name);
 	const datasets = [{
 		label: "time",
-		data: matches.map(r => ({
-			y: mean(r.metrics.time),
-			// yMin: NaN,
-			// yMax: NaN,
-		})),
+		data: matches.map(r => errorBarType.value(r.metrics.time)),
 	}];
 	return { labels, datasets } as any;
 });
 
 watch(data, newData => {
 	chart.data = newData;
-	chart.update();
+	chart.update("none");
 });
 
 onMounted(() => {
@@ -163,6 +180,6 @@ header {
 
 .params {
     grid-area: params;
-	padding: 20px;
+    padding: 20px;
 }
 </style>
