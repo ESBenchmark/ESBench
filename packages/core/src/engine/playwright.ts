@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import mime from "mime";
-import { BenchmarkEngine, RunOptions } from "../stage.js";
+import { Engine, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 
@@ -41,7 +41,7 @@ async function client({ files, pattern }: any) {
  *     }],
  * });
  */
-export default class PlaywrightEngine implements BenchmarkEngine {
+export default class PlaywrightEngine implements Engine {
 
 	private readonly type: BrowserType;
 	private readonly options?: LaunchOptions;

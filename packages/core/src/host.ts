@@ -4,8 +4,8 @@ import { cwd } from "process";
 import { performance } from "perf_hooks";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
-import { BenchmarkEngine, Builder, RunOptions } from "./stage.js";
-import { ESBenchConfig, normalizeConfig, NormalizedESConfig, Stage } from "./config.js";
+import { Builder, Engine, RunOptions } from "./stage.js";
+import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
 import { consoleLogHandler } from "./client/utils.js";
 
@@ -21,7 +21,7 @@ function dotPrefixed(path: string) {
 
 export class ESBenchHost {
 
-	private readonly config: NormalizedESConfig;
+	private readonly config: NormalizedConfig;
 
 	readonly result: ESBenchResult = {};
 
@@ -29,9 +29,12 @@ export class ESBenchHost {
 		this.config = normalizeConfig(config);
 	}
 
-	async build(stages: Array<Required<Stage>>, outDir: string, file?: string) {
-		const engineMap = new MultiMap<BenchmarkEngine, Builder>();
+	async build(file?: string) {
+		const { tempDir, stages } = this.config;
+		const engineMap = new MultiMap<Engine, Builder>();
 		const builderMap = new MultiMap<Builder, string>();
+
+		mkdirSync(tempDir, { recursive: true });
 
 		for (const { include, builders, engines } of stages) {
 			const dotGlobs = include.map(dotPrefixed);
@@ -41,9 +44,9 @@ export class ESBenchHost {
 			}
 		}
 
-		const assetMap = new MultiMap<Builder, Build>();
+		const assetMap = new Map<Builder, Build>();
 		for (const [builder, include] of builderMap) {
-			const root = mkdtempSync(join(outDir, "build-"));
+			const root = mkdtempSync(join(tempDir, "build-"));
 			const { name } = builder;
 
 			const files = await glob(include);
@@ -60,19 +63,19 @@ export class ESBenchHost {
 			}
 			console.log(`Building with ${name}...`);
 			await builder.build(root, files);
-			assetMap.add(builder, { files, name, root });
+			assetMap.set(builder, { files, name, root });
 		}
 
-		const tasks = [];
+		const jobs = new MultiMap<Engine, Build>();
 		for (const [engine, builders] of engineMap) {
 			for (const builder of builders) {
 				const builds = assetMap.get(builder);
 				if (builds) {
-					tasks.push([engine, builds]);
+					jobs.add(engine, builds);
 				}
 			}
 		}
-		return tasks as Array<[BenchmarkEngine, Build[]]>;
+		return jobs;
 	}
 
 	private onMessage(engine: string, builder: string, message: ClientMessage) {
@@ -85,7 +88,7 @@ export class ESBenchHost {
 	}
 
 	async run(file?: string, nameRegex?: RegExp) {
-		const { stages, reporters, tempDir, cleanTempDir } = this.config;
+		const { reporters, tempDir, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
 		if (file) {
@@ -93,22 +96,19 @@ export class ESBenchHost {
 			file = dotPrefixed(file.replaceAll("\\", "/"));
 		}
 
-		mkdirSync(tempDir, { recursive: true });
-		const tasks = await this.build(stages, tempDir, file);
+		const jobs = await this.build(file);
 
-		if (tasks.length === 0) {
+		if (jobs.size === 0) {
 			throw new Error("No file matching the include pattern of stages");
 		}
-
-		const stageCount = tasks.reduce((s, t) => s + t[1].length, 0);
-		console.log(`${stageCount} stages for ${tasks.length} engines.`);
+		console.log(`${jobs.count} stages for ${jobs.size} engines.`);
 
 		const context: Partial<RunOptions> = {
 			tempDir,
 			pattern: nameRegex?.source,
 		};
 
-		for (const [engine, builds] of tasks) {
+		for (const [engine, builds] of jobs) {
 			const engineName = await engine.start();
 			console.log(`Running suites with: ${engineName}.`);
 

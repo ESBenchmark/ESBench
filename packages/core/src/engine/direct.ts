@@ -1,12 +1,12 @@
 import { execArgv, version } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { BenchmarkEngine, RunOptions } from "../stage.js";
+import { Engine, RunOptions } from "../stage.js";
 
 /**
  * Run suites directly in the current context.
  */
-export default class DirectEngine implements BenchmarkEngine {
+export default class DirectEngine implements Engine {
 
 	start() {
 		return execArgv.length

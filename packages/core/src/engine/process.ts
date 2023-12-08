@@ -5,7 +5,7 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
-import { BenchmarkEngine, RunOptions } from "../stage.js";
+import { Engine, RunOptions } from "../stage.js";
 
 const template = `\
 import connect from "__ENTRY__";
@@ -24,7 +24,7 @@ type GetCommand = (file: string) => string;
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.
  */
-export default class ProcessEngine implements BenchmarkEngine {
+export default class ProcessEngine implements Engine {
 
 	private readonly getCommand: GetCommand;
 

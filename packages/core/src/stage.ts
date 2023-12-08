@@ -22,7 +22,7 @@ export interface RunOptions {
 	handleMessage(message: any): void;
 }
 
-export interface BenchmarkEngine {
+export interface Engine {
 
 	start(): Awaitable<string>;
 
