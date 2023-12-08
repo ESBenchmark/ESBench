@@ -29,4 +29,11 @@ describe("process", () => {
 		};
 		expect(process(params).length).toBe(8);
 	});
+
+	it("should restrict parameters to have unique display names", () => {
+		const params = {
+			foo: ["1234567_A_1234567", "1234567_B_1234567"],
+		};
+		expect(() => process(params)).toThrow(/Parameter display name conflict/);
+	});
 });

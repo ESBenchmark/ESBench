@@ -40,15 +40,24 @@ function displayName(v: unknown) {
 export function process(params: CPSrcObject) {
 	const entries = Object.entries(params);
 	const paramDef: Record<string, string[]> = {};
-	let length = 1;
+	const set = new Set<string>();
 
+	let length = 1;
 	for (const [key, values] of entries) {
 		const current: string[] = [];
 		paramDef[key] = current;
 
 		for (const v of values) {
-			current.push(displayName(v));
+			const name = displayName(v);
+			set.add(name);
+			current.push(name);
 		}
+
+		if (set.size !== current.length) {
+			throw new Error("Parameter display name conflict.");
+		}
+
+		set.clear();
 		length *= current.length;
 	}
 
