@@ -1,34 +1,37 @@
-<div {...$$restProps} class={mergedClass}>
-	<header>
-		Suite: {name}
-	</header>
+<template>
+	<div :class='$style.container'>
+		<header>
+			Suite: {name}
+		</header>
 
-	<section class="main">
-		<canvas bind:this={canvasRef}/>
-		<select>
-			<option>Mean</option>
-			<option>Median</option>
-		</select>
-	</section>
+		<section :class='$style.main'>
+			<canvas ref='canvasRef'/>
+			<select>
+				<option>Mean</option>
+				<option>Median</option>
+			</select>
+		</section>
 
-	<section class="params">
-		<h1>Parameters</h1>
-	</section>
-</div>
+		<section :class='$style.params'>
+			<h1>Parameters</h1>
+		</section>
+	</div>
+</template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { flatSummary, type StageResult } from "@esbench/core/client";
-import { onMount } from "svelte";
 import { Chart } from "chart.js";
+import { onMounted, shallowRef } from "vue";
 
-export let name: string;
-export let stages: StageResult[];
+interface SuiteReportProps {
+	name: string;
+	stages: StageResult[];
+}
 
-const flatted = flatSummary(stages);
+const props = defineProps<SuiteReportProps>();
 
-let canvasRef: HTMLCanvasElement;
-
-$: mergedClass = `container ${$$restProps.class}`
+const flatted = flatSummary(props.stages);
+const canvasRef = shallowRef();
 
 function mean(values: number[]) {
 	let sum = 0;
@@ -43,8 +46,8 @@ function meaian(values: number[]) {
 	return values[Math.round(values.length / 2)];
 }
 
-onMount(() => {
-	new Chart(canvasRef, {
+onMounted(() => {
+	new Chart(canvasRef.value, {
 		type: "bar",
 		data: {
 			labels: flatted.list.map(r => r.name),
@@ -65,7 +68,7 @@ onMount(() => {
 });
 </script>
 
-<style>
+<style module>
 .container {
     display: grid;
     grid-template-areas: "header params" "main params";

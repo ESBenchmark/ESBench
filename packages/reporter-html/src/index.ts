@@ -3,4 +3,4 @@ import "./app.css";
 
 Chart.register(BarController, Tooltip, Colors, CategoryScale, LinearScale, BarElement, Legend);
 
-export { default as Page } from "./App.svelte";
+export { default as Page } from "./App.vue";

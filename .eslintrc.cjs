@@ -3,23 +3,13 @@ module.exports = {
 	extends: [
 		"@kaciras/core",
 		"@kaciras/typescript",
-		'plugin:svelte/recommended',
+		"@kaciras/vue/typescript",
 	],
 	env: {
 		browser: true,
 		node: true,
 	},
-	parserOptions: {
-		extraFileExtensions: ['.svelte']
-	},
 	rules: {
 		"@kaciras/import-group-sort": "warn",
 	},
-	overrides: [{
-		files: ["*.svelte"],
-		parser: 'svelte-eslint-parser',
-		parserOptions: {
-			parser: '@typescript-eslint/parser'
-		},
-	}],
 };

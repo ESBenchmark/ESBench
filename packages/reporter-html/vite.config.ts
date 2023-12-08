@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { defineConfig, type Plugin } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import vue from "@vitejs/plugin-vue";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 const debugDataPlugin: Plugin = {
@@ -14,7 +14,7 @@ const debugDataPlugin: Plugin = {
 export default defineConfig(({ mode }) => ({
 	plugins: [
 		viteSingleFile(),
-		svelte(),
+		vue(),
 		mode === "development" && debugDataPlugin,
 	],
 	build: {

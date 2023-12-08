@@ -1,2 +1,2 @@
-/// <reference types="svelte" />
+/// <reference types="vue" />
 /// <reference types="vite/client" />
