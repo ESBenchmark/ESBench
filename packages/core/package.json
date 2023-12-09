@@ -22,7 +22,7 @@
 		"lib/**/*.{js,d.ts}"
 	],
 	"bin": {
-		"esbench": "bin/cli.js"
+		"esbench": "lib/cli.js"
 	},
 	"scripts": {
 		"test": "vitest run"
@@ -39,7 +39,8 @@
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {
-		"@types/mime": "^3.0.4"
+		"@types/mime": "^3.0.4",
+		"@types/yargs": "^17.0.32"
 	},
 	"optionalDependencies": {
 		"playwright-core": "^1.40.1",

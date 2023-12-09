@@ -22,7 +22,7 @@ const parsed = yargs(hideBin(argv))
 	.strict()
 	.parseSync();
 
-let { config = "esbench.config.js", file, name } = parsed;
+let { config = "esbench.config.js", file, name = "" } = parsed;
 
 if (!isAbsolute(config)) {
 	config = join(cwd(), config);
