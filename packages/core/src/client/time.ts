@@ -2,7 +2,7 @@ import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/
 import { medianSorted } from "simple-statistics";
 import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
-import { runHooks, timeDetail } from "./utils.js";
+import { runHooks, timeDetail, welchTTestGreater } from "./utils.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -126,10 +126,10 @@ export class TimeWorker implements BenchmarkWorker {
 		await ctx.info();
 		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
 
-		const overhead = medianSorted(overheads);
-		const diff = time.map(ms => ms - overhead);
-		if (diff.every(ms => ms > 0)) {
-			metrics.time = diff;
+		const pValue = welchTTestGreater(time, overheads);
+		if (isNaN(pValue) || pValue < 0.05) {
+			const overhead = medianSorted(overheads);
+			metrics.time = time.map(ms => ms - overhead);
 		} else {
 			metrics.time = time;
 			await ctx.warn("The function duration is indistinguishable from the empty function duration.");
@@ -163,7 +163,7 @@ export class TimeWorker implements BenchmarkWorker {
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
-			timeUsageList.push(time);
+			timeUsageList.push(time / count);
 			await ctx.info(`${name}: ${timeDetail(time, count)}`);
 		}
 
