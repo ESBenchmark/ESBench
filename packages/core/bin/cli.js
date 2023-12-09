@@ -6,9 +6,19 @@ import { hideBin } from "yargs/helpers";
 import { ESBenchHost } from "../lib/index.js";
 
 const parsed = yargs(hideBin(argv))
-	.option("config", { type: "string" })
-	.option("file", { type: "string" })
-	.option("name", { type: "string" })
+	.option("file", {
+		type: "string",
+		description: "Run only benchmark for specified file",
+	})
+	.option("name", {
+		type: "string",
+		description: "Run benchmark with names matching the Regex pattern",
+	})
+	.option("config", {
+		type: "string",
+		description: "Use specified config file",
+	})
+	.version(false)
 	.strict()
 	.parseSync();
 
