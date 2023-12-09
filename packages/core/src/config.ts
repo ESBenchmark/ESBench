@@ -14,12 +14,17 @@ export interface Stage {
 	include?: string[];
 
 	/**
+	 * Specific a list of builder to transform source files before execution.
+	 * Each build results as a new set of benchmarks.
+	 *
 	 * By default, it will perform no transform at all.
 	 */
 	builders?: Builder[];
 
 	/**
-	 * By default, it run suites directly in the current context.
+	 * With engines, you specify JS runtimes that ESBench execute your suites.
+	 *
+	 * By default, it will run suites in the current process.
 	 */
 	engines?: Engine[];
 }

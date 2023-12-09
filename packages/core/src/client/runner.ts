@@ -2,30 +2,29 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
-import { consoleLogHandler, process, runHooks } from "./utils.js";
+import { checkParams, consoleLogHandler, runHooks } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
- * A function that intercepts log messages. If not supplied, logs are printed to the console.
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
 export type LogHandler = (level: LogLevel, message?: string) => Awaitable<void>;
 
-/**
- * A function that intercepts log messages. If not supplied, logs are printed to the console.
- * Calling this function always requires `await` in order to send the message as soon as possible.
- */
-export interface Logger {
+export interface WorkerContext {
 
+	/**
+	 * Using this method will generate warnings, which are logs with log level "warn".
+	 */
 	warn(message?: string): Awaitable<void>;
 
+	/**
+	 * Generate an "info" log. As these logs are displayed by default, use them for information
+	 * that is not a warning but makes sense to display to all users on every build.
+	 */
 	info(message?: string): Awaitable<void>;
 
 	debug(message?: string): Awaitable<void>;
-}
-
-export interface WorkerContext extends Logger {
 
 	run(workers: BenchmarkWorker[]): Promise<void>;
 }
@@ -38,7 +37,6 @@ export interface BenchmarkWorker {
 
 	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
-
 
 export interface WorkloadResult {
 	name: string;
@@ -54,7 +52,15 @@ export interface RunSuiteResult {
 }
 
 export interface RunSuiteOption {
+	/**
+	 * A function that intercepts log messages.
+	 * If not supplied, logs are printed to the console.
+	 */
 	log?: LogHandler;
+
+	/**
+	 * Run benchmark with names matching the Regex pattern.
+	 */
 	pattern?: RegExp;
 }
 
@@ -70,7 +76,7 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		workers.push(new ValidateWorker(config.validate));
 	}
 
-	const { length, paramDef } = process(params);
+	const { length, paramDef } = checkParams(params);
 	const scenes: WorkloadResult[][] = [];
 
 	const ctx: WorkerContext = {

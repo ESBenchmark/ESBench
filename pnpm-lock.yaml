@@ -17,6 +17,9 @@ importers:
       '@kaciras/eslint-config-vue':
         specifier: ^2.6.1
         version: 2.6.1(eslint@8.55.0)(typescript@5.3.3)
+      '@types/node':
+        specifier: ^20.10.4
+        version: 20.10.4
       eslint:
         specifier: ^8.55.0
         version: 8.55.0
@@ -25,7 +28,7 @@ importers:
         version: 5.3.3
       vitest:
         specifier: ^1.0.2
-        version: 1.0.2
+        version: 1.0.2(@types/node@20.10.4)
 
   packages/core:
     dependencies:
@@ -65,11 +68,14 @@ importers:
         version: 4.7.0
       vite:
         specifier: ^5.0.7
-        version: 5.0.7
+        version: 5.0.7(@types/node@20.10.4)
     devDependencies:
       '@types/mime':
         specifier: ^3.0.4
         version: 3.0.4
+      '@types/yargs':
+        specifier: ^17.0.32
+        version: 17.0.32
 
   packages/example:
     dependencies:
@@ -115,7 +121,7 @@ importers:
         version: 4.5.2(vite@5.0.7)(vue@3.3.11)
       vite:
         specifier: ^5.0.7
-        version: 5.0.7
+        version: 5.0.7(@types/node@20.10.4)
       vite-plugin-singlefile:
         specifier: ^0.13.5
         version: 0.13.5(rollup@4.7.0)(vite@5.0.7)
@@ -131,7 +137,7 @@ importers:
     devDependencies:
       vitepress:
         specifier: 1.0.0-rc.31
-        version: 1.0.0-rc.31(@algolia/client-search@4.20.0)(search-insights@2.11.0)(typescript@5.3.3)
+        version: 1.0.0-rc.31(@algolia/client-search@4.20.0)(@types/node@20.10.4)(search-insights@2.11.0)(typescript@5.3.3)
 
 packages:
 
@@ -800,6 +806,11 @@ packages:
     resolution: {integrity: sha512-iJt33IQnVRkqeqC7PzBHPTC6fDlRNRW8vjrgqtScAhrmMwe8c4Eo7+fUGTa+XdWrpEgpyKWMYmi2dIwMAYRzPw==}
     dev: true
 
+  /@types/node@20.10.4:
+    resolution: {integrity: sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==}
+    dependencies:
+      undici-types: 5.26.5
+
   /@types/semver@7.5.5:
     resolution: {integrity: sha512-+d+WYC1BxJ6yVOgUgzK8gWvp5qF8ssV5r4nsDcZWKRWcDQLQ619tvWAxJQYGgBrO1MnLJC7a5GtiYsAoQ47dJg==}
     dev: true
@@ -810,6 +821,16 @@ packages:
 
   /@types/web-bluetooth@0.0.20:
     resolution: {integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==}
+
+  /@types/yargs-parser@21.0.3:
+    resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
+    dev: true
+
+  /@types/yargs@17.0.32:
+    resolution: {integrity: sha512-xQ67Yc/laOG5uMfX/093MRlGGCIBzZMarVa+gfNKJxWAIgykYpVGkBdbqEzGDDfCrVUj6Hiff4mTZ5BA6TmAog==}
+    dependencies:
+      '@types/yargs-parser': 21.0.3
+    dev: true
 
   /@typescript-eslint/eslint-plugin@6.10.0(@typescript-eslint/parser@6.10.0)(eslint@8.55.0)(typescript@5.3.3):
     resolution: {integrity: sha512-uoLj4g2OTL8rfUQVx2AFO1hp/zja1wABJq77P6IclQs6I/m9GLrm7jCdgzZkvWdDCQf1uEvoa8s8CupsgWQgVg==}
@@ -953,7 +974,7 @@ packages:
       vite: ^4.0.0 || ^5.0.0
       vue: ^3.2.25
     dependencies:
-      vite: 5.0.7
+      vite: 5.0.7(@types/node@20.10.4)
       vue: 3.3.11(typescript@5.3.3)
     dev: true
 
@@ -2690,6 +2711,9 @@ packages:
     resolution: {integrity: sha512-o+ORpgGwaYQXgqGDwd+hkS4PuZ3QnmqMMxRuajK/a38L6fTpcE5GPIfrf+L/KemFzfUpeUQc1rRS1iDBozvnFA==}
     dev: true
 
+  /undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+
   /unist-util-is@6.0.0:
     resolution: {integrity: sha512-2qCTHimwdxLfz+YzdGfkqNlH0tLi9xjTnHddPmJwtIG9MGsdbutfTc4P+haPD7l7Cjxf/WZj+we5qfVPvvxfYw==}
     dependencies:
@@ -2760,7 +2784,7 @@ packages:
       vfile-message: 4.0.2
     dev: true
 
-  /vite-node@1.0.2:
+  /vite-node@1.0.2(@types/node@20.10.4):
     resolution: {integrity: sha512-h7BbMJf46fLvFW/9Ygo3snkIBEHFh6fHpB4lge98H5quYrDhPFeI3S0LREz328uqPWSnii2yeJXktQ+Pmqk5BQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -2769,7 +2793,7 @@ packages:
       debug: 4.3.4
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 5.0.7
+      vite: 5.0.7(@types/node@20.10.4)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -2790,10 +2814,10 @@ packages:
     dependencies:
       micromatch: 4.0.5
       rollup: 4.7.0
-      vite: 5.0.7
+      vite: 5.0.7(@types/node@20.10.4)
     dev: true
 
-  /vite@5.0.7:
+  /vite@5.0.7(@types/node@20.10.4):
     resolution: {integrity: sha512-B4T4rJCDPihrQo2B+h1MbeGL/k/GMAHzhQ8S0LjQ142s6/+l3hHTT095ORvsshj4QCkoWu3Xtmob5mazvakaOw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -2821,13 +2845,14 @@ packages:
       terser:
         optional: true
     dependencies:
+      '@types/node': 20.10.4
       esbuild: 0.19.8
       postcss: 8.4.32
       rollup: 4.7.0
     optionalDependencies:
       fsevents: 2.3.3
 
-  /vitepress@1.0.0-rc.31(@algolia/client-search@4.20.0)(search-insights@2.11.0)(typescript@5.3.3):
+  /vitepress@1.0.0-rc.31(@algolia/client-search@4.20.0)(@types/node@20.10.4)(search-insights@2.11.0)(typescript@5.3.3):
     resolution: {integrity: sha512-ikH9pIjOOAbyoYAGBVfTz8TzuXp+UoWaIRMU4bw/oiTg8R65SbAaGKY84xx6TuL+f4VqUJ8lhzW82YyxSLvstA==}
     hasBin: true
     peerDependencies:
@@ -2852,7 +2877,7 @@ packages:
       mrmime: 1.0.1
       shikiji: 0.7.6
       shikiji-transformers: 0.7.6
-      vite: 5.0.7
+      vite: 5.0.7(@types/node@20.10.4)
       vue: 3.3.11(typescript@5.3.3)
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -2882,7 +2907,7 @@ packages:
       - universal-cookie
     dev: true
 
-  /vitest@1.0.2:
+  /vitest@1.0.2(@types/node@20.10.4):
     resolution: {integrity: sha512-F3NVwwpXfRSDnJmyv+ALPwSRVt0zDkRRE18pwUHSUPXAlWQ47rY1dc99ziMW5bBHyqwK2ERjMisLNoef64qk9w==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -2907,6 +2932,7 @@ packages:
       jsdom:
         optional: true
     dependencies:
+      '@types/node': 20.10.4
       '@vitest/expect': 1.0.2
       '@vitest/runner': 1.0.2
       '@vitest/snapshot': 1.0.2
@@ -2925,8 +2951,8 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.8.1
-      vite: 5.0.7
-      vite-node: 1.0.2
+      vite: 5.0.7(@types/node@20.10.4)
+      vite-node: 1.0.2(@types/node@20.10.4)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less

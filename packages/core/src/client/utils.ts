@@ -4,17 +4,14 @@ import { LogHandler } from "./runner.js";
 
 export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
 
-interface ProcessedParamDef {
-	length: number;
-	paramDef: Record<string, string[]>;
-}
+const NAME_LENGTH = 16;
 
 /**
- * Convert the value to a short display string.
+ * Convert the value to a short (length <= 16) display string.
  */
-function displayName(v: unknown) {
+function toDisplayName(v: unknown) {
 	if (Array.isArray(v)) {
-		return ellipsis(`[${v}]`, 16);
+		return ellipsis(`[${v}]`, NAME_LENGTH - 2);
 	}
 	if (v === null) {
 		return "null";
@@ -22,22 +19,27 @@ function displayName(v: unknown) {
 	switch (typeof v) {
 		case "object":
 			return typeof v.toString === "function"
-				? ellipsis(v.toString(), 16)
+				? ellipsis(v.toString(), NAME_LENGTH)
 				: "[object null]";
 		case "symbol":
 			return v.description
-				? `symbol(${ellipsis(v.description, 10)})`
+				? `symbol(${ellipsis(v.description, NAME_LENGTH - 8)})`
 				: "symbol";
 		case "function":
 			return v.name
-				? `${ellipsis(v.name, 11)}(...)`
+				? `${ellipsis(v.name, NAME_LENGTH - 5)}(...)`
 				: "Anonymous fn";
 		default:
-			return ellipsis("" + v, 16);
+			return ellipsis("" + v, NAME_LENGTH);
 	}
 }
 
-export function process(params: CPSrcObject) {
+interface ProcessedParamDef {
+	length: number;
+	paramDef: Record<string, string[]>;
+}
+
+export function checkParams(params: CPSrcObject) {
 	const entries = Object.entries(params);
 	const paramDef: Record<string, string[]> = {};
 	const set = new Set<string>();
@@ -48,7 +50,7 @@ export function process(params: CPSrcObject) {
 		paramDef[key] = current;
 
 		for (const v of values) {
-			const name = displayName(v);
+			const name = toDisplayName(v);
 			set.add(name);
 			current.push(name);
 		}

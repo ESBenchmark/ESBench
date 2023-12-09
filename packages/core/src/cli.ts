@@ -1,9 +1,11 @@
 import { argv, cwd } from "process";
-import { isAbsolute, join } from "path";
+import { resolve } from "path";
 import { pathToFileURL } from "url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { ESBenchHost } from "../lib/index.js";
+import { ESBenchHost } from "./host.js";
+
+process.title = "node (esbench)";
 
 const parsed = yargs(hideBin(argv))
 	.option("file", {
@@ -22,13 +24,9 @@ const parsed = yargs(hideBin(argv))
 	.strict()
 	.parseSync();
 
-let { config = "esbench.config.js", file, name = "" } = parsed;
+const { config = "esbench.config.js", file, name = "" } = parsed;
 
-if (!isAbsolute(config)) {
-	config = join(cwd(), config);
-}
-config = pathToFileURL(config).toString();
+const resolved = pathToFileURL(resolve(cwd(), config)).toString();
+const userConfig = (await import(resolved)).default;
 
-const options = (await import(config)).default;
-
-await new ESBenchHost(options).run(file, new RegExp(name));
+await new ESBenchHost(userConfig).run(file, new RegExp(name));

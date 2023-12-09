@@ -5,10 +5,11 @@ export interface Builder {
 	name: string;
 
 	/**
-	 * The entry filename must be [outDir]/index.js
+	 * Transform the files needed for the benchmark.
+	 * The path of the generated entry must be [outDir]/index.js
 	 *
-	 * @param outDir
-	 * @param files
+	 * @param outDir The directory in which all generated chunks should be placed.
+	 * @param files Suite file paths relative to cwd.
 	 */
 	build(outDir: string, files: string[]): Awaitable<void>;
 }

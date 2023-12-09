@@ -18,6 +18,13 @@ export interface FlattedResult {
 	params: Record<string, string>;
 }
 
+export interface FlattedSummary {
+	list: FlattedResult[];
+	builders: Set<string>;
+	engines: Set<string>;
+	params: Record<string, Set<string>>;
+}
+
 export function flatSummary(value: StageResult[]) {
 	const list: FlattedResult[] = [];
 	const params: Record<string, Set<string>> = {};
@@ -46,5 +53,5 @@ export function flatSummary(value: StageResult[]) {
 		}
 	}
 
-	return { list, builders, engines, params };
+	return { list, builders, engines, params } as FlattedSummary;
 }

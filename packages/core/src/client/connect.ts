@@ -7,8 +7,14 @@ export type ClientMessage = RunSuiteResult | {
 	level: LogLevel;
 };
 
+/**
+ * A function that load benchmark suites. Provided by builders.
+ */
 export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite<any> }>;
 
+/**
+ * A function that post messages to the host. Provided by engines.
+ */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 
 export async function connect(channel: Channel, importer: Importer, files: string[], regex?: string) {
