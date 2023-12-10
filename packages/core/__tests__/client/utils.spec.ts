@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { process } from "../../src/client/utils.js";
+import { checkParams } from "../../src/client/utils.js";
 
 describe("process", () => {
 	it.each([
@@ -18,7 +18,7 @@ describe("process", () => {
 		[Symbol(), "symbol"],
 		[Symbol("foo"), "symbol(foo)"],
 	])("should get display name of values %#", (value, expected) => {
-		expect(process({ _: [value] }).paramDef._[0]).toBe(expected);
+		expect(checkParams({ _: [value] }).paramDef._[0]).toBe(expected);
 	});
 
 	it("should return the number of cartesian cells", () => {
@@ -27,13 +27,13 @@ describe("process", () => {
 			bar: [null],
 			baz: ["a", "b"],
 		};
-		expect(process(params).length).toBe(8);
+		expect(checkParams(params).length).toBe(8);
 	});
 
 	it("should restrict parameters to have unique display names", () => {
 		const params = {
 			foo: ["1234567_A_1234567", "1234567_B_1234567"],
 		};
-		expect(() => process(params)).toThrow(/Parameter display name conflict/);
+		expect(() => checkParams(params)).toThrow(/Parameter display name conflict/);
 	});
 });

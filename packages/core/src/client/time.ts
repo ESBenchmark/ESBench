@@ -2,7 +2,8 @@ import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/
 import { medianSorted } from "simple-statistics";
 import { BenchCase, SuiteConfig } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
-import { runHooks, timeDetail, welchTTestGreater } from "./utils.js";
+import { runHooks, timeDetail } from "./utils.js";
+import { welchTTest } from "./math.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -126,8 +127,8 @@ export class TimeWorker implements BenchmarkWorker {
 		await ctx.info();
 		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
 
-		const pValue = welchTTestGreater(time, overheads);
-		if (isNaN(pValue) || pValue < 0.05) {
+		const pValue = welchTTest(time, overheads, "greater");
+		if (pValue < 0.05) {
 			const overhead = medianSorted(overheads);
 			metrics.time = time.map(ms => ms - overhead);
 		} else {
