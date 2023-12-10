@@ -8,10 +8,10 @@ import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
 import { ESBenchResult, flatSummary, FlattedResult } from "../client/collect.js";
 import { Reporter } from "../config.js";
-import { removeOutliers } from "../client/math.js";
+import { OutlierMode, TukeyOutlierDetector } from "../client/math.js";
 
 async function print(result: ESBenchResult, options: TextReporterOptions, out: Writable, chalk: ChalkInstance) {
-	const { stdDev = false, percentiles = [] } = options;
+	const { stdDev = false, percentiles = [], outliers = "upper" } = options;
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
@@ -55,7 +55,10 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			}
 
 			const rawTime = data.metrics.time;
-			const time = removeOutliers(rawTime);
+			let time = rawTime;
+			if (outliers) {
+				time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);
+			}
 
 			if (rawTime.length !== time.length) {
 				const removed = rawTime.length - time.length;
@@ -123,6 +126,13 @@ export interface TextReporterOptions {
 	 * |    map |    1000 |    1.03 s |    1.07 s |  1.1 s |
 	 */
 	percentiles?: number[];
+
+	/**
+	 * Specifies which outliers should be removed from the distribution.
+	 *
+	 * @default "upper"
+	 */
+	outliers?: false | OutlierMode;
 }
 
 export default function (options: TextReporterOptions = {}): Reporter {

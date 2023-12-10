@@ -1,15 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { removeOutliers, welchTTest } from "../../src/client/math.js";
+import { TukeyOutlierDetector, welchTTest } from "../../src/client/math.js";
 
 describe("removeOutliers", () => {
+	it("should throw error with empty array", () => {
+		expect(() => new TukeyOutlierDetector([])).toThrow();
+	});
+
 	it("should work with one-element array", () => {
-		expect(removeOutliers([11])).toStrictEqual([11]);
+		const detector = new TukeyOutlierDetector([11]);
+		expect(detector.lowerFence).toBe(11);
+		expect(detector.upperFence).toBe(11);
 	});
-	it("should work with empty array", () => {
-		expect(removeOutliers([])).toStrictEqual([]);
+
+	it("should support custom K value", () => {
+		const values = [1, 7, 8, 9, 22];
+		const detector = new TukeyOutlierDetector(values, 3);
+
+		expect(detector.lowerFence).toBe(1);
+		expect(detector.upperFence).toBe(15);
 	});
+
 	it("should works", () => {
-		expect(removeOutliers([1, 7, 8, 9, 22])).toStrictEqual([7, 8, 9]);
+		const values = [1, 7, 8, 9, 22];
+		const detector = new TukeyOutlierDetector(values);
+
+		expect(detector.isOutlier(11)).toBe(false);
+		expect(detector.isOutlier(22)).toBe(true);
+
+		expect(detector.filter(values)).toStrictEqual([7, 8, 9]);
+		expect(detector.filter(values, "lower")).toStrictEqual([7, 8, 9, 22]);
+		expect(detector.filter(values, "upper")).toStrictEqual([1, 7, 8, 9]);
 	});
 });
 
@@ -17,6 +37,7 @@ describe("welch's t-test", () => {
 	it("should return NaN if variance are 0", () => {
 		expect(welchTTest([1, 1, 1], [2, 2, 2], "not equal")).toBeNaN();
 	});
+
 	it("should return NaN if sample size < 2", () => {
 		expect(welchTTest([], [], "not equal")).toBeNaN();
 		expect(welchTTest([1], [2], "not equal")).toBeNaN();

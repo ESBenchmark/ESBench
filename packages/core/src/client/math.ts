@@ -1,21 +1,49 @@
 import { mean, quantileSorted, sampleVariance } from "simple-statistics";
 
-/**
- * Creates a copy of the given array without outliers.
- *
- * @param values Sample array, muse be sorted.
- * @param k The K value in Tukey's fences.
- */
-export function removeOutliers(values: number[], k = 1.5) {
-	if (values.length === 0) {
-		return [];
+export type OutlierMode = "upper" | "lower" | "all";
+
+export class TukeyOutlierDetector {
+
+	readonly lowerFence: number;
+	readonly upperFence: number;
+
+	/**
+	 * Create a new outlier detector using Tukey's Fences.
+	 *
+	 * @param values Sample array, muse be sorted.
+	 * @param k The K value.
+	 */
+	constructor(values: number[], k = 1.5) {
+		if (values.length === 0) {
+			throw new Error("values should be non-empty");
+		}
+		const Q1 = quantileSorted(values, 0.25);
+		const Q3 = quantileSorted(values, 0.75);
+		const IQR = Q3 - Q1;
+		this.lowerFence = Q1 - k * IQR;
+		this.upperFence = Q3 + k * IQR;
 	}
-	const Q1 = quantileSorted(values, 0.25);
-	const Q3 = quantileSorted(values, 0.75);
-	const IQR = Q3 - Q1;
-	const lowerFence = Q1 - k * IQR;
-	const upperFence = Q3 + k * IQR;
-	return values.filter(v => v >= lowerFence && v <= upperFence);
+
+	isOutlier(value: number) {
+		return value < this.lowerFence || value > this.upperFence;
+	}
+
+	/**
+	 * Creates a copy of the given array without outliers.
+	 *
+	 * @param values The array filter() was called upon.
+	 * @param mode Specifies which outliers should be removed from the distribution.
+	 */
+	filter(values: number[], mode: OutlierMode = "all") {
+		switch (mode) {
+			case "lower":
+				return values.filter(v => v >= this.lowerFence);
+			case "upper":
+				return values.filter(v => v <= this.upperFence);
+			default:
+				return values.filter(v => !this.isOutlier(v));
+		}
+	}
 }
 
 type AlternativeHypothesis = "not equal" | "less" | "greater";
