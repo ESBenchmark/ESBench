@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { welchTTest } from "../../src/client/math.js";
+import { removeOutliers, welchTTest } from "../../src/client/math.js";
+
+describe("removeOutliers", () => {
+	it("should work with one-element array", () => {
+		expect(removeOutliers([11])).toStrictEqual([11]);
+	});
+	it("should work with empty array", () => {
+		expect(removeOutliers([])).toStrictEqual([]);
+	});
+	it("should works", () => {
+		expect(removeOutliers([1, 7, 8, 9, 22])).toStrictEqual([7, 8, 9]);
+	});
+});
 
 describe("welch's t-test", () => {
 	it("should return NaN if variance are 0", () => {

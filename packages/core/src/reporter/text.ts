@@ -8,6 +8,7 @@ import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
 import { ESBenchResult, flatSummary, FlattedResult } from "../client/collect.js";
 import { Reporter } from "../config.js";
+import { removeOutliers } from "../client/math.js";
 
 async function print(result: ESBenchResult, options: TextReporterOptions, out: Writable, chalk: ChalkInstance) {
 	const { stdDev = false, percentiles = [] } = options;
@@ -40,30 +41,45 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		out.write(name);
 
 		const table = [header];
+		const hints = [];
+
 		for (const data of list) {
-			const column: string[] = [];
-			table.push(column);
+			const columns: string[] = [];
+			table.push(columns);
 
 			for (const k of stageKeys) {
-				column.push(data[k] as string);
+				columns.push(data[k] as string);
 			}
 			for (const k of Object.keys(params)) {
-				column.push("" + data.params[k]);
+				columns.push("" + data.params[k]);
 			}
 
-			const time = data.metrics.time.sort((a, b) => a - b);
-			column.push(fmtTime(mean(time)));
+			const rawTime = data.metrics.time;
+			const time = removeOutliers(rawTime);
+
+			if (rawTime.length !== time.length) {
+				const removed = rawTime.length - time.length;
+				hints.push(`${data.name}: ${removed} outliers were removed.`);
+			}
+			columns.push(fmtTime(mean(time)));
 
 			if (stdDev) {
-				column.push(fmtTime(standardDeviation(time)));
+				columns.push(fmtTime(standardDeviation(time)));
 			}
 			for (const k of percentiles) {
-				column.push(fmtTime(quantileSorted(time, k / 100)));
+				columns.push(fmtTime(quantileSorted(time, k / 100)));
 			}
 		}
 
 		out.write("\n");
 		out.write(markdownTable(table, { stringLength, align: "r" }));
+		out.write("\n");
+
+		out.write("\nHints:\n");
+		for (const hint of hints) {
+			out.write(hint);
+			out.write("\n");
+		}
 	}
 }
 

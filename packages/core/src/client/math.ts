@@ -1,4 +1,22 @@
-import { mean, sampleVariance } from "simple-statistics";
+import { mean, quantileSorted, sampleVariance } from "simple-statistics";
+
+/**
+ * Creates a copy of the given array without outliers.
+ *
+ * @param values Sample array, muse be sorted.
+ * @param k The K value in Tukey's fences.
+ */
+export function removeOutliers(values: number[], k = 1.5) {
+	if (values.length === 0) {
+		return [];
+	}
+	const Q1 = quantileSorted(values, 0.25);
+	const Q3 = quantileSorted(values, 0.75);
+	const IQR = Q3 - Q1;
+	const lowerFence = Q1 - k * IQR;
+	const upperFence = Q3 + k * IQR;
+	return values.filter(v => v >= lowerFence && v <= upperFence);
+}
 
 type AlternativeHypothesis = "not equal" | "less" | "greater";
 
@@ -34,9 +52,9 @@ export function welchTTest(a: number[], b: number[], alt: AlternativeHypothesis)
 
 function studentOneTail(t: number, df: number): number {
 	if (t < 0) {
-		return 1.0 - studentTwoTail(t, df) / 2.0;
+		return 1 - studentTwoTail(t, df) / 2;
 	}
-	return 1.0 - studentOneTail(0.0 - t, df);
+	return 1 - studentOneTail(-t, df);
 }
 
 function studentTwoTail(t: number, df: number) {
