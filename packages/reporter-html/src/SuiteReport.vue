@@ -22,27 +22,23 @@
 			<h1>Variables</h1>
 
 			<LabeledSelect
-				v-for='(def, i) of filterDefs'
+				v-for='({ name, values }, i) of dataFilter.defs.value'
 				:key='i'
-				v-model='filters[i]'
-				:label='def.name'
+				v-model='dataFilter.variables[i]'
+				:label='name'
 			>
-				<option
-					v-for='value of def.values'
-					:key='value'
-				>
-					{{ value }}
-				</option>
+				<option v-for='v of values' :key='v'>{{ v }}</option>
 			</LabeledSelect>
 		</section>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { flatSummary, FlattedResult, type StageResult } from "@esbench/core/client";
-import { computed, onMounted, reactive, shallowRef, watch } from "vue";
+import { computed, onMounted, shallowRef, watch } from "vue";
+import { flatSummary, type StageResult } from "@esbench/core/client";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
+import useDataFilter from "./useDataFilter.ts";
 import LabeledSelect from "./LabeledSelect.vue";
 
 interface SuiteReportProps {
@@ -58,48 +54,7 @@ const errorBarType = shallowRef(valueRange);
 
 let chart: BarWithErrorBarsChart;
 
-interface FilterDef {
-	type: (result: FlattedResult, name: string, value: any) => boolean;
-	name: string;
-	values: string[];
-}
-
-function topLevel(result: FlattedResult, name: string, value: any) {
-	return (result as any)[name] === value;
-}
-
-function paramFilter(result: FlattedResult, name: string, value: any) {
-	return result.params[name] === value;
-}
-
-const filterDefs = computed(() => {
-	const defs: FilterDef[] = [];
-	const { builders, engines, params } = flatted.value;
-
-	if (builders.size > 0) {
-		defs.push({ type: topLevel, name: "builder", values: [...builders] });
-	}
-	if (engines.size > 0) {
-		defs.push({ type: topLevel, name: "engine", values: [...engines] });
-	}
-
-	for (const [name, values] of Object.entries(params)) {
-		defs.push({ type: paramFilter, name, values: [...values] });
-	}
-
-	return defs;
-});
-
-const filters = reactive<any[]>([]);
-
-function resetFilterData() {
-	filters.length = 0;
-	for (const def of filterDefs.value) {
-		filters.push(def.values[0]);
-	}
-}
-
-watch(flatted, resetFilterData, { flush: "pre" });
+const dataFilter = useDataFilter(flatted);
 
 function none(values: number[]) {
 	return { y: mean(values) };
@@ -123,22 +78,12 @@ function valueRange(values: number[]) {
 }
 
 const data = computed(() => {
-	const { list } = flatted.value;
+	const selects = dataFilter.selects.value;
 
-	const matches = list.filter(v => {
-		for (let i = 0; i < filters.length; i++) {
-			const { type, name } = filterDefs.value[i];
-			if (!type(v, name, filters[i])) {
-				return false;
-			}
-		}
-		return true;
-	});
-
-	const labels = matches.map(r => r.name);
+	const labels = selects.map(r => r.name);
 	const datasets = [{
 		label: "time",
-		data: matches.map(r => errorBarType.value(r.metrics.time)),
+		data: selects.map(r => errorBarType.value(r.metrics.time)),
 	}];
 	return { labels, datasets } as any;
 });
