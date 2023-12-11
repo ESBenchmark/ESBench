@@ -20,6 +20,7 @@ export interface FlattedResult {
 
 export interface FlattedSummary {
 	list: FlattedResult[];
+	names: Set<string>;
 	builders: Set<string>;
 	engines: Set<string>;
 	params: Record<string, Set<string>>;
@@ -27,9 +28,10 @@ export interface FlattedSummary {
 
 export function flatSummary(value: StageResult[]) {
 	const list: FlattedResult[] = [];
-	const params: Record<string, Set<string>> = {};
+	const names = new Set<string>();
 	const builders = new Set<string>();
 	const engines = new Set<string>();
+	const params: Record<string, Set<string>> = {};
 
 	for (const { engine, builder, paramDef, scenes } of value) {
 		const paramsIter = cartesianObject(paramDef)[Symbol.iterator]();
@@ -48,10 +50,11 @@ export function flatSummary(value: StageResult[]) {
 		for (const scene of scenes) {
 			const params = paramsIter.next().value;
 			for (const { name, metrics } of scene) {
+				names.add(name);
 				list.push({ name, engine, builder, metrics, params });
 			}
 		}
 	}
 
-	return { list, builders, engines, params } as FlattedSummary;
+	return { list,names, builders, engines, params } as FlattedSummary;
 }

@@ -29,9 +29,12 @@ export default function (summary: Ref<FlattedSummary>) {
 	const xAxis = ref(0);
 
 	const defs = computed(() => {
-		const { builders, engines, params } = summary.value;
+		const { names, builders, engines, params } = summary.value;
 		const defs: VariableDef[] = [];
 
+		if (names.size > 0) {
+			defs.push({ type: topLevel, name: "name", values: [...names] });
+		}
 		if (builders.size > 0) {
 			defs.push({ type: topLevel, name: "builder", values: [...builders] });
 		}
