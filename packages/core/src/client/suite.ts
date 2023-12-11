@@ -18,12 +18,12 @@ export class BenchCase {
 	readonly fn: Workload;
 	readonly isAsync: boolean;
 
-	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
+	constructor(scene: Scene, name: string, fn: Workload) {
 		this.name = name;
 		this.fn = fn;
-		this.isAsync = isAsync;
 		this.setupHooks = scene.setupIteration;
 		this.cleanHooks = scene.cleanIteration;
+		this.isAsync = fn.constructor !== Function;
 	}
 
 	async invoke() {
@@ -67,14 +67,6 @@ export class Scene<P = any> {
 	}
 
 	bench(name: string, fn: SyncWorkload) {
-		this.add(name, fn, false);
-	}
-
-	benchAsync(name: string, fn: AsyncWorkload) {
-		this.add(name, fn, true);
-	}
-
-	private add(name: string, fn: Workload, isAsync: boolean) {
 		if (/^\s*$/.test(name)) {
 			throw new Error("Workload name cannot be a blank string.");
 		}
@@ -84,7 +76,7 @@ export class Scene<P = any> {
 		if (!this.include.test(name)) {
 			return;
 		}
-		this.cases.push(new BenchCase(this, name, fn, isAsync));
+		this.cases.push(new BenchCase(this, name, fn));
 	}
 }
 
