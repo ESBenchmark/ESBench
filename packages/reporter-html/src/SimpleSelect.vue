@@ -1,8 +1,9 @@
 <template>
 	<div :class='$style.container'>
 		<select
-			:class='$style.select'
 			v-model='forward'
+			:class='$style.select'
+			:disabled='disabled'
 		>
 			<slot></slot>
 		</select>
@@ -16,6 +17,7 @@ import { IconCaretDownFilled } from "@tabler/icons-vue";
 
 export interface SelectProps {
 	modelValue: any;
+	disabled?: boolean;
 }
 
 const props = defineProps<SelectProps>();
@@ -29,7 +31,8 @@ const forward = useVModel(props, "modelValue", emit);
 	display: block;
 	position: relative;
 
-	border: solid 1px #ddd;
+    background: white;
+	border: solid 1px rgba(0, 0, 0, 0.1);
 	border-radius: 4px;
 }
 
@@ -40,9 +43,12 @@ const forward = useVModel(props, "modelValue", emit);
 	padding: 5px 30px 5px 10px;
 	border: none;
 
-	cursor: pointer;
 	font: inherit;
 	background: none;
+
+	&:not(:disabled) {
+        cursor: pointer;
+	}
 }
 
 .icon {

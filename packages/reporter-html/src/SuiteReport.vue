@@ -26,6 +26,9 @@
 				:key='i'
 				v-model='dataFilter.variables[i]'
 				:label='name'
+				:disabled='i === dataFilter.xAxis.value'
+				:class='[$style.variable, i === dataFilter.xAxis.value && $style.active]'
+				@click.self='dataFilter.xAxis.value = i'
 			>
 				<option v-for='v of values' :key='v'>{{ v }}</option>
 			</LabeledSelect>
@@ -78,12 +81,15 @@ function valueRange(values: number[]) {
 }
 
 const data = computed(() => {
-	const selects = dataFilter.selects.value;
+	const matches = dataFilter.matches.value;
 
-	const labels = selects.map(r => r.name);
+	const labels = matches.map(r => {
+		const def = dataFilter.defs.value[dataFilter.xAxis.value];
+		return def.type(r, def.name);
+	});
 	const datasets = [{
 		label: "time",
-		data: selects.map(r => errorBarType.value(r.metrics.time)),
+		data: matches.map(r => errorBarType.value(r.metrics.time)),
 	}];
 	return { labels, datasets } as any;
 });
@@ -126,5 +132,16 @@ header {
 .params {
     grid-area: params;
     padding: 20px;
+}
+
+.variable {
+	cursor: pointer;
+    padding: 8px;
+	border-radius: 8px;
+
+	&.active {
+        cursor: default;
+		background: #bee3ff;
+	}
 }
 </style>
