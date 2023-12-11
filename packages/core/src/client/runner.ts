@@ -65,15 +65,17 @@ export interface RunSuiteOption {
 }
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
-	const { name, setup, afterAll = noop, config = {}, params = {} } = suite;
+	const { name, setup, afterAll = noop, timing = {}, validate, params = {} } = suite;
 	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");
 
 	const workers: BenchmarkWorker[] = [];
 
-	workers.push(new TimeWorker(config));
-	if (config.validate) {
-		workers.push(new ValidateWorker(config.validate));
+	if (timing !== false) {
+		workers.push(new TimeWorker(timing === true ? {} : timing));
+	}
+	if (validate) {
+		workers.push(new ValidateWorker(validate));
 	}
 
 	const { length, paramDef } = checkParams(params);

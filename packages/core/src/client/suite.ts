@@ -1,6 +1,7 @@
 import { Awaitable, CPCellObject, CPSrcObject } from "@kaciras/utilities/browser";
 import { runHooks } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
+import { TimingOptions } from "./time.js";
 
 type AsyncWorkload = () => Promise<unknown>;
 
@@ -87,40 +88,18 @@ export class Scene<P = any> {
 	}
 }
 
-export interface SuiteConfig {
+export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
+
+export interface BenchmarkSuite<T extends CPSrcObject> {
+	name: string;
+	setup: SetupScene<T>;
 
 	/**
-	 * How many target iterations should be performed.
+	 * Measure the running time of the benchmark function.
 	 *
-	 * @default 10
+	 * @default true
 	 */
-	samples?: number;
-
-	/**
-	 * How many warmup iterations should be performed.
-	 * The value can be 0, which disables warmup.
-	 *
-	 * @default 5
-	 */
-	warmup?: number;
-
-	/**
-	 * how many times the benchmark method will be invoked per one iteration of a generated loop.
-	 *
-	 * @default 16
-	 */
-	unrollFactor?: number;
-
-	/**
-	 * Invocation count or time in a single iteration.
-	 *
-	 * If the value is a number it used as invocation count, must be a multiple of unrollFactor.
-	 *
-	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
-	 *
-	 * @default "1s"
-	 */
-	iterations?: number | string;
+	timing?: boolean | TimingOptions;
 
 	/**
 	 * Checks if it is possible to run your benchmarks.
@@ -129,16 +108,9 @@ export interface SuiteConfig {
 	 * Additional checks can be configured in the options.
 	 */
 	validate?: ValidateOptions;
-}
 
-export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
-
-export interface BenchmarkSuite<T extends CPSrcObject> {
-	name: string;
-	setup: SetupScene<T>;
 	params?: T;
 	afterAll?: HookFn;
-	config?: SuiteConfig;
 }
 
 type Empty = Record<string, never>;

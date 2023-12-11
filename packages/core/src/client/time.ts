@@ -1,6 +1,6 @@
 import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
-import { BenchCase, SuiteConfig } from "./suite.js";
+import { BenchCase } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
 import { runHooks, timeDetail } from "./utils.js";
 import { welchTTest } from "./math.js";
@@ -72,11 +72,47 @@ function createInvoker(factor: number, case_: BenchCase): Iterate {
 	}
 }
 
+export interface TimingOptions {
+
+	/**
+	 * How many target iterations should be performed.
+	 *
+	 * @default 10
+	 */
+	samples?: number;
+
+	/**
+	 * How many warmup iterations should be performed.
+	 * The value can be 0, which disables warmup.
+	 *
+	 * @default 5
+	 */
+	warmup?: number;
+
+	/**
+	 * how many times the benchmark method will be invoked per one iteration of a generated loop.
+	 *
+	 * @default 16
+	 */
+	unrollFactor?: number;
+
+	/**
+	 * Invocation count or time in a single iteration.
+	 *
+	 * If the value is a number it used as invocation count, must be a multiple of unrollFactor.
+	 *
+	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
+	 *
+	 * @default "1s"
+	 */
+	iterations?: number | string;
+}
+
 export class TimeWorker implements BenchmarkWorker {
 
-	private readonly config: SuiteConfig;
+	private readonly config: TimingOptions;
 
-	constructor(config: SuiteConfig) {
+	constructor(config: TimingOptions) {
 		this.config = config;
 	}
 

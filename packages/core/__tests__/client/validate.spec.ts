@@ -21,7 +21,7 @@ it("should not validate if the option is false", async () => {
 
 	const suite = defineSuite({
 		name: "Test Suite",
-		config: {
+		timing: {
 			samples: 11,
 		},
 		setup(scene) {
@@ -40,10 +40,10 @@ it("should validate executions", async () => {
 
 	const suite = defineSuite({
 		name: "Test Suite",
-		config: {
+		timing: {
 			samples: 2,
-			validate: {},
 		},
+		validate: {},
 		params: {
 			n: [10, 100, 1000],
 		},
@@ -69,10 +69,8 @@ it("should validate the return value", () => {
 	const cause = new TypeError("Stub Error");
 	const suite = defineSuite({
 		name: "Test Suite",
-		config: {
-			validate: {
-				correctness: () => {throw cause;},
-			},
+		validate: {
+			correctness: () => {throw cause;},
 		},
 		setup(scene) {
 			scene.bench("foo", () => 11);
@@ -91,9 +89,7 @@ it("should validate the return value", () => {
 it("should check return values are equal", () => {
 	const suite = defineSuite({
 		name: "Test Suite",
-		config: {
-			validate: { equality: true },
-		},
+		validate: { equality: true },
 		setup(scene) {
 			scene.bench("foo", () => 11);
 			scene.bench("bar", () => 22);
@@ -110,9 +106,7 @@ it("should check return values are equal", () => {
 it("should support custom equality function", () => {
 	const suite = defineSuite({
 		name: "Test Suite",
-		config: {
-			validate: { equality: () => true },
-		},
+		validate: { equality: () => true },
 		setup(scene) {
 			scene.bench("A", () => 11);
 			scene.bench("B", () => 22);

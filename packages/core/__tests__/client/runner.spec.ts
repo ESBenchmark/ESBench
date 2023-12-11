@@ -14,12 +14,12 @@ function fib(n: number) {
 
 export function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pattern?: RegExp) {
 	suite.name ??= "Test Suite";
-	suite.config = {
+	suite.timing = {
 		iterations: 1,
 		samples: 1,
 		warmup: 0,
 		unrollFactor: 1,
-		...suite.config,
+		...(suite.timing as any),
 	};
 	return runSuite(suite as any, { log: noop, pattern });
 }
@@ -41,7 +41,7 @@ it("should works", async () => {
 
 it("should validate sample count", () => {
 	const promise = run({
-		config: { samples: 0 },
+		timing: { samples: 0 },
 		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
@@ -49,7 +49,7 @@ it("should validate sample count", () => {
 
 it("should validate iteration count", () => {
 	const promise = run({
-		config: { iterations: 0 },
+		timing: { iterations: 0 },
 		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
@@ -57,7 +57,7 @@ it("should validate iteration count", () => {
 
 it("should validate iteration time", () => {
 	const promise = run({
-		config: { iterations: "0m" },
+		timing: { iterations: "0m" },
 		setup: (scene) => scene.bench("Test", noop),
 	});
 	expect(promise).rejects.toThrow();
@@ -74,7 +74,7 @@ it("should call lifecycle hooks", async () => {
 	const afterAll = () => invocations.push(afterAll);
 
 	await run({
-		config: { iterations: 1, samples: 1 },
+		timing: { iterations: 1, samples: 1 },
 		params: { n: [10, 100] },
 		afterAll,
 		setup(scene) {
