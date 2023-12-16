@@ -6,10 +6,12 @@ export const consoleLogHandler: LogHandler = (level, message = "") => console[le
 
 const NAME_LENGTH = 16;
 
+export const BUILTIN_FIELDS = ["Name", "Builder", "Engine"];
+
 /**
  * Convert the value to a short (length <= 16) display string.
  */
-function toDisplayName(v: unknown) {
+export function toDisplayName(v: unknown) {
 	if (Array.isArray(v)) {
 		return ellipsis(`[${v}]`, NAME_LENGTH - 2);
 	}
@@ -46,6 +48,9 @@ export function checkParams(params: CPSrcObject) {
 
 	let length = 1;
 	for (const [key, values] of entries) {
+		if (BUILTIN_FIELDS.includes(key)) {
+			throw new Error(`${key} is not allowed for param name`);
+		}
 		const current: string[] = [];
 		paramDef[key] = current;
 

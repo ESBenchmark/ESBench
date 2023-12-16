@@ -6,7 +6,7 @@ import { durationFmt } from "@kaciras/utilities/node";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
-import { ESBenchResult, flatSummary, FlattedResult } from "../client/collect.js";
+import { ESBenchResult, SummaryTableFilter } from "../client/collect.js";
 import { Reporter } from "../config.js";
 import { OutlierMode, TukeyOutlierDetector } from "../client/math.js";
 
@@ -16,18 +16,14 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, stages] of entries) {
-		const { list, builders, engines, params } = flatSummary(stages);
-		const stageKeys: Array<keyof FlattedResult> = ["name"];
-		if (builders.size > 1) {
-			stageKeys.push("builder");
-		}
-		if (engines.size > 1) {
-			stageKeys.push("engine");
-		}
+		const stf = new SummaryTableFilter(stages);
+		const header = [...stf.vars.keys()];
 
-		const header: string[] = [...stageKeys];
-		for (const key of Object.keys(params)) {
-			header.push(chalk.magentaBright(key));
+		for (let i = 0; i < stf.builtinParams.length; i++) {
+			header[i] = chalk.cyan(header[i]);
+		}
+		for (let i = stf.builtinParams.length; i < header.length; i++) {
+			header[i] = chalk.magentaBright(header[i]);
 		}
 		header.push("time");
 		if (stdDev) {
@@ -37,47 +33,66 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			header.push("p" + k);
 		}
 
-		out.write(chalk.greenBright("\n\nSuite: "));
-		out.write(name);
-
 		const table = [header];
 		const hints = [];
 
-		for (const data of list) {
-			const columns: string[] = [];
-			table.push(columns);
+		const { baseline } = stages[0];
+		let groups = [stf.table][Symbol.iterator]();
 
-			for (const k of stageKeys) {
-				columns.push(data[k] as string);
-			}
-			for (const k of Object.keys(params)) {
-				columns.push("" + data.params[k]);
-			}
-
-			const rawTime = data.metrics.time;
-			let time = rawTime;
-			if (outliers) {
-				time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);
-			}
-
-			if (rawTime.length !== time.length) {
-				const removed = rawTime.length - time.length;
-				hints.push(`${data.name}: ${removed} outliers were removed.`);
-			}
-			columns.push(fmtTime(mean(time)));
-
-			if (stdDev) {
-				columns.push(fmtTime(standardDeviation(time)));
-			}
-			for (const k of percentiles) {
-				columns.push(fmtTime(quantileSorted(time, k / 100)));
-			}
+		if (baseline) {
+			groups = stf.groupBy(baseline.type).values();
+			header.push("ratio");
 		}
 
+		for (const group of groups) {
+			const ratio1Row = group.find(d => d[baseline!.type] === baseline!.value);
+			if (!ratio1Row && baseline) {
+				throw new Error(`Baseline (${baseline.type}=${baseline.value}) does not in the table`);
+			}
+			const ratio1 = ratio1Row ? stf.getMetrics(ratio1Row) : null;
+
+			for (const data of group) {
+				const columns: string[] = [];
+				table.push(columns);
+
+				for (const k of stf.vars.keys()) {
+					columns.push("" + data[k]);
+				}
+
+				const rawTime = stf.getMetrics(data).time;
+				let time = rawTime;
+				if (outliers) {
+					time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);
+				}
+
+				if (rawTime.length !== time.length) {
+					const removed = rawTime.length - time.length;
+					hints.push(`${data.Name}: ${removed} outliers were removed.`);
+				}
+				columns.push(fmtTime(mean(time)));
+
+				if (stdDev) {
+					columns.push(fmtTime(standardDeviation(time)));
+				}
+				for (const k of percentiles) {
+					columns.push(fmtTime(quantileSorted(time, k / 100)));
+				}
+
+				if (ratio1Row) {
+					const ratio = mean(rawTime) / mean(ratio1!.time);
+					columns.push(`${ratio.toFixed(2)}x`);
+				}
+			}
+			table.push(new Array(header.length));
+		}
+
+		table.pop();
+
+		out.write(chalk.greenBright("\n\nSuite: "));
+		out.write(name);
 		out.write("\n");
 		out.write(markdownTable(table, { stringLength, align: "r" }));
 		out.write("\n");
-
 		out.write("\nHints:\n");
 		for (const hint of hints) {
 			out.write(hint);

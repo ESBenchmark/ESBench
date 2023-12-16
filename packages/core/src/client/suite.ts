@@ -81,12 +81,9 @@ export class Scene<P = any> {
 
 export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
 
+
 export type BaselineOptions = {
-	type: "name" | "builder" | "engine";
-	value: string;
-} | {
-	type: "param";
-	name: string;
+	type: string;
 	value: any;
 }
 

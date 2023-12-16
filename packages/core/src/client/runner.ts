@@ -2,7 +2,7 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
-import { checkParams, consoleLogHandler, runHooks } from "./utils.js";
+import { BUILTIN_FIELDS, checkParams, consoleLogHandler, runHooks, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -70,8 +70,13 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");
 
-	const workers: BenchmarkWorker[] = [];
+	if (baseline) {
+		if (!BUILTIN_FIELDS.includes(baseline.type)) {
+			baseline.value = toDisplayName(baseline.value);
+		}
+	}
 
+	const workers: BenchmarkWorker[] = [];
 	if (timing !== false) {
 		workers.push(new TimeWorker(timing === true ? {} : timing));
 	}
