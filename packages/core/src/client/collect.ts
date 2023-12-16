@@ -1,9 +1,11 @@
 import { cartesianObject } from "@kaciras/utilities/browser";
 import { Metrics, WorkloadResult } from "./runner.js";
+import { BaselineOptions } from "./suite.js";
 
 export type ESBenchResult = Record<string, StageResult[]>;
 
 export interface StageResult {
+	baseline?: BaselineOptions;
 	engine?: string;
 	builder?: string;
 	paramDef: Record<string, string[]>;

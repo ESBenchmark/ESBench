@@ -1,5 +1,5 @@
 import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
-import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
+import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
 import { checkParams, consoleLogHandler, runHooks } from "./utils.js";
@@ -47,6 +47,7 @@ export type Metrics = Record<string, any[]>;
 
 export interface RunSuiteResult {
 	name: string;
+	baseline?: BaselineOptions;
 	paramDef: Record<string, string[]>;
 	scenes: WorkloadResult[][];
 }
@@ -65,7 +66,7 @@ export interface RunSuiteOption {
 }
 
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
-	const { name, setup, afterAll = noop, timing = {}, validate, params = {} } = suite;
+	const { name, setup, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");
 
@@ -128,5 +129,5 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	await newWorkflow(workers).finally(afterAll);
 
-	return { name, paramDef, scenes } as RunSuiteResult;
+	return { name, baseline, paramDef, scenes } as RunSuiteResult;
 }

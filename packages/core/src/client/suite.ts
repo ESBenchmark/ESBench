@@ -68,19 +68,27 @@ export class Scene<P = any> {
 
 	bench(name: string, fn: SyncWorkload) {
 		if (/^\s*$/.test(name)) {
-			throw new Error("Workload name cannot be a blank string.");
+			throw new Error("Case name cannot be blank.");
 		}
 		if (this.cases.some(c => c.name === name)) {
-			throw new Error(`Workload "${name}" already exists.`);
+			throw new Error(`Case "${name}" already exists.`);
 		}
-		if (!this.include.test(name)) {
-			return;
+		if (this.include.test(name)) {
+			this.cases.push(new BenchCase(this, name, fn));
 		}
-		this.cases.push(new BenchCase(this, name, fn));
 	}
 }
 
 export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
+
+export type BaselineOptions = {
+	type: "name" | "builder" | "engine";
+	value: string;
+} | {
+	type: "param";
+	name: string;
+	value: any;
+}
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
 	name: string;
@@ -102,6 +110,9 @@ export interface BenchmarkSuite<T extends CPSrcObject> {
 	validate?: ValidateOptions;
 
 	params?: T;
+
+	baseline?: BaselineOptions;
+
 	afterAll?: HookFn;
 }
 

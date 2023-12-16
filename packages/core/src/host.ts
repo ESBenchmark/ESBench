@@ -82,8 +82,8 @@ export class ESBenchHost {
 		if ("level" in message) {
 			consoleLogHandler(message.level, message.log);
 		} else {
-			const { name, scenes, paramDef } = message;
-			(this.result[name] ??= []).push({ scenes, paramDef, engine, builder });
+			const { name, ...rest } = message;
+			(this.result[name] ??= []).push({ engine, builder, ...rest });
 		}
 	}
 
