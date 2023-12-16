@@ -11,7 +11,7 @@ export type ESBenchResult = Record<string, StageResult[]>;
 
 export interface StageResult {
 	baseline?: BaselineOptions;
-	engine?: string;
+	executor?: string;
 	builder?: string;
 	paramDef: Record<string, string[]>;
 	scenes: WorkloadResult[][];
@@ -23,7 +23,7 @@ export type FlattedCase = Record<string, string> & {
 	[kMetrics]: Metrics;
 	Name: string;
 	Builder?: string;
-	Engine?: string;
+	Executor?: string;
 }
 
 export class SummaryTableFilter {
@@ -42,14 +42,14 @@ export class SummaryTableFilter {
 	}
 
 	private addStageResult(stage: StageResult) {
-		const { engine, builder, paramDef, scenes } = stage;
+		const { executor, builder, paramDef, scenes } = stage;
 		const paramsIter = cartesianObject(paramDef)[Symbol.iterator]();
 
 		if (builder) {
 			this.addToVar("Builder", builder);
 		}
-		if (engine) {
-			this.addToVar("Engine", engine);
+		if (executor) {
+			this.addToVar("Executor", executor);
 		}
 		for (const [key, values] of Object.entries(paramDef)) {
 			this.addToVar(key, ...values);
@@ -61,7 +61,7 @@ export class SummaryTableFilter {
 				this.table.push({
 					...params,
 					Builder: builder,
-					Engine: engine,
+					Executor: executor,
 					Name: name,
 					[kMetrics]: metrics,
 				});

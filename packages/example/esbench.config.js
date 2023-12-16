@@ -1,4 +1,4 @@
-import { defineConfig, DirectEngine, rawReporter } from "@esbench/core";
+import { defineConfig, DirectExecutor, rawReporter } from "@esbench/core";
 
 export default defineConfig({
 	reporters: [
@@ -10,14 +10,14 @@ export default defineConfig({
 		// 	new ViteBuilder(),
 		// 	new RollupBuilder(),
 		// ],
-		engines: [
-			// new PlaywrightEngine(chromium, {
+		executors: [
+			// new PlaywrightExecutor(firefox, {
 			// 	headless: false,
-			// 	executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+				// executablePath: "D:/Program Files/Mozilla Firefox/firefox.exe",
 			// }),
-			// new NodeEngine(),
-			new DirectEngine(),
-			// new ProcessEngine("node"),
+			// new NodeExecutor(),
+			new DirectExecutor(),
+			// new ProcessExecutor("node"),
 		],
 	}],
 });

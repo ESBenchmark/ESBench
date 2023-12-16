@@ -5,7 +5,7 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
-import { Engine, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../stage.js";
 
 const template = `\
 import connect from "__ENTRY__";
@@ -24,7 +24,7 @@ type GetCommand = (file: string) => string;
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.
  */
-export default class ProcessEngine implements Engine {
+export default class ProcessExecutor implements Executor {
 
 	private readonly getCommand: GetCommand;
 
@@ -67,7 +67,7 @@ export default class ProcessEngine implements Engine {
 			.replace("__ADDRESS__", JSON.stringify(address))
 			.replace("__ENTRY__", "./" + specifier);
 
-		// No need to make the filename unique because only one engine can run at the same time.
+		// No need to make the filename unique because only one executor can run at the same time.
 		const script = join(tempDir, "main.js");
 		writeFileSync(script, loaderCode);
 

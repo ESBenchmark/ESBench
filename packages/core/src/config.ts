@@ -1,8 +1,8 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "./client/collect.js";
-import DirectEngine from "./engine/direct.js";
-import { Builder, Engine } from "./stage.js";
+import { Builder, Executor } from "./stage.js";
 import noBuild from "./builder/default.js";
+import DirectExecutor from "./executor/direct.js";
 import textReporter from "./reporter/text.js";
 
 export interface Stage {
@@ -22,11 +22,11 @@ export interface Stage {
 	builders?: Builder[];
 
 	/**
-	 * With engines, you specify JS runtimes that ESBench execute your suites.
+	 * With executors, you specify JS runtimes that ESBench execute your suites.
 	 *
 	 * By default, it will run suites in the current process.
 	 */
-	engines?: Engine[];
+	executors?: Executor[];
 }
 
 export type Reporter = (result: ESBenchResult) => Awaitable<unknown>;
@@ -82,7 +82,7 @@ export function normalizeConfig(input: ESBenchConfig) {
 		stage = {
 			include: ["./benchmark/**/*.[jt]s?(x)"],
 			builders: [noBuild],
-			engines: [new DirectEngine()],
+			executors: [new DirectExecutor()],
 			...stage,
 		};
 		config.stages!.push(stage);
@@ -90,8 +90,8 @@ export function normalizeConfig(input: ESBenchConfig) {
 		if (stage.builders?.length === 0) {
 			throw new Error("No builders.");
 		}
-		if (stage.engines!.length === 0) {
-			throw new Error("No engines.");
+		if (stage.executors!.length === 0) {
+			throw new Error("No executors.");
 		}
 		if (stage.include?.length === 0) {
 			throw new Error("No included files.");

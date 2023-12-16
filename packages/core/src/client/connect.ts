@@ -13,7 +13,7 @@ export type ClientMessage = RunSuiteResult | {
 export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite<any> }>;
 
 /**
- * A function that post messages to the host. Provided by engines.
+ * A function that post messages to the host. Provided by executors.
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 

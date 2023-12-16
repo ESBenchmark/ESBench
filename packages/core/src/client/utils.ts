@@ -6,7 +6,7 @@ export const consoleLogHandler: LogHandler = (level, message = "") => console[le
 
 const NAME_LENGTH = 16;
 
-export const BUILTIN_FIELDS = ["Name", "Builder", "Engine"];
+export const BUILTIN_FIELDS = ["Name", "Builder", "Executor"];
 
 /**
  * Convert the value to a short (length <= 16) display string.

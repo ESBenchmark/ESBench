@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import mime from "mime";
-import { Engine, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 
@@ -33,16 +33,16 @@ async function client({ files, pattern }: any) {
  * `executablePath` or run `npx playwright install`.
  *
  * @example
- * import { PlaywrightEngine } from "@esbench/core";
+ * import { PlaywrightExecutor } from "@esbench/core";
  * import { firefox } from "playwright-core";
  *
  * export default defineConfig({
  *     stages: [{
- *         engines: [new PlaywrightEngine(firefox)]
+ *         Executors: [new PlaywrightExecutor(firefox)]
  *     }],
  * });
  */
-export default class PlaywrightEngine implements Engine {
+export default class PlaywrightExecutor implements Executor {
 
 	private readonly type: BrowserType;
 	private readonly options?: LaunchOptions;

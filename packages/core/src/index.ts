@@ -9,7 +9,7 @@ export { default as htmlReporter } from "./reporter/html.js";
 export * from "./builder/rollup.js";
 export { default as noBuild } from "./builder/default.js";
 
-export { default as ProcessEngine } from "./engine/process.js";
-export { default as DirectEngine } from "./engine/direct.js";
-export { default as NodeEngine } from "./engine/node.js";
-export { default as PlaywrightEngine } from "./engine/playwright.js";
+export { default as ProcessExecutor } from "./executor/process.js";
+export { default as DirectExecutor } from "./executor/direct.js";
+export { default as NodeExecutor } from "./executor/node.js";
+export { default as PlaywrightExecutor } from "./executor/playwright.js";

@@ -1,12 +1,12 @@
 import { execArgv, version } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { Engine, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../stage.js";
 
 /**
  * Run suites directly in the current context.
  */
-export default class DirectEngine implements Engine {
+export default class DirectExecutor implements Executor {
 
 	start() {
 		return execArgv.length

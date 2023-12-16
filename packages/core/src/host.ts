@@ -1,10 +1,11 @@
 import { mkdirSync, mkdtempSync, rmSync } from "fs";
 import { join, relative } from "path";
-import { cwd } from "process";
+import { cwd, stdout } from "process";
 import { performance } from "perf_hooks";
+import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
-import { Builder, Engine, RunOptions } from "./stage.js";
+import { Builder, Executor, RunOptions } from "./stage.js";
 import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
 import { consoleLogHandler } from "./client/utils.js";
@@ -31,16 +32,16 @@ export class ESBenchHost {
 
 	async build(file?: string) {
 		const { tempDir, stages } = this.config;
-		const engineMap = new MultiMap<Engine, Builder>();
+		const executorMap = new MultiMap<Executor, Builder>();
 		const builderMap = new MultiMap<Builder, string>();
 
 		mkdirSync(tempDir, { recursive: true });
 
-		for (const { include, builders, engines } of stages) {
+		for (const { include, builders, executors } of stages) {
 			const dotGlobs = include.map(dotPrefixed);
 			for (const builder of builders) {
 				builderMap.add(builder, ...dotGlobs);
-				engineMap.distribute(engines, builder);
+				executorMap.distribute(executors, builder);
 			}
 		}
 
@@ -61,29 +62,34 @@ export class ESBenchHost {
 			if (files.length === 0) {
 				continue;
 			}
-			console.log(`Building with ${name}...`);
+			stdout.write(`Building suites with ${name}... `);
+
+			const start = performance.now();
 			await builder.build(root, files);
+			const time = performance.now() - start;
+
+			console.log(chalk.greenBright(durationFmt.formatDiv(time, "ms")));
 			assetMap.set(builder, { files, name, root });
 		}
 
-		const jobs = new MultiMap<Engine, Build>();
-		for (const [engine, builders] of engineMap) {
+		const jobs = new MultiMap<Executor, Build>();
+		for (const [executor, builders] of executorMap) {
 			for (const builder of builders) {
 				const builds = assetMap.get(builder);
 				if (builds) {
-					jobs.add(engine, builds);
+					jobs.add(executor, builds);
 				}
 			}
 		}
 		return jobs;
 	}
 
-	private onMessage(engine: string, builder: string, message: ClientMessage) {
+	private onMessage(executor: string, builder: string, message: ClientMessage) {
 		if ("level" in message) {
 			consoleLogHandler(message.level, message.log);
 		} else {
 			const { name, ...rest } = message;
-			(this.result[name] ??= []).push({ engine, builder, ...rest });
+			(this.result[name] ??= []).push({ executor, builder, ...rest });
 		}
 	}
 
@@ -99,27 +105,27 @@ export class ESBenchHost {
 		const jobs = await this.build(file);
 
 		if (jobs.size === 0) {
-			throw new Error("No file matching the include pattern of stages");
+			throw new Error("\nNo file matching the include pattern of stages");
 		}
-		console.log(`${jobs.count} stages for ${jobs.size} engines.`);
+		console.log(`\n${jobs.count} stages for ${jobs.size} executors.`);
 
 		const context: Partial<RunOptions> = {
 			tempDir,
 			pattern: nameRegex?.source,
 		};
 
-		for (const [engine, builds] of jobs) {
-			const engineName = await engine.start();
-			console.log(`Running suites with: ${engineName}.`);
+		for (const [executor, builds] of jobs) {
+			const executorName = await executor.start();
+			console.log(`Running suites with: ${executorName}.`);
 
 			for (const { files, name, root } of builds) {
-				context.handleMessage = this.onMessage.bind(this, engineName, name);
+				context.handleMessage = this.onMessage.bind(this, executorName, name);
 				context.files = files;
 				context.root = root;
-				await engine.run(context as RunOptions);
+				await executor.run(context as RunOptions);
 			}
 
-			await engine.close();
+			await executor.close();
 		}
 
 		console.log(); // Add an empty line between running & reporting phase.
