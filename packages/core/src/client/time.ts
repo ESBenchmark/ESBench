@@ -136,7 +136,6 @@ export class TimeWorker implements BenchmarkWorker {
 		}
 
 		const iterateActual = createInvoker(unrollFactor, case_);
-		await ctx.info(`\nBenchmark: ${case_.name}`);
 
 		// noinspection SuspiciousTypeOfGuard
 		if (typeof iterations === "string") {

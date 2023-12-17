@@ -13,6 +13,8 @@ export type LogHandler = (level: LogLevel, message?: string) => Awaitable<void>;
 
 export interface WorkerContext {
 
+	sceneCount: number;
+
 	/**
 	 * Using this method will generate warnings, which are logs with log level "warn".
 	 */
@@ -31,7 +33,7 @@ export interface WorkerContext {
 
 export interface BenchmarkWorker {
 
-	onSuite?: (ctx: WorkerContext) => Awaitable<void>;
+	onSuite?: (ctx: WorkerContext, suite: BenchmarkSuite) => Awaitable<void>;
 
 	onScene?: (ctx: WorkerContext, scene: Scene) => Awaitable<void>;
 
@@ -65,6 +67,30 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
+class DefaultLoggingWorker implements BenchmarkWorker {
+
+	private index = 0;
+
+	onSuite(ctx: WorkerContext, suite: BenchmarkSuite) {
+		return ctx.info(`\nSuite: ${suite.name}, ${ctx.sceneCount} scenes.`);
+	}
+
+	onScene(ctx: WorkerContext, scene: Scene) {
+		const caseCount = scene.cases.length;
+		const { sceneCount } = ctx;
+
+		return caseCount === 0
+			? ctx.warn(`\nNo case found from scene #${this.index++}.`)
+			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
+	}
+
+	onCase(ctx: WorkerContext, case_: BenchCase) {
+		const { name, isAsync, setupHooks, cleanHooks } = case_;
+		const hooks = setupHooks.length + cleanHooks.length > 0;
+		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
+	}
+}
+
 export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
 	const { name, setup, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 	const log = options.log ?? consoleLogHandler;
@@ -76,18 +102,19 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 		}
 	}
 
-	const workers: BenchmarkWorker[] = [];
-	if (timing !== false) {
-		workers.push(new TimeWorker(timing === true ? {} : timing));
-	}
+	const workers: BenchmarkWorker[] = [new DefaultLoggingWorker()];
 	if (validate) {
 		workers.push(new ValidateWorker(validate));
+	}
+	if (timing !== false) {
+		workers.push(new TimeWorker(timing === true ? {} : timing));
 	}
 
 	const { length, paramDef } = checkParams(params);
 	const scenes: WorkloadResult[][] = [];
 
 	const ctx: WorkerContext = {
+		sceneCount: length,
 		run: newWorkflow,
 		warn: message => log("warn", message),
 		info: message => log("info", message),
@@ -96,7 +123,7 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
 		for (const worker of workers) {
-			await worker.onSuite?.(ctx);
+			await worker.onSuite?.(ctx, suite);
 		}
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
@@ -114,14 +141,7 @@ export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOpti
 
 	async function handleScene(scene: Scene, workers: BenchmarkWorker[]) {
 		const workloads: WorkloadResult[] = [];
-		const caseCount = scene.cases.length;
-		const index = scenes.push(workloads);
-
-		if (caseCount === 0) {
-			await ctx.warn(`\nNo workload found from scene #${index}.`);
-		} else {
-			await ctx.info(`\nScene ${index} of ${length}, ${caseCount} workloads.`);
-		}
+		scenes.push(workloads);
 
 		for (const case_ of scene.cases) {
 			const metrics: Metrics = {};
