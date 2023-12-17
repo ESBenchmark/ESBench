@@ -73,6 +73,7 @@ export class RollupBuilder implements Builder {
 			plugins: [...plugins, esbenchEntryPlugin(files)],
 		});
 		await bundle.write({ ...this.config.output, dir });
+		await bundle.close();
 	}
 }
 
