@@ -124,7 +124,7 @@ export type BaselineOptions = {
 	value: any;
 }
 
-export interface BenchmarkSuite<T extends CPSrcObject> {
+export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	name: string;
 	setup: SetupScene<T>;
 

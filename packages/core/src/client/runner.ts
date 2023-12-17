@@ -91,7 +91,7 @@ class DefaultLoggingWorker implements BenchmarkWorker {
 	}
 }
 
-export async function runSuite(suite: BenchmarkSuite<any>, options: RunSuiteOption) {
+export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	const { name, setup, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");

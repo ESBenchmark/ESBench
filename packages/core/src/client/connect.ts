@@ -10,7 +10,7 @@ export type ClientMessage = RunSuiteResult | {
 /**
  * A function that load benchmark suites. Provided by builders.
  */
-export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite<any> }>;
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
 
 /**
  * A function that post messages to the host. Provided by executors.
