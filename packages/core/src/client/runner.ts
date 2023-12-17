@@ -2,7 +2,7 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ValidateWorker } from "./validate.js";
 import { TimeWorker } from "./time.js";
-import { BUILTIN_FIELDS, checkParams, consoleLogHandler, runHooks, toDisplayName } from "./utils.js";
+import { BUILTIN_FIELDS, checkParams, consoleLogHandler, runFns, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -91,6 +91,17 @@ class DefaultLoggingWorker implements BenchmarkWorker {
 	}
 }
 
+async function runHooks<K extends keyof BenchmarkWorker>(
+	workers: BenchmarkWorker[],
+	name: K,
+	...args: Parameters<NonNullable<BenchmarkWorker[K]>>
+) {
+	for (const worker of workers) {
+		// @ts-expect-error Is it a TypeScript bug?
+		await worker[name]?.(...args);
+	}
+}
+
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	const { name, setup, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 	const log = options.log ?? consoleLogHandler;
@@ -122,19 +133,15 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	};
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
-		for (const worker of workers) {
-			await worker.onSuite?.(ctx, suite);
-		}
+		await runHooks(workers, "onSuite", ctx, suite);
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
 			await setup(scene);
 			try {
-				for (const worker of workers) {
-					await worker.onScene?.(ctx, scene);
-				}
+				await runHooks(workers, "onScene", ctx, scene);
 				await handleScene(scene, workers);
 			} finally {
-				await runHooks(scene.cleanEach);
+				await runFns(scene.cleanEach);
 			}
 		}
 	}
@@ -145,9 +152,7 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 
 		for (const case_ of scene.cases) {
 			const metrics: Metrics = {};
-			for (const worker of workers) {
-				await worker.onCase?.(ctx, case_, metrics);
-			}
+			await runHooks(workers, "onCase", ctx, case_, metrics);
 			workloads.push({ name: case_.name, metrics });
 		}
 	}

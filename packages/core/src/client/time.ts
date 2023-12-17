@@ -2,7 +2,7 @@ import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/
 import { medianSorted } from "simple-statistics";
 import { BenchCase } from "./suite.js";
 import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
-import { runHooks, timeDetail } from "./utils.js";
+import { runFns, timeDetail } from "./utils.js";
 import { welchTTest } from "./math.js";
 
 type Iterate = (count: number) => Awaitable<number>;
@@ -40,13 +40,13 @@ function createInvoker(factor: number, case_: BenchCase): Iterate {
 	async function syncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
-			await runHooks(setupHooks);
+			await runFns(setupHooks);
 
 			timeUsage -= performance.now();
 			fn();
 			timeUsage += performance.now();
 
-			await runHooks(cleanHooks);
+			await runFns(cleanHooks);
 		}
 		return timeUsage;
 	}
@@ -54,13 +54,13 @@ function createInvoker(factor: number, case_: BenchCase): Iterate {
 	async function asyncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
-			await runHooks(setupHooks);
+			await runFns(setupHooks);
 
 			timeUsage -= performance.now();
 			await fn();
 			timeUsage += performance.now();
 
-			await runHooks(cleanHooks);
+			await runFns(cleanHooks);
 		}
 		return timeUsage;
 	}

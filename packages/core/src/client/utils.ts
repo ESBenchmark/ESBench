@@ -71,7 +71,7 @@ export function checkParams(params: CPSrcObject) {
 	return { length, paramDef } as ProcessedParamDef;
 }
 
-export function runHooks(hooks: HookFn[]) {
+export function runFns(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
 }
 

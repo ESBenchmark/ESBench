@@ -1,5 +1,5 @@
 import { Awaitable, CPCellObject, CPSrcObject } from "@kaciras/utilities/browser";
-import { runHooks } from "./utils.js";
+import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
 
@@ -27,11 +27,11 @@ export class BenchCase {
 	}
 
 	async invoke() {
-		await runHooks(this.setupHooks);
+		await runFns(this.setupHooks);
 		try {
 			return this.fn();
 		} finally {
-			await runHooks(this.cleanHooks);
+			await runFns(this.cleanHooks);
 		}
 	}
 }
