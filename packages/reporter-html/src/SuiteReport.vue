@@ -24,11 +24,14 @@
 			<LabeledSelect
 				v-for='([name, values], i) of stf.vars'
 				:key='i'
-				v-model='dataFilter.variables.value[i]'
+				v-model='variables[i]'
 				:label='name'
-				:disabled='name === dataFilter.xAxis.value'
-				:class='[$style.variable, name === dataFilter.xAxis.value && $style.active]'
-				@click.self='dataFilter.xAxis.value = name'
+				:disabled='name === xAxis'
+				:class='[
+					$style.variable,
+					name === xAxis && $style.active
+				]'
+				@click.self='xAxis = name'
 			>
 				<option v-for='v of values' :key='v'>{{ v }}</option>
 			</LabeledSelect>
@@ -57,7 +60,7 @@ const errorBarType = shallowRef(valueRange);
 
 let chart: BarWithErrorBarsChart;
 
-const dataFilter = useDataFilter(stf);
+const { variables, matches, xAxis } = useDataFilter(stf);
 
 function none(values: number[]) {
 	return { y: mean(values) };
@@ -81,12 +84,10 @@ function valueRange(values: number[]) {
 }
 
 const data = computed(() => {
-	const matches = dataFilter.matches.value;
-
-	const labels = [...stf.value.vars.get(dataFilter.xAxis.value)!];
+	const labels = [...stf.value.vars.get(xAxis.value)!];
 	const datasets = [{
 		label: "time",
-		data: matches.map(r => errorBarType.value(stf.value.getMetrics(r).time)),
+		data: matches.value.map(r => errorBarType.value(stf.value.getMetrics(r).time)),
 	}];
 	return { labels, datasets } as any;
 });
@@ -111,33 +112,33 @@ onMounted(() => {
 
 <style module>
 .container {
-    display: grid;
-    grid-template-areas: "header params" "main params";
-    grid-template-rows: auto 1fr;
-    grid-template-columns: 1fr 400px;
+	display: grid;
+	grid-template-areas: "header params" "main params";
+	grid-template-rows: auto 1fr;
+	grid-template-columns: 1fr 400px;
 }
 
 header {
-    grid-area: header;
-    padding: 10px;
+	grid-area: header;
+	padding: 10px;
 }
 
 .main {
-    grid-area: main;
+	grid-area: main;
 }
 
 .params {
-    grid-area: params;
-    padding: 20px;
+	grid-area: params;
+	padding: 20px;
 }
 
 .variable {
 	cursor: pointer;
-    padding: 8px;
+	padding: 8px;
 	border-radius: 8px;
 
 	&.active {
-        cursor: default;
+		cursor: default;
 		background: #bee3ff;
 	}
 }

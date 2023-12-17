@@ -57,14 +57,14 @@ export function welchTTest(a: number[], b: number[], alt: AlternativeHypothesis)
 		return NaN;
 	}
 
-	const leftSE = sampleVariance(a) / a.length;
-	const rightSE = sampleVariance(b) / b.length;
-	const se = leftSE + rightSE;
+	const seA = sampleVariance(a) / a.length;
+	const seB = sampleVariance(b) / b.length;
+	const se = seA + seB;
 
 	const t = (mean(a) - mean(b)) / Math.sqrt(se);
 	const df = (se ** 2) / (
-		(leftSE ** 2) / (a.length - 1) +
-		(rightSE ** 2) / (b.length - 1)
+		(seA ** 2) / (a.length - 1) +
+		(seB ** 2) / (b.length - 1)
 	);
 
 	switch (alt.charCodeAt(0)) {
@@ -78,11 +78,8 @@ export function welchTTest(a: number[], b: number[], alt: AlternativeHypothesis)
 	throw new TypeError(`Invalid alternative hypothesis: "${alt}"`);
 }
 
-function studentOneTail(t: number, df: number): number {
-	if (t < 0) {
-		return 1 - studentTwoTail(t, df) / 2;
-	}
-	return 1 - studentOneTail(-t, df);
+function studentOneTail(t: number, df: number) {
+	return t < 0 ? 1 - studentTwoTail(t, df) / 2 : studentTwoTail(-t, df) / 2;
 }
 
 function studentTwoTail(t: number, df: number) {

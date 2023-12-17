@@ -10,10 +10,10 @@ export interface ValidateOptions {
 	/**
 	 * Check the return value of benchmarks, throw an error if it's invalid.
 	 */
-	correctness?: CheckFn;
+	check?: CheckFn;
 
 	/**
-	 * Check to make sure the values returned by the benchmarks are equal.
+	 * Check to make sure the values returned by the function are equal.
 	 */
 	equality?: boolean | EqualityFn;
 }
@@ -90,8 +90,8 @@ export class ValidateWorker implements BenchmarkWorker {
 	private readonly isEqual: EqualityFn;
 	private readonly check: CheckFn;
 
-	constructor({ equality, correctness }: ValidateOptions) {
-		this.check = correctness ?? noop;
+	constructor({ equality, check }: ValidateOptions) {
+		this.check = check ?? noop;
 		if (equality === true) {
 			this.isEqual = (a, b) => a === b;
 		} else if (equality) {

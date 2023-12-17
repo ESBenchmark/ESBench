@@ -1,8 +1,7 @@
 .DS_Store
 node_modules
 .svelte-kit
-.vitepress/cache
-/dist
+dist
 /debug.[jt]s
 /packages/*/debug.[jt]s
 
@@ -29,6 +28,7 @@ pnpm-debug.log*
 packages/core/html
 packages/core/lib
 packages/reporter-html/build
+packages/site/.vitepress/cache
 .esbench-tmp
 reports
 benchmark.json

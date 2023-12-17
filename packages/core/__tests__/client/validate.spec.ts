@@ -70,7 +70,7 @@ it("should validate the return value", () => {
 	const suite = defineSuite({
 		name: "Test Suite",
 		validate: {
-			correctness: () => {throw cause;},
+			check: () => {throw cause;},
 		},
 		setup(scene) {
 			scene.bench("foo", () => 11);

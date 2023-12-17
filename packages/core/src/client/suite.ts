@@ -54,14 +54,25 @@ export class Scene<P = any> {
 		this.include = include;
 	}
 
+	/**
+	 * Register a callback to be called exactly once before each benchmark invocation.
+	 * It's not recommended to use this in microbenchmarks because it can spoil the results.
+	 */
 	beforeIteration(fn: HookFn) {
 		this.setupIteration.push(fn);
 	}
 
+	/**
+	 * Register a callback to be called  exactly once after each invocation.
+	 * It's not recommended to use this in microbenchmarks because it can spoil the results.
+	 */
 	afterIteration(fn: HookFn) {
 		this.cleanIteration.push(fn);
 	}
 
+	/**
+	 * Teardown function to run after all case in the scene are executed.
+	 */
 	afterEach(fn: HookFn) {
 		this.cleanEach.push(fn);
 	}
@@ -81,15 +92,25 @@ export class Scene<P = any> {
 
 export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
 
-
 export type BaselineOptions = {
+	/**
+	 * Type of the baseline variable, can be one of:
+	 * - "Name", "Builder", "Executor"
+	 * - Any key of the suite's `param` option.
+	 */
 	type: string;
+
+	/**
+	 * Case with variable value equals to this is the baseline.
+	 */
 	value: any;
 }
 
 export interface BenchmarkSuite<T extends CPSrcObject> {
 	name: string;
 	setup: SetupScene<T>;
+
+	afterAll?: HookFn;
 
 	/**
 	 * Measure the running time of the benchmark function.
@@ -106,11 +127,16 @@ export interface BenchmarkSuite<T extends CPSrcObject> {
 	 */
 	validate?: ValidateOptions;
 
+	/**
+	 * you can specify set of values.
+	 * As a result, you will get results for each combination of params values.
+	 */
 	params?: T;
 
+	/**
+	 * In order to scale your results, you can mark a variable as a baseline.
+	 */
 	baseline?: BaselineOptions;
-
-	afterAll?: HookFn;
 }
 
 type Empty = Record<string, never>;
