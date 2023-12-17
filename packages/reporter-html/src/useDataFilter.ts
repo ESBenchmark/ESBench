@@ -1,77 +1,26 @@
-import { computed, ComputedRef, reactive, ref, Ref, watch } from "vue";
-import { FlattedResult, FlattedSummary } from "@esbench/core/client";
-
-type Predicate = (result: FlattedResult, name: string) => string;
-
-export interface VariableDef {
-	type: Predicate;
-	name: string;
-	values: string[];
-}
+import { computed, ComputedRef, ref, Ref, watch } from "vue";
+import { firstItem, FlattedCase, SummaryTableFilter } from "@esbench/core/client";
 
 export interface UseDataFilterReturn {
-	defs: ComputedRef<VariableDef[]>;
-	variables: string[];
-	xAxis: Ref<number>;
-	matches: ComputedRef<FlattedResult[]>;
+	variables: Ref<string[]>;
+	xAxis: Ref<string>;
+	matches: ComputedRef<FlattedCase[]>;
 }
 
-function topLevel(result: FlattedResult, name: string) {
-	return (result as any)[name];
-}
-
-function param(result: FlattedResult, name: string) {
-	return result.params[name];
-}
-
-export default function (summary: Ref<FlattedSummary>) {
-	const variables = reactive<string[]>([]);
-	const xAxis = ref(0);
-
-	const defs = computed(() => {
-		const { names, builders, engines, params } = summary.value;
-		const defs: VariableDef[] = [];
-
-		if (names.size > 0) {
-			defs.push({ type: topLevel, name: "name", values: [...names] });
-		}
-		if (builders.size > 0) {
-			defs.push({ type: topLevel, name: "builder", values: [...builders] });
-		}
-		if (engines.size > 0) {
-			defs.push({ type: topLevel, name: "engine", values: [...engines] });
-		}
-
-		for (const [name, values] of Object.entries(params)) {
-			defs.push({ type: param, name, values: [...values] });
-		}
-
-		return defs;
-	});
+export default function (stf: Ref<SummaryTableFilter>) {
+	const variables = ref<string[]>([]);
+	const xAxis = ref("");
 
 	const matches = computed(() => {
-		return summary.value.list.filter(v => {
-			for (let i = 0; i < defs.value.length; i++) {
-				if (i === xAxis.value) {
-					continue;
-				}
-				const { type, name } = defs.value[i];
-				if (type(v, name) !== variables[i]) {
-					return false;
-				}
-			}
-			return true;
-		});
+		return stf.value.select(variables.value, xAxis.value);
 	});
 
 	function reset() {
-		xAxis.value = variables.length = 0;
-		for (const def of defs.value) {
-			variables.push(def.values[0]);
-		}
+		xAxis.value = firstItem(firstItem(stf.value.vars));
+		variables.value = stf.value.createOptions();
 	}
 
-	watch(summary, reset, { immediate: true });
+	watch(stf, reset, { immediate: true });
 
-	return { defs, variables, matches, xAxis } as UseDataFilterReturn;
+	return { variables, matches, xAxis } as UseDataFilterReturn;
 }

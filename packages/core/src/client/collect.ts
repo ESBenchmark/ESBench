@@ -3,7 +3,7 @@ import { BaselineOptions } from "./suite.js";
 import { BUILTIN_FIELDS } from "./utils.js";
 import { Metrics, WorkloadResult } from "./runner.js";
 
-function firstItem<T>(iterable: Iterable<T>) {
+export function firstItem<T>(iterable: Iterable<T>) {
 	for (const value of iterable) return value;
 }
 
@@ -43,7 +43,7 @@ export class SummaryTableFilter {
 
 	private addStageResult(stage: StageResult) {
 		const { executor, builder, paramDef, scenes } = stage;
-		const paramsIter = cartesianObject(paramDef)[Symbol.iterator]();
+		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 
 		if (builder) {
 			this.addToVar("Builder", builder);
@@ -56,7 +56,7 @@ export class SummaryTableFilter {
 		}
 
 		for (const scene of scenes) {
-			const params = paramsIter.next().value;
+			const params = iter.next().value;
 			for (const { name, metrics } of scene) {
 				this.table.push({
 					...params,
@@ -95,14 +95,15 @@ export class SummaryTableFilter {
 		return group;
 	}
 
-	select(values: string[], axis: number) {
+	select(values: string[], axis: string) {
 		return this.table.filter(row => {
 			let index = 0;
 			for (const k of this.vars.keys()) {
-				if (index === axis) {
+				const v = values[index++];
+				if (k === axis) {
 					continue;
 				}
-				if (row[k] === values[index++]) {
+				if (row[k] !== v) {
 					return false;
 				}
 			}

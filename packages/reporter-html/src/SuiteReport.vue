@@ -22,13 +22,13 @@
 			<h1>Variables</h1>
 
 			<LabeledSelect
-				v-for='({ name, values }, i) of dataFilter.defs.value'
+				v-for='([name, values], i) of stf.vars'
 				:key='i'
-				v-model='dataFilter.variables[i]'
+				v-model='dataFilter.variables.value[i]'
 				:label='name'
-				:disabled='i === dataFilter.xAxis.value'
-				:class='[$style.variable, i === dataFilter.xAxis.value && $style.active]'
-				@click.self='dataFilter.xAxis.value = i'
+				:disabled='name === dataFilter.xAxis.value'
+				:class='[$style.variable, name === dataFilter.xAxis.value && $style.active]'
+				@click.self='dataFilter.xAxis.value = name'
 			>
 				<option v-for='v of values' :key='v'>{{ v }}</option>
 			</LabeledSelect>
@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { flatSummary, type StageResult } from "@esbench/core/client";
+import { type StageResult, SummaryTableFilter } from "@esbench/core/client";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
 import useDataFilter from "./useDataFilter.ts";
@@ -50,14 +50,14 @@ interface SuiteReportProps {
 }
 
 const props = defineProps<SuiteReportProps>();
-const flatted = computed(() => flatSummary(props.stages));
+const stf = computed(() => new SummaryTableFilter(props.stages));
 
 const canvasRef = shallowRef();
 const errorBarType = shallowRef(valueRange);
 
 let chart: BarWithErrorBarsChart;
 
-const dataFilter = useDataFilter(flatted);
+const dataFilter = useDataFilter(stf);
 
 function none(values: number[]) {
 	return { y: mean(values) };
@@ -83,13 +83,10 @@ function valueRange(values: number[]) {
 const data = computed(() => {
 	const matches = dataFilter.matches.value;
 
-	const labels = matches.map(r => {
-		const def = dataFilter.defs.value[dataFilter.xAxis.value];
-		return def.type(r, def.name);
-	});
+	const labels = [...stf.value.vars.get(dataFilter.xAxis.value)!];
 	const datasets = [{
 		label: "time",
-		data: matches.map(r => errorBarType.value(r.metrics.time)),
+		data: matches.map(r => errorBarType.value(stf.value.getMetrics(r).time)),
 	}];
 	return { labels, datasets } as any;
 });
