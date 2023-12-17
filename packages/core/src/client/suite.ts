@@ -18,12 +18,12 @@ export class BenchCase {
 	readonly fn: Workload;
 	readonly isAsync: boolean;
 
-	constructor(scene: Scene, name: string, fn: Workload) {
+	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
 		this.name = name;
 		this.fn = fn;
 		this.setupHooks = scene.setupIteration;
 		this.cleanHooks = scene.cleanIteration;
-		this.isAsync = fn.constructor !== Function;
+		this.isAsync = isAsync;
 	}
 
 	async invoke() {
@@ -78,6 +78,24 @@ export class Scene<P = any> {
 	}
 
 	bench(name: string, fn: SyncWorkload) {
+		this.add(name, fn, false);
+	}
+
+	benchAsync(name: string, fn: SyncWorkload) {
+		this.add(name, fn, true);
+	}
+
+	/*
+	 * Don't use `isAsync = fn.constructor === AsyncFunction` because the fn can be
+	 * non-async and return a Promise.
+	 *
+	 * For example:
+	 * scene.bench("name", () => asyncFn(args));
+	 *
+	 * You can fix this by adding `await` to the arrow function, but it impacts performance.
+	 * Related benchmark: example/src/async-return-promise.js
+	 */
+	private add(name: string, fn: SyncWorkload, isAsync: boolean) {
 		if (/^\s*$/.test(name)) {
 			throw new Error("Case name cannot be blank.");
 		}
@@ -85,7 +103,7 @@ export class Scene<P = any> {
 			throw new Error(`Case "${name}" already exists.`);
 		}
 		if (this.include.test(name)) {
-			this.cases.push(new BenchCase(this, name, fn));
+			this.cases.push(new BenchCase(this, name, fn, isAsync));
 		}
 	}
 }
