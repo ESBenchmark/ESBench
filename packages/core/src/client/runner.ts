@@ -28,7 +28,7 @@ export interface WorkerContext {
 
 	debug(message?: string): Awaitable<void>;
 
-	run(workers: BenchmarkWorker[]): Promise<void>;
+	run(workers: BenchmarkWorker[]): Promise<WorkloadResult[][]>;
 }
 
 export interface BenchmarkWorker {
@@ -122,7 +122,6 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	}
 
 	const { length, paramDef } = checkParams(params);
-	const scenes: WorkloadResult[][] = [];
 
 	const ctx: WorkerContext = {
 		sceneCount: length,
@@ -133,31 +132,30 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	};
 
 	async function newWorkflow(workers: BenchmarkWorker[]) {
+		const scenes: WorkloadResult[][] = [];
 		await runHooks(workers, "onSuite", ctx, suite);
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
 			await setup(scene);
 			try {
 				await runHooks(workers, "onScene", ctx, scene);
-				await handleScene(scene, workers);
+
+				const workloads: WorkloadResult[] = [];
+				scenes.push(workloads);
+
+				for (const case_ of scene.cases) {
+					const metrics: Metrics = {};
+					await runHooks(workers, "onCase", ctx, case_, metrics);
+					workloads.push({ name: case_.name, metrics });
+				}
 			} finally {
 				await runFns(scene.cleanEach);
 			}
 		}
+		return scenes;
 	}
 
-	async function handleScene(scene: Scene, workers: BenchmarkWorker[]) {
-		const workloads: WorkloadResult[] = [];
-		scenes.push(workloads);
-
-		for (const case_ of scene.cases) {
-			const metrics: Metrics = {};
-			await runHooks(workers, "onCase", ctx, case_, metrics);
-			workloads.push({ name: case_.name, metrics });
-		}
-	}
-
-	await newWorkflow(workers).finally(afterAll);
+	const scenes = await newWorkflow(workers).finally(afterAll);
 
 	return { name, baseline, paramDef, scenes } as RunSuiteResult;
 }
