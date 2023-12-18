@@ -1,22 +1,23 @@
-import { defineConfig, DirectExecutor, rawReporter } from "@esbench/core";
+import { defineConfig, PlaywrightExecutor, textReporter, ViteBuilder } from "@esbench/core";
+import { chromium, firefox, webkit } from "playwright-core";
 
 export default defineConfig({
 	reporters: [
-		rawReporter(),
+		// rawReporter(),
+		textReporter({ stdDev: true }),
 	],
 	stages: [{
 		include: ["./src/*.js"],
-		// builders: [
-		// 	new ViteBuilder(),
+		builders: [
+			new ViteBuilder(),
 		// 	new RollupBuilder(),
-		// ],
+		],
 		executors: [
-			// new PlaywrightExecutor(firefox, {
-			// 	headless: false,
-				// executablePath: "D:/Program Files/Mozilla Firefox/firefox.exe",
-			// }),
+			new PlaywrightExecutor(firefox),
+			new PlaywrightExecutor(chromium),
+			new PlaywrightExecutor(webkit),
 			// new NodeExecutor(),
-			new DirectExecutor(),
+			// new DirectExecutor(),
 			// new ProcessExecutor("node"),
 		],
 	}],

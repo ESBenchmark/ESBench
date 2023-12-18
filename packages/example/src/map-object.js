@@ -2,7 +2,7 @@ import { defineSuite } from "@esbench/core/client";
 
 export default defineSuite({
 	name: "Map vs Object - Get",
-	baseline: { type: "name", value: "object" },
+	baseline: { type: "Name", value: "map" },
 	params: {
 		size: [0, 1000, 1000_000],
 	},

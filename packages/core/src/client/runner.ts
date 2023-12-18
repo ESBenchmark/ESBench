@@ -159,3 +159,34 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 
 	return { name, baseline, paramDef, scenes } as RunSuiteResult;
 }
+
+export type ClientMessage = RunSuiteResult | {
+	log?: string;
+	level: LogLevel;
+};
+
+/**
+ * A function that load benchmark suites. Provided by builders.
+ */
+export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
+
+/**
+ * A function that post messages to the host. Provided by executors.
+ */
+export type Channel = (message: ClientMessage) => Awaitable<void>;
+
+export async function connect(channel: Channel, importer: Importer, files: string[], regex?: string) {
+	const option: RunSuiteOption = {
+		log: (level, log) => channel({ level: level, log }),
+		pattern: regex ? new RegExp(regex) : undefined,
+	};
+
+	try {
+		for (const file of files) {
+			const { default: suite } = await importer(file);
+			channel(await runSuite(suite, option));
+		}
+	} catch (e) {
+		channel({ log: `Suite execution failed: ${e.message}`, level: "error" });
+	}
+}

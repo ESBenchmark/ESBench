@@ -77,7 +77,7 @@ interface MetricColumnFactory {
 
 	prepare?(stf: SummaryTableFilter, cases: FlattedCase[]): void;
 
-	getValue(metrics: Metrics): any;
+	getValue(metrics: Metrics, chalk: ChalkInstance): any;
 }
 
 class BaselineColumn implements MetricColumnFactory {
@@ -103,7 +103,7 @@ class BaselineColumn implements MetricColumnFactory {
 		this.ratio1 = mean(stf.getMetrics(ratio1Row).time);
 	}
 
-	getValue(metrics: Metrics) {
+	getValue(metrics: Metrics, chalk: ChalkInstance) {
 		const ratio = mean(metrics.time) / this.ratio1;
 		if (!isFinite(ratio)) {
 			return chalk.blackBright("N/A");
@@ -204,7 +204,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 				}
 				const metrics = stf.getMetrics(data);
 				for (const metricColumn of metricColumns) {
-					columns.push(metricColumn.getValue(metrics));
+					columns.push(metricColumn.getValue(metrics, chalk));
 				}
 			}
 
