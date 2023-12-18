@@ -105,6 +105,9 @@ class BaselineColumn implements MetricColumnFactory {
 
 	getValue(metrics: Metrics) {
 		const ratio = mean(metrics.time) / this.ratio1;
+		if (!isFinite(ratio)) {
+			return chalk.blackBright("N/A");
+		}
 		const text = `${ratio.toFixed(2)}x`;
 		if (ratio === 1) {
 			return text;
@@ -249,11 +252,15 @@ function formatTime(table: any[][], column: number, flex: boolean) {
 	const x = durationFmt.fractions[2 /* ms */];
 	let min = Infinity;
 	for (const row of table) {
-		min = Math.min(min, durationFmt.suit(row[column] * x));
+		min = row[column] === 0 // 0 is equal in any unit.
+			? min
+			: Math.min(min, durationFmt.suit(row[column] * x));
 	}
-	const s = x / durationFmt.fractions[min];
+	const scale = x / durationFmt.fractions[min];
+	const unit = durationFmt.units[min];
+
 	for (const row of table) {
-		row[column] = (row[column] * s).toFixed(2) + " " + durationFmt.units[min];
+		row[column] = (row[column] * scale).toFixed(2) + " " + unit;
 	}
 }
 
