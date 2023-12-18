@@ -166,8 +166,8 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			metricColumns.push(new BaselineColumn(baseline));
 		}
 
-		const header = [...stf.vars.keys()];
-		for (let i = stf.builtinParams.length; i < header.length; i++) {
+		const header = ["No.", ...stf.vars.keys()];
+		for (let i = 1 + stf.builtinParams.length; i < header.length; i++) {
 			header[i] = chalk.magentaBright(header[i]);
 		}
 		for (const metricColumn of metricColumns) {
@@ -176,23 +176,24 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 		const table = [header];
 		const hints: string[] = [];
+		let rowNumber = 0;
 
 		let groups = [stf.table][Symbol.iterator]();
 		if (baseline) {
 			groups = stf.groupBy(baseline.type).values();
 		}
 
-		for (const data of stf.table) {
-			removeOutliers(data, stf.getMetrics(data));
-		}
-
 		for (const group of groups) {
+			for (const data of group) {
+				removeOutliers(data, stf.getMetrics(data));
+			}
 			for (const metricColumn of metricColumns) {
 				metricColumn.prepare?.(stf, group);
 			}
+
 			const startIndex = table.length;
 			for (const data of group) {
-				const columns: string[] = [];
+				const columns: string[] = [(rowNumber++).toString()];
 				table.push(columns);
 
 				for (const k of stf.vars.keys()) {
@@ -206,7 +207,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 			const slice = table.slice(startIndex);
 			for (let i = 0; i < metricColumns.length; i++) {
-				const c = stf.vars.size + i;
+				const c = 1 + stf.vars.size + i;
 				if (metricColumns[i].format) {
 					formatTime(slice, c, flexUnit);
 				}
