@@ -28,7 +28,7 @@ pnpm-debug.log*
 packages/core/html
 packages/core/lib
 packages/reporter-html/build
-packages/site/.vitepress/cache
+docs/.vitepress/cache
 .esbench-tmp
 reports
 benchmark.json
