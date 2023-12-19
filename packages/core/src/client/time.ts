@@ -7,6 +7,8 @@ import { welchTTest } from "./math.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
+const asyncNoop = async () => {};
+
 function unroll(factor: number, isAsync: boolean) {
 	const call = isAsync ? "await f()" : "f()";
 	const body = `\
@@ -152,7 +154,7 @@ export class TimeWorker implements BenchmarkWorker {
 		}
 
 		const iterateOverhead = createInvoker(unrollFactor, <any>{
-			fn: noop,
+			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 			setupHooks: [],
 			cleanHooks: [],
 			isAsync: case_.isAsync,
@@ -167,7 +169,7 @@ export class TimeWorker implements BenchmarkWorker {
 			const overhead = medianSorted(overheads);
 			metrics.time = time.map(ms => ms - overhead);
 		} else {
-			metrics.time = time;
+			metrics.time = [0];
 			await ctx.warn("The function duration is indistinguishable from the empty function duration.");
 		}
 	}
