@@ -1,7 +1,7 @@
 import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
 import { BenchCase } from "./suite.js";
-import { BenchmarkWorker, Metrics, WorkerContext } from "./runner.js";
+import { Metrics, Profiler, ProfilingContext } from "./runner.js";
 import { runFns, timeDetail } from "./utils.js";
 import { welchTTest } from "./math.js";
 
@@ -110,7 +110,7 @@ export interface TimingOptions {
 	iterations?: number | string;
 }
 
-export class TimeWorker implements BenchmarkWorker {
+export class TimeProfiler implements Profiler {
 
 	private readonly config: TimingOptions;
 
@@ -118,7 +118,7 @@ export class TimeWorker implements BenchmarkWorker {
 		this.config = config;
 	}
 
-	async onSuite(ctx: WorkerContext) {
+	async onSuite(ctx: ProfilingContext) {
 		// @ts-ignore
 		if (globalThis.crossOriginIsolated === false) {
 			await ctx.warn("Context is non-isolated, performance.now() may work in low-precision mode. For more details, see:\n" +
@@ -126,7 +126,7 @@ export class TimeWorker implements BenchmarkWorker {
 		}
 	}
 
-	async onCase(ctx: WorkerContext, case_: BenchCase, metrics: Metrics) {
+	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
 		const { samples = 10, unrollFactor = 16 } = this.config;
 		let { iterations = "1s" } = this.config;
 
@@ -174,7 +174,7 @@ export class TimeWorker implements BenchmarkWorker {
 		}
 	}
 
-	async estimate(ctx: WorkerContext, iterate: Iterate, target: string) {
+	async estimate(ctx: ProfilingContext, iterate: Iterate, target: string) {
 		const targetMS = durationFmt.parse(target, "ms");
 
 		let iterations = 1;
@@ -188,7 +188,7 @@ export class TimeWorker implements BenchmarkWorker {
 		return Math.ceil(iterations / 2 * targetMS / time);
 	}
 
-	async measure(ctx: WorkerContext, name: string, iterate: Iterate, count: number) {
+	async measure(ctx: ProfilingContext, name: string, iterate: Iterate, count: number) {
 		const { warmup = 5, samples = 10 } = this.config;
 		const timeUsageList = [];
 

@@ -1,7 +1,7 @@
 import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
-import { ValidateWorker } from "./validate.js";
-import { TimeWorker } from "./time.js";
+import { ExecutionValidator } from "./validate.js";
+import { TimeProfiler } from "./time.js";
 import { BUILTIN_FIELDS, checkParams, consoleLogHandler, runFns, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -11,7 +11,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  */
 export type LogHandler = (level: LogLevel, message?: string) => Awaitable<void>;
 
-export interface WorkerContext {
+export interface ProfilingContext {
 
 	sceneCount: number;
 
@@ -28,16 +28,16 @@ export interface WorkerContext {
 
 	debug(message?: string): Awaitable<void>;
 
-	run(workers: BenchmarkWorker[]): Promise<WorkloadResult[][]>;
+	run(profilers: Profiler[]): Promise<WorkloadResult[][]>;
 }
 
-export interface BenchmarkWorker {
+export interface Profiler {
 
-	onSuite?: (ctx: WorkerContext, suite: BenchmarkSuite) => Awaitable<void>;
+	onSuite?: (ctx: ProfilingContext, suite: BenchmarkSuite) => Awaitable<void>;
 
-	onScene?: (ctx: WorkerContext, scene: Scene) => Awaitable<void>;
+	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
-	onCase?: (ctx: WorkerContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
+	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
 
 export interface WorkloadResult {
@@ -67,15 +67,15 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-class DefaultLoggingWorker implements BenchmarkWorker {
+class DefaultEventLogger implements Profiler {
 
 	private index = 0;
 
-	onSuite(ctx: WorkerContext, suite: BenchmarkSuite) {
+	onSuite(ctx: ProfilingContext, suite: BenchmarkSuite) {
 		return ctx.info(`\nSuite: ${suite.name}, ${ctx.sceneCount} scenes.`);
 	}
 
-	onScene(ctx: WorkerContext, scene: Scene) {
+	onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
 		const { sceneCount } = ctx;
 
@@ -84,21 +84,21 @@ class DefaultLoggingWorker implements BenchmarkWorker {
 			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
 	}
 
-	onCase(ctx: WorkerContext, case_: BenchCase) {
+	onCase(ctx: ProfilingContext, case_: BenchCase) {
 		const { name, isAsync, setupHooks, cleanHooks } = case_;
 		const hooks = setupHooks.length + cleanHooks.length > 0;
 		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
 	}
 }
 
-async function runHooks<K extends keyof BenchmarkWorker>(
-	workers: BenchmarkWorker[],
+async function runHooks<K extends keyof Profiler>(
+	profilers: Profiler[],
 	name: K,
-	...args: Parameters<NonNullable<BenchmarkWorker[K]>>
+	...args: Parameters<NonNullable<Profiler[K]>>
 ) {
-	for (const worker of workers) {
+	for (const profiler of profilers) {
 		// @ts-expect-error Is it a TypeScript bug?
-		await worker[name]?.(...args);
+		await profiler[name]?.(...args);
 	}
 }
 
@@ -113,17 +113,17 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 		}
 	}
 
-	const workers: BenchmarkWorker[] = [new DefaultLoggingWorker()];
+	const profilers: Profiler[] = [new DefaultEventLogger()];
 	if (validate) {
-		workers.push(new ValidateWorker(validate));
+		profilers.push(new ExecutionValidator(validate));
 	}
 	if (timing !== false) {
-		workers.push(new TimeWorker(timing === true ? {} : timing));
+		profilers.push(new TimeProfiler(timing === true ? {} : timing));
 	}
 
 	const { length, paramDef } = checkParams(params);
 
-	const ctx: WorkerContext = {
+	const ctx: ProfilingContext = {
 		sceneCount: length,
 		run: newWorkflow,
 		warn: message => log("warn", message),
@@ -131,21 +131,21 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 		debug: message => log("debug", message),
 	};
 
-	async function newWorkflow(workers: BenchmarkWorker[]) {
+	async function newWorkflow(profilers: Profiler[]) {
 		const scenes: WorkloadResult[][] = [];
-		await runHooks(workers, "onSuite", ctx, suite);
+		await runHooks(profilers, "onSuite", ctx, suite);
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
 			await setup(scene);
 			try {
-				await runHooks(workers, "onScene", ctx, scene);
+				await runHooks(profilers, "onScene", ctx, scene);
 
 				const workloads: WorkloadResult[] = [];
 				scenes.push(workloads);
 
 				for (const case_ of scene.cases) {
 					const metrics: Metrics = {};
-					await runHooks(workers, "onCase", ctx, case_, metrics);
+					await runHooks(profilers, "onCase", ctx, case_, metrics);
 					workloads.push({ name: case_.name, metrics });
 				}
 			} finally {
@@ -155,7 +155,7 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 		return scenes;
 	}
 
-	const scenes = await newWorkflow(workers).finally(afterAll);
+	const scenes = await newWorkflow(profilers).finally(afterAll);
 
 	return { name, baseline, paramDef, scenes } as RunSuiteResult;
 }

@@ -1,6 +1,6 @@
 import { alwaysTrue, noop } from "@kaciras/utilities/browser";
 import { BenchCase, Scene } from "./suite.js";
-import { BenchmarkWorker, WorkerContext } from "./runner.js";
+import { Profiler, ProfilingContext } from "./runner.js";
 
 type EqualityFn = (a: any, b: any) => boolean;
 
@@ -37,7 +37,7 @@ ValidationError.prototype.name = "ValidationError";
 
 const NONE = Symbol();
 
-class PreValidateWorker implements BenchmarkWorker {
+class PreValidateProfiler implements Profiler {
 
 	private readonly isEqual: EqualityFn;
 	private readonly check: CheckFn;
@@ -51,11 +51,11 @@ class PreValidateWorker implements BenchmarkWorker {
 		this.isEqual = isEqual;
 	}
 
-	onScene(_: WorkerContext, scene: Scene) {
+	onScene(_: ProfilingContext, scene: Scene) {
 		this.params = scene.params;
 	}
 
-	async onCase(_: WorkerContext, case_: BenchCase) {
+	async onCase(_: ProfilingContext, case_: BenchCase) {
 		const { nameA, valueA, isEqual, check } = this;
 		const { name } = case_;
 
@@ -85,7 +85,7 @@ class PreValidateWorker implements BenchmarkWorker {
 	}
 }
 
-export class ValidateWorker implements BenchmarkWorker {
+export class ExecutionValidator implements Profiler {
 
 	private readonly isEqual: EqualityFn;
 	private readonly check: CheckFn;
@@ -104,8 +104,8 @@ export class ValidateWorker implements BenchmarkWorker {
 	/**
 	 * To catch errors as early as possible, we start a new workflow for the validator.
 	 */
-	async onSuite(ctx: WorkerContext) {
+	async onSuite(ctx: ProfilingContext) {
 		ctx.info("Validating benchmarks...");
-		await ctx.run([new PreValidateWorker(this.check, this.isEqual)]);
+		await ctx.run([new PreValidateProfiler(this.check, this.isEqual)]);
 	}
 }
