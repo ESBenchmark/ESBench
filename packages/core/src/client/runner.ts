@@ -2,7 +2,7 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { BUILTIN_FIELDS, checkParams, consoleLogHandler, runFns, toDisplayName } from "./utils.js";
+import { BUILTIN_FIELDS, checkParams, consoleLogHandler, DefaultEventLogger, runFns, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -65,30 +65,6 @@ export interface RunSuiteOption {
 	 * Run benchmark with names matching the Regex pattern.
 	 */
 	pattern?: RegExp;
-}
-
-class DefaultEventLogger implements Profiler {
-
-	private index = 0;
-
-	onSuite(ctx: ProfilingContext, suite: BenchmarkSuite) {
-		return ctx.info(`\nSuite: ${suite.name}, ${ctx.sceneCount} scenes.`);
-	}
-
-	onScene(ctx: ProfilingContext, scene: Scene) {
-		const caseCount = scene.cases.length;
-		const { sceneCount } = ctx;
-
-		return caseCount === 0
-			? ctx.warn(`\nNo case found from scene #${this.index++}.`)
-			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
-	}
-
-	onCase(ctx: ProfilingContext, case_: BenchCase) {
-		const { name, isAsync, setupHooks, cleanHooks } = case_;
-		const hooks = setupHooks.length + cleanHooks.length > 0;
-		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
-	}
 }
 
 async function runHooks<K extends keyof Profiler>(

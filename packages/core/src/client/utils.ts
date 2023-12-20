@@ -1,6 +1,6 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
-import { HookFn } from "./suite.js";
-import { LogHandler } from "./runner.js";
+import { BenchCase, BenchmarkSuite, HookFn, Scene } from "./suite.js";
+import { LogHandler, Profiler, ProfilingContext } from "./runner.js";
 
 export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
 
@@ -79,4 +79,28 @@ export function timeDetail(time: number, count: number) {
 	const total = durationFmt.formatDiv(time, "ms");
 	const mean = durationFmt.formatDiv(time / count, "ms");
 	return `${count} operations, ${total}, ${mean}/op`;
+}
+
+export class DefaultEventLogger implements Profiler {
+
+	private index = 0;
+
+	onSuite(ctx: ProfilingContext, suite: BenchmarkSuite) {
+		return ctx.info(`\nSuite: ${suite.name}, ${ctx.sceneCount} scenes.`);
+	}
+
+	onScene(ctx: ProfilingContext, scene: Scene) {
+		const caseCount = scene.cases.length;
+		const { sceneCount } = ctx;
+
+		return caseCount === 0
+			? ctx.warn(`\nNo case found from scene #${this.index++}.`)
+			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
+	}
+
+	onCase(ctx: ProfilingContext, case_: BenchCase) {
+		const { name, isAsync, setupHooks, cleanHooks } = case_;
+		const hooks = setupHooks.length + cleanHooks.length > 0;
+		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
+	}
 }
