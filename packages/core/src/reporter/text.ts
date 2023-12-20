@@ -43,6 +43,13 @@ export interface TextReporterOptions {
 	stdDev?: boolean;
 
 	/**
+	 * If true, variables with only one value are not shown.
+	 *
+	 * @default true
+	 */
+	hideSingle?: boolean;
+
+	/**
 	 * Show percentiles columns in the report.
 	 *
 	 * To make this value more accurate, you can increase `samples` and decrease `iterations` in suite config.
@@ -150,13 +157,18 @@ class PercentileColumn implements MetricColumnFactory {
 }
 
 async function print(result: ESBenchResult, options: TextReporterOptions, out: Writable, chalk: ChalkInstance) {
-	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false } = options;
+	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, stages] of entries) {
 		const stf = new SummaryTableFilter(stages);
 		const { baseline } = stages[0];
+
+		let vars = Array.from(stf.vars.keys());
+		if (hideSingle) {
+			vars = vars.filter(x => stf.vars.get(x)!.size > 1);
+		}
 
 		const metricColumns: MetricColumnFactory[] = [meanColumn];
 		if (stdDev) {
@@ -169,8 +181,9 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			metricColumns.push(new BaselineColumn(baseline));
 		}
 
-		const header = ["No.", ...stf.vars.keys()];
-		for (let i = 1 + stf.builtinParams.length; i < header.length; i++) {
+		const header = ["No.", ...vars];
+		const offset = 1 + vars.filter(x => BUILTIN_FIELDS.includes(x)).length;
+		for (let i = offset; i < header.length; i++) {
 			header[i] = chalk.magentaBright(header[i]);
 		}
 		for (const metricColumn of metricColumns) {
@@ -199,7 +212,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 				const columns: string[] = [(rowNumber++).toString()];
 				table.push(columns);
 
-				for (const k of stf.vars.keys()) {
+				for (const k of vars) {
 					columns.push("" + data[k]);
 				}
 				const metrics = stf.getMetrics(data);
@@ -210,7 +223,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 			const slice = table.slice(startIndex);
 			for (let i = 0; i < metricColumns.length; i++) {
-				const c = 1 + stf.vars.size + i;
+				const c = 1 + vars.length + i;
 				if (metricColumns[i].format) {
 					formatTime(slice, c, flexUnit);
 				}
