@@ -1,11 +1,21 @@
 import { cartesianObject, MultiMap } from "@kaciras/utilities/browser";
 import { BaselineOptions } from "./suite.js";
-import { BUILTIN_FIELDS } from "./utils.js";
-import { Metrics, WorkloadResult } from "./runner.js";
+import { CaseResult, Metrics } from "./runner.js";
 
 export function firstItem<T>(iterable: Iterable<T>) {
 	for (const value of iterable) return value;
 }
+
+function groupBy1<T>(items: T[], callbackFn: (e: T) => string) {
+	const group = new MultiMap<string, T>();
+	for (const element of items) {
+		group.add(callbackFn(element), element);
+	}
+	return group;
+}
+
+// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
+const groupBy: typeof groupBy1 = (Map as any).groupBy ?? groupBy1;
 
 export type ESBenchResult = Record<string, StageResult[]>;
 
@@ -14,29 +24,33 @@ export interface StageResult {
 	executor?: string;
 	builder?: string;
 	paramDef: Record<string, string[]>;
-	scenes: WorkloadResult[][];
+	scenes: CaseResult[][];
 }
 
 const kMetrics = Symbol("metrics");
 
-export type FlattedCase = Record<string, string> & {
+export type FlattedResult = Record<string, string> & {
 	[kMetrics]: Metrics;
 	Name: string;
 	Builder?: string;
 	Executor?: string;
 }
 
+function shallowHashKey(obj: any, keys: string[]) {
+	return keys.map(k => `${k}=${obj[k]}`).join(",");
+}
+
 export class SummaryTableFilter {
 
 	readonly vars = new Map<string, Set<string>>();
 
-	readonly table: FlattedCase[] = [];
+	readonly table: FlattedResult[] = [];
 
-	constructor(results: StageResult[]) {
+	constructor(suiteResult: StageResult[]) {
 		// Ensure the Name is the first entry.
 		this.vars.set("Name", new Set());
 
-		for (const result of results) {
+		for (const result of suiteResult) {
 			this.addStageResult(result);
 		}
 	}
@@ -78,46 +92,20 @@ export class SummaryTableFilter {
 		for (const value of values) list.add(value);
 	}
 
-	get builtinParams() {
-		return BUILTIN_FIELDS.filter(k => this.vars.has(k));
+	getMetrics(result: FlattedResult) {
+		return result[kMetrics];
 	}
 
-	getMetrics(row: FlattedCase) {
-		return row[kMetrics];
-	}
-
-	groupBy(key: string) {
-		const group = new MultiMap<string, FlattedCase>();
-		const hKeys = [...this.vars.keys()].filter(k => k !== key);
-		for (const row of this.table) {
-			group.add(this.hashKey(row, hKeys), row);
-		}
-		return group;
+	group(ignore: string) {
+		const keys = Array.from(this.vars.keys()).filter(k => k !== ignore);
+		return groupBy(this.table, row => shallowHashKey(row, keys));
 	}
 
 	select(values: string[], axis: string) {
+		const keys = [...this.vars.keys()];
 		return this.table.filter(row => {
-			let index = 0;
-			for (const k of this.vars.keys()) {
-				const v = values[index++];
-				if (k === axis) {
-					continue;
-				}
-				if (row[k] !== v) {
-					return false;
-				}
-			}
-			return true;
+			return keys.every((k,i) => k === axis ? true : row[k] === values[i]);
 		});
-	}
-
-	hashKey(row: FlattedCase, keys?: string[]) {
-		const ks = keys ?? this.vars.keys();
-		const parts = [];
-		for (const k of ks) {
-			parts.push(`${k}=${row[k]}`);
-		}
-		return parts.join(",");
 	}
 
 	createOptions() {

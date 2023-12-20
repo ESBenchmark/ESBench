@@ -6,10 +6,11 @@ import { durationFmt } from "@kaciras/utilities/node";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
-import { ESBenchResult, FlattedCase, SummaryTableFilter } from "../client/collect.js";
+import { ESBenchResult, FlattedResult, SummaryTableFilter } from "../client/collect.js";
 import { Reporter } from "../config.js";
 import { OutlierMode, TukeyOutlierDetector } from "../client/math.js";
 import { BaselineOptions, Metrics } from "../client/index.js";
+import { BUILTIN_FIELDS } from "../client/utils.js";
 
 export interface TextReporterOptions {
 	/**
@@ -82,7 +83,7 @@ interface MetricColumnFactory {
 
 	format?: boolean;
 
-	prepare?(stf: SummaryTableFilter, cases: FlattedCase[]): void;
+	prepare?(stf: SummaryTableFilter, cases: FlattedResult[]): void;
 
 	getValue(metrics: Metrics, chalk: ChalkInstance): any;
 }
@@ -101,7 +102,7 @@ class BaselineColumn implements MetricColumnFactory {
 		this.value = baseline.value;
 	}
 
-	prepare(stf: SummaryTableFilter, cases: FlattedCase[]) {
+	prepare(stf: SummaryTableFilter, cases: FlattedResult[]) {
 		const { key, value } = this;
 		const ratio1Row = cases.find(d => d[key] === value);
 		if (!ratio1Row) {
@@ -196,7 +197,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 		let groups = [stf.table][Symbol.iterator]();
 		if (baseline) {
-			groups = stf.groupBy(baseline.type).values();
+			groups = stf.group(baseline.type).values();
 		}
 
 		for (const group of groups) {
@@ -232,7 +233,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 			table.push(new Array(header.length));
 		}
 
-		function removeOutliers(data: FlattedCase, metrics: Metrics) {
+		function removeOutliers(data: FlattedResult, metrics: Metrics) {
 			const rawTime = metrics.time;
 			if (outliers) {
 				metrics.time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);
