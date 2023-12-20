@@ -77,13 +77,15 @@ export interface TextReporterOptions {
 	outliers?: false | OutlierMode;
 }
 
+const { getMetrics } = SummaryTableFilter;
+
 interface MetricColumnFactory {
 
 	name: string;
 
 	format?: boolean;
 
-	prepare?(stf: SummaryTableFilter, cases: FlattedResult[]): void;
+	prepare?(cases: FlattedResult[]): void;
 
 	getValue(metrics: Metrics, chalk: ChalkInstance): any;
 }
@@ -102,13 +104,13 @@ class BaselineColumn implements MetricColumnFactory {
 		this.value = baseline.value;
 	}
 
-	prepare(stf: SummaryTableFilter, cases: FlattedResult[]) {
+	prepare(cases: FlattedResult[]) {
 		const { key, value } = this;
 		const ratio1Row = cases.find(d => d[key] === value);
 		if (!ratio1Row) {
 			throw new Error(`Baseline (${key}=${value}) does not in the table`);
 		}
-		this.ratio1 = mean(stf.getMetrics(ratio1Row).time);
+		this.ratio1 = mean(getMetrics(ratio1Row).time);
 	}
 
 	getValue(metrics: Metrics, chalk: ChalkInstance) {
@@ -202,10 +204,10 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 		for (const group of groups) {
 			for (const data of group) {
-				removeOutliers(data, stf.getMetrics(data));
+				removeOutliers(data);
 			}
 			for (const metricColumn of metricColumns) {
-				metricColumn.prepare?.(stf, group);
+				metricColumn.prepare?.(group);
 			}
 
 			const startIndex = table.length;
@@ -216,7 +218,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 				for (const k of vars) {
 					columns.push("" + data[k]);
 				}
-				const metrics = stf.getMetrics(data);
+				const metrics = getMetrics(data);
 				for (const metricColumn of metricColumns) {
 					columns.push(metricColumn.getValue(metrics, chalk));
 				}
@@ -230,10 +232,11 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 				}
 			}
 
-			table.push(new Array(header.length));
+			table.push([]); // Add an empty row between groups.
 		}
 
-		function removeOutliers(data: FlattedResult, metrics: Metrics) {
+		function removeOutliers(data: FlattedResult) {
+			const metrics =  getMetrics(data);
 			const rawTime = metrics.time;
 			if (outliers) {
 				metrics.time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);

@@ -1,10 +1,10 @@
 import { computed, ComputedRef, ref, Ref, watch } from "vue";
-import { firstItem, FlattedCase, SummaryTableFilter } from "@esbench/core/client";
+import { firstItem, FlattedResult, SummaryTableFilter } from "@esbench/core/client";
 
 export interface UseDataFilterReturn {
 	variables: Ref<string[]>;
 	xAxis: Ref<string>;
-	matches: ComputedRef<FlattedCase[]>;
+	matches: ComputedRef<FlattedResult[]>;
 }
 
 export default function (stf: Ref<SummaryTableFilter>) {
@@ -16,7 +16,7 @@ export default function (stf: Ref<SummaryTableFilter>) {
 	});
 
 	function reset() {
-		xAxis.value = firstItem(firstItem(stf.value.vars));
+		xAxis.value = firstItem(stf.value.vars.keys())!;
 		variables.value = stf.value.createOptions();
 	}
 

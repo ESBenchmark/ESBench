@@ -53,10 +53,13 @@ interface SuiteReportProps {
 }
 
 const props = defineProps<SuiteReportProps>();
-const stf = computed(() => new SummaryTableFilter(props.stages));
 
-const canvasRef = shallowRef();
+const { getMetrics } = SummaryTableFilter;
+
 const errorBarType = shallowRef(valueRange);
+const canvasRef = shallowRef();
+
+const stf = computed(() => new SummaryTableFilter(props.stages));
 
 let chart: BarWithErrorBarsChart;
 
@@ -87,7 +90,7 @@ const data = computed(() => {
 	const labels = [...stf.value.vars.get(xAxis.value)!];
 	const datasets = [{
 		label: "time",
-		data: matches.value.map(r => errorBarType.value(stf.value.getMetrics(r).time)),
+		data: matches.value.map(r => errorBarType.value(getMetrics(r).time)),
 	}];
 	return { labels, datasets } as any;
 });

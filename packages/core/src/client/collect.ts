@@ -92,7 +92,7 @@ export class SummaryTableFilter {
 		for (const value of values) list.add(value);
 	}
 
-	getMetrics(result: FlattedResult) {
+	static getMetrics(result: FlattedResult) {
 		return result[kMetrics];
 	}
 
