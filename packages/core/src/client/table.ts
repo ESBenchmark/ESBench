@@ -1,12 +1,11 @@
-import type { ChalkInstance, ForegroundColorName } from "chalk";
+import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
-import { durationFmt } from "@kaciras/utilities/browser";
+import { durationFmt, identity } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
 import { Metrics } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_FIELDS } from "./utils.js";
 import { FlattedResult, StageResult, SummaryTableFilter } from "./collect.js";
-import { identity } from "@kaciras/utilities/node";
 
 const { getMetrics } = SummaryTableFilter;
 
@@ -63,7 +62,8 @@ export interface SummaryTableOptions {
 	outliers?: false | OutlierMode;
 }
 
-type ChalkLike = Record<ForegroundColorName, (str: string) => string>;
+type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
+type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
 
@@ -101,7 +101,7 @@ class BaselineColumn implements MetricColumnFactory {
 		this.ratio1 = mean(getMetrics(ratio1Row).time);
 	}
 
-	getValue(metrics: Metrics, chalk: ChalkInstance) {
+	getValue(metrics: Metrics, chalk: ChalkLike) {
 		const ratio = mean(metrics.time) / this.ratio1;
 		if (!isFinite(ratio)) {
 			return chalk.blackBright("N/A");
