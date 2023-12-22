@@ -9,7 +9,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 /**
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
-export type LogHandler = (level: LogLevel, message?: string) => Awaitable<void>;
+export type LogHandler = (level: LogLevel, message?: string) => Awaitable<unknown>;
 
 export interface ProfilingContext {
 

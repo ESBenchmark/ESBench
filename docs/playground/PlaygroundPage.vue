@@ -28,11 +28,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, shallowRef } from "vue";
-import * as monaco from "monaco-editor";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
-import { runSuite, RunSuiteResult } from "../../packages/core/src/client/index.ts";
+import * as monaco from "monaco-editor";
+import { onMounted, shallowRef } from "vue";
+import { runSuite, RunSuiteResult } from "@esbench/core/client";
+import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../packages/reporter-html/src/index.ts";
 
 // @ts-ignore
@@ -53,7 +54,9 @@ interface PlaygroundProps {
 	initCode: string;
 }
 
-const props = defineProps<PlaygroundProps>();
+const props = withDefaults(defineProps<PlaygroundProps>(), {
+	initCode: defaultCode,
+});
 
 const editorEl = shallowRef<HTMLElement>();
 const running = shallowRef(false);
@@ -62,26 +65,33 @@ const result = shallowRef<RunSuiteResult>();
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
-async function startBenchmark() {
-	running.value = true;
-	const blob = new Blob([editor.getValue()], { type: "text/javascript" });
+async function importCode(code: string) {
+	const blob = new Blob([code], {
+		type: "text/javascript",
+	});
 	const dataURL = URL.createObjectURL(blob);
 	try {
-		const module = await import(dataURL);
-		logMessage.value = "";
-		result.value = await runSuite(module.default, {
-			log: (_, message) => {
-				if (message) {
-					logMessage.value += message + "\n";
-				} else {
-					logMessage.value += "\n";
-				}
-				return new Promise(requestAnimationFrame);
-			},
-		});
+		return await import(/* @vite-ignore */ dataURL);
 	} finally {
 		URL.revokeObjectURL(dataURL);
 	}
+}
+
+async function startBenchmark() {
+	const module = await importCode(editor.getValue());
+	logMessage.value = "";
+	running.value = true;
+	result.value = await runSuite(module.default, {
+		log: (_, message) => {
+			if (message) {
+				logMessage.value += message + "\n";
+			} else {
+				logMessage.value += "\n";
+			}
+			return new Promise(requestAnimationFrame);
+		},
+	});
+	running.value = false;
 }
 
 onMounted(() => {
