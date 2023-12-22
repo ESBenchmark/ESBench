@@ -3,6 +3,15 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
 	title: "ESBench",
 	description: "A VitePress Site",
+	vite: {
+		// The site should be deployed to a platform that supports these headers.
+		server: {
+			headers: {
+				"Cross-Origin-Opener-Policy": "same-origin",
+				"Cross-Origin-Embedder-Policy": "require-corp",
+			},
+		},
+	},
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
