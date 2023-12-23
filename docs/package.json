@@ -8,9 +8,9 @@
 	"dependencies": {
 		"@esbench/core": "workspace:^",
 		"monaco-editor": "^0.45.0",
-		"vue": "^3.3.11"
+		"vue": "^3.3.13"
 	},
 	"devDependencies": {
-		"vitepress": "1.0.0-rc.31"
+		"vitepress": "1.0.0-rc.32"
 	}
 }

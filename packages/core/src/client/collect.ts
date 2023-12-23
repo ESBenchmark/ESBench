@@ -1,21 +1,6 @@
-import { cartesianObject, MultiMap } from "@kaciras/utilities/browser";
+import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
 import { BaselineOptions } from "./suite.js";
 import { CaseResult, Metrics } from "./runner.js";
-
-export function firstItem<T>(iterable: Iterable<T>) {
-	for (const value of iterable) return value;
-}
-
-function groupBy1<T>(items: T[], callbackFn: (e: T) => string) {
-	const group = new MultiMap<string, T>();
-	for (const element of items) {
-		group.add(callbackFn(element), element);
-	}
-	return group;
-}
-
-// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
-const groupBy: typeof groupBy1 = (Map as any).groupBy ?? groupBy1;
 
 export type ESBenchResult = Record<string, StageResult[]>;
 
