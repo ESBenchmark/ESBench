@@ -7,7 +7,7 @@ export type ESBenchResult = Record<string, StageResult[]>;
 export interface Note {
 	type: "hint" | "warn";
 	text: string;
-	caseIndex?: number;
+	caseId?: number;
 }
 
 export interface StageResult {

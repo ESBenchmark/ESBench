@@ -12,18 +12,30 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  */
 export type LogHandler = (level: LogLevel, message?: string) => Awaitable<any>;
 
+const MATCH_ANY = new RegExp("");
+
 export class ProfilingContext {
 
-	readonly logHandler: LogHandler;
-	readonly pattern: RegExp;
-	readonly suite: BenchmarkSuite;
-	readonly sceneCount: number;
+	readonly scenes: CaseResult[][] = [];
+	readonly notes: Note[] = [];
 
-	constructor(logHandler: LogHandler, pattern: RegExp, suite: BenchmarkSuite, sceneCount: number) {
-		this.logHandler = logHandler;
-		this.pattern = pattern;
+	readonly suite: BenchmarkSuite;
+	readonly profilers: Profiler[];
+	readonly pattern: RegExp;
+	readonly logHandler: LogHandler;
+
+	private hasRun = false;
+
+	constructor(suite: BenchmarkSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
-		this.sceneCount = sceneCount;
+		this.profilers = profilers;
+		this.pattern = options.pattern ?? MATCH_ANY;
+		this.logHandler = options.log ?? consoleLogHandler;
+	}
+
+	get sceneCount() {
+		const lists: unknown[][] = Object.values(this.suite.params);
+		return lists.length === 0 ? 1 : lists.reduce((s, v) => s + v.length, 0);
 	}
 
 	/**
@@ -45,16 +57,54 @@ export class ProfilingContext {
 		return this.logHandler("debug", message);
 	}
 
-	newWorkflow(profilers: Profiler[]) {
-		return new RunSuiteState(this, profilers);
+	note(type: "hint" | "warn", text: string, case_?: BenchCase) {
+		this.notes.push({ type, text, caseId: case_?.id });
 	}
-}
 
-export interface Recorder {
+	newWorkflow(profilers: Profiler[], options: RunSuiteOption = {}) {
+		return new ProfilingContext(this.suite, profilers, options);
+	}
 
-	metrics: Metrics;
+	async run() {
+		const { hasRun, pattern, suite } = this;
+		if (hasRun) {
+			throw new Error("A context can only be run once.");
+		}
+		this.hasRun = true;
 
-	note(type: "hint" | "warn", text: string, case_?: BenchCase): void;
+		const { params, setup } = suite;
+		await this.runHooks("onSuite", suite);
+
+		for (const comb of cartesianObject(params)) {
+			const scene = new Scene(comb, pattern);
+			await setup(scene);
+			try {
+				await this.runScene(scene);
+			} finally {
+				await runFns(scene.cleanEach);
+			}
+		}
+	}
+
+	private async runScene(scene: Scene) {
+		await this.runHooks("onScene", scene);
+
+		const workloads: CaseResult[] = [];
+		this.scenes.push(workloads);
+
+		for (const case_ of scene.cases) {
+			const metrics = {};
+			await this.runHooks("onCase", case_, this);
+			workloads.push({ name: case_.name, metrics });
+		}
+	}
+
+	private async runHooks<K extends keyof Profiler>(name: K, ...args: any[]) {
+		for (const profiler of this.profilers) {
+			// @ts-expect-error Is it a TypeScript bug?
+			await profiler[name]?.(this, ...args);
+		}
+	}
 }
 
 export interface Profiler {
@@ -63,7 +113,7 @@ export interface Profiler {
 
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
-	onCase?: (ctx: ProfilingContext, case_: BenchCase, recorder: Recorder) => Awaitable<void>;
+	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 }
 
 export interface CaseResult {
@@ -93,67 +143,8 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-export class RunSuiteState implements Recorder {
-
-	readonly scenes: CaseResult[][] = [];
-	readonly notes: Note[] = [];
-
-	readonly context: ProfilingContext;
-	readonly profilers: Profiler[];
-
-	metrics!: Metrics;
-
-	constructor(context: ProfilingContext, profilers: Profiler[]) {
-		this.context = context;
-		this.profilers = profilers;
-	}
-
-	note(type: "hint" | "warn", text: string, case_?: BenchCase) {
-		this.notes.push({ type, text, caseIndex: case_?.id });
-	}
-
-	async run() {
-		const { pattern, suite } = this.context;
-		const { params, setup } = suite;
-
-		await this.runHooks("onSuite", suite);
-
-		for (const comb of cartesianObject(params)) {
-			const scene = new Scene(comb, pattern);
-			await setup(scene);
-			try {
-				await this.runScene(scene);
-			} finally {
-				await runFns(scene.cleanEach);
-			}
-		}
-	}
-
-	private async runScene(scene: Scene) {
-		await this.runHooks("onScene", scene);
-
-		const workloads: CaseResult[] = [];
-		this.scenes.push(workloads);
-
-		for (const case_ of scene.cases) {
-			const metrics = this.metrics = {};
-			await this.runHooks("onCase", case_, this);
-			workloads.push({ name: case_.name, metrics });
-		}
-	}
-
-	private async runHooks<K extends keyof Profiler>(name: K, ...args: any[]) {
-		for (const profiler of this.profilers) {
-			// @ts-expect-error Is it a TypeScript bug?
-			await profiler[name]?.(this.context, ...args);
-		}
-	}
-}
-
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	const { name, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
-	const log = options.log ?? consoleLogHandler;
-	const pattern = options.pattern ?? new RegExp("");
 
 	if (baseline) {
 		if (!BUILTIN_FIELDS.includes(baseline.type)) {
@@ -169,13 +160,12 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 		profilers.push(new TimeProfiler(timing === true ? {} : timing));
 	}
 
-	const { length, paramDef } = checkParams(params);
-	const context = new ProfilingContext(log, pattern, suite, length);
+	const paramDef = checkParams(params);
+	const context = new ProfilingContext(suite, profilers, options);
 
-	const state = context.newWorkflow(profilers);
-	await state.run().finally(afterAll);
+	await context.run().finally(afterAll);
 
-	const { scenes, notes } = state;
+	const { scenes, notes } = context;
 	return { name, notes, baseline, paramDef, scenes } as RunSuiteResult;
 }
 

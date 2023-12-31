@@ -1,4 +1,4 @@
-import { Awaitable, CPCellObject, CPSrcObject } from "@kaciras/utilities/browser";
+import { Awaitable, CPCellObject, CPSrcObject, uniqueId } from "@kaciras/utilities/browser";
 import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
@@ -13,6 +13,11 @@ export class BenchCase {
 
 	readonly setupHooks: HookFn[];
 	readonly cleanHooks: HookFn[];
+
+	/**
+	 * A unique number within a suite execution.
+	 */
+	readonly id = uniqueId();
 
 	readonly name: string;
 	readonly fn: Workload;

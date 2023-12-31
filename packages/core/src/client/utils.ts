@@ -36,17 +36,11 @@ export function toDisplayName(v: unknown) {
 	}
 }
 
-interface ProcessedParamDef {
-	length: number;
-	paramDef: Record<string, string[]>;
-}
-
 export function checkParams(params: CPSrcObject) {
 	const entries = Object.entries(params);
 	const paramDef: Record<string, string[]> = {};
 	const set = new Set<string>();
 
-	let length = 1;
 	for (const [key, values] of entries) {
 		if (BUILTIN_FIELDS.includes(key)) {
 			throw new Error(`${key} is not allowed for param name`);
@@ -65,10 +59,9 @@ export function checkParams(params: CPSrcObject) {
 		}
 
 		set.clear();
-		length *= current.length;
 	}
 
-	return { length, paramDef } as ProcessedParamDef;
+	return paramDef;
 }
 
 export function runFns(hooks: HookFn[]) {
