@@ -9,7 +9,7 @@ type Iterate = (count: number) => Awaitable<number>;
 
 const asyncNoop = async () => {};
 
-function unroll(factor: number, isAsync: boolean) {
+export function unroll(factor: number, isAsync: boolean) {
 	const call = isAsync ? "await f()" : "f()";
 	const body = `\
 		const start = performance.now();
