@@ -34,7 +34,7 @@ export class ProfilingContext {
 	}
 
 	get sceneCount() {
-		const lists: unknown[][] = Object.values(this.suite.params);
+		const lists: unknown[][] = Object.values(this.suite.params ?? {});
 		return lists.length === 0 ? 1 : lists.reduce((s, v) => s + v.length, 0);
 	}
 
@@ -72,7 +72,7 @@ export class ProfilingContext {
 		}
 		this.hasRun = true;
 
-		const { params, setup } = suite;
+		const { params = {}, setup } = suite;
 		await this.runHooks("onSuite", suite);
 
 		for (const comb of cartesianObject(params)) {
@@ -94,7 +94,7 @@ export class ProfilingContext {
 
 		for (const case_ of scene.cases) {
 			const metrics = {};
-			await this.runHooks("onCase", case_, this);
+			await this.runHooks("onCase", case_, metrics);
 			workloads.push({ name: case_.name, metrics });
 		}
 	}
@@ -127,6 +127,7 @@ export interface RunSuiteResult {
 	name: string;
 	baseline?: BaselineOptions;
 	paramDef: Record<string, string[]>;
+	notes: Note[];
 	scenes: CaseResult[][];
 }
 

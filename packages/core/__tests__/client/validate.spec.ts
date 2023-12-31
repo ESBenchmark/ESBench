@@ -65,6 +65,20 @@ it("should validate executions", async () => {
 	expect(previous).toHaveBeenCalledTimes(2);
 });
 
+it("should run in new context",async () => {
+	const suite = defineSuite({
+		name: "Test Suite",
+		validate: {},
+		setup(scene) {
+			scene.benchAsync("foo", vi.fn());
+			scene.benchAsync("bar", vi.fn());
+		},
+	});
+	const result = await run(suite);
+	expect(result.scenes).toHaveLength(1);
+	expect(result.scenes[0]).toHaveLength(2);
+});
+
 it("should validate the return value", () => {
 	const cause = new TypeError("Stub Error");
 	const suite = defineSuite({

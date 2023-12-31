@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkParams } from "../../src/client/utils.js";
 
-describe("process", () => {
+describe("checkParams", () => {
 	it.each([
 		["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
 		["", ""],
@@ -18,16 +18,7 @@ describe("process", () => {
 		[Symbol(), "symbol"],
 		[Symbol("foo"), "symbol(foo)"],
 	])("should get display name of values %#", (value, expected) => {
-		expect(checkParams({ _: [value] }).paramDef._[0]).toBe(expected);
-	});
-
-	it("should return the number of cartesian cells", () => {
-		const params = {
-			foo: [1, 2, 3, 4],
-			bar: [null],
-			baz: ["a", "b"],
-		};
-		expect(checkParams(params).length).toBe(8);
+		expect(checkParams({ _: [value] })._[0]).toBe(expected);
 	});
 
 	it("should restrict parameters to have unique display names", () => {

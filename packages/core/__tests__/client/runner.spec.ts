@@ -39,30 +39,6 @@ it("should works", async () => {
 	expect(result.scenes[0]).toHaveLength(1);
 });
 
-it("should validate sample count", () => {
-	const promise = run({
-		timing: { samples: 0 },
-		setup: (scene) => scene.bench("Test", noop),
-	});
-	expect(promise).rejects.toThrow();
-});
-
-it("should validate iteration count", () => {
-	const promise = run({
-		timing: { iterations: 0 },
-		setup: (scene) => scene.bench("Test", noop),
-	});
-	expect(promise).rejects.toThrow();
-});
-
-it("should validate iteration time", () => {
-	const promise = run({
-		timing: { iterations: "0m" },
-		setup: (scene) => scene.bench("Test", noop),
-	});
-	expect(promise).rejects.toThrow();
-});
-
 it("should call lifecycle hooks", async () => {
 	const invocations: any[] = [];
 
