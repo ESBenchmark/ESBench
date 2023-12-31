@@ -4,6 +4,12 @@ import { CaseResult, Metrics } from "./runner.js";
 
 export type ESBenchResult = Record<string, StageResult[]>;
 
+export interface Note {
+	type: "hint" | "warn";
+	text: string;
+	caseIndex?: number;
+}
+
 export interface StageResult {
 	baseline?: BaselineOptions;
 	executor?: string;

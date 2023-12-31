@@ -1,9 +1,9 @@
 import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
 import { BenchCase } from "./suite.js";
-import { Metrics, Profiler, ProfilingContext } from "./runner.js";
+import { Profiler, ProfilingContext, Recorder } from "./runner.js";
 import { runFns, timeDetail } from "./utils.js";
-import { welchTTest } from "./math.js";
+import { welchTest } from "./math.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -126,7 +126,7 @@ export class TimeProfiler implements Profiler {
 		}
 	}
 
-	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
+	async onCase(ctx: ProfilingContext, case_: BenchCase, recorder: Recorder) {
 		const { samples = 10, unrollFactor = 16 } = this.config;
 		let { iterations = "1s" } = this.config;
 
@@ -167,10 +167,11 @@ export class TimeProfiler implements Profiler {
 		const pValue = welchTTest(time, overheads, "greater");
 		if (pValue < 0.05) {
 			const overhead = medianSorted(overheads);
-			metrics.time = time.map(ms => ms - overhead);
+			recorder.metrics.time = time.map(ms => ms - overhead);
 		} else {
-			metrics.time = [0];
-			await ctx.warn("The function duration is indistinguishable from the empty function duration.");
+			recorder.metrics.time = [0];
+			recorder.note("warn",
+				"The function duration is indistinguishable from the empty function duration.", case_);
 		}
 	}
 

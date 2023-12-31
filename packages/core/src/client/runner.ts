@@ -2,6 +2,7 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
+import { Note } from "./collect.js";
 import { BUILTIN_FIELDS, checkParams, consoleLogHandler, DefaultEventLogger, runFns, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -9,26 +10,51 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 /**
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
-export type LogHandler = (level: LogLevel, message?: string) => Awaitable<unknown>;
+export type LogHandler = (level: LogLevel, message?: string) => Awaitable<any>;
 
-export interface ProfilingContext {
+export class ProfilingContext {
 
-	sceneCount: number;
+	readonly logHandler: LogHandler;
+	readonly pattern: RegExp;
+	readonly suite: BenchmarkSuite;
+	readonly sceneCount: number;
+
+	constructor(logHandler: LogHandler, pattern: RegExp, suite: BenchmarkSuite, sceneCount: number) {
+		this.logHandler = logHandler;
+		this.pattern = pattern;
+		this.suite = suite;
+		this.sceneCount = sceneCount;
+	}
 
 	/**
 	 * Using this method will generate warnings, which are logs with log level "warn".
 	 */
-	warn(message?: string): Awaitable<void>;
+	warn(message?: string) {
+		return this.logHandler("warn", message);
+	}
 
 	/**
 	 * Generate an "info" log. As these logs are displayed by default, use them for information
 	 * that is not a warning but makes sense to display to all users on every build.
 	 */
-	info(message?: string): Awaitable<void>;
+	info(message?: string) {
+		return this.logHandler("info", message);
+	}
 
-	debug(message?: string): Awaitable<void>;
+	debug(message?: string) {
+		return this.logHandler("debug", message);
+	}
 
-	run(profilers: Profiler[]): Promise<WorkloadResult[][]>;
+	newWorkflow(profilers: Profiler[]) {
+		return new RunSuiteState(this, profilers);
+	}
+}
+
+export interface Recorder {
+
+	metrics: Metrics;
+
+	note(type: "hint" | "warn", text: string, case_?: BenchCase): void;
 }
 
 export interface Profiler {
@@ -37,10 +63,10 @@ export interface Profiler {
 
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
-	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
+	onCase?: (ctx: ProfilingContext, case_: BenchCase, recorder: Recorder) => Awaitable<void>;
 }
 
-export interface WorkloadResult {
+export interface CaseResult {
 	name: string;
 	metrics: Metrics;
 }
@@ -51,7 +77,7 @@ export interface RunSuiteResult {
 	name: string;
 	baseline?: BaselineOptions;
 	paramDef: Record<string, string[]>;
-	scenes: WorkloadResult[][];
+	scenes: CaseResult[][];
 }
 
 export interface RunSuiteOption {
@@ -67,19 +93,65 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-async function runHooks<K extends keyof Profiler>(
-	profilers: Profiler[],
-	name: K,
-	...args: Parameters<NonNullable<Profiler[K]>>
-) {
-	for (const profiler of profilers) {
-		// @ts-expect-error Is it a TypeScript bug?
-		await profiler[name]?.(...args);
+export class RunSuiteState implements Recorder {
+
+	readonly scenes: CaseResult[][] = [];
+	readonly notes: Note[] = [];
+
+	readonly context: ProfilingContext;
+	readonly profilers: Profiler[];
+
+	metrics!: Metrics;
+
+	constructor(context: ProfilingContext, profilers: Profiler[]) {
+		this.context = context;
+		this.profilers = profilers;
+	}
+
+	note(type: "hint" | "warn", text: string, case_?: BenchCase) {
+		this.notes.push({ type, text, caseIndex: case_?.id });
+	}
+
+	async run() {
+		const { pattern, suite } = this.context;
+		const { params, setup } = suite;
+
+		await this.runHooks("onSuite", suite);
+
+		for (const comb of cartesianObject(params)) {
+			const scene = new Scene(comb, pattern);
+			await setup(scene);
+			try {
+				await this.runScene(scene);
+			} finally {
+				await runFns(scene.cleanEach);
+			}
+		}
+	}
+
+	private async runScene(scene: Scene) {
+		await this.runHooks("onScene", scene);
+
+		const workloads: CaseResult[] = [];
+		this.scenes.push(workloads);
+
+		for (const case_ of scene.cases) {
+			const metrics = this.metrics = {};
+			await this.runHooks("onCase", case_, this);
+			workloads.push({ name: case_.name, metrics });
+		}
+	}
+
+	private async runHooks<K extends keyof Profiler>(name: K, ...args: any[]) {
+		for (const profiler of this.profilers) {
+			// @ts-expect-error Is it a TypeScript bug?
+			await profiler[name]?.(this.context, ...args);
+		}
 	}
 }
 
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
-	const { name, setup, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
+	const { name, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 	const log = options.log ?? consoleLogHandler;
 	const pattern = options.pattern ?? new RegExp("");
 
@@ -98,42 +170,13 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	}
 
 	const { length, paramDef } = checkParams(params);
+	const context = new ProfilingContext(log, pattern, suite, length);
 
-	const ctx: ProfilingContext = {
-		sceneCount: length,
-		run: newWorkflow,
-		warn: message => log("warn", message),
-		info: message => log("info", message),
-		debug: message => log("debug", message),
-	};
+	const state = context.newWorkflow(profilers);
+	await state.run().finally(afterAll);
 
-	async function newWorkflow(profilers: Profiler[]) {
-		const scenes: WorkloadResult[][] = [];
-		await runHooks(profilers, "onSuite", ctx, suite);
-		for (const comb of cartesianObject(params)) {
-			const scene = new Scene(comb, pattern);
-			await setup(scene);
-			try {
-				await runHooks(profilers, "onScene", ctx, scene);
-
-				const workloads: WorkloadResult[] = [];
-				scenes.push(workloads);
-
-				for (const case_ of scene.cases) {
-					const metrics: Metrics = {};
-					await runHooks(profilers, "onCase", ctx, case_, metrics);
-					workloads.push({ name: case_.name, metrics });
-				}
-			} finally {
-				await runFns(scene.cleanEach);
-			}
-		}
-		return scenes;
-	}
-
-	const scenes = await newWorkflow(profilers).finally(afterAll);
-
-	return { name, baseline, paramDef, scenes } as RunSuiteResult;
+	const { scenes, notes } = state;
+	return { name, notes, baseline, paramDef, scenes } as RunSuiteResult;
 }
 
 export type ClientMessage = RunSuiteResult | {
