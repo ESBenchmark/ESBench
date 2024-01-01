@@ -18,6 +18,8 @@ export interface StageResult {
 	scenes: CaseResult[][];
 }
 
+// -------------------------------------------------------------
+
 const kMetrics = Symbol("metrics");
 
 export type FlattedResult = Record<string, string> & {
@@ -30,6 +32,17 @@ export type FlattedResult = Record<string, string> & {
 function shallowHashKey(obj: any, keys: string[]) {
 	return keys.map(k => `${k}=${obj[k]}`).join(",");
 }
+
+function groupBy1<T>(items: T[], callbackFn: (e: T) => string) {
+	const group = new MultiMap<string, T>();
+	for (const element of items) {
+		group.add(callbackFn(element), element);
+	}
+	return group;
+}
+
+// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
+const groupBy: typeof groupBy1 = (Map as any).groupBy ?? groupBy1;
 
 export class SummaryTableFilter {
 
@@ -94,9 +107,8 @@ export class SummaryTableFilter {
 
 	select(values: string[], axis: string) {
 		const keys = [...this.vars.keys()];
-		return this.table.filter(row => {
-			return keys.every((k,i) => k === axis ? true : row[k] === values[i]);
-		});
+		return this.table.filter(row =>
+			keys.every((k, i) => k === axis ? true : row[k] === values[i]));
 	}
 
 	createOptions() {
