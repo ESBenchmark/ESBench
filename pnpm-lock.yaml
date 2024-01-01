@@ -46,6 +46,18 @@ importers:
         specifier: 1.0.0-rc.33
         version: 1.0.0-rc.33(@algolia/client-search@4.22.0)(@types/node@20.10.6)(search-insights@2.13.0)(typescript@5.3.3)
 
+  example:
+    dependencies:
+      '@esbench/core':
+        specifier: workspace:^
+        version: link:../packages/core
+      '@esbench/reporter-html':
+        specifier: workspace:^
+        version: link:../packages/reporter-html
+      playwright-core:
+        specifier: ^1.40.1
+        version: 1.40.1
+
   packages/core:
     dependencies:
       '@kaciras/utilities':
@@ -92,18 +104,6 @@ importers:
       '@types/yargs':
         specifier: ^17.0.32
         version: 17.0.32
-
-  packages/example:
-    dependencies:
-      '@esbench/core':
-        specifier: workspace:^
-        version: link:../core
-      '@esbench/reporter-html':
-        specifier: workspace:^
-        version: link:../reporter-html
-      playwright-core:
-        specifier: ^1.40.1
-        version: 1.40.1
 
   packages/reporter-html:
     dependencies:

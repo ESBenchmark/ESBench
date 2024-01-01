@@ -1,10 +1,8 @@
 {
-	"name": "example",
-	"version": "1.0.0",
-	"license": "MIT",
+	"private": true,
 	"type": "module",
 	"scripts": {
-		"run": "esbench"
+		"run-all": "esbench"
 	},
 	"dependencies": {
 		"@esbench/core": "workspace:^",
