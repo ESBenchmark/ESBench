@@ -1,9 +1,9 @@
-import { defineConfig, PlaywrightExecutor, textReporter, ViteBuilder } from "@esbench/core";
+import { defineConfig, PlaywrightExecutor, rawReporter, textReporter, ViteBuilder } from "@esbench/core";
 import { chromium, firefox, webkit } from "playwright-core";
 
 export default defineConfig({
 	reporters: [
-		// rawReporter(),
+		rawReporter(),
 		textReporter({ stdDev: true }),
 	],
 	stages: [{
@@ -16,8 +16,8 @@ export default defineConfig({
 			new PlaywrightExecutor(firefox),
 			new PlaywrightExecutor(chromium),
 			new PlaywrightExecutor(webkit),
-			// new NodeExecutor(),
 			// new DirectExecutor(),
+			// new NodeExecutor(),
 			// new ProcessExecutor("node"),
 		],
 	}],

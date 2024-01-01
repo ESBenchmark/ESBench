@@ -6,7 +6,7 @@ import { Executor, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 
-// Playwright doesn't work well on default page (about:blank), so we use an HTTP page.
+// Playwright doesn't work well on default URL (about:blank), so we use localhost.
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement

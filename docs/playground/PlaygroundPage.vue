@@ -32,7 +32,7 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { onMounted, shallowRef } from "vue";
-import { runSuite, RunSuiteResult } from "@esbench/core/client";
+import { createTable, runSuite, RunSuiteResult } from "@esbench/core/client";
 import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../packages/reporter-html/src/index.ts";
 
@@ -77,6 +77,34 @@ async function importCode(code: string) {
 	}
 }
 
+// IDEA Darcula theme
+const logColors: Record<string, string> = {
+	black: "#000",
+	blackBright: "#595959",
+	blue: "#3993D4",
+	blueBright: "#1FB0FF",
+	cyan: "#00A3A3",
+	cyanBright: "#00E5E5",
+	gray: "#595959",
+	grey: "#595959",
+	green: "#5C962C",
+	greenBright: "#4FC414",
+	magenta: "#A771BF",
+	magentaBright: "#ED7EED",
+	red: "#F0524F",
+	redBright: "#FF4050",
+	white: "#808080",
+	whiteBright: "#fff",
+	yellow: "#A68A0D",
+	yellowBright: "#E5BF00",
+};
+
+const logChalk = new Proxy<any>(logColors, {
+	get(colors: typeof logColors, p: string) {
+		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
+	},
+});
+
 async function startBenchmark() {
 	const module = await importCode(editor.getValue());
 	logMessage.value = "";
@@ -92,6 +120,9 @@ async function startBenchmark() {
 		},
 	});
 	running.value = false;
+
+	const {table}= createTable([result.value], {}, logChalk);
+	console.table(table);
 }
 
 onMounted(() => {

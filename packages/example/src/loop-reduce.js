@@ -13,7 +13,13 @@ export default defineSuite({
 			values.push(Math.random());
 		}
 
-		scene.bench("For-index", () => {});
+		scene.bench("For-index", () => {
+			let sum = 0;
+			for (let i = 0; i < size; i++) {
+				sum += values[i];
+			}
+			return sum;
+		});
 
 		scene.bench("For-of", () => {
 			let sum = 0;

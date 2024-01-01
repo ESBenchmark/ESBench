@@ -3,7 +3,7 @@ layout: home
 title: Playground
 ---
 
-<PlaygroundPage init-code=""/>
+<PlaygroundPage/>
 
 <script setup>
 // noinspection ES6UnusedImports

@@ -9,6 +9,9 @@ type Iterate = (count: number) => Awaitable<number>;
 
 const asyncNoop = async () => {};
 
+const MIN_PRECISION = 1e-4; // 1e-4 ms = 100 ns
+const MIN_ITERATIONS = 4;
+
 export function unroll(factor: number, isAsync: boolean) {
 	const call = isAsync ? "await f()" : "f()";
 	const body = `\
@@ -177,16 +180,25 @@ export class TimeProfiler implements Profiler {
 
 	async estimate(ctx: ProfilingContext, iterate: Iterate, target: string) {
 		const targetMS = durationFmt.parse(target, "ms");
+		let downCount = 0;
+		let count = MIN_ITERATIONS;
 
-		let iterations = 1;
-		let time = 0;
-		while (time < targetMS) {
-			time = await iterate(iterations);
-			await ctx.info(`Pilot: ${timeDetail(time, iterations)}`);
-			iterations *= 2;
+		while (count < Number.MAX_SAFE_INTEGER) {
+			const time = await iterate(count) || MIN_PRECISION;
+			await ctx.info(`Pilot: ${timeDetail(time, count)}`);
+
+			const previous = count;
+			count = Math.round(count * targetMS / time);
+			count = Math.max(MIN_ITERATIONS, count);
+
+			if (Math.abs(previous - count) <= 1) {
+				return previous;
+			}
+			if (count < previous && ++downCount >= 3) {
+				return previous;
+			}
 		}
-
-		return Math.ceil(iterations / 2 * targetMS / time);
+		throw new Error("Iteration time is too long and the fn runs too fast.");
 	}
 
 	async measure(ctx: ProfilingContext, name: string, iterate: Iterate, count: number) {
