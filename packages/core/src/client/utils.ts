@@ -41,24 +41,26 @@ export function checkParams(params: CPSrcObject) {
 	const paramDef: Record<string, string[]> = {};
 	const set = new Set<string>();
 
+	if (Object.getOwnPropertySymbols(params).length) {
+		throw new Error("Property with only string keys are allowed in param");
+	}
+
 	for (const [key, values] of entries) {
 		if (BUILTIN_FIELDS.includes(key)) {
-			throw new Error(`${key} is not allowed for param name`);
+			throw new Error(`'${key}' is a builtin parameter`);
 		}
 		const current: string[] = [];
 		paramDef[key] = current;
+		set.clear();
 
 		for (const v of values) {
 			const name = toDisplayName(v);
+			if (set.has(name)) {
+				throw new Error(`Parameter display name conflict (${key}: ${name})`);
+			}
 			set.add(name);
 			current.push(name);
 		}
-
-		if (set.size !== current.length) {
-			throw new Error("Parameter display name conflict.");
-		}
-
-		set.clear();
 	}
 
 	return paramDef;

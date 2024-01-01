@@ -21,10 +21,21 @@ describe("checkParams", () => {
 		expect(checkParams({ _: [value] })._[0]).toBe(expected);
 	});
 
+	it("should restrict keys to be string", () => {
+		expect(() => checkParams({ [Symbol()]: [11] }))
+			.toThrow("Property with only string keys are allowed in param");
+	});
+
+	it("should fail if a property is builtin parameter", () => {
+		expect(() => checkParams({ Builder: [11] }))
+			.toThrow("'Builder' is a builtin parameter");
+	});
+
 	it("should restrict parameters to have unique display names", () => {
 		const params = {
 			foo: ["1234567_A_1234567", "1234567_B_1234567"],
 		};
-		expect(() => checkParams(params)).toThrow(/Parameter display name conflict/);
+		expect(() => checkParams(params))
+			.toThrow("Parameter display name conflict (foo: 1234567_…1234567)");
 	});
 });
