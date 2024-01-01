@@ -9,7 +9,6 @@ type Iterate = (count: number) => Awaitable<number>;
 
 const asyncNoop = async () => {};
 
-const MIN_PRECISION = 1e-4; // 1e-4 ms = 100 ns
 const MIN_ITERATIONS = 4;
 
 export function unroll(factor: number, isAsync: boolean) {
@@ -184,8 +183,13 @@ export class TimeProfiler implements Profiler {
 		let count = MIN_ITERATIONS;
 
 		while (count < Number.MAX_SAFE_INTEGER) {
-			const time = await iterate(count) || MIN_PRECISION;
+			const time = await iterate(count);
 			await ctx.info(`Pilot: ${timeDetail(time, count)}`);
+
+			if (time === 0) {
+				count *= 2;
+				continue; // less than the precision, re-run with larger count.
+			}
 
 			const previous = count;
 			count = Math.round(count * targetMS / time);
