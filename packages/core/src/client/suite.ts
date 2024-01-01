@@ -82,11 +82,11 @@ export class Scene<P = any> {
 		this.cleanEach.push(fn);
 	}
 
-	bench(name: string, fn: SyncWorkload) {
+	bench(name: string, fn: Workload) {
 		this.add(name, fn, false);
 	}
 
-	benchAsync(name: string, fn: SyncWorkload) {
+	benchAsync(name: string, fn: Workload) {
 		this.add(name, fn, true);
 	}
 
@@ -100,7 +100,7 @@ export class Scene<P = any> {
 	 * You can fix this by adding `await` to the arrow function, but it impacts performance.
 	 * Related benchmark: example/src/async-return-promise.js
 	 */
-	private add(name: string, fn: SyncWorkload, isAsync: boolean) {
+	private add(name: string, fn: Workload, isAsync: boolean) {
 		if (/^\s*$/.test(name)) {
 			throw new Error("Case name cannot be blank.");
 		}

@@ -5,3 +5,4 @@ import "./app.css";
 Chart.register(BarWithErrorBarsController, BarController, Tooltip, Colors, CategoryScale, LinearScale, BarElement, Legend);
 
 export { default as Page } from "./App.vue";
+export { default as SuiteReport } from "./SuiteReport.vue";

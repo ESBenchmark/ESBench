@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TukeyOutlierDetector, welchTTest } from "../../src/client/math.js";
+import { TukeyOutlierDetector, welchTest } from "../../src/client/math.js";
 
 describe("removeOutliers", () => {
 	it("should throw error with empty array", () => {
@@ -35,12 +35,12 @@ describe("removeOutliers", () => {
 
 describe("welch's t-test", () => {
 	it("should return NaN if variance are 0", () => {
-		expect(welchTTest([1, 1, 1], [2, 2, 2], "not equal")).toBeNaN();
+		expect(welchTest([1, 1, 1], [2, 2, 2], "not equal")).toBeNaN();
 	});
 
 	it("should return NaN if sample size < 2", () => {
-		expect(welchTTest([], [], "not equal")).toBeNaN();
-		expect(welchTTest([1], [2], "not equal")).toBeNaN();
+		expect(welchTest([], [], "not equal")).toBeNaN();
+		expect(welchTest([1], [2], "not equal")).toBeNaN();
 	});
 
 	it.each([{
@@ -49,15 +49,15 @@ describe("welch's t-test", () => {
 		notEqual: 0.035972,
 		less: 0.017986,
 		greater: 0.982013,
-
+	},{
 		a: [0, 1, 1, 1],
 		b: [1, 2, 2, 2],
 		notEqual: 0.030019,
 		less: 0.015009,
 		greater: 0.984990,
 	}])("should get display name of values %#", data => {
-		expect(welchTTest(data.a, data.b, "not equal")).closeTo(data.notEqual, 1e-6);
-		expect(welchTTest(data.a, data.b, "less")).closeTo(data.less, 1e-6);
-		expect(welchTTest(data.a, data.b, "greater")).closeTo(data.greater, 1e-6);
+		expect(welchTest(data.a, data.b, "not equal")).closeTo(data.notEqual, 1e-6);
+		expect(welchTest(data.a, data.b, "less")).closeTo(data.less, 1e-6);
+		expect(welchTest(data.a, data.b, "greater")).closeTo(data.greater, 1e-6);
 	});
 });

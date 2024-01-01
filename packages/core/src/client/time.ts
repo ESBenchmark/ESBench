@@ -1,9 +1,9 @@
 import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
-import { BenchCase } from "./suite.js";
-import { Metrics, Profiler, ProfilingContext } from "./runner.js";
-import { runFns, timeDetail } from "./utils.js";
 import { welchTest } from "./math.js";
+import { BenchCase } from "./suite.js";
+import { runFns, timeDetail } from "./utils.js";
+import { Metrics, Profiler, ProfilingContext } from "./runner.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -164,7 +164,7 @@ export class TimeProfiler implements Profiler {
 		await ctx.info();
 		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
 
-		const pValue = welchTTest(time, overheads, "greater");
+		const pValue = welchTest(time, overheads, "greater");
 		if (pValue < 0.05) {
 			const overhead = medianSorted(overheads);
 			metrics.time = time.map(ms => ms - overhead);

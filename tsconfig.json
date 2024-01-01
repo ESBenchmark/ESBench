@@ -2,8 +2,12 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
-		"moduleResolution": "NodeNext",
-		"lib": ["ESNext"],
+		"moduleResolution": "Bundler",
+		"lib": [
+			"ESNext",
+			"DOM",
+			"DOM.Iterable"
+		],
 		"noEmit": true,
 		"declaration": true,
 		"sourceMap": true,
@@ -11,6 +15,5 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"useUnknownInCatchVariables": false,
-		"allowSyntheticDefaultImports": true
 	}
 }

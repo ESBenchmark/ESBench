@@ -52,7 +52,7 @@ type AlternativeHypothesis = "not equal" | "less" | "greater";
  * Perform the Welch's t hypothesis test. return the P-Value.
  * If the samples don't have enough size or their variance are all zero, the result is NaN.
  */
-export function welchTTest(a: number[], b: number[], alt: AlternativeHypothesis) {
+export function welchTest(a: number[], b: number[], alt: AlternativeHypothesis) {
 	if (a.length < 2 || b.length < 2) {
 		return NaN;
 	}
