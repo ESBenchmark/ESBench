@@ -3,11 +3,9 @@ import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
 
-type AsyncWorkload = () => Promise<unknown>;
+export type HookFn = () => Awaitable<unknown>;
 
-type SyncWorkload = () => unknown;
-
-export type Workload = AsyncWorkload | SyncWorkload;
+export type Workload = () => unknown;
 
 export class BenchCase {
 
@@ -21,6 +19,10 @@ export class BenchCase {
 
 	readonly name: string;
 	readonly fn: Workload;
+
+	/**
+	 * true if the case defined by `benchAsync`, false for `bench`.
+	 */
 	readonly isAsync: boolean;
 
 	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
@@ -31,6 +33,9 @@ export class BenchCase {
 		this.isAsync = isAsync;
 	}
 
+	/**
+	 * Call the fn and each iteration hooks once.
+	 */
 	async invoke() {
 		await runFns(this.setupHooks);
 		try {
@@ -40,8 +45,6 @@ export class BenchCase {
 		}
 	}
 }
-
-export type HookFn = () => Awaitable<unknown>;
 
 export class Scene<P = any> {
 
@@ -164,6 +167,10 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 
 type Empty = Record<string, never>;
 
+/**
+ * Type helper to mark the object as an ESBench suite.
+ * IDE plugins require it to find benchmark cases.
+ */
 export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkSuite<T>) {
 	return suite;
 }

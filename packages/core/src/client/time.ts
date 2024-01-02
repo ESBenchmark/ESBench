@@ -156,10 +156,10 @@ export class TimeProfiler implements Profiler {
 		}
 
 		const iterateOverhead = createInvoker(unrollFactor, <any>{
-			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 			setupHooks: [],
 			cleanHooks: [],
 			isAsync: case_.isAsync,
+			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 		});
 
 		const overheads = await this.measure(ctx, "Overhead", iterateOverhead, iterations);
@@ -179,9 +179,12 @@ export class TimeProfiler implements Profiler {
 
 	async estimate(ctx: ProfilingContext, iterate: Iterate, target: string) {
 		const targetMS = durationFmt.parse(target, "ms");
-		let downCount = 0;
-		let count = MIN_ITERATIONS;
+		if (targetMS === 0) {
+			throw new Error("Iteration time cannot be 0");
+		}
 
+		let count = MIN_ITERATIONS;
+		let downCount = 0;
 		while (count < Number.MAX_SAFE_INTEGER) {
 			const time = await iterate(count);
 			await ctx.info(`Pilot: ${timeDetail(time, count)}`);

@@ -1,12 +1,12 @@
+import type { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import mime from "mime";
 import { Executor, RunOptions } from "../stage.js";
 
 declare function _ESBenchChannel(message: any): void;
 
-// Playwright doesn't work well on default URL (about:blank), so we use localhost.
+// Playwright doesn't work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement

@@ -2,11 +2,9 @@ import * as tp from "timers/promises";
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { run } from "./runner.spec.js";
-import { unroll } from "../../src/client/time.js";
+import { TimeProfiler, unroll } from "../../src/client/time.js";
 
 const sleep1 = tp.setTimeout.bind(null, 1);
-
-vi.mock("../../src/client/math.js");
 
 it("should reduce overhead by unrolling", async () => {
 	const iterations = 100;
@@ -71,6 +69,21 @@ it("should support specify number of iterations", async () => {
 	});
 	expect(fn).toHaveBeenCalledTimes(33);
 	expect(result.scenes[0][0].metrics.time).toHaveLength(1);
+});
+
+it("should estimate number of iterations", async () => {
+	const iterate = async (count: number) => {
+		const start = performance.now();
+		await tp.setTimeout(count);
+		return performance.now() - start;
+	};
+	const profiler = new TimeProfiler({});
+	const ctx = { info: noop } as any;
+
+	const iterations = await profiler.estimate(ctx, iterate, "100ms");
+
+	expect(iterations).toBeLessThan(110);
+	expect(iterations).toBeGreaterThan(90);
 });
 
 it("should check zero measurement", async () => {
