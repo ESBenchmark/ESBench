@@ -1,4 +1,4 @@
-import { Awaitable, CPCellObject, CPSrcObject, uniqueId } from "@kaciras/utilities/browser";
+import { Awaitable, CartesianObjectCell, CPSrcObject, uniqueId } from "@kaciras/utilities/browser";
 import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
@@ -116,8 +116,6 @@ export class Scene<P = any> {
 	}
 }
 
-export type SetupScene<T extends CPSrcObject> = (scene: Scene<CPCellObject<T>>) => Awaitable<void>;
-
 export type BaselineOptions = {
 	/**
 	 * Type of the baseline variable, can be one of:
@@ -134,7 +132,8 @@ export type BaselineOptions = {
 
 export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	name: string;
-	setup: SetupScene<T>;
+
+	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
 
 	afterAll?: HookFn;
 
