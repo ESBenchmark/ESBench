@@ -3,7 +3,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path/posix";
 import { ChildProcess, fork } from "child_process";
 import { once } from "events";
-import { Executor, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../toolchain.js";
 
 const __filename = fileURLToPath(import.meta.url);
 

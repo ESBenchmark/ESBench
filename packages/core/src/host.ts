@@ -5,7 +5,7 @@ import { performance } from "perf_hooks";
 import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
-import { Builder, Executor, RunOptions } from "./stage.js";
+import { Builder, Executor, RunOptions } from "./toolchain.js";
 import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
 import { consoleLogHandler } from "./client/utils.js";
@@ -31,13 +31,13 @@ export class ESBenchHost {
 	}
 
 	async build(file?: string) {
-		const { tempDir, stages } = this.config;
+		const { tempDir, toolchains } = this.config;
 		const executorMap = new MultiMap<Executor, Builder>();
 		const builderMap = new MultiMap<Builder, string>();
 
 		mkdirSync(tempDir, { recursive: true });
 
-		for (const { include, builders, executors } of stages) {
+		for (const { include, builders, executors } of toolchains) {
 			const dotGlobs = include.map(dotPrefixed);
 			for (const builder of builders) {
 				builderMap.add(builder, ...dotGlobs);
@@ -105,9 +105,9 @@ export class ESBenchHost {
 		const jobs = await this.build(file);
 
 		if (jobs.size === 0) {
-			throw new Error("\nNo file matching the include pattern of stages");
+			throw new Error("\nNo file matching the include pattern of toolchains");
 		}
-		console.log(`\n${jobs.count} stages for ${jobs.size} executors.`);
+		console.log(`\n${jobs.count} toolchains for ${jobs.size} executors.`);
 
 		const context: Partial<RunOptions> = {
 			tempDir,

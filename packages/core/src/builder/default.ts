@@ -1,6 +1,6 @@
 import { writeFileSync } from "fs";
 import { join, relative } from "path";
-import { Builder } from "../stage.js";
+import { Builder } from "../toolchain.js";
 
 const template = `\
 import { connect } from "@esbench/core/client";

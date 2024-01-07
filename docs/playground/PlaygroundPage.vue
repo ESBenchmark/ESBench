@@ -18,7 +18,7 @@
 			<SuiteReport
 				v-if='result'
 				:name='result.name'
-				:stages='[result]'
+				:result='[result]'
 			/>
 		</section>
 		<section :class='$style.tabList'>

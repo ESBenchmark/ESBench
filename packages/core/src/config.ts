@@ -1,11 +1,11 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "./client/collect.js";
-import { Builder, Executor } from "./stage.js";
+import { Builder, Executor } from "./toolchain.js";
 import noBuild from "./builder/default.js";
 import DirectExecutor from "./executor/direct.js";
 import textReporter from "./reporter/text.js";
 
-export interface Stage {
+export interface ToolchainOptions {
 	/**
 	 * The micromatch glob patterns ESBench uses to detect suite files.
 	 *
@@ -35,7 +35,7 @@ export interface ESBenchConfig {
 	/**
 	 * Which files will be run as benchmark suites under which scenarios.
 	 */
-	stages?: Stage[];
+	toolchains?: ToolchainOptions[];
 
 	/**
 	 * Choose dir that ESBench uses for mutation testing.
@@ -65,12 +65,12 @@ export interface ESBenchConfig {
 export const defineConfig = identity<ESBenchConfig>;
 
 export type NormalizedConfig = Required<ESBenchConfig> & {
-	stages: Array<Required<Stage>>;
+	toolchains: Array<Required<ToolchainOptions>>;
 }
 
 export function normalizeConfig(input: ESBenchConfig) {
-	if (input.stages?.length === 0) {
-		throw new Error("No stages.");
+	if (input.toolchains?.length === 0) {
+		throw new Error("No toolchains.");
 	}
 
 	const config: ESBenchConfig = {
@@ -78,25 +78,25 @@ export function normalizeConfig(input: ESBenchConfig) {
 		cleanTempDir: true,
 		reporters: [textReporter()],
 		...input,
-		stages: [],
+		toolchains: [],
 	};
 
-	for (let stage of input.stages ?? [{}]) {
-		stage = {
+	for (let toolchain of input.toolchains ?? [{}]) {
+		toolchain = {
 			include: ["./benchmark/**/*.[jt]s?(x)"],
 			builders: [noBuild],
 			executors: [new DirectExecutor()],
-			...stage,
+			...toolchain,
 		};
-		config.stages!.push(stage);
+		config.toolchains!.push(toolchain);
 
-		if (stage.builders?.length === 0) {
+		if (toolchain.builders?.length === 0) {
 			throw new Error("No builders.");
 		}
-		if (stage.executors!.length === 0) {
+		if (toolchain.executors!.length === 0) {
 			throw new Error("No executors.");
 		}
-		if (stage.include?.length === 0) {
+		if (toolchain.include?.length === 0) {
 			throw new Error("No included files.");
 		}
 	}

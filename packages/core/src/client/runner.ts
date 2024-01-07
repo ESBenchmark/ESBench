@@ -48,7 +48,7 @@ export class ProfilingContext {
 	/**
 	 * Using this method will generate warnings, which are logs with log level "warn".
 	 */
-	warn(message?: string) {
+	warn(message?: string, case_?: BenchCase) {
 		return this.logHandler("warn", message);
 	}
 
@@ -58,10 +58,6 @@ export class ProfilingContext {
 	 */
 	info(message?: string) {
 		return this.logHandler("info", message);
-	}
-
-	debug(message?: string) {
-		return this.logHandler("debug", message);
 	}
 
 	note(type: "hint" | "warn", text: string, case_?: BenchCase) {

@@ -1,6 +1,6 @@
 import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { Builder } from "../stage.js";
+import { Builder } from "../toolchain.js";
 
 const entryId = "./index.js";
 

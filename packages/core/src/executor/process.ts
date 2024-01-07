@@ -5,7 +5,7 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { join, relative } from "path/posix";
 import { writeFileSync } from "fs";
-import { Executor, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../toolchain.js";
 
 const template = `\
 import connect from "__ENTRY__";

@@ -5,7 +5,7 @@ import { OutlierMode, TukeyOutlierDetector } from "./math.js";
 import { Metrics } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_FIELDS } from "./utils.js";
-import { FlattedResult, StageResult, SummaryTableFilter } from "./collect.js";
+import { FlattedResult, SummaryTableFilter, ToolchainResult } from "./collect.js";
 
 const { getMetrics } = SummaryTableFilter;
 
@@ -150,8 +150,8 @@ class PercentileColumn implements MetricColumnFactory {
 export function createTable(stages: StageResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 
-	const stf = new SummaryTableFilter(stages);
-	const { baseline } = stages[0];
+	const stf = new SummaryTableFilter(result);
+	const { baseline } = result[0];
 
 	let vars = Array.from(stf.vars.keys());
 	if (hideSingle) {

@@ -12,10 +12,10 @@
 	</nav>
 
 	<SuiteReport
-		v-if='stages'
+		v-if='toolchains'
 		:class='$style.report'
 		:name='selected'
-		:stages='stages'
+		:result='toolchains'
 	/>
 
 	<main v-else>
@@ -43,7 +43,7 @@ const initName = getSuiteName() || names[0];
 
 const selected = shallowRef(initName);
 
-const stages = computed(() => props.result[selected.value]);
+const toolchains = computed(() => props.result[selected.value]);
 
 window.addEventListener("hashchange", () => {
 	selected.value = getSuiteName();

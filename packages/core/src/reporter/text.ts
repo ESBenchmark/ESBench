@@ -25,8 +25,8 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
-	for (const [name, stages] of entries) {
-		const { table, hints } = createTable(stages, options, chalk);
+	for (const [name, toolchains] of entries) {
+		const table = createTable(toolchains, options, chalk);
 
 		out.write(chalk.greenBright("\n\nSuite: "));
 		out.write(name);
@@ -34,7 +34,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		out.write(markdownTable(table, { stringLength, align: "r" }));
 		out.write("\n");
 		out.write("\nHints:\n");
-		for (const hint of hints) {
+		for (const hint of table.hints) {
 			out.write(hint);
 			out.write("\n");
 		}

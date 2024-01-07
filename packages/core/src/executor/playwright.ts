@@ -2,7 +2,7 @@ import type { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
 import mime from "mime";
-import { Executor, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../toolchain.js";
 
 declare function _ESBenchChannel(message: any): void;
 
@@ -37,7 +37,7 @@ async function client({ files, pattern }: any) {
  * import { firefox } from "playwright-core";
  *
  * export default defineConfig({
- *     stages: [{
+ *     toolchains: [{
  *         Executors: [new PlaywrightExecutor(firefox)]
  *     }],
  * });

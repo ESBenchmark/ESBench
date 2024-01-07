@@ -2,7 +2,7 @@ import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser
 import { BaselineOptions } from "./suite.js";
 import { CaseResult, Metrics } from "./runner.js";
 
-export type ESBenchResult = Record<string, StageResult[]>;
+export type ESBenchResult = Record<string, ToolchainResult[]>;
 
 export interface Note {
 	type: "hint" | "warn";
@@ -10,7 +10,7 @@ export interface Note {
 	caseId?: number;
 }
 
-export interface StageResult {
+export interface ToolchainResult {
 	baseline?: BaselineOptions;
 	executor?: string;
 	builder?: string;
@@ -50,17 +50,17 @@ export class SummaryTableFilter {
 
 	readonly table: FlattedResult[] = [];
 
-	constructor(suiteResult: StageResult[]) {
+	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
 		this.vars.set("Name", new Set());
 
 		for (const result of suiteResult) {
-			this.addStageResult(result);
+			this.addResult(result);
 		}
 	}
 
-	private addStageResult(stage: StageResult) {
-		const { executor, builder, paramDef, scenes } = stage;
+	private addResult(toolchain: ToolchainResult) {
+		const { executor, builder, paramDef, scenes } = toolchain;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 
 		if (builder) {

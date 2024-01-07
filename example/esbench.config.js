@@ -5,7 +5,7 @@ export default defineConfig({
 		rawReporter(),
 		textReporter({ stdDev: true }),
 	],
-	stages: [{
+	toolchains: [{
 		include: ["./src/*.js"],
 		// builders: [
 		// 	new ViteBuilder(),

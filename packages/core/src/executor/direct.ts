@@ -1,7 +1,7 @@
 import { execArgv, version } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { Executor, RunOptions } from "../stage.js";
+import { Executor, RunOptions } from "../toolchain.js";
 
 /**
  * Run suites directly in the current context.

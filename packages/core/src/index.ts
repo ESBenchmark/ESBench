@@ -1,5 +1,5 @@
 export * from "./config.js";
-export * from "./stage.js";
+export * from "./toolchain.js";
 export * from "./host.js";
 
 export { default as textReporter } from "./reporter/text.js";
