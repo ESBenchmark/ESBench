@@ -120,7 +120,7 @@ export type BaselineOptions = {
 	/**
 	 * Type of the baseline variable, can be one of:
 	 * - "Name", "Builder", "Executor"
-	 * - Any key of the suite's `param` option.
+	 * - Any key of suite's `params` object.
 	 */
 	type: string;
 
@@ -132,13 +132,13 @@ export type BaselineOptions = {
 
 export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	name: string;
-
 	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
 
 	afterAll?: HookFn;
 
 	/**
 	 * Measure the running time of the benchmark function.
+	 * true is equivalent to not specifying the option and will always choose the default value.
 	 *
 	 * @default true
 	 */
@@ -153,8 +153,9 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	validate?: ValidateOptions;
 
 	/**
-	 * you can specify set of values.
-	 * As a result, you will get results for each combination of params values.
+	 * you can specify set of values. As a result, you will get results for each combination of params values.
+	 *
+	 * If not specified, or it is an empty object, the suite will have one scene with empty params.
 	 */
 	params?: T;
 
@@ -167,8 +168,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 type Empty = Record<string, never>;
 
 /**
- * Type helper to mark the object as an ESBench suite.
- * IDE plugins require it to find benchmark cases.
+ * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.
  */
 export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkSuite<T>) {
 	return suite;

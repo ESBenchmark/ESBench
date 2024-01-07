@@ -31,6 +31,19 @@ export default class ProcessExecutor implements Executor {
 	private process!: ChildProcess;
 	private server!: Server;
 
+	/**
+	 * Create new ProcessExecutor with a command line template.
+	 *
+	 * You can pass a string as argument, the entry file will append to the end,
+	 * or specific a function accept the entry filename and return the command line.
+	 *
+	 * @example
+	 * // Will execute command: `node --jitless /path/to/your/suite.js`
+	 * new ProcessExecutor("node --jitless");
+	 *
+	 * // Will execute command: `bun /path/to/your/suite.js --foo=bar`
+	 * new ProcessExecutor(file => `bun ${file} --foo=bar`);
+	 */
 	constructor(command: string | GetCommand) {
 		this.getCommand = typeof command === "function"
 			? command

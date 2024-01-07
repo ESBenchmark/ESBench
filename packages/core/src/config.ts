@@ -59,6 +59,9 @@ export interface ESBenchConfig {
 	reporters?: Reporter[];
 }
 
+/**
+ * Type helper to mark the object as an ESBench config.
+ */
 export const defineConfig = identity<ESBenchConfig>;
 
 export type NormalizedConfig = Required<ESBenchConfig> & {

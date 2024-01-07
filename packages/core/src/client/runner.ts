@@ -16,7 +16,14 @@ const MATCH_ANY = new RegExp("");
 
 export class ProfilingContext {
 
+	/**
+	 * Result for each case in each scene.
+	 */
 	readonly scenes: CaseResult[][] = [];
+
+	/**
+	 * Notes collected from the profiling.
+	 */
 	readonly notes: Note[] = [];
 
 	readonly suite: BenchmarkSuite;
@@ -65,6 +72,9 @@ export class ProfilingContext {
 		return new ProfilingContext(this.suite, profilers, options);
 	}
 
+	/**
+	 * Run the profiling, the result is saved at `scenes` & `notes` properties.
+	 */
 	async run() {
 		const { hasRun, pattern, suite } = this;
 		if (hasRun) {

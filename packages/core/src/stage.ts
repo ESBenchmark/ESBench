@@ -2,6 +2,9 @@ import { Awaitable } from "@kaciras/utilities/node";
 
 export interface Builder {
 
+	/**
+	 * Suggest a name for the builder, it will be used if no name specified from config.
+	 */
 	name: string;
 
 	/**
@@ -15,9 +18,21 @@ export interface Builder {
 }
 
 export interface RunOptions {
+	/**
+	 * A folder where the executor can save temporal files.
+	 */
 	tempDir: string;
+
+	/**
+	 * Output directory of the build, can be used to resolve imports.
+	 */
 	root: string;
+
 	files: string[];
+
+	/**
+	 * Run benchmark with names matching the Regex pattern.
+	 */
 	pattern?: string;
 
 	handleMessage(message: any): void;
