@@ -79,7 +79,7 @@ export class ProfilingContext {
 		this.hasRun = true;
 
 		const { params = {}, setup } = suite;
-		await this.runHooks("onSuite", suite);
+		await this.runHooks("onSuite");
 
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
@@ -90,6 +90,7 @@ export class ProfilingContext {
 				await runFns(scene.cleanEach);
 			}
 		}
+		return this.runHooks("onFinish");
 	}
 
 	private async runScene(scene: Scene) {
@@ -115,11 +116,13 @@ export class ProfilingContext {
 
 export interface Profiler {
 
-	onSuite?: (ctx: ProfilingContext, suite: BenchmarkSuite) => Awaitable<void>;
+	onSuite?: (ctx: ProfilingContext) => Awaitable<void>;
 
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
 	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
+
+	onFinish?: (ctx: ProfilingContext) => Awaitable<void>;
 }
 
 export interface CaseResult {

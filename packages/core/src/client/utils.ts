@@ -1,5 +1,5 @@
 import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
-import { BenchCase, BenchmarkSuite, HookFn, Scene } from "./suite.js";
+import { BenchCase, HookFn, Scene } from "./suite.js";
 import { LogHandler, Profiler, ProfilingContext } from "./runner.js";
 
 export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
@@ -80,8 +80,8 @@ export class DefaultEventLogger implements Profiler {
 
 	private index = 0;
 
-	onSuite(ctx: ProfilingContext, suite: BenchmarkSuite) {
-		return ctx.info(`\nSuite: ${suite.name}, ${ctx.sceneCount} scenes.`);
+	onSuite(ctx: ProfilingContext) {
+		return ctx.info(`\nSuite: ${ctx.suite.name}, ${ctx.sceneCount} scenes.`);
 	}
 
 	onScene(ctx: ProfilingContext, scene: Scene) {
