@@ -35,7 +35,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		out.write("\n");
 
 		if (table.hints.length > 0) {
-			out.write(chalk.cyan("\nHints:\n"));
+			out.write(chalk.cyan("Hints:\n"));
 			for (const note of table.hints) {
 				out.write(note);
 				out.write("\n");
@@ -43,7 +43,7 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		}
 
 		if (table.warnings.length > 0) {
-			out.write(chalk.yellowBright("\nWarnings:\n"));
+			out.write(chalk.yellowBright("Warnings:\n"));
 			for (const note of table.warnings) {
 				out.write(note);
 				out.write("\n");
