@@ -33,10 +33,21 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 		out.write("\n");
 		out.write(markdownTable(table, { stringLength, align: "r" }));
 		out.write("\n");
-		out.write("\nHints:\n");
-		for (const hint of table.hints) {
-			out.write(hint);
-			out.write("\n");
+
+		if (table.hints.length > 0) {
+			out.write(chalk.cyan("\nHints:\n"));
+			for (const note of table.hints) {
+				out.write(note);
+				out.write("\n");
+			}
+		}
+
+		if (table.warnings.length > 0) {
+			out.write(chalk.yellowBright("\nWarnings:\n"));
+			for (const note of table.warnings) {
+				out.write(note);
+				out.write("\n");
+			}
 		}
 	}
 }

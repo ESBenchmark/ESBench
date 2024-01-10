@@ -1,21 +1,11 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
-import { BaselineOptions } from "./suite.js";
-import { CaseResult, Metrics } from "./runner.js";
+import { Metrics, RunSuiteResult } from "./runner.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
-export interface Note {
-	type: "hint" | "warn";
-	text: string;
-	caseId?: number;
-}
-
-export interface ToolchainResult {
-	baseline?: BaselineOptions;
-	executor?: string;
+export interface ToolchainResult extends RunSuiteResult {
 	builder?: string;
-	paramDef: Record<string, string[]>;
-	scenes: CaseResult[][];
+	executor?: string;
 }
 
 // -------------------------------------------------------------
@@ -27,6 +17,13 @@ export type FlattedResult = Record<string, string> & {
 	Name: string;
 	Builder?: string;
 	Executor?: string;
+	[kCustom: symbol]: any;
+}
+
+export interface ResolvedNote {
+	type: "info" | "warn";
+	text: string;
+	row?: FlattedResult;
 }
 
 function shallowHashKey(obj: any, keys: string[]) {
@@ -49,6 +46,7 @@ export class SummaryTableFilter {
 	readonly vars = new Map<string, Set<string>>();
 
 	readonly table: FlattedResult[] = [];
+	readonly notes: ResolvedNote[] = [];
 
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
@@ -60,7 +58,8 @@ export class SummaryTableFilter {
 	}
 
 	private addResult(toolchain: ToolchainResult) {
-		const { executor, builder, paramDef, scenes } = toolchain;
+		const { executor, builder, paramDef, scenes, notes } = toolchain;
+		const offset = this.table.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 
 		if (builder) {
@@ -84,6 +83,14 @@ export class SummaryTableFilter {
 					[kMetrics]: metrics,
 				});
 				this.addToVar("Name", name);
+			}
+		}
+
+		for (const { type, text, caseId } of notes) {
+			const resolved: ResolvedNote = { type, text };
+			this.notes.push(resolved);
+			if (caseId !== undefined) {
+				resolved.row = this.table[offset + caseId];
 			}
 		}
 	}

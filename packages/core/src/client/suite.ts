@@ -1,4 +1,4 @@
-import { Awaitable, CartesianObjectCell, CPSrcObject, uniqueId } from "@kaciras/utilities/browser";
+import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/browser";
 import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
@@ -12,11 +12,6 @@ export class BenchCase {
 	readonly setupHooks: HookFn[];
 	readonly cleanHooks: HookFn[];
 
-	/**
-	 * A unique number within a suite execution.
-	 */
-	readonly id = uniqueId();
-
 	readonly name: string;
 	readonly fn: Workload;
 
@@ -24,6 +19,11 @@ export class BenchCase {
 	 * true if the case defined by `benchAsync`, false for `bench`.
 	 */
 	readonly isAsync: boolean;
+
+	/**
+	 * A unique number within a suite execution.
+	 */
+	id!: number;
 
 	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
 		this.name = name;
@@ -161,6 +161,10 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 
 	/**
 	 * In order to scale your results, you can mark a variable as a baseline.
+	 *
+	 * @example
+	 * // The result with baseline: { type: "Name", value: "map" }
+	 *
 	 */
 	baseline?: BaselineOptions;
 }

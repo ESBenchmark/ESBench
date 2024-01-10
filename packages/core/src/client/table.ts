@@ -147,7 +147,14 @@ class PercentileColumn implements MetricColumnFactory {
 	}
 }
 
-export function createTable(stages: StageResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
+interface TableWithNotes extends Array<string[]> {
+	hints: string[];
+	warnings: string[];
+}
+
+const kRowNumber = Symbol();
+
+export function createTable(result: ToolchainResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 
 	const stf = new SummaryTableFilter(result);
@@ -175,11 +182,12 @@ export function createTable(stages: StageResult[], options: SummaryTableOptions 
 		header[i] = chalk.magentaBright(header[i]);
 	}
 	for (const metricColumn of metricColumns) {
-		header.push(chalk.cyan(metricColumn.name));
+		header.push(chalk.blueBright(metricColumn.name));
 	}
 
 	const table = [header];
 	const hints: string[] = [];
+	const warnings: string[] = [];
 	let rowNumber = 0;
 
 	let groups = [stf.table][Symbol.iterator]();
@@ -197,7 +205,8 @@ export function createTable(stages: StageResult[], options: SummaryTableOptions 
 
 		const startIndex = table.length;
 		for (const data of group) {
-			const columns: string[] = [(rowNumber++).toString()];
+			const rowNo = data[kRowNumber] = rowNumber++;
+			const columns: string[] = [rowNo.toString()];
 			table.push(columns);
 
 			for (const k of vars) {
@@ -228,12 +237,29 @@ export function createTable(stages: StageResult[], options: SummaryTableOptions 
 		}
 		if (rawTime.length !== metrics.time.length) {
 			const removed = rawTime.length - metrics.time.length;
-			hints.push(`${data.Name}: ${removed} outliers were removed.`);
+			stf.notes.push({
+				type: "info",
+				row: data,
+				text: `${data.Name}: ${removed} outliers were removed.`,
+			});
+		}
+	}
+
+	for (const note of stf.notes) {
+		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
+		const msg = scope + note.text;
+		if (note.type === "info") {
+			hints.push(chalk.cyan(msg));
+		} else {
+			warnings.push(chalk.yellowBright(msg));
 		}
 	}
 
 	table.pop();
-	return { table, hints };
+	(table as any).hints = hints;
+	(table as any).warnings = warnings;
+
+	return table as TableWithNotes;
 }
 
 function formatTime(table: any[][], column: number, flex: boolean) {

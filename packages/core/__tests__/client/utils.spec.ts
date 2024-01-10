@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkParams } from "../../src/client/utils.js";
+import { checkParams, toDisplayName } from "../../src/client/utils.js";
 
 describe("checkParams", () => {
 	it.each([
@@ -18,7 +18,7 @@ describe("checkParams", () => {
 		[Symbol(), "symbol"],
 		[Symbol("foo"), "symbol(foo)"],
 	])("should get display name of values %#", (value, expected) => {
-		expect(checkParams({ _: [value] })._[0]).toBe(expected);
+		expect(toDisplayName(value)).toBe(expected);
 	});
 
 	it("should restrict keys to be string", () => {
@@ -37,5 +37,9 @@ describe("checkParams", () => {
 		};
 		expect(() => checkParams(params))
 			.toThrow("Parameter display name conflict (foo: 1234567_…1234567)");
+	});
+
+	it("should return entries array", () => {
+
 	});
 });

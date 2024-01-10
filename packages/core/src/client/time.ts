@@ -123,8 +123,7 @@ export class TimeProfiler implements Profiler {
 	async onSuite(ctx: ProfilingContext) {
 		// @ts-ignore
 		if (globalThis.crossOriginIsolated === false) {
-			await ctx.warn("Context is non-isolated, performance.now() may work in low-precision mode. For more details, see:\n" +
-				"https://developer.mozilla.org/docs/Web/API/Performance/now#security_requirements");
+			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
 		}
 	}
 

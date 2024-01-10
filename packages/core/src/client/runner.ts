@@ -2,7 +2,6 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { Note } from "./collect.js";
 import { BUILTIN_FIELDS, checkParams, consoleLogHandler, DefaultEventLogger, runFns, toDisplayName } from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -32,6 +31,7 @@ export class ProfilingContext {
 	readonly logHandler: LogHandler;
 
 	private hasRun = false;
+	private caseIndex = 0;
 
 	constructor(suite: BenchmarkSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
@@ -48,7 +48,7 @@ export class ProfilingContext {
 	/**
 	 * Using this method will generate warnings, which are logs with log level "warn".
 	 */
-	warn(message?: string, case_?: BenchCase) {
+	warn(message?: string) {
 		return this.logHandler("warn", message);
 	}
 
@@ -60,8 +60,19 @@ export class ProfilingContext {
 		return this.logHandler("info", message);
 	}
 
-	note(type: "hint" | "warn", text: string, case_?: BenchCase) {
+	/**
+	 * Add a note to result, it will print a log and displayed in the report.
+	 *
+	 * The different between notes and logs is note is that
+	 * notes are only relevant to the result, while logs can record anything.
+	 *
+	 * @param type Type of the note, "info" or "warn".
+	 * @param text The message of this note.
+	 * @param case_ The case associated with this note.
+	 */
+	note(type: "info" | "warn", text: string, case_?: BenchCase) {
 		this.notes.push({ type, text, caseId: case_?.id });
+		return this.logHandler(type, text);
 	}
 
 	newWorkflow(profilers: Profiler[], options: RunSuiteOption = {}) {
@@ -100,6 +111,7 @@ export class ProfilingContext {
 		this.scenes.push(workloads);
 
 		for (const case_ of scene.cases) {
+			case_.id = this.caseIndex++;
 			const metrics = {};
 			await this.runHooks("onCase", case_, metrics);
 			workloads.push({ name: case_.name, metrics });
@@ -131,6 +143,12 @@ export interface CaseResult {
 }
 
 export type Metrics = Record<string, any[]>;
+
+export interface Note {
+	type: "info" | "warn";
+	text: string;
+	caseId?: number;
+}
 
 export interface RunSuiteResult {
 	name: string;
