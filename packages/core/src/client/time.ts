@@ -104,12 +104,19 @@ export interface TimingOptions {
 	 * Invocation count or time in a single iteration.
 	 *
 	 * If the value is a number it used as invocation count, must be a multiple of unrollFactor.
-	 *
 	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
 	 *
 	 * @default "1s"
 	 */
 	iterations?: number | string;
+
+	/**
+	 * Specifies if the overhead should be evaluated (Idle runs) and it's average value
+	 * subtracted from every result. Very important for nano-benchmarks.
+	 *
+	 * @default true
+	 */
+	evaluateOverhead?: boolean;
 }
 
 export class TimeProfiler implements Profiler {
@@ -128,7 +135,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
-		const { samples = 10, unrollFactor = 16 } = this.config;
+		const { samples = 10, unrollFactor = 16, evaluateOverhead = true } = this.config;
 		let { iterations = "1s" } = this.config;
 
 		if (unrollFactor < 1) {
@@ -154,21 +161,25 @@ export class TimeProfiler implements Profiler {
 			throw new Error("The number of iterations cannot be 0 or negative.");
 		}
 
+		metrics.time = await this.measure(ctx, "Actual", iterateActual, iterations);
+
+		if (!evaluateOverhead) {
+			return;
+		}
+
 		const iterateOverhead = createInvoker(unrollFactor, <any>{
 			setupHooks: [],
 			cleanHooks: [],
 			isAsync: case_.isAsync,
 			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 		});
-
-		const overheads = await this.measure(ctx, "Overhead", iterateOverhead, iterations);
 		await ctx.info();
-		const time = await this.measure(ctx, "Actual", iterateActual, iterations);
+		const overheads = await this.measure(ctx, "Overhead", iterateOverhead, iterations);
 
-		const pValue = welchTest(time, overheads, "greater");
+		const pValue = welchTest(metrics.time, overheads, "greater");
 		if (pValue < 0.05) {
 			const overhead = medianSorted(overheads);
-			metrics.time = time.map(ms => ms - overhead);
+			metrics.time = metrics.time.map(ms => ms - overhead);
 		} else {
 			metrics.time = [0];
 			ctx.note("warn",

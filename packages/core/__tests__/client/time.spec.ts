@@ -98,3 +98,15 @@ it("should check zero measurement", async () => {
 	expect(result.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
 	expect(result.scenes[0][0].metrics.time).toStrictEqual([0]);
 });
+
+it("should skip overhead stage if evaluateOverhead is false", async () => {
+	const stubFn = vi.fn(noop);
+	const result = await run({
+		timing: {
+			evaluateOverhead: false,
+		},
+		setup: scene => scene.bench("Test", stubFn),
+	});
+	expect(stubFn).toHaveBeenCalledTimes(1);
+	expect(result.scenes[0][0].metrics.time[0]).toBeGreaterThan(0);
+});
