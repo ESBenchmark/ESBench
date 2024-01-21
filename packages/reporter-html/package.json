@@ -22,18 +22,18 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.11.0",
+		"@kaciras/utilities": "^0.12.0",
 		"@tabler/icons-vue": "^2.46.0",
-		"@vueuse/core": "^10.7.1",
+		"@vueuse/core": "^10.7.2",
 		"chart.js": "^4.4.1",
 		"chartjs-chart-error-bars": "^4.3.3",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.11"
+		"vue": "^3.4.15"
 	},
 	"devDependencies": {
 		"@esbench/core": "workspace:^",
 		"@vitejs/plugin-vue": "^5.0.3",
-		"vite": "^5.0.11",
-		"vite-plugin-singlefile": "^0.13.5"
+		"vite": "^5.0.12",
+		"vite-plugin-singlefile": "^1.0.0"
 	}
 }
