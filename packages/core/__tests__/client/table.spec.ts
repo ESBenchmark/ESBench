@@ -14,7 +14,7 @@ it("should works", () => {
 	expect(Array.from(table)).toStrictEqual([
 		["No.", "Name", "time"],
 		["0", "foo", "750.00 us"],
-		["1", "bar", "1750.00 us"],
+		["1", "bar", "1,750.00 us"],
 	]);
 	expect(table.hints).toHaveLength(0);
 });

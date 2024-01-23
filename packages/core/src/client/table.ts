@@ -154,6 +154,10 @@ interface TableWithNotes extends Array<string[]> {
 
 const kRowNumber = Symbol();
 
+export function addThousandCommas(text: string) {
+	return text.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 export function createTable(result: ToolchainResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 
@@ -264,7 +268,7 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 
 function formatTime(table: any[][], column: number, flex: boolean) {
 	if (flex) {
-		return table.forEach(r => r[column] = durationFmt.formatDiv(r[column], "ms"));
+		return table.forEach(r => r[column] = addThousandCommas(durationFmt.formatDiv(r[column], "ms")));
 	}
 	const x = durationFmt.fractions[2 /* ms */];
 	let min = Infinity;
@@ -280,6 +284,6 @@ function formatTime(table: any[][], column: number, flex: boolean) {
 	const unit = durationFmt.units[min];
 
 	for (const row of table) {
-		row[column] = (row[column] * scale).toFixed(2) + " " + unit;
+		row[column] = addThousandCommas((row[column] * scale).toFixed(2) + " " + unit);
 	}
 }
