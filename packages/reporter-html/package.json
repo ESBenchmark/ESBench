@@ -26,7 +26,7 @@
 		"@tabler/icons-vue": "^2.46.0",
 		"@vueuse/core": "^10.7.2",
 		"chart.js": "^4.4.1",
-		"chartjs-chart-error-bars": "^4.3.3",
+		"chartjs-chart-error-bars": "^4.3.4",
 		"simple-statistics": "^7.8.3",
 		"vue": "^3.4.15"
 	},
