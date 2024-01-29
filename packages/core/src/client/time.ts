@@ -128,6 +128,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async onSuite(ctx: ProfilingContext) {
+		ctx.meta.time = { format: "{duration.ms}" };
 		// @ts-ignore
 		if (globalThis.crossOriginIsolated === false) {
 			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");

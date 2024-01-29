@@ -25,6 +25,8 @@ export class ProfilingContext {
 	 */
 	readonly notes: Note[] = [];
 
+	readonly meta: Record<string, MetricMeta> = {};
+
 	readonly suite: BenchmarkSuite;
 	readonly profilers: Profiler[];
 	readonly pattern: RegExp;
@@ -142,7 +144,31 @@ export interface CaseResult {
 	metrics: Metrics;
 }
 
-export type Metrics = Record<string, any[]>;
+export type Metrics = Record<string, number | number[] | string>;
+
+export enum MetricAnalyzer {
+	/**
+	 * There is no analyze performed to the metric.
+	 */
+	None,
+
+	/**
+	 * Reporters should show diff with another result if present for the metric.
+	 * The metric value must be a number.
+	 */
+	Compare,
+
+	/**
+	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metric.
+	 * The metric value must be an array of number with at least 1 element.
+	 */
+	Statistics,
+}
+
+export interface MetricMeta {
+	format?: string;
+	analyze?: MetricAnalyzer;
+}
 
 export interface Note {
 	type: "info" | "warn";
@@ -152,10 +178,11 @@ export interface Note {
 
 export interface RunSuiteResult {
 	name: string;
-	baseline?: BaselineOptions;
 	paramDef: Record<string, string[]>;
+	meta: Record<string, MetricMeta>;
 	notes: Note[];
 	scenes: CaseResult[][];
+	baseline?: BaselineOptions;
 }
 
 export interface RunSuiteOption {
@@ -193,8 +220,8 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 
 	await context.run().finally(afterAll);
 
-	const { scenes, notes } = context;
-	return { name, notes, baseline, paramDef, scenes } as RunSuiteResult;
+	const { scenes, notes, meta } = context;
+	return { name, notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
 }
 
 export type ClientMessage = RunSuiteResult | {

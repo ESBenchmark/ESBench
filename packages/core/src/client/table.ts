@@ -1,8 +1,8 @@
 import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
-import { durationFmt, identity } from "@kaciras/utilities/browser";
+import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { Metrics } from "./runner.js";
+import { MetricMeta } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_FIELDS } from "./utils.js";
 import { FlattedResult, SummaryTableFilter, ToolchainResult } from "./collect.js";
@@ -67,42 +67,52 @@ type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
 
-interface MetricColumnFactory {
+interface ColumnFactory {
 
 	name: string;
 
-	format?: boolean;
+	format?: string;
 
 	prepare?(cases: FlattedResult[]): void;
 
-	getValue(metrics: Metrics, chalk: ChalkLike): any;
+	getValue(data: FlattedResult, chalk: ChalkLike): any;
 }
 
-class BaselineColumn implements MetricColumnFactory {
+class BaselineColumn implements ColumnFactory {
 
-	readonly name = "ratio";
+	readonly key: string;
 
-	private readonly key: string;
+	private readonly variable: string;
 	private readonly value: string;
 
 	private ratio1 = 0;
 
-	constructor(baseline: BaselineOptions) {
-		this.key = baseline.type;
+	constructor(key: string, baseline: BaselineOptions) {
+		this.key = key;
+		this.variable = baseline.type;
 		this.value = baseline.value;
 	}
 
-	prepare(cases: FlattedResult[]) {
-		const { key, value } = this;
-		const ratio1Row = cases.find(d => d[key] === value);
-		if (!ratio1Row) {
-			throw new Error(`Baseline (${key}=${value}) does not in the table`);
-		}
-		this.ratio1 = mean(getMetrics(ratio1Row).time);
+	get name() {
+		return this.key + ".Ratio";
 	}
 
-	getValue(metrics: Metrics, chalk: ChalkLike) {
-		const ratio = mean(metrics.time) / this.ratio1;
+	private toNumber(data: FlattedResult) {
+		const metric = getMetrics(data)[this.key];
+		return Array.isArray(metric) ? mean(metric) : metric as number;
+	}
+
+	prepare(cases: FlattedResult[]) {
+		const { variable, value } = this;
+		const ratio1Row = cases.find(d => d[variable] === value);
+		if (!ratio1Row) {
+			throw new Error(`Baseline (${variable}=${value}) does not in the table`);
+		}
+		this.ratio1 = this.toNumber(ratio1Row);
+	}
+
+	getValue(data: FlattedResult, chalk: ChalkLike) {
+		const ratio = this.toNumber(data) / this.ratio1;
 		if (!isFinite(ratio)) {
 			return chalk.blackBright("N/A");
 		}
@@ -114,36 +124,94 @@ class BaselineColumn implements MetricColumnFactory {
 	}
 }
 
-const meanColumn: MetricColumnFactory = {
-	name: "time",
-	format: true,
-	getValue(metrics: Metrics) {
-		return mean(metrics.time);
-	},
-};
+class stdDevColumn implements ColumnFactory {
 
-const stdDevColumn: MetricColumnFactory = {
-	name: "stdDev",
-	format: true,
-	getValue(metrics: Metrics) {
-		return standardDeviation(metrics.time);
-	},
-};
+	readonly key: string;
+	readonly format?: string;
 
-class PercentileColumn implements MetricColumnFactory {
-
-	readonly format = true;
-
-	readonly p: number;
-	readonly name: string;
-
-	constructor(p: number) {
-		this.p = p / 100;
-		this.name = "p" + p;
+	constructor(key: string, meta: MetricMeta) {
+		this.key = key;
+		this.format = meta.format;
 	}
 
-	getValue(metrics: Metrics) {
-		return quantileSorted(metrics.time, this.p);
+	get name() {
+		return this.key + ".SD";
+	}
+
+	getValue(data: FlattedResult) {
+		return standardDeviation(getMetrics(data)[this.key] as number[]);
+	}
+}
+
+class PercentileColumn implements ColumnFactory {
+
+	readonly p: number;
+	readonly key: string;
+	readonly format?: string;
+
+	constructor(key: string, meta: MetricMeta, p: number) {
+		this.p = p;
+		this.key = key;
+		this.format = meta.format;
+	}
+
+	get name() {
+		return `${this.key}.p${this.p}`;
+	}
+
+	getValue(data: FlattedResult) {
+		return quantileSorted(getMetrics(data)[this.key] as number[], this.p / 100);
+	}
+}
+
+class RowNumberColumn implements ColumnFactory {
+
+	readonly name = "No.";
+
+	private index = 0;
+
+	getValue(data: FlattedResult) {
+		data[kRowNumber] = this.index;
+		return `No.${this.index++}`;
+	}
+}
+
+class VariableColumn implements ColumnFactory {
+
+	readonly name: string;
+
+	private readonly key: string;
+
+	constructor(key: string, chalk: ChalkLike) {
+		this.name = this.key = key;
+		if (!BUILTIN_FIELDS.includes(this.key)) {
+			this.name = chalk.magentaBright(this.name);
+		}
+	}
+
+	getValue(data: FlattedResult) {
+		return data[this.key];
+	}
+}
+
+class RawMetricColumn implements ColumnFactory {
+
+	readonly name: string;
+	readonly meta: MetricMeta;
+
+	constructor(name: string, meta: MetricMeta) {
+		this.name = name;
+		this.meta = meta;
+	}
+
+	get format() {
+		return this.meta.format;
+	}
+
+	getValue(data: FlattedResult) {
+		if (this.meta.analyze === 2) {
+			return mean(getMetrics(data)[this.name] as number[]);
+		}
 	}
 }
 
@@ -164,69 +232,63 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	const stf = new SummaryTableFilter(result);
 	const { baseline } = result[0];
 
-	let vars = Array.from(stf.vars.keys());
-	if (hideSingle) {
-		vars = vars.filter(x => stf.vars.get(x)!.size > 1);
+	// 1. Create columns
+	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
+	for (const [p, v] of stf.vars.entries()) {
+		if (!hideSingle || v.size > 1) {
+			columnDefs.push(new VariableColumn(p, chalk));
+		}
+	}
+	for (const [name, meta] of stf.meta) {
+		columnDefs.push(new RawMetricColumn(name, meta));
+		if (meta.analyze === 2) {
+			if (stdDev) {
+				columnDefs.push(new stdDevColumn(name, meta));
+			}
+			for (const k of percentiles) {
+				columnDefs.push(new PercentileColumn(name, meta, k));
+			}
+		}
+		if (baseline && meta.analyze !== 0) {
+			columnDefs.push(new BaselineColumn(name, baseline));
+		}
 	}
 
-	const metricColumns: MetricColumnFactory[] = [meanColumn];
-	if (stdDev) {
-		metricColumns.push(stdDevColumn);
-	}
-	for (const k of percentiles) {
-		metricColumns.push(new PercentileColumn(k));
-	}
-	if (baseline) {
-		metricColumns.push(new BaselineColumn(baseline));
-	}
-
-	const header = ["No.", ...vars];
-	const offset = 1 + vars.filter(x => BUILTIN_FIELDS.includes(x)).length;
-	for (let i = offset; i < header.length; i++) {
-		header[i] = chalk.magentaBright(header[i]);
-	}
-	for (const metricColumn of metricColumns) {
-		header.push(chalk.blueBright(metricColumn.name));
-	}
-
+	// 2. Build the header
+	const header = columnDefs.map(c => c.name);
 	const table = [header];
 	const hints: string[] = [];
 	const warnings: string[] = [];
-	let rowNumber = 0;
 
+	// 3. Fill the body
 	let groups = [stf.table][Symbol.iterator]();
 	if (baseline) {
 		groups = stf.group(baseline.type).values();
 	}
-
 	for (const group of groups) {
+		// 3-1. Preprocess
 		for (const data of group) {
 			removeOutliers(data);
 		}
-		for (const metricColumn of metricColumns) {
+		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
 		}
 
-		const startIndex = table.length;
+		// 3-2. Add values to cells
 		for (const data of group) {
-			const rowNo = data[kRowNumber] = rowNumber++;
-			const columns: string[] = [rowNo.toString()];
-			table.push(columns);
-
-			for (const k of vars) {
-				columns.push("" + data[k]);
-			}
-			const metrics = getMetrics(data);
-			for (const metricColumn of metricColumns) {
-				columns.push(metricColumn.getValue(metrics, chalk));
+			const cells: any[] = [];
+			table.push(cells);
+			for (const column of columnDefs) {
+				cells.push(column.getValue(data, chalk));
 			}
 		}
 
-		const slice = table.slice(startIndex);
-		for (let i = 0; i < metricColumns.length; i++) {
-			const c = 1 + vars.length + i;
-			if (metricColumns[i].format) {
-				formatTime(slice, c, flexUnit);
+		// 3-3. Postprocess
+		const body = table.slice(1);
+		for (let i = 0; i < columnDefs.length; i++) {
+			const def = columnDefs[i];
+			if (def.format) {
+				formatTime(body, i, def.format, flexUnit);
 			}
 		}
 
@@ -234,21 +296,30 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	}
 
 	function removeOutliers(data: FlattedResult) {
-		const metrics = getMetrics(data);
-		const rawTime = metrics.time;
-		if (outliers) {
-			metrics.time = new TukeyOutlierDetector(rawTime).filter(rawTime, outliers);
+		if (!outliers) {
+			return;
 		}
-		if (rawTime.length !== metrics.time.length) {
-			const removed = rawTime.length - metrics.time.length;
-			stf.notes.push({
-				type: "info",
-				row: data,
-				text: `${data.Name}: ${removed} outliers were removed.`,
-			});
+		const metrics = getMetrics(data);
+		for (const [name, meta] of stf.meta) {
+			if (meta.analyze !== 2) {
+				continue;
+			}
+			const before = metrics[name] as number[];
+			const after = new TukeyOutlierDetector(before).filter(before, outliers);
+
+			metrics[name] = after;
+			if (before.length !== after.length) {
+				const removed = before.length - after.length;
+				stf.notes.push({
+					type: "info",
+					row: data,
+					text: `${data.Name}: ${removed} outliers were removed.`,
+				});
+			}
 		}
 	}
 
+	// 4. Generate additional properties
 	for (const note of stf.notes) {
 		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
@@ -266,24 +337,49 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	return table as TableWithNotes;
 }
 
-function formatTime(table: any[][], column: number, flex: boolean) {
+const formatRE = /\{(\w+)\.(\w+)}/ig;
+
+const formatters: Record<string, UnitConvertor<readonly any[]>> = {
+	number: decimalPrefix,
+	duration: durationFmt,
+	dataSize: dataSizeIEC,
+};
+
+function formatTime(table: any[][], column: number, format: string, flex: boolean) {
+	const p = Array.from(format.matchAll(formatRE));
+	const s = format.split(formatRE);
+
+	let pf: Array<(value: number) => string>;
 	if (flex) {
-		return table.forEach(r => r[column] = addThousandCommas(durationFmt.formatDiv(r[column], "ms")));
+		pf = p.map(([, type, unit]) => v => addThousandCommas(formatters[type].formatDiv(v, unit)));
+	} else {
+		pf = [];
+		for (const [, type, unit] of p) {
+			const fmt = formatters[type];
+			const x = fmt.fractions[(fmt.units.indexOf(unit))];
+			let min = Infinity;
+			for (const row of table) {
+				min = row[column] === 0 // 0 is equal in any unit.
+					? min
+					: Math.min(min, fmt.suit(row[column] * x));
+			}
+			if (min === Infinity) {
+				min = 0; // All values are 0, use the minimum unit.
+			}
+			const scale = x / fmt.fractions[min];
+			const newUnit = fmt.units[min];
+
+			pf.push(v => addThousandCommas((v * scale).toFixed(2) + " " + newUnit));
+		}
 	}
-	const x = durationFmt.fractions[2 /* ms */];
-	let min = Infinity;
-	for (const row of table) {
-		min = row[column] === 0 // 0 is equal in any unit.
-			? min
-			: Math.min(min, durationFmt.suit(row[column] * x));
-	}
-	if (min === Infinity) {
-		min = 0; // All values are 0, use the minimum unit.
-	}
-	const scale = x / durationFmt.fractions[min];
-	const unit = durationFmt.units[min];
 
 	for (const row of table) {
-		row[column] = addThousandCommas((row[column] * scale).toFixed(2) + " " + unit);
+		const parts = [];
+		for (let i = 0; i < pf.length; i++) {
+			parts.push(s[i]);
+			parts.push(pf[i](row[column]));
+		}
+		parts.push(s[s.length - 1]);
+		row[column] = parts.join("");
 	}
 }

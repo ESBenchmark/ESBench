@@ -1,5 +1,5 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
-import { Metrics, RunSuiteResult } from "./runner.js";
+import { MetricMeta, Metrics, RunSuiteResult } from "./runner.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
@@ -13,10 +13,14 @@ export interface ToolchainResult extends RunSuiteResult {
 const kMetrics = Symbol("metrics");
 
 export type FlattedResult = Record<string, string> & {
-	[kMetrics]: Metrics;
 	Name: string;
 	Builder?: string;
 	Executor?: string;
+
+	// Retrieve by SummaryTableFilter.getMetrics
+	[kMetrics]: Metrics;
+
+	// You can assign custom value with symbol keys.
 	[kCustom: symbol]: any;
 }
 
@@ -30,7 +34,7 @@ function shallowHashKey(obj: any, keys: string[]) {
 	return keys.map(k => `${k}=${obj[k]}`).join(",");
 }
 
-function groupBy1<T>(items: T[], callbackFn: (e: T) => string) {
+function groupByPolyfill<T>(items: T[], callbackFn: (e: T) => string) {
 	const group = new MultiMap<string, T>();
 	for (const element of items) {
 		group.add(callbackFn(element), element);
@@ -39,7 +43,7 @@ function groupBy1<T>(items: T[], callbackFn: (e: T) => string) {
 }
 
 // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
-const groupBy: typeof groupBy1 = (Map as any).groupBy ?? groupBy1;
+const groupBy: typeof groupByPolyfill = (Map as any).groupBy ?? groupByPolyfill;
 
 export class SummaryTableFilter {
 
@@ -47,6 +51,7 @@ export class SummaryTableFilter {
 
 	readonly table: FlattedResult[] = [];
 	readonly notes: ResolvedNote[] = [];
+	readonly meta = new Map<string, MetricMeta>();
 
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
@@ -70,6 +75,10 @@ export class SummaryTableFilter {
 		}
 		for (const [key, values] of Object.entries(paramDef)) {
 			this.addToVar(key, ...values);
+		}
+
+		for (const [k, v] of Object.entries(toolchain.meta)) {
+			this.meta.set(k, v);
 		}
 
 		for (const scene of scenes) {
