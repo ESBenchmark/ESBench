@@ -4,7 +4,7 @@ import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
 import { MetricMeta } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
-import { BUILTIN_FIELDS } from "./utils.js";
+import { addThousandCommas, BUILTIN_FIELDS } from "./utils.js";
 import { FlattedResult, SummaryTableFilter, ToolchainResult } from "./collect.js";
 
 const { getMetrics } = SummaryTableFilter;
@@ -124,7 +124,7 @@ class BaselineColumn implements ColumnFactory {
 	}
 }
 
-class stdDevColumn implements ColumnFactory {
+class StdDevColumn implements ColumnFactory {
 
 	readonly key: string;
 	readonly format?: string;
@@ -209,9 +209,8 @@ class RawMetricColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult) {
-		if (this.meta.analyze === 2) {
-			return mean(getMetrics(data)[this.name] as number[]);
-		}
+		const metric = getMetrics(data)[this.name];
+		return Array.isArray(metric) ? mean(metric) : metric;
 	}
 }
 
@@ -222,15 +221,31 @@ interface TableWithNotes extends Array<string[]> {
 
 const kRowNumber = Symbol();
 
-export function addThousandCommas(text: string) {
-	return text.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ",");
+function removeOutliers(stf: SummaryTableFilter, mode: OutlierMode, row: FlattedResult) {
+	const metrics = getMetrics(row);
+	for (const [name, meta] of stf.meta) {
+		if (meta.analyze !== 2) {
+			continue;
+		}
+		const before = metrics[name] as number[];
+		const after = new TukeyOutlierDetector(before).filter(before, mode);
+		metrics[name] = after;
+
+		if (before.length !== after.length) {
+			const removed = before.length - after.length;
+			stf.notes.push({
+				type: "info",
+				row,
+				text: `${row.Name}: ${removed} outliers were removed.`,
+			});
+		}
+	}
 }
 
 export function createTable(result: ToolchainResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
-
-	const stf = new SummaryTableFilter(result);
 	const { baseline } = result[0];
+	const stf = new SummaryTableFilter(result);
 
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
@@ -243,7 +258,7 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 		columnDefs.push(new RawMetricColumn(name, meta));
 		if (meta.analyze === 2) {
 			if (stdDev) {
-				columnDefs.push(new stdDevColumn(name, meta));
+				columnDefs.push(new StdDevColumn(name, meta));
 			}
 			for (const k of percentiles) {
 				columnDefs.push(new PercentileColumn(name, meta, k));
@@ -256,9 +271,9 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 
 	// 2. Build the header
 	const header = columnDefs.map(c => c.name);
-	const table = [header];
-	const hints: string[] = [];
-	const warnings: string[] = [];
+	const table = [header] as TableWithNotes;
+	table.hints = [];
+	table.warnings = [];
 
 	// 3. Fill the body
 	let groups = [stf.table][Symbol.iterator]();
@@ -267,8 +282,8 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	}
 	for (const group of groups) {
 		// 3-1. Preprocess
-		for (const data of group) {
-			removeOutliers(data);
+		if (outliers) {
+			group.forEach(removeOutliers.bind(null, stf, outliers));
 		}
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
@@ -295,45 +310,18 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 		table.push([]); // Add an empty row between groups.
 	}
 
-	function removeOutliers(data: FlattedResult) {
-		if (!outliers) {
-			return;
-		}
-		const metrics = getMetrics(data);
-		for (const [name, meta] of stf.meta) {
-			if (meta.analyze !== 2) {
-				continue;
-			}
-			const before = metrics[name] as number[];
-			const after = new TukeyOutlierDetector(before).filter(before, outliers);
-
-			metrics[name] = after;
-			if (before.length !== after.length) {
-				const removed = before.length - after.length;
-				stf.notes.push({
-					type: "info",
-					row: data,
-					text: `${data.Name}: ${removed} outliers were removed.`,
-				});
-			}
-		}
-	}
-
 	// 4. Generate additional properties
 	for (const note of stf.notes) {
 		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
 		if (note.type === "info") {
-			hints.push(chalk.cyan(msg));
+			table.hints.push(chalk.cyan(msg));
 		} else {
-			warnings.push(chalk.yellowBright(msg));
+			table.warnings.push(chalk.yellowBright(msg));
 		}
 	}
 
 	table.pop();
-	(table as any).hints = hints;
-	(table as any).warnings = warnings;
-
 	return table as TableWithNotes;
 }
 

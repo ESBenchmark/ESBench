@@ -76,6 +76,10 @@ export function timeDetail(time: number, count: number) {
 	return `${count} operations, ${total}, ${mean}/op`;
 }
 
+export function addThousandCommas(text: string) {
+	return text.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 export class DefaultEventLogger implements Profiler {
 
 	private index = 0;
