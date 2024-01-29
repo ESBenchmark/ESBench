@@ -325,7 +325,7 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	return table as TableWithNotes;
 }
 
-const formatRE = /\{(\w+)\.(\w+)}/ig;
+const formatRE = /\{(\w+)(?:\.(\w+))?}/ig;
 
 const formatters: Record<string, UnitConvertor<readonly any[]>> = {
 	number: decimalPrefix,
@@ -344,7 +344,7 @@ function formatTime(table: any[][], column: number, format: string, flex: boolea
 		pf = [];
 		for (const [, type, unit] of p) {
 			const fmt = formatters[type];
-			const x = fmt.fractions[(fmt.units.indexOf(unit))];
+			const x = unit ? fmt.fractions[(fmt.units.indexOf(unit))] : 1;
 			let min = Infinity;
 			for (const row of table) {
 				min = row[column] === 0 // 0 is equal in any unit.

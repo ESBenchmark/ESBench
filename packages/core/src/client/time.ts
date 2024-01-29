@@ -77,6 +77,15 @@ function createInvoker(factor: number, case_: BenchCase): Iterate {
 }
 
 export interface TimingOptions {
+	/**
+	 * Measure throughput (ops/<unit>) instead of time (time/op).
+	 * The value can be a duration unit.
+	 *
+	 * @example
+	 * defineSuite({ timing: { throughput: "s" } });
+	 *
+	 */
+	throughput?: string;
 
 	/**
 	 * How many target iterations should be performed.
@@ -128,10 +137,16 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async onSuite(ctx: ProfilingContext) {
-		ctx.meta.time = { format: "{duration.ms}" };
 		// @ts-ignore
 		if (globalThis.crossOriginIsolated === false) {
 			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
+		}
+
+		const { throughput } = this.config;
+		if (throughput) {
+			ctx.meta.throughput = { format: `{number} ops/${throughput}` };
+		} else {
+			ctx.meta.time = { format: "{duration.ms}" };
 		}
 	}
 
@@ -140,17 +155,17 @@ export class TimeProfiler implements Profiler {
 		let { iterations = "1s" } = this.config;
 
 		if (unrollFactor < 1) {
-			throw new Error("The unrollFactor option must be at least 1.");
+			throw new Error("The unrollFactor must be at least 1.");
 		}
 		if (samples <= 0) {
 			throw new Error("The number of samples must be at least 1.");
 		}
 
-		const iterateActual = createInvoker(unrollFactor, case_);
+		const iterate = createInvoker(unrollFactor, case_);
 
 		// noinspection SuspiciousTypeOfGuard
 		if (typeof iterations === "string") {
-			iterations = await this.estimate(ctx, iterateActual, iterations);
+			iterations = await this.estimate(ctx, iterate, iterations);
 			await ctx.info();
 		} else if (iterations % unrollFactor === 0) {
 			iterations /= unrollFactor;
@@ -162,27 +177,41 @@ export class TimeProfiler implements Profiler {
 			throw new Error("The number of iterations cannot be 0 or negative.");
 		}
 
-		metrics.time = await this.measure(ctx, "Actual", iterateActual, iterations);
-
-		if (!evaluateOverhead) {
-			return;
+		const time = await this.measure(ctx, "Actual", iterate, iterations);
+		if (evaluateOverhead) {
+			await this.subtractOverhead(ctx, case_, iterations, time);
 		}
 
-		const iterateOverhead = createInvoker(unrollFactor, <any>{
+		const { throughput } = this.config;
+		if (!throughput) {
+			metrics.time = time;
+		} else {
+			const d = durationFmt.fractions[durationFmt.units.indexOf(throughput as any)] / 1e6;
+			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
+		}
+	}
+
+	async subtractOverhead(ctx: ProfilingContext, case_: BenchCase, iterations: number, time: number[]) {
+		const { unrollFactor = 16 } = this.config;
+
+		const iterate = createInvoker(unrollFactor, <any>{
 			setupHooks: [],
 			cleanHooks: [],
 			isAsync: case_.isAsync,
 			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 		});
 		await ctx.info();
-		const overheads = await this.measure(ctx, "Overhead", iterateOverhead, iterations);
+		const overheads = await this.measure(ctx, "Overhead", iterate, iterations);
 
-		const pValue = welchTest(metrics.time, overheads, "greater");
+		const pValue = welchTest(time, overheads, "greater");
 		if (pValue < 0.05) {
 			const overhead = medianSorted(overheads);
-			metrics.time = metrics.time.map(ms => ms - overhead);
+			for (let i = 0; i < time.length; i++) {
+				time[i] -= overhead;
+			}
 		} else {
-			metrics.time = [0];
+			time.length = 1;
+			time[0] = 0;
 			ctx.note("warn",
 				"The function duration is indistinguishable from the empty function duration.", case_);
 		}
