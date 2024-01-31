@@ -22,7 +22,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.12.0",
+		"@kaciras/utilities": "^0.12.1",
 		"@tabler/icons-vue": "^2.46.0",
 		"@vueuse/core": "^10.7.2",
 		"chart.js": "^4.4.1",

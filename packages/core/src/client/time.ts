@@ -186,7 +186,7 @@ export class TimeProfiler implements Profiler {
 		if (!throughput) {
 			metrics.time = time;
 		} else {
-			const d = durationFmt.fractions[durationFmt.units.indexOf(throughput as any)] / 1e6;
+			const d = durationFmt.getFraction(throughput, "ms");
 			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
 		}
 	}

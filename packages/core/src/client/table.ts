@@ -303,7 +303,7 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 		for (let i = 0; i < columnDefs.length; i++) {
 			const def = columnDefs[i];
 			if (def.format) {
-				formatTime(body, i, def.format, flexUnit);
+				formatColumn(body, i, def.format, flexUnit);
 			}
 		}
 
@@ -327,45 +327,39 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 
 const formatRE = /\{(\w+)(?:\.(\w+))?}/ig;
 
-const formatters: Record<string, UnitConvertor<readonly any[]>> = {
-	number: decimalPrefix,
-	duration: durationFmt,
-	dataSize: dataSizeIEC,
+type FormatFn = (value: any) => string;
+type GetFormatter = (flex: boolean, values: any[], unit?: string) => FormatFn;
+
+function normalFormatter(this: UnitConvertor<readonly any[]>, flex: boolean, values: any[], unit?: string) {
+	if (flex) {
+		return (value: number) => addThousandCommas(this.formatDiv(value, unit));
+	}
+	const format = this.homogeneous(values, unit);
+	return (value: number) => addThousandCommas(format(value));
+}
+
+function stringFormatter() {
+	return (value: unknown) => "" + value;
+}
+
+const formatters: Record<string, GetFormatter> = {
+	string: stringFormatter,
+	number: normalFormatter.bind(decimalPrefix),
+	duration: normalFormatter.bind(durationFmt),
+	dataSize: normalFormatter.bind(dataSizeIEC),
 };
 
-function formatTime(table: any[][], column: number, format: string, flex: boolean) {
-	const p = Array.from(format.matchAll(formatRE));
+function formatColumn(table: any[][], column: number, format: string, flex: boolean) {
+	const values = table.map(r => r[column]);
 	const s = format.split(formatRE);
-
-	let pf: Array<(value: number) => string>;
-	if (flex) {
-		pf = p.map(([, type, unit]) => v => addThousandCommas(formatters[type].formatDiv(v, unit)));
-	} else {
-		pf = [];
-		for (const [, type, unit] of p) {
-			const fmt = formatters[type];
-			const x = unit ? fmt.fractions[(fmt.units.indexOf(unit))] : 1;
-			let min = Infinity;
-			for (const row of table) {
-				min = row[column] === 0 // 0 is equal in any unit.
-					? min
-					: Math.min(min, fmt.suit(row[column] * x));
-			}
-			if (min === Infinity) {
-				min = 0; // All values are 0, use the minimum unit.
-			}
-			const scale = x / fmt.fractions[min];
-			const newUnit = fmt.units[min];
-
-			pf.push(v => addThousandCommas((v * scale).toFixed(2) + " " + newUnit));
-		}
-	}
+	const p = Array.from(format.matchAll(formatRE))
+		.map(([, type, unit]) => formatters[type](flex, values, unit));
 
 	for (const row of table) {
 		const parts = [];
-		for (let i = 0; i < pf.length; i++) {
+		for (let i = 0; i < p.length; i++) {
 			parts.push(s[i]);
-			parts.push(pf[i](row[column]));
+			parts.push(p[i](row[column]));
 		}
 		parts.push(s[s.length - 1]);
 		row[column] = parts.join("");
