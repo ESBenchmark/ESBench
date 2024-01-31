@@ -5,6 +5,11 @@ import noBuild from "./builder/default.js";
 import DirectExecutor from "./executor/direct.js";
 import textReporter from "./reporter/text.js";
 
+/**
+ * You can assign a name for builder or executor.
+ */
+export type Nameable<T> = T | { name: string; use: T };
+
 export interface ToolchainOptions {
 	/**
 	 * The micromatch glob patterns ESBench uses to detect suite files.
@@ -19,14 +24,14 @@ export interface ToolchainOptions {
 	 *
 	 * By default, it will perform no transform at all.
 	 */
-	builders?: Builder[];
+	builders?: Array<Nameable<Builder>>;
 
 	/**
 	 * With executors, you specify JS runtimes that ESBench execute your suites.
 	 *
 	 * By default, it will run suites in the current process.
 	 */
-	executors?: Executor[];
+	executors?: Array<Nameable<Executor>>;
 }
 
 export type Reporter = (result: ESBenchResult) => Awaitable<unknown>;

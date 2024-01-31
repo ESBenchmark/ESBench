@@ -6,7 +6,7 @@ import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
-import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
+import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
 import { consoleLogHandler } from "./client/utils.js";
 
@@ -20,36 +20,34 @@ function dotPrefixed(path: string) {
 	return path.charCodeAt(0) === 46 ? path : "./" + path;
 }
 
-export class ESBenchHost {
+class ToolchainJobGenerator {
 
-	private readonly config: NormalizedConfig;
+	readonly nameMap = new Map<any, string | null>();
+	readonly assetMap = new Map<Builder, Build>();
+	readonly executorMap = new MultiMap<Executor, Builder>();
+	readonly builderMap = new MultiMap<Builder, string>();
 
-	readonly result: ESBenchResult = {};
+	readonly directory: string;
 
-	constructor(config: ESBenchConfig) {
-		this.config = normalizeConfig(config);
+	constructor(directory: string) {
+		this.directory = directory;
+	}
+
+	add(toolchain: Required<ToolchainOptions>) {
+		const { include, builders, executors } = toolchain;
+		const ue = executors.map(this.unwrapNameable.bind(this, "run"));
+
+		const dotGlobs = include.map(dotPrefixed);
+		for (const builder of builders) {
+			const builderUsed = this.unwrapNameable("build", builder);
+			this.builderMap.add(builderUsed, ...dotGlobs);
+			this.executorMap.distribute(ue, builderUsed);
+		}
 	}
 
 	async build(file?: string) {
-		const { tempDir, toolchains } = this.config;
-		const executorMap = new MultiMap<Executor, Builder>();
-		const builderMap = new MultiMap<Builder, string>();
-
-		mkdirSync(tempDir, { recursive: true });
-
-		for (const { include, builders, executors } of toolchains) {
-			const dotGlobs = include.map(dotPrefixed);
-			for (const builder of builders) {
-				builderMap.add(builder, ...dotGlobs);
-				executorMap.distribute(executors, builder);
-			}
-		}
-
-		const assetMap = new Map<Builder, Build>();
-		for (const [builder, include] of builderMap) {
-			const root = mkdtempSync(join(tempDir, "build-"));
-			const { name } = builder;
-
+		const { directory, assetMap, nameMap } = this;
+		for (const [builder, include] of this.builderMap) {
 			const files = await glob(include);
 			if (file) {
 				if (files.includes(file)) {
@@ -62,8 +60,11 @@ export class ESBenchHost {
 			if (files.length === 0) {
 				continue;
 			}
+
+			const name = nameMap.get(builder)!;
 			stdout.write(`Building suites with ${name}... `);
 
+			const root = mkdtempSync(join(directory, "build-"));
 			const start = performance.now();
 			await builder.build(root, files);
 			const time = performance.now() - start;
@@ -71,11 +72,13 @@ export class ESBenchHost {
 			console.log(chalk.greenBright(durationFmt.formatDiv(time, "ms")));
 			assetMap.set(builder, { files, name, root });
 		}
+	}
 
+	getJobs() {
 		const jobs = new MultiMap<Executor, Build>();
-		for (const [executor, builders] of executorMap) {
+		for (const [executor, builders] of this.executorMap) {
 			for (const builder of builders) {
-				const builds = assetMap.get(builder);
+				const builds = this.assetMap.get(builder);
 				if (builds) {
 					jobs.add(executor, builds);
 				}
@@ -84,17 +87,45 @@ export class ESBenchHost {
 		return jobs;
 	}
 
+	private unwrapNameable(keyMethod: string, tool: Nameable<any>) {
+		let name: string | null = null;
+		let unwrapped = tool;
+
+		if (typeof unwrapped[keyMethod] === "undefined") {
+			name = tool.name;
+			unwrapped = tool.use;
+		}
+
+		const existing = this.nameMap.get(unwrapped);
+		if (existing === undefined || existing === name) {
+			this.nameMap.set(unwrapped, name);
+			return unwrapped;
+		}
+		throw new Error("A builder or executor can only have 1 name");
+	}
+}
+
+export class ESBenchHost {
+
+	private readonly config: NormalizedConfig;
+
+	readonly result: ESBenchResult = {};
+
+	constructor(config: ESBenchConfig) {
+		this.config = normalizeConfig(config);
+	}
+
 	private onMessage(executor: string, builder: string, message: ClientMessage) {
 		if ("level" in message) {
 			consoleLogHandler(message.level, message.log);
 		} else {
-			const { name, ...rest } = message;
-			(this.result[name] ??= []).push({ executor, builder, ...rest });
+			const { name } = message;
+			(this.result[name] ??= []).push({ executor, builder, ...message });
 		}
 	}
 
 	async run(file?: string, nameRegex?: RegExp) {
-		const { reporters, tempDir, cleanTempDir } = this.config;
+		const { reporters, toolchains, tempDir, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
 		if (file) {
@@ -102,7 +133,14 @@ export class ESBenchHost {
 			file = dotPrefixed(file.replaceAll("\\", "/"));
 		}
 
-		const jobs = await this.build(file);
+		mkdirSync(tempDir, { recursive: true });
+
+		const generator = new ToolchainJobGenerator(tempDir);
+		for (const toolchain of toolchains) {
+			generator.add(toolchain);
+		}
+		await generator.build(file);
+		const jobs = generator.getJobs();
 
 		if (jobs.size === 0) {
 			throw new Error("\nNo file matching the include pattern of toolchains");
@@ -115,7 +153,8 @@ export class ESBenchHost {
 		};
 
 		for (const [executor, builds] of jobs) {
-			const executorName = await executor.start();
+			let executorName = await executor.start();
+			executorName = generator.nameMap.get(executor) ?? executorName;
 			console.log(`Running suites with: ${executorName}.`);
 
 			for (const { files, name, root } of builds) {
