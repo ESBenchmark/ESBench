@@ -18,16 +18,20 @@ export default defineConfig({
 			{ text: "Guide", link: "/guide/introduction" },
 			{ text: "Playground", link: "/playground/index" },
 		],
-
 		sidebar: [
 			{
 				text: "Getting started",
 				items: [
 					{ text: "Introduction", link: "/guide/introduction" },
+					{ text: "Parameterization", link: "/guide/parameterization" },
+					{ text: "Setup And Cleanup", link: "/guide/setup-cleanup" },
+					{ text: "Toolchain", link: "/guide/toolchain" },
+					{ text: "Baselines", link: "/guide/baselines" },
+					{ text: "Reporters", link: "/guide/reporters" },
+					{ text: "IDE Integration", link: "/guide/ide-integration" },
 				],
 			},
 		],
-
 		socialLinks: [
 			{ icon: "github", link: "https://github.com/Kaciras/esbench" },
 		],
