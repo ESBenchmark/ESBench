@@ -21,12 +21,19 @@ export interface TextReporterOptions extends SummaryTableOptions {
 	console?: boolean;
 }
 
-async function print(result: ESBenchResult, options: TextReporterOptions, out: Writable, chalk: ChalkInstance) {
+async function print(
+	result: ESBenchResult,
+	previous: ESBenchResult | undefined,
+	options: TextReporterOptions,
+	out: Writable,
+	chalk: ChalkInstance,
+) {
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, toolchains] of entries) {
-		const table = createTable(toolchains, options, chalk);
+		const diff = previous?.[name];
+		const table = createTable(toolchains, diff, options, chalk);
 
 		out.write(chalk.greenBright("\n\nSuite: "));
 		out.write(name);
@@ -54,13 +61,13 @@ async function print(result: ESBenchResult, options: TextReporterOptions, out: W
 
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
-	return async result => {
+	return async (result, prev) => {
 		if (console) {
-			await print(result, options, stdout, chalk);
+			await print(result, prev, options, stdout, chalk);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
-			await print(result, options, stream, new Chalk({ level: 0 }));
+			await print(result, prev, options, stream, new Chalk({ level: 0 }));
 		}
 	};
 }

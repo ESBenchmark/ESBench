@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { join, relative } from "path";
 import { cwd, stdout } from "process";
 import { performance } from "perf_hooks";
@@ -125,7 +125,7 @@ export class ESBenchHost {
 	}
 
 	async run(file?: string, nameRegex?: RegExp) {
-		const { reporters, toolchains, tempDir, cleanTempDir } = this.config;
+		const { reporters, toolchains, tempDir, diff, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
 		if (file) {
@@ -169,8 +169,18 @@ export class ESBenchHost {
 
 		console.log(); // Add an empty line between running & reporting phase.
 
+		let previous: ESBenchResult | undefined;
+		try {
+			const json = diff && readFileSync(diff, "utf8");
+			if (json) {
+				previous = JSON.parse(json);
+			}
+		} catch (e) {
+			if (e.code !== "ENOENT") throw e;
+		}
+
 		for (const reporter of reporters) {
-			await reporter(this.result);
+			await reporter(this.result, previous);
 		}
 		if (cleanTempDir) {
 			rmSync(tempDir, { recursive: true });

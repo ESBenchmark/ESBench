@@ -53,6 +53,8 @@ export class SummaryTableFilter {
 	readonly notes: ResolvedNote[] = [];
 	readonly meta = new Map<string, MetricMeta>();
 
+	readonly hashTable = new Map<string, FlattedResult>();
+
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
 		this.vars.set("Name", new Set());
@@ -84,13 +86,15 @@ export class SummaryTableFilter {
 		for (const scene of scenes) {
 			const params = iter.next().value;
 			for (const { name, metrics } of scene) {
-				this.table.push({
+				const flatted = {
 					...params,
 					Builder: builder,
 					Executor: executor,
 					Name: name,
 					[kMetrics]: metrics,
-				});
+				};
+				this.table.push(flatted);
+				this.hashTable.set(JSON.stringify(flatted), flatted);
 				this.addToVar("Name", name);
 			}
 		}
@@ -119,6 +123,10 @@ export class SummaryTableFilter {
 	group(ignore: string) {
 		const keys = Array.from(this.vars.keys()).filter(k => k !== ignore);
 		return groupBy(this.table, row => shallowHashKey(row, keys));
+	}
+
+	find(properties: FlattedResult) {
+		return this.hashTable.get(JSON.stringify(properties));
 	}
 
 	select(values: string[], axis: string) {

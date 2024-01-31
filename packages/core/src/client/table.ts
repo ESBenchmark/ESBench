@@ -2,7 +2,7 @@ import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { MetricMeta } from "./runner.js";
+import { MetricMeta, Metrics } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
 import { addThousandCommas, BUILTIN_FIELDS } from "./utils.js";
 import { FlattedResult, SummaryTableFilter, ToolchainResult } from "./collect.js";
@@ -24,7 +24,7 @@ export interface SummaryTableOptions {
 	flexUnit?: boolean;
 
 	/**
-	 * Show standard deviation (SD) columns in the report.
+	 * Show standard deviation (*.SD) columns in the report.
 	 */
 	stdDev?: boolean;
 
@@ -46,11 +46,10 @@ export interface SummaryTableOptions {
 	 *         textReporter({ percentiles: [75, 99] }),
 	 *     ],
 	 * });
-	 *
-	 * |   name |    size |      time |       p75 |    p99 |
-	 * | -----: | ------: | --------: | --------: | -----: |
-	 * | object |    1000 | 938.45 ms | 992.03 ms | 1.08 s |
-	 * |    map |    1000 |    1.03 s |    1.07 s |  1.1 s |
+	 * |   name |    size |      time |  time.p75 | time.p99 |
+	 * | -----: | ------: | --------: | --------: | -------: |
+	 * | object |    1000 | 938.45 ms | 992.03 ms |   1.08 s |
+	 * |    map |    1000 |    1.03 s |    1.07 s |    1.1 s |
 	 */
 	percentiles?: number[];
 
@@ -172,7 +171,7 @@ class RowNumberColumn implements ColumnFactory {
 
 	getValue(data: FlattedResult) {
 		data[kRowNumber] = this.index;
-		return `No.${this.index++}`;
+		return (this.index++).toString();
 	}
 }
 
@@ -214,6 +213,42 @@ class RawMetricColumn implements ColumnFactory {
 	}
 }
 
+class DifferenceColumn implements ColumnFactory {
+
+	readonly another: SummaryTableFilter;
+	readonly key: string;
+	readonly name: string;
+
+	constructor(another: SummaryTableFilter, key: string) {
+		this.another = another;
+		this.key = key;
+		this.name = `${key}.diff`;
+	}
+
+	private toNumber(data: Metrics): number | undefined {
+		const metric = data[this.key];
+		return Array.isArray(metric) ? mean(metric) : metric as number;
+	}
+
+	getValue(data: FlattedResult, chalk: ChalkLike) {
+		const previous = this.another.find(data);
+		if (!previous) {
+			return "";
+		}
+		const p = this.toNumber(getMetrics(previous));
+		const c = this.toNumber(getMetrics(data));
+
+		if (p === undefined || c === undefined) {
+			return "";
+		}
+		const d = (c - p) / p * 100;
+		if (Number.isNaN(d)) {
+			return "";
+		}
+		return d > 0 ? `+${d.toFixed(2)}%` : `${d.toFixed(2)}%`;
+	}
+}
+
 interface TableWithNotes extends Array<string[]> {
 	hints: string[];
 	warnings: string[];
@@ -242,10 +277,16 @@ function removeOutliers(stf: SummaryTableFilter, mode: OutlierMode, row: Flatted
 	}
 }
 
-export function createTable(result: ToolchainResult[], options: SummaryTableOptions = {}, chalk: ChalkLike = noColors) {
+export function createTable(
+	result: ToolchainResult[],
+	diff: ToolchainResult[] | undefined,
+	options: SummaryTableOptions = {},
+	chalk: ChalkLike = noColors,
+) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 	const { baseline } = result[0];
 	const stf = new SummaryTableFilter(result);
+	const dstf = new SummaryTableFilter(diff || []);
 
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
@@ -256,6 +297,9 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 	}
 	for (const [name, meta] of stf.meta) {
 		columnDefs.push(new RawMetricColumn(name, meta));
+		if (meta.analyze === 0) {
+			continue;
+		}
 		if (meta.analyze === 2) {
 			if (stdDev) {
 				columnDefs.push(new StdDevColumn(name, meta));
@@ -264,8 +308,11 @@ export function createTable(result: ToolchainResult[], options: SummaryTableOpti
 				columnDefs.push(new PercentileColumn(name, meta, k));
 			}
 		}
-		if (baseline && meta.analyze !== 0) {
+		if (baseline) {
 			columnDefs.push(new BaselineColumn(name, baseline));
+		}
+		if (dstf.meta.has(name)) {
+			columnDefs.push(new DifferenceColumn(dstf, name));
 		}
 	}
 
