@@ -3,7 +3,7 @@ import { once } from "events";
 import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
-import { join, relative } from "path/posix";
+import { join, relative } from "path";
 import { writeFileSync } from "fs";
 import { Executor, RunOptions } from "../toolchain.js";
 
@@ -51,7 +51,7 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	start() {
-		return `External runtime (${this.getCommand("<file>")})`;
+		return `Command '${this.getCommand("<file>")}'`;
 	}
 
 	close() {
@@ -59,7 +59,7 @@ export default class ProcessExecutor implements Executor {
 		this.process.kill();
 	}
 
-	run(options: RunOptions) {
+	async run(options: RunOptions) {
 		const { tempDir, root, files, pattern, handleMessage } = options;
 		const { getCommand } = this;
 
@@ -72,7 +72,9 @@ export default class ProcessExecutor implements Executor {
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 
-		const specifier = relative(tempDir, join(root, "index.js"));
+		// relative() from path/posix also uses system-depend slash.
+		const specifier = relative(tempDir, join(root, "index.js"))
+			.replaceAll("\\", "/");
 
 		const loaderCode = template
 			.replace("__FILES__", JSON.stringify(files))
@@ -84,8 +86,13 @@ export default class ProcessExecutor implements Executor {
 		const script = join(tempDir, "main.js");
 		writeFileSync(script, loaderCode);
 
+		const command = getCommand(script);
 		this.process?.kill();
-		this.process = exec(getCommand(script));
-		return once(this.process, "exit");
+		this.process = exec(command);
+
+		const [code] = await once(this.process, "exit");
+		if (code !== 0) {
+			throw new Error(`Execute Failed (${code}), Command: ${command}`);
+		}
 	}
 }
