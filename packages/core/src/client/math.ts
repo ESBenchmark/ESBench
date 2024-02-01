@@ -56,7 +56,6 @@ export function welchTest(a: number[], b: number[], alt: AlternativeHypothesis) 
 	if (a.length < 2 || b.length < 2) {
 		return NaN;
 	}
-
 	const seA = sampleVariance(a) / a.length;
 	const seB = sampleVariance(b) / b.length;
 	const se = seA + seB;
@@ -83,34 +82,34 @@ function studentOneTail(t: number, df: number) {
 }
 
 function studentTwoTail(t: number, df: number) {
-	const g = Math.exp(logGamma(df / 2.0) + logGamma(0.5) - logGamma(df / 2.0 + 0.5));
+	const g = Math.exp(logGamma(df / 2) + logGamma(0.5) - logGamma(df / 2 + 0.5));
 	const b = df / (t * t + df);
 
 	function f(r: number) {
-		return Math.pow(r, df / 2.0 - 1.0) / Math.sqrt(1.0 - r);
+		return Math.pow(r, df / 2 - 1) / Math.sqrt(1 - r);
 	}
 
 	// n = 10000 seems more than enough here.
-	return simpson(0.0, b, 10000, f) / g;
+	return simpson(0, b, 10000, f) / g;
 }
 
 function simpson(a: number, b: number, n: number, f: (r: number) => number) {
 	const h = (b - a) / n;
-	let sum = 0.0;
+	let sum = 0;
 	for (let i = 0; i < n; i++) {
 		const x = a + i * h;
-		sum += (f(x) + 4.0 * f(x + h / 2.0) + f(x + h)) / 6.0;
+		sum += (f(x) + 4 * f(x + h / 2) + f(x + h)) / 6;
 	}
 	return sum * h;
 }
 
 function logGamma(z: number) {
-	const S = 1 + 76.18009173 / z
+	const s = 1 + 76.18009173 / z
 		- 86.50532033 / (z + 1)
 		+ 24.01409822 / (z + 2)
 		- 1.231739516 / (z + 3)
 		+ 0.00120858003 / (z + 4)
 		- 0.00000536382 / (z + 5);
 	return (z - 0.5) * Math.log(z + 4.5)
-		- (z + 4.5) + Math.log(S * 2.50662827465);
+		- (z + 4.5) + Math.log(s * 2.50662827465);
 }

@@ -4,10 +4,10 @@ import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
 import { MetricMeta, Metrics } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
-import { addThousandCommas, BUILTIN_FIELDS } from "./utils.js";
-import { FlattedResult, SummaryTableFilter, ToolchainResult } from "./collect.js";
+import { BUILTIN_FIELDS, insertThousandCommas } from "./utils.js";
+import { FlattedResult, Summary, ToolchainResult } from "./collect.js";
 
-const { getMetrics } = SummaryTableFilter;
+const { getMetrics } = Summary;
 
 export interface SummaryTableOptions {
 	/**
@@ -25,6 +25,13 @@ export interface SummaryTableOptions {
 
 	/**
 	 * Show standard deviation (*.SD) columns in the report.
+	 *
+	 * @example
+	 * textReporter({ stdDev: true })
+	 * | No. |         Name |          time |      time.SD |
+	 * | --: | -----------: | ------------: | -----------: |
+	 * |   0 |    For-index |       0.37 ns |      0.01 ns |
+	 * |   1 |       For-of |       6.26 ns |      2.88 ns |
 	 */
 	stdDev?: boolean;
 
@@ -41,11 +48,7 @@ export interface SummaryTableOptions {
 	 * To make this value more accurate, you can increase `samples` and decrease `iterations` in suite config.
 	 *
 	 * @example
-	 * export default defineConfig({
-	 *     reporters: [
-	 *         textReporter({ percentiles: [75, 99] }),
-	 *     ],
-	 * });
+	 * textReporter({ percentiles: [75, 99] })
 	 * |   name |    size |      time |  time.p75 | time.p99 |
 	 * | -----: | ------: | --------: | --------: | -------: |
 	 * | object |    1000 | 938.45 ms | 992.03 ms |   1.08 s |
@@ -215,11 +218,11 @@ class RawMetricColumn implements ColumnFactory {
 
 class DifferenceColumn implements ColumnFactory {
 
-	readonly another: SummaryTableFilter;
+	readonly another: Summary;
 	readonly key: string;
 	readonly name: string;
 
-	constructor(another: SummaryTableFilter, key: string) {
+	constructor(another: Summary, key: string) {
 		this.another = another;
 		this.key = key;
 		this.name = `${key}.diff`;
@@ -256,7 +259,7 @@ interface TableWithNotes extends Array<string[]> {
 
 const kRowNumber = Symbol();
 
-function removeOutliers(stf: SummaryTableFilter, mode: OutlierMode, row: FlattedResult) {
+function removeOutliers(stf: Summary, mode: OutlierMode, row: FlattedResult) {
 	const metrics = getMetrics(row);
 	for (const [name, meta] of stf.meta) {
 		if (meta.analyze !== 2) {
@@ -285,17 +288,17 @@ export function createTable(
 ) {
 	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
 	const { baseline } = result[0];
-	const stf = new SummaryTableFilter(result);
-	const dstf = new SummaryTableFilter(diff || []);
+	const summary = new Summary(result);
+	const prev = new Summary(diff || []);
 
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
-	for (const [p, v] of stf.vars.entries()) {
+	for (const [p, v] of summary.vars.entries()) {
 		if (!hideSingle || v.size > 1) {
 			columnDefs.push(new VariableColumn(p, chalk));
 		}
 	}
-	for (const [name, meta] of stf.meta) {
+	for (const [name, meta] of summary.meta) {
 		columnDefs.push(new RawMetricColumn(name, meta));
 		if (meta.analyze === 0) {
 			continue;
@@ -311,8 +314,8 @@ export function createTable(
 		if (baseline) {
 			columnDefs.push(new BaselineColumn(name, baseline));
 		}
-		if (dstf.meta.has(name)) {
-			columnDefs.push(new DifferenceColumn(dstf, name));
+		if (prev.meta.has(name)) {
+			columnDefs.push(new DifferenceColumn(prev, name));
 		}
 	}
 
@@ -323,14 +326,14 @@ export function createTable(
 	table.warnings = [];
 
 	// 3. Fill the body
-	let groups = [stf.table][Symbol.iterator]();
+	let groups = [summary.table][Symbol.iterator]();
 	if (baseline) {
-		groups = stf.group(baseline.type).values();
+		groups = summary.group(baseline.type).values();
 	}
 	for (const group of groups) {
 		// 3-1. Preprocess
 		if (outliers) {
-			group.forEach(removeOutliers.bind(null, stf, outliers));
+			group.forEach(removeOutliers.bind(null, summary, outliers));
 		}
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
@@ -358,7 +361,7 @@ export function createTable(
 	}
 
 	// 4. Generate additional properties
-	for (const note of stf.notes) {
+	for (const note of summary.notes) {
 		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
 		if (note.type === "info") {
@@ -379,10 +382,10 @@ type GetFormatter = (flex: boolean, values: any[], unit?: string) => FormatFn;
 
 function normalFormatter(this: UnitConvertor<readonly any[]>, flex: boolean, values: any[], unit?: string) {
 	if (flex) {
-		return (value: number) => addThousandCommas(this.formatDiv(value, unit));
+		return (value: number) => insertThousandCommas(this.formatDiv(value, unit));
 	}
 	const format = this.homogeneous(values, unit);
-	return (value: number) => addThousandCommas(format(value));
+	return (value: number) => insertThousandCommas(format(value));
 }
 
 function stringFormatter() {

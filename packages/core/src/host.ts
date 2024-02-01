@@ -11,9 +11,9 @@ import { ClientMessage, ESBenchResult } from "./client/index.js";
 import { consoleLogHandler } from "./client/utils.js";
 
 interface Build {
-	files: string[];
 	name: string;
 	root: string;
+	files: string[];
 }
 
 function dotPrefixed(path: string) {
@@ -60,8 +60,7 @@ class ToolchainJobGenerator {
 			if (files.length === 0) {
 				continue;
 			}
-
-			const name = nameMap.get(builder)!;
+			const name = nameMap.get(builder) ?? builder.name;
 			stdout.write(`Building suites with ${name}... `);
 
 			const root = mkdtempSync(join(directory, "build-"));
@@ -70,7 +69,7 @@ class ToolchainJobGenerator {
 			const time = performance.now() - start;
 
 			console.log(chalk.greenBright(durationFmt.formatDiv(time, "ms")));
-			assetMap.set(builder, { files, name, root });
+			assetMap.set(builder, { name, root, files });
 		}
 	}
 
@@ -91,17 +90,17 @@ class ToolchainJobGenerator {
 		let name: string | null = null;
 		let unwrapped = tool;
 
-		if (typeof unwrapped[keyMethod] === "undefined") {
+		if (unwrapped[keyMethod] === undefined) {
 			name = tool.name;
 			unwrapped = tool.use;
 		}
 
-		const existing = this.nameMap.get(unwrapped);
-		if (existing === undefined || existing === name) {
+		const custom = this.nameMap.get(unwrapped);
+		if (custom === undefined || custom === name) {
 			this.nameMap.set(unwrapped, name);
 			return unwrapped;
 		}
-		throw new Error("A builder or executor can only have 1 name");
+		throw new Error("A tool can only have one name: " + custom ?? name);
 	}
 }
 
@@ -157,7 +156,7 @@ export class ESBenchHost {
 			executorName = generator.nameMap.get(executor) ?? executorName;
 			console.log(`Running suites with: ${executorName}.`);
 
-			for (const { files, name, root } of builds) {
+			for (const { name, root,files } of builds) {
 				context.handleMessage = this.onMessage.bind(this, executorName, name);
 				context.files = files;
 				context.root = root;

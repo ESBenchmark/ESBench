@@ -6,7 +6,20 @@ import DirectExecutor from "./executor/direct.js";
 import textReporter from "./reporter/text.js";
 
 /**
- * You can assign a name for builder or executor.
+ * You can assign a name for a tool (builder or executor). Each tool can only have one name.
+ *
+ * @example
+ * export default defineConfig({
+ *   toolchains: [{
+ *     builders: [
+ *       new ViteBuilder({ build: { minify: false } }),
+ *       {
+ *           name: "Vite Minified"
+ *           use: new ViteBuilder({ build: { minify: true } }),
+ *       }
+ *     ]
+ *   }]
+ * });
  */
 export type Nameable<T> = T | { name: string; use: T };
 
@@ -29,16 +42,22 @@ export interface ToolchainOptions {
 	/**
 	 * With executors, you specify JS runtimes that ESBench execute your suites.
 	 *
-	 * By default, it will run suites in the current process.
+	 * By default, ESBench run your suites in the current process.
 	 */
 	executors?: Array<Nameable<Executor>>;
 }
 
+/**
+ * A reporter allows you to export results of your benchmark in different formats.
+ *
+ * @param result
+ * @param prev Another result used to calculate difference.
+ */
 export type Reporter = (result: ESBenchResult, prev?: ESBenchResult) => Awaitable<unknown>;
 
 export interface ESBenchConfig {
 	/**
-	 * Which files will be run as benchmark suites under which scenarios.
+	 * Which files will be run as benchmark suites uses which toolchains.
 	 */
 	toolchains?: ToolchainOptions[];
 

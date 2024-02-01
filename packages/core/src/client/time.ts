@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns, timeDetail } from "./utils.js";
-import { Metrics, Profiler, ProfilingContext } from "./runner.js";
+import { MetricAnalyzing, Metrics, Profiler, ProfilingContext } from "./runner.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -83,7 +83,10 @@ export interface TimingOptions {
 	 *
 	 * @example
 	 * defineSuite({ timing: { throughput: "s" } });
-	 *
+	 * | No. |   Name |   throughput |
+	 * | --: | -----: | -----------: |
+	 * |   0 | object | 14.39M ops/s |
+	 * |   1 |    map | 17.32M ops/s |
 	 */
 	throughput?: string;
 
@@ -95,8 +98,7 @@ export interface TimingOptions {
 	samples?: number;
 
 	/**
-	 * How many warmup iterations should be performed.
-	 * The value can be 0, which disables warmup.
+	 * How many warmup iterations should be performed. The value can be 0, which disables warmup.
 	 *
 	 * @default 5
 	 */
@@ -112,7 +114,7 @@ export interface TimingOptions {
 	/**
 	 * Invocation count or time in a single iteration.
 	 *
-	 * If the value is a number it used as invocation count, must be a multiple of unrollFactor.
+	 * If the value is a number it used as invocation count, must be a multiple of `unrollFactor`.
 	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
 	 *
 	 * @default "1s"
@@ -144,9 +146,15 @@ export class TimeProfiler implements Profiler {
 
 		const { throughput } = this.config;
 		if (throughput) {
-			ctx.meta.throughput = { format: `{number} ops/${throughput}` };
+			ctx.meta.throughput = {
+				format: `{number} ops/${throughput}`,
+				analyze: MetricAnalyzing.Statistics,
+			};
 		} else {
-			ctx.meta.time = { format: "{duration.ms}" };
+			ctx.meta.time = {
+				format: "{duration.ms}",
+				analyze: MetricAnalyzing.Statistics,
+			};
 		}
 	}
 

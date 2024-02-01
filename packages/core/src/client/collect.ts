@@ -17,10 +17,10 @@ export type FlattedResult = Record<string, string> & {
 	Builder?: string;
 	Executor?: string;
 
-	// Retrieve by SummaryTableFilter.getMetrics
+	// Retrieved by `SummaryTableFilter.getMetrics`
 	[kMetrics]: Metrics;
 
-	// You can assign custom value with symbol keys.
+	// You can add custom properties with symbol keys.
 	[kCustom: symbol]: any;
 }
 
@@ -34,7 +34,7 @@ function shallowHashKey(obj: any, keys: string[]) {
 	return keys.map(k => `${k}=${obj[k]}`).join(",");
 }
 
-function groupByPolyfill<T>(items: T[], callbackFn: (e: T) => string) {
+function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => string) {
 	const group = new MultiMap<string, T>();
 	for (const element of items) {
 		group.add(callbackFn(element), element);
@@ -45,13 +45,29 @@ function groupByPolyfill<T>(items: T[], callbackFn: (e: T) => string) {
 // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
 const groupBy: typeof groupByPolyfill = (Map as any).groupBy ?? groupByPolyfill;
 
-export class SummaryTableFilter {
+export class Summary {
 
+	/**
+	 * All variables and each of their possible values.
+	 */
 	readonly vars = new Map<string, Set<string>>();
 
-	readonly table: FlattedResult[] = [];
-	readonly notes: ResolvedNote[] = [];
+	/**
+	 * Descriptions of metrics.
+	 *
+	 * @see ProfilingContext.meta
+	 */
 	readonly meta = new Map<string, MetricMeta>();
+
+	readonly table: FlattedResult[] = [];
+
+	/**
+	 * Additional noteworthy information generated during the run of the suite.
+	 *
+	 * @see ProfilingContext.warn
+	 * @see ProfilingContext.note
+	 */
+	readonly notes: ResolvedNote[] = [];
 
 	readonly hashTable = new Map<string, FlattedResult>();
 
@@ -120,6 +136,13 @@ export class SummaryTableFilter {
 		return result[kMetrics];
 	}
 
+	createVariableArray() {
+		return Array.from(this.vars.values(), firstItem) as string[];
+	}
+
+	/**
+	 * Grouping results by all variables except the ignore parameter.
+	 */
 	group(ignore: string) {
 		const keys = Array.from(this.vars.keys()).filter(k => k !== ignore);
 		return groupBy(this.table, row => shallowHashKey(row, keys));
@@ -129,13 +152,9 @@ export class SummaryTableFilter {
 		return this.hashTable.get(JSON.stringify(properties));
 	}
 
-	select(values: string[], axis: string) {
+	findAll(values: string[], axis: string) {
 		const keys = [...this.vars.keys()];
 		return this.table.filter(row =>
 			keys.every((k, i) => k === axis ? true : row[k] === values[i]));
-	}
-
-	createOptions() {
-		return Array.from(this.vars.values(), firstItem) as string[];
 	}
 }
