@@ -104,7 +104,7 @@ export class ExecutionValidator implements Profiler {
 	/**
 	 * To catch errors as early as possible, we start a new workflow for the validator.
 	 */
-	async onSuite(ctx: ProfilingContext) {
+	async onStart(ctx: ProfilingContext) {
 		await ctx.info("Validating benchmarks...");
 		const validator = new PreValidateProfiler(this.check, this.isEqual);
 		await ctx.newWorkflow([validator]).run();

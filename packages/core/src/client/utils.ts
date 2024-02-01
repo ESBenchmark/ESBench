@@ -84,7 +84,7 @@ export class DefaultEventLogger implements Profiler {
 
 	private index = 0;
 
-	onSuite(ctx: ProfilingContext) {
+	onStart(ctx: ProfilingContext) {
 		return ctx.info(`\nSuite: ${ctx.suite.name}, ${ctx.sceneCount} scenes.`);
 	}
 

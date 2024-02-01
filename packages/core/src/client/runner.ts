@@ -25,7 +25,7 @@ export class ProfilingContext {
 	 */
 	readonly notes: Note[] = [];
 
-	readonly meta: Record<string, MetricMeta> = {};
+	readonly meta: Record<string, MetricsMeta> = {};
 
 	readonly suite: BenchmarkSuite;
 	readonly profilers: Profiler[];
@@ -92,7 +92,7 @@ export class ProfilingContext {
 		this.hasRun = true;
 
 		const { params = {}, setup } = suite;
-		await this.runHooks("onSuite");
+		await this.runHooks("onStart");
 
 		for (const comb of cartesianObject(params)) {
 			const scene = new Scene(comb, pattern);
@@ -130,7 +130,7 @@ export class ProfilingContext {
 
 export interface Profiler {
 
-	onSuite?: (ctx: ProfilingContext) => Awaitable<void>;
+	onStart?: (ctx: ProfilingContext) => Awaitable<void>;
 
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
@@ -146,28 +146,28 @@ export interface CaseResult {
 
 export type Metrics = Record<string, number | number[] | string>;
 
-export enum MetricAnalyzing {
+export enum MetricsAnalyzing {
 	/**
-	 * There is no analyze performed to the metric. This is the default value.
+	 * There is no analyze performed to the metrics. This is the default value.
 	 */
 	None,
 
 	/**
-	 * Reporters should show diff with another result if present for the metric.
-	 * The metric value must be a number.
+	 * Reporters should show diff with another result if present for the metrics.
+	 * The metrics value must be a number.
 	 */
 	Compare,
 
 	/**
-	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metric.
-	 * The metric value must be an array of number with at least 1 element.
+	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metrics.
+	 * The metrics value must be an array of number with at least 1 element.
 	 */
 	Statistics,
 }
 
-export interface MetricMeta {
+export interface MetricsMeta {
 	format?: string;
-	analyze?: MetricAnalyzing;
+	analyze?: MetricsAnalyzing;
 	lowerBetter?: boolean;
 }
 
@@ -180,7 +180,7 @@ export interface Note {
 export interface RunSuiteResult {
 	name: string;
 	paramDef: Record<string, string[]>;
-	meta: Record<string, MetricMeta>;
+	meta: Record<string, MetricsMeta>;
 	notes: Note[];
 	scenes: CaseResult[][];
 	baseline?: BaselineOptions;

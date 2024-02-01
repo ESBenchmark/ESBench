@@ -4,7 +4,7 @@ import { Writable } from "stream";
 import chalk, { Chalk, ChalkInstance } from "chalk";
 import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
-import { ESBenchResult } from "../client/collect.js";
+import { ESBenchResult } from "../client/summary.js";
 import { Reporter } from "../config.js";
 import { createTable, SummaryTableOptions } from "../client/table.js";
 

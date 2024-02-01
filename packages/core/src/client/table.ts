@@ -2,10 +2,10 @@ import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { MetricMeta, Metrics } from "./runner.js";
+import { Metrics, MetricsMeta } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_FIELDS, insertThousandCommas } from "./utils.js";
-import { FlattedResult, Summary, ToolchainResult } from "./collect.js";
+import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
 const { getMetrics } = Summary;
 
@@ -83,13 +83,13 @@ interface ColumnFactory {
 class BaselineColumn implements ColumnFactory {
 
 	private readonly key: string;
-	private readonly meta: MetricMeta;
+	private readonly meta: MetricsMeta;
 	private readonly variable: string;
 	private readonly value: string;
 
 	private ratio1 = 0;
 
-	constructor(key: string, meta: MetricMeta, baseline: BaselineOptions) {
+	constructor(key: string, meta: MetricsMeta, baseline: BaselineOptions) {
 		this.key = key;
 		this.meta = meta;
 		this.variable = baseline.type;
@@ -101,8 +101,8 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	private toNumber(data: FlattedResult) {
-		const metric = getMetrics(data)[this.key];
-		return Array.isArray(metric) ? mean(metric) : metric as number;
+		const metrics = getMetrics(data)[this.key];
+		return Array.isArray(metrics) ? mean(metrics) : metrics as number;
 	}
 
 	prepare(cases: FlattedResult[]) {
@@ -134,7 +134,7 @@ class StdDevColumn implements ColumnFactory {
 	readonly key: string;
 	readonly format?: string;
 
-	constructor(key: string, meta: MetricMeta) {
+	constructor(key: string, meta: MetricsMeta) {
 		this.key = key;
 		this.format = meta.format;
 	}
@@ -154,7 +154,7 @@ class PercentileColumn implements ColumnFactory {
 	readonly key: string;
 	readonly format?: string;
 
-	constructor(key: string, meta: MetricMeta, p: number) {
+	constructor(key: string, meta: MetricsMeta, p: number) {
 		this.p = p;
 		this.key = key;
 		this.format = meta.format;
@@ -202,9 +202,9 @@ class VariableColumn implements ColumnFactory {
 class RawMetricColumn implements ColumnFactory {
 
 	readonly name: string;
-	readonly meta: MetricMeta;
+	readonly meta: MetricsMeta;
 
-	constructor(name: string, meta: MetricMeta) {
+	constructor(name: string, meta: MetricsMeta) {
 		this.name = name;
 		this.meta = meta;
 	}
@@ -214,8 +214,8 @@ class RawMetricColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult) {
-		const metric = getMetrics(data)[this.name];
-		return Array.isArray(metric) ? mean(metric) : metric;
+		const metrics = getMetrics(data)[this.name];
+		return Array.isArray(metrics) ? mean(metrics) : metrics;
 	}
 }
 
@@ -223,9 +223,9 @@ class DifferenceColumn implements ColumnFactory {
 
 	private readonly another: Summary;
 	private readonly key: string;
-	private readonly meta: MetricMeta;
+	private readonly meta: MetricsMeta;
 
-	constructor(another: Summary, key: string, meta: MetricMeta) {
+	constructor(another: Summary, key: string, meta: MetricsMeta) {
 		this.another = another;
 		this.key = key;
 		this.meta = meta;
@@ -236,8 +236,8 @@ class DifferenceColumn implements ColumnFactory {
 	}
 
 	private toNumber(data: Metrics): number | undefined {
-		const metric = data[this.key];
-		return Array.isArray(metric) ? mean(metric) : metric as number;
+		const metrics = data[this.key];
+		return Array.isArray(metrics) ? mean(metrics) : metrics as number;
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {

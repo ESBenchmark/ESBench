@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns, timeDetail } from "./utils.js";
-import { MetricAnalyzing, Metrics, Profiler, ProfilingContext } from "./runner.js";
+import { Metrics, MetricsAnalyzing, Profiler, ProfilingContext } from "./runner.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -138,7 +138,7 @@ export class TimeProfiler implements Profiler {
 		this.config = config;
 	}
 
-	async onSuite(ctx: ProfilingContext) {
+	async onStart(ctx: ProfilingContext) {
 		// @ts-ignore
 		if (globalThis.crossOriginIsolated === false) {
 			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
@@ -149,13 +149,13 @@ export class TimeProfiler implements Profiler {
 			ctx.meta.throughput = {
 				format: `{number} ops/${throughput}`,
 				lowerBetter: false,
-				analyze: MetricAnalyzing.Statistics,
+				analyze: MetricsAnalyzing.Statistics,
 			};
 		} else {
 			ctx.meta.time = {
 				format: "{duration.ms}",
 				lowerBetter: true,
-				analyze: MetricAnalyzing.Statistics,
+				analyze: MetricsAnalyzing.Statistics,
 			};
 		}
 	}

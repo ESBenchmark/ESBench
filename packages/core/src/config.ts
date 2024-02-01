@@ -1,5 +1,5 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
-import { ESBenchResult } from "./client/collect.js";
+import { ESBenchResult } from "./client/summary.js";
 import { Builder, Executor } from "./toolchain.js";
 import noBuild from "./builder/default.js";
 import DirectExecutor from "./executor/direct.js";
