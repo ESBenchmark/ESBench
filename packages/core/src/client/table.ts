@@ -82,15 +82,16 @@ interface ColumnFactory {
 
 class BaselineColumn implements ColumnFactory {
 
-	readonly key: string;
-
+	private readonly key: string;
+	private readonly meta: MetricMeta;
 	private readonly variable: string;
 	private readonly value: string;
 
 	private ratio1 = 0;
 
-	constructor(key: string, baseline: BaselineOptions) {
+	constructor(key: string, meta: MetricMeta, baseline: BaselineOptions) {
 		this.key = key;
+		this.meta = meta;
 		this.variable = baseline.type;
 		this.value = baseline.value;
 	}
@@ -114,7 +115,9 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {
-		const ratio = this.toNumber(data) / this.ratio1;
+		const { ratio1, meta: { lowerBetter } } = this;
+
+		const ratio = this.toNumber(data) / ratio1;
 		if (!isFinite(ratio)) {
 			return chalk.blackBright("N/A");
 		}
@@ -122,7 +125,7 @@ class BaselineColumn implements ColumnFactory {
 		if (ratio === 1) {
 			return text;
 		}
-		return ratio < 1 ? chalk.green(text) : chalk.red(text);
+		return ratio < 1 === lowerBetter ? chalk.green(text) : chalk.red(text);
 	}
 }
 
@@ -218,14 +221,18 @@ class RawMetricColumn implements ColumnFactory {
 
 class DifferenceColumn implements ColumnFactory {
 
-	readonly another: Summary;
-	readonly key: string;
-	readonly name: string;
+	private readonly another: Summary;
+	private readonly key: string;
+	private readonly meta: MetricMeta;
 
-	constructor(another: Summary, key: string) {
+	constructor(another: Summary, key: string, meta: MetricMeta) {
 		this.another = another;
 		this.key = key;
-		this.name = `${key}.diff`;
+		this.meta = meta;
+	}
+
+	get name() {
+		return `${this.key}.diff`;
 	}
 
 	private toNumber(data: Metrics): number | undefined {
@@ -248,7 +255,10 @@ class DifferenceColumn implements ColumnFactory {
 		if (Number.isNaN(d)) {
 			return "";
 		}
-		return d > 0 ? `+${d.toFixed(2)}%` : `${d.toFixed(2)}%`;
+		const text = d > 0 ? `+${d.toFixed(2)}%` : `${d.toFixed(2)}%`;
+		return d === 0
+			? text : this.meta.lowerBetter === d < 0
+				? chalk.green(text) : chalk.red(text);
 	}
 }
 
@@ -312,10 +322,10 @@ export function createTable(
 			}
 		}
 		if (baseline) {
-			columnDefs.push(new BaselineColumn(name, baseline));
+			columnDefs.push(new BaselineColumn(name, meta, baseline));
 		}
 		if (prev.meta.has(name)) {
-			columnDefs.push(new DifferenceColumn(prev, name));
+			columnDefs.push(new DifferenceColumn(prev, name, meta));
 		}
 	}
 
@@ -340,6 +350,7 @@ export function createTable(
 		}
 
 		// 3-2. Add values to cells
+		const groupOffset = table.length;
 		for (const data of group) {
 			const cells: any[] = [];
 			table.push(cells);
@@ -349,7 +360,7 @@ export function createTable(
 		}
 
 		// 3-3. Postprocess
-		const body = table.slice(1);
+		const body = table.slice(groupOffset);
 		for (let i = 0; i < columnDefs.length; i++) {
 			const def = columnDefs[i];
 			if (def.format) {

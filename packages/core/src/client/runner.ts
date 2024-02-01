@@ -168,6 +168,7 @@ export enum MetricAnalyzing {
 export interface MetricMeta {
 	format?: string;
 	analyze?: MetricAnalyzing;
+	lowerBetter?: boolean;
 }
 
 export interface Note {

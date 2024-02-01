@@ -148,11 +148,13 @@ export class TimeProfiler implements Profiler {
 		if (throughput) {
 			ctx.meta.throughput = {
 				format: `{number} ops/${throughput}`,
+				lowerBetter: false,
 				analyze: MetricAnalyzing.Statistics,
 			};
 		} else {
 			ctx.meta.time = {
 				format: "{duration.ms}",
+				lowerBetter: true,
 				analyze: MetricAnalyzing.Statistics,
 			};
 		}
