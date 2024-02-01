@@ -182,7 +182,11 @@ export class ESBenchHost {
 			await reporter(this.result, previous);
 		}
 		if (cleanTempDir) {
-			rmSync(tempDir, { recursive: true });
+			try {
+				rmSync(tempDir, { recursive: true });
+			} catch (e) {
+				console.error(e); // It's ok to keep running.
+			}
 		}
 
 		const timeUsage = performance.now() - startTime;
