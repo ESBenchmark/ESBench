@@ -179,7 +179,7 @@ export interface Note {
 
 export interface RunSuiteResult {
 	name: string;
-	paramDef: Record<string, string[]>;
+	paramDef: Array<[string, string[]]>;
 	meta: Record<string, MetricsMeta>;
 	notes: Note[];
 	scenes: CaseResult[][];

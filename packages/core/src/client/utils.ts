@@ -38,20 +38,20 @@ export function toDisplayName(v: unknown) {
 
 export function checkParams(params: CPSrcObject) {
 	const entries = Object.entries(params);
-	const paramDef: Record<string, string[]> = {};
 	const set = new Set<string>();
 
 	if (Object.getOwnPropertySymbols(params).length) {
 		throw new Error("Property with only string keys are allowed in param");
 	}
 
-	for (const [key, values] of entries) {
+	for (let i = 0; i < entries.length; i++) {
+		const [key, values] = entries[i];
 		if (BUILTIN_FIELDS.includes(key)) {
 			throw new Error(`'${key}' is a builtin parameter`);
 		}
 		const current: string[] = [];
-		paramDef[key] = current;
 		set.clear();
+		entries[i][1] = current;
 
 		for (const v of values) {
 			const name = toDisplayName(v);
@@ -63,7 +63,7 @@ export function checkParams(params: CPSrcObject) {
 		}
 	}
 
-	return paramDef;
+	return entries as Array<[string, string[]]>;
 }
 
 export function runFns(hooks: HookFn[]) {

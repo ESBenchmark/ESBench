@@ -91,7 +91,7 @@ export class Summary {
 		if (executor) {
 			this.addToVar("Executor", executor);
 		}
-		for (const [key, values] of Object.entries(paramDef)) {
+		for (const [key, values] of paramDef) {
 			this.addToVar(key, ...values);
 		}
 
