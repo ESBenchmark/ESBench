@@ -156,7 +156,7 @@ export class ESBenchHost {
 			executorName = generator.nameMap.get(executor) ?? executorName;
 			console.log(`Running suites with: ${executorName}.`);
 
-			for (const { name, root,files } of builds) {
+			for (const { name, root, files } of builds) {
 				context.handleMessage = this.onMessage.bind(this, executorName, name);
 				context.files = files;
 				context.root = root;
@@ -168,19 +168,11 @@ export class ESBenchHost {
 
 		console.log(); // Add an empty line between running & reporting phase.
 
-		let previous: ESBenchResult | undefined;
-		try {
-			const json = diff && readFileSync(diff, "utf8");
-			if (json) {
-				previous = JSON.parse(json);
-			}
-		} catch (e) {
-			if (e.code !== "ENOENT") throw e;
-		}
-
+		const previous = diff && loadJSON(diff, false);
 		for (const reporter of reporters) {
 			await reporter(this.result, previous);
 		}
+
 		if (cleanTempDir) {
 			try {
 				rmSync(tempDir, { recursive: true });
@@ -191,5 +183,24 @@ export class ESBenchHost {
 
 		const timeUsage = performance.now() - startTime;
 		console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
+	}
+}
+
+function loadJSON(path: string, throwIfMissing: boolean) {
+	try {
+		return JSON.parse(readFileSync(path, "utf8"));
+	} catch (e) {
+		if (throwIfMissing || e.code !== "ENOENT") throw e;
+	}
+}
+
+export async function report(config: ESBenchConfig, file: string) {
+	const { reporters, diff } = normalizeConfig(config);
+
+	const result = loadJSON(file, true) as ESBenchResult;
+	const previous = diff && loadJSON(diff, false);
+
+	for (const reporter of reporters) {
+		await reporter(result, previous);
 	}
 }

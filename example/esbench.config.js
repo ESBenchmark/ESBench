@@ -2,9 +2,10 @@ import { defineConfig, DirectExecutor, rawReporter, textReporter } from "@esbenc
 
 export default defineConfig({
 	reporters: [
-		rawReporter(),
+		rawReporter("reports/result.json"),
 		textReporter({ stdDev: true }),
 	],
+	diff: "reports/result-1.json",
 	toolchains: [{
 		include: ["./src/*.js"],
 		// builders: [
@@ -12,14 +13,19 @@ export default defineConfig({
 		// 	new RollupBuilder(),
 		// ],
 		executors: [
-			// new PlaywrightExecutor(firefox),
-			// new PlaywrightExecutor(chromium, {
-			// 	headless: false,
-			// }),
-			// new PlaywrightExecutor(webkit),
 			new DirectExecutor(),
 			// new NodeExecutor(),
+			//
+			// new PlaywrightExecutor(firefox),
+			// new PlaywrightExecutor(chromium),
+			// new PlaywrightExecutor(webkit),
+			//
+			// new PlaywrightExecutor(chromium, { headless: false }),
+			//
 			// new ProcessExecutor("node"),
+			// new ProcessExecutor("bun"),
+			// new ProcessExecutor("deno run --allow-net"),
+			// new ProcessExecutor("D:\\qjs"),
 		],
 	}],
 });

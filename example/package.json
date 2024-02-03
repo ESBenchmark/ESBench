@@ -2,7 +2,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"run-all": "esbench"
+		"run-all": "esbench",
+		"report": "esbench report reports/result.json"
 	},
 	"dependencies": {
 		"@esbench/core": "workspace:^",
