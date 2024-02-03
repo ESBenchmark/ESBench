@@ -199,7 +199,7 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
+export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
 	const { name, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 
 	if (baseline) {
@@ -209,6 +209,9 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption) {
 	}
 
 	const profilers: Profiler[] = [new DefaultEventLogger()];
+	if (suite.profilers) {
+		profilers.push(...suite.profilers);
+	}
 	if (validate) {
 		profilers.push(new ExecutionValidator(validate));
 	}

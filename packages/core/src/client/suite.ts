@@ -2,6 +2,7 @@ import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/
 import { runFns } from "./utils.js";
 import { ValidateOptions } from "./validate.js";
 import { TimingOptions } from "./time.js";
+import { Profiler } from "./runner.js";
 
 export type HookFn = () => Awaitable<unknown>;
 
@@ -135,6 +136,11 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
 
 	afterAll?: HookFn;
+
+	/**
+	 * Add more profilers for the suite.
+	 */
+	profilers?: Profiler[];
 
 	/**
 	 * Measure the running time of the benchmark function.
