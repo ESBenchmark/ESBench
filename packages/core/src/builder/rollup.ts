@@ -25,7 +25,7 @@ function createEntry(files: string[]) {
 	return template.replace("__IMPORTS__", imports);
 }
 
-function esbenchEntryPlugin(files: string[]): Plugin {
+function entryPlugin(files: string[]): Plugin {
 	return {
 		name: "ESBench-entry",
 		resolveId(id) {
@@ -70,7 +70,7 @@ export class RollupBuilder implements Builder {
 			...this.config,
 			preserveEntrySignatures: "strict",
 			input: entryId,
-			plugins: [...plugins, esbenchEntryPlugin(files)],
+			plugins: [...plugins, entryPlugin(files)],
 		});
 		await bundle.write({ ...this.config.output, dir });
 		await bundle.close();
@@ -100,7 +100,7 @@ export class ViteBuilder implements Builder {
 					},
 				},
 			},
-			plugins: [esbenchEntryPlugin(files)],
+			plugins: [entryPlugin(files)],
 		}));
 	}
 }

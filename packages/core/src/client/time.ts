@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns, timeDetail } from "./utils.js";
-import { Metrics, MetricsAnalyzing, Profiler, ProfilingContext } from "./runner.js";
+import { Metrics, MetricsAnalysis, Profiler, ProfilingContext } from "./runner.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -132,10 +132,27 @@ export interface TimingOptions {
 
 export class TimeProfiler implements Profiler {
 
-	private readonly config: TimingOptions;
+	private readonly throughput?: string;
+	private readonly samples: number;
+	private readonly warmup: number;
+	private readonly unrollFactor: number;
+	private readonly iterations: number | string;
+	private readonly evaluateOverhead: boolean;
 
 	constructor(config: TimingOptions) {
-		this.config = config;
+		this.evaluateOverhead = config.evaluateOverhead !== false;
+		this.throughput = config.throughput;
+		this.samples = config.samples ?? 10;
+		this.warmup = config.warmup ?? 5;
+		this.unrollFactor = config.unrollFactor ?? 16;
+		this.iterations = config.iterations ?? "1s";
+
+		if (this.unrollFactor < 1) {
+			throw new Error("The unrollFactor must be at least 1.");
+		}
+		if (this.samples <= 0) {
+			throw new Error("The number of samples must be at least 1.");
+		}
 	}
 
 	async onStart(ctx: ProfilingContext) {
@@ -144,32 +161,25 @@ export class TimeProfiler implements Profiler {
 			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
 		}
 
-		const { throughput } = this.config;
+		const { throughput } = this;
 		if (throughput) {
 			ctx.meta.throughput = {
 				format: `{number} ops/${throughput}`,
 				lowerBetter: false,
-				analyze: MetricsAnalyzing.Statistics,
+				analyze: MetricsAnalysis.Statistics,
 			};
 		} else {
 			ctx.meta.time = {
 				format: "{duration.ms}",
 				lowerBetter: true,
-				analyze: MetricsAnalyzing.Statistics,
+				analyze: MetricsAnalysis.Statistics,
 			};
 		}
 	}
 
 	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
-		const { samples = 10, unrollFactor = 16, evaluateOverhead = true } = this.config;
-		let { iterations = "1s" } = this.config;
-
-		if (unrollFactor < 1) {
-			throw new Error("The unrollFactor must be at least 1.");
-		}
-		if (samples <= 0) {
-			throw new Error("The number of samples must be at least 1.");
-		}
+		const { throughput, unrollFactor, evaluateOverhead } = this;
+		let { iterations } = this;
 
 		const iterate = createInvoker(unrollFactor, case_);
 
@@ -192,7 +202,6 @@ export class TimeProfiler implements Profiler {
 			await this.subtractOverhead(ctx, case_, iterations, time);
 		}
 
-		const { throughput } = this.config;
 		if (!throughput) {
 			metrics.time = time;
 		} else {
@@ -202,7 +211,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async subtractOverhead(ctx: ProfilingContext, case_: BenchCase, iterations: number, time: number[]) {
-		const { unrollFactor = 16 } = this.config;
+		const { unrollFactor } = this;
 
 		const iterate = createInvoker(unrollFactor, <any>{
 			setupHooks: [],
@@ -259,7 +268,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async measure(ctx: ProfilingContext, name: string, iterate: Iterate, count: number) {
-		const { warmup = 5, samples = 10 } = this.config;
+		const { warmup, samples } = this;
 		const timeUsageList = [];
 
 		for (let i = 0; i < warmup; i++) {

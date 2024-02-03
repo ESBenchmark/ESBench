@@ -18,7 +18,6 @@
 		"./client": "./lib/client/index.js"
 	},
 	"files": [
-		"bin",
 		"lib/**/*.{js,d.ts}"
 	],
 	"bin": {

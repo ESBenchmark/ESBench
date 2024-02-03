@@ -146,7 +146,7 @@ export interface CaseResult {
 
 export type Metrics = Record<string, number | number[] | string>;
 
-export enum MetricsAnalyzing {
+export enum MetricsAnalysis {
 	/**
 	 * There is no analyze performed to the metrics. This is the default value.
 	 */
@@ -167,7 +167,7 @@ export enum MetricsAnalyzing {
 
 export interface MetricsMeta {
 	format?: string;
-	analyze?: MetricsAnalyzing;
+	analyze?: MetricsAnalysis;
 	lowerBetter?: boolean;
 }
 

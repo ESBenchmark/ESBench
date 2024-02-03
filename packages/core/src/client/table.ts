@@ -269,9 +269,9 @@ interface TableWithNotes extends Array<string[]> {
 
 const kRowNumber = Symbol();
 
-function removeOutliers(stf: Summary, mode: OutlierMode, row: FlattedResult) {
+function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult) {
 	const metrics = getMetrics(row);
-	for (const [name, meta] of stf.meta) {
+	for (const [name, meta] of summary.meta) {
 		if (meta.analyze !== 2) {
 			continue;
 		}
@@ -281,7 +281,7 @@ function removeOutliers(stf: Summary, mode: OutlierMode, row: FlattedResult) {
 
 		if (before.length !== after.length) {
 			const removed = before.length - after.length;
-			stf.notes.push({
+			summary.notes.push({
 				type: "info",
 				row,
 				text: `${row.Name}: ${removed} outliers were removed.`,
@@ -399,12 +399,7 @@ function normalFormatter(this: UnitConvertor<readonly any[]>, flex: boolean, val
 	return (value: number) => insertThousandCommas(format(value));
 }
 
-function stringFormatter() {
-	return (value: unknown) => "" + value;
-}
-
 const formatters: Record<string, GetFormatter> = {
-	string: stringFormatter,
 	number: normalFormatter.bind(decimalPrefix),
 	duration: normalFormatter.bind(durationFmt),
 	dataSize: normalFormatter.bind(dataSizeIEC),
