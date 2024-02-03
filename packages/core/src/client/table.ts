@@ -36,7 +36,7 @@ export interface SummaryTableOptions {
 	stdDev?: boolean;
 
 	/**
-	 * If true, variables with only one value are not shown.
+	 * If true, variables (expect Name) with only one value are not shown.
 	 *
 	 * @default true
 	 */
@@ -292,7 +292,7 @@ function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult)
 
 export function createTable(
 	result: ToolchainResult[],
-	diff: ToolchainResult[] | undefined,
+	diff?: ToolchainResult[],
 	options: SummaryTableOptions = {},
 	chalk: ChalkLike = noColors,
 ) {
@@ -304,7 +304,7 @@ export function createTable(
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
 	for (const [p, v] of summary.vars.entries()) {
-		if (!hideSingle || v.size > 1) {
+		if (!hideSingle || v.size > 1 || p === "Name") {
 			columnDefs.push(new VariableColumn(p, chalk));
 		}
 	}

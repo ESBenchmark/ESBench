@@ -1,10 +1,8 @@
 import * as tp from "timers/promises";
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { run } from "./runner.spec.js";
+import { run, sleep1 } from "../helper.js";
 import { TimeProfiler, unroll } from "../../src/client/time.js";
-
-const sleep1 = tp.setTimeout.bind(null, 1);
 
 it("should reduce overhead by unrolling", async () => {
 	const iterations = 100;
@@ -108,5 +106,5 @@ it("should skip overhead stage if evaluateOverhead is false", async () => {
 		setup: scene => scene.bench("Test", stubFn),
 	});
 	expect(stubFn).toHaveBeenCalledTimes(1);
-	expect(result.scenes[0][0].metrics.time[0]).toBeGreaterThan(0);
+	expect((result.scenes[0][0].metrics as any).time[0]).toBeGreaterThan(0);
 });

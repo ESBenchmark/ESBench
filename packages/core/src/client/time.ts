@@ -178,7 +178,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
-		const { throughput, unrollFactor, evaluateOverhead } = this;
+		const { throughput, samples, unrollFactor, evaluateOverhead } = this;
 		let { iterations } = this;
 
 		const iterate = createInvoker(unrollFactor, case_);
@@ -198,7 +198,7 @@ export class TimeProfiler implements Profiler {
 		}
 
 		const time = await this.measure(ctx, "Actual", iterate, iterations);
-		if (evaluateOverhead) {
+		if (evaluateOverhead && samples > 1) {
 			await this.subtractOverhead(ctx, case_, iterations, time);
 		}
 

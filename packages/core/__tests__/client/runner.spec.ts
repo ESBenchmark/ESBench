@@ -1,20 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { sleep1 } from "../helper.js";
-import { BenchmarkSuite, runSuite } from "../../src/client/index.js";
-
-export function run<T extends CPSrcObject>(suite: Partial<BenchmarkSuite<T>>, pattern?: RegExp) {
-	suite.name ??= "Test Suite";
-	suite.timing = {
-		iterations: 1,
-		samples: 1,
-		warmup: 0,
-		evaluateOverhead: false,
-		unrollFactor: 1,
-		...(suite.timing as any),
-	};
-	return runSuite(suite as any, { log: noop, pattern });
-}
+import { noop } from "@kaciras/utilities/browser";
+import { run, sleep1 } from "../helper.js";
 
 it("should return the result", async () => {
 	const result = await run({
@@ -84,7 +70,6 @@ it("should filter workloads with pattern", async () => {
 it("should call profiler hooks in order", async () => {
 	const invocations: unknown[] = [];
 	await run({
-		name: "Test Suite",
 		timing: false,
 		params: {
 			param: [11, 22],

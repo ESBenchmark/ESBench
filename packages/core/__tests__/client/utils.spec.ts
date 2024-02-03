@@ -21,6 +21,17 @@ describe("checkParams", () => {
 		expect(toDisplayName(value)).toBe(expected);
 	});
 
+	it("should return entries array", () => {
+		const paramDef = checkParams({
+			foo: ["text"],
+			bar: [11, 22, 33],
+		});
+		expect(paramDef).toStrictEqual([
+			["foo", ["text"]],
+			["bar", ["11", "22", "33"]],
+		]);
+	});
+
 	it("should restrict keys to be string", () => {
 		expect(() => checkParams({ [Symbol()]: [11] }))
 			.toThrow("Property with only string keys are allowed in param");
@@ -37,9 +48,5 @@ describe("checkParams", () => {
 		};
 		expect(() => checkParams(params))
 			.toThrow("Parameter display name conflict (foo: 1234567_…1234567)");
-	});
-
-	it("should return entries array", () => {
-
 	});
 });

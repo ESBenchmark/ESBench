@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { run } from "./runner.spec.js";
 import { defineSuite } from "../../src/client/index.js";
+import { run } from "../helper.js";
 import { ValidationError } from "../../src/client/validate.js";
 
 async function expectError(suite: any, properties: any) {
