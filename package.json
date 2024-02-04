@@ -5,7 +5,7 @@
 		"@kaciras/eslint-config-core": "^2.6.3",
 		"@kaciras/eslint-config-typescript": "^2.6.3",
 		"@kaciras/eslint-config-vue": "^2.6.3",
-		"@types/node": "^20.11.8",
+		"@types/node": "^20.11.16",
 		"eslint": "^8.56.0",
 		"typescript": "^5.3.3",
 		"vitest": "^1.2.2"

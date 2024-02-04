@@ -11,6 +11,6 @@
 		"vue": "^3.4.15"
 	},
 	"devDependencies": {
-		"vitepress": "1.0.0-rc.40"
+		"vitepress": "1.0.0-rc.41"
 	}
 }
