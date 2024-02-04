@@ -1,4 +1,4 @@
-import { defineSuite } from "@esbench/core/client";
+import { defineSuite } from "esbench";
 
 export default defineSuite({
 	name: "Async vs Sync function returns Promise",
@@ -12,7 +12,8 @@ export default defineSuite({
 	setup(scene) {
 		const value = scene.params.returns === "Promise"
 			? Promise.resolve(11) : 11;
-		scene.benchAsync("async", async () => value);
+
 		scene.benchAsync("sync", () => value);
+		scene.benchAsync("async", async () => value);
 	},
 });

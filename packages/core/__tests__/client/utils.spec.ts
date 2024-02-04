@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkParams, SharedModeFilter, toDisplayName } from "../../src/client/utils.js";
+import { checkParams, SharedModeFilter, toDisplayName } from "../../src/utils.js";
 
 describe("checkParams", () => {
 	it.each([
@@ -61,13 +61,13 @@ describe("SharedModeFilter", () => {
 
 	it("should filter items", () => {
 		const filter = new SharedModeFilter("1/4");
-		const array = new Array(10);
+		const array = new Array(10).fill(11);
 		expect(filter.select(array)).toHaveLength(3);
 	});
 
 	it("should not filter out items by default", () => {
 		const filter = new SharedModeFilter();
-		const array = new Array(10);
+		const array = new Array(10).fill(11);
 		expect(filter.select(array)).toHaveLength(10);
 	});
 });

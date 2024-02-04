@@ -1,9 +1,13 @@
-import { defineSuite } from "@esbench/core/client";
+import { defineSuite } from "esbench";
 
 export default defineSuite({
 	name: "For-loop vs Array.reduce",
+	baseline: {
+		type: "Name",
+		value: "For-index",
+	},
 	params: {
-		size: [0, 100, 10_000],
+		size: [0, 100, 10_00],
 	},
 	setup(scene) {
 		const { size } = scene.params;
@@ -28,7 +32,7 @@ export default defineSuite({
 		});
 
 		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v, 0);
+			return values.reduce((v, s) => s * v, 0);
 		});
 	},
 });

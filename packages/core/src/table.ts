@@ -389,9 +389,15 @@ export function createTable(
 const formatRE = /\{(\w+)(?:\.(\w+))?}/ig;
 
 type FormatFn = (value: any) => string;
+
 type GetFormatter = (flex: boolean, values: any[], unit?: string) => FormatFn;
 
-function normalFormatter(this: UnitConvertor<readonly any[]>, flex: boolean, values: any[], unit?: string) {
+function unitFormatter(
+	this: UnitConvertor<readonly any[]>,
+	flex: boolean,
+	values: any[],
+	unit?: string,
+) {
 	if (flex) {
 		return (value: number) => insertThousandCommas(this.formatDiv(value, unit));
 	}
@@ -400,16 +406,19 @@ function normalFormatter(this: UnitConvertor<readonly any[]>, flex: boolean, val
 }
 
 const formatters: Record<string, GetFormatter> = {
-	number: normalFormatter.bind(decimalPrefix),
-	duration: normalFormatter.bind(durationFmt),
-	dataSize: normalFormatter.bind(dataSizeIEC),
+	number: unitFormatter.bind(decimalPrefix),
+	duration: unitFormatter.bind(durationFmt),
+	dataSize: unitFormatter.bind(dataSizeIEC),
 };
 
 function formatColumn(table: any[][], column: number, format: string, flex: boolean) {
 	const values = table.map(r => r[column]);
 	const s = format.split(formatRE);
-	const p = Array.from(format.matchAll(formatRE))
-		.map(([, type, unit]) => formatters[type](flex, values, unit));
+	const p: FormatFn[] = [];
+
+	for (const [, type, unit] of format.matchAll(formatRE)) {
+		p.push(formatters[type](flex, values, unit));
+	}
 
 	for (const row of table) {
 		const parts = [];

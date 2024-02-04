@@ -1,4 +1,4 @@
-import { defineSuite } from "@esbench/core/client";
+import { defineSuite } from "esbench";
 
 const small = {
 	Name: "Benchmark",

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { ESBenchConfig, normalizeConfig } from "../src/index.js";
+import { ESBenchConfig, normalizeConfig } from "../src/host/index.js";
 
 it.each<ESBenchConfig>([
 	{ toolchains: [{ executors: [] }] },

@@ -1,4 +1,4 @@
-import { defineSuite } from "@esbench/core/client";
+import { defineSuite } from "esbench";
 
 const objectDef = {
 	foo: [11, 22, 33],

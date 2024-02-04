@@ -1,11 +1,11 @@
 import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
-import { Builder } from "../toolchain.js";
+import { Builder } from "../host/toolchain.js";
 
 const entryId = "./index.js";
 
 const template = `\
-import { connect } from "@esbench/core/client";
+import { connect } from "esbench";
 
 const suites = {__IMPORTS__\n};
 

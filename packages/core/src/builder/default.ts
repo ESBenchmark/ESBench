@@ -1,9 +1,9 @@
 import { writeFileSync } from "fs";
 import { join, relative } from "path";
-import { Builder } from "../toolchain.js";
+import { Builder } from "../host/toolchain.js";
 
 const template = `\
-import { connect } from "@esbench/core/client";
+import { connect } from "esbench";
 
 const doImport = file => import("__ROOT__" + file.slice(1));
 

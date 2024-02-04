@@ -1,6 +1,6 @@
 import tp from "timers/promises";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { BenchmarkSuite, runSuite } from "../src/client/index.js";
+import { BenchmarkSuite, runSuite } from "../src/index.js";
 
 export const sleep1 = tp.setTimeout.bind(null, 1);
 

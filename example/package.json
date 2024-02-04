@@ -2,12 +2,11 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"run-all": "esbench",
+		"run-all": "esbench --file=src/array-",
 		"report": "esbench report reports/result-1.json"
 	},
 	"dependencies": {
-		"@esbench/core": "workspace:^",
-		"@esbench/reporter-html": "workspace:^",
+		"esbench": "workspace:^",
 		"playwright-core": "^1.41.2"
 	}
 }

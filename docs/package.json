@@ -6,7 +6,7 @@
 		"docs:build": "vitepress build"
 	},
 	"dependencies": {
-		"@esbench/core": "workspace:^",
+		"esbench": "workspace:^",
 		"monaco-editor": "^0.45.0",
 		"vue": "^3.4.15"
 	},

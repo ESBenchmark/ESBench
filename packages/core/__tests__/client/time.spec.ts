@@ -2,7 +2,7 @@ import * as tp from "timers/promises";
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { run, sleep1 } from "../helper.js";
-import { TimeProfiler, unroll } from "../../src/client/time.js";
+import { TimeProfiler, unroll } from "../../src/time.js";
 
 it("should reduce overhead by unrolling", async () => {
 	const iterations = 100;

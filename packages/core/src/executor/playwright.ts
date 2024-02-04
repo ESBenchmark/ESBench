@@ -2,7 +2,7 @@ import type { Browser, BrowserType, LaunchOptions } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
 import mime from "mime";
-import { Executor, RunOptions } from "../toolchain.js";
+import { Executor, RunOptions } from "../host/toolchain.js";
 
 declare function _ESBenchChannel(message: any): void;
 
@@ -33,7 +33,7 @@ async function client({ files, pattern }: any) {
  * `executablePath` or run `npx playwright install`.
  *
  * @example
- * import { PlaywrightExecutor } from "@esbench/core";
+ * import { PlaywrightExecutor } from "esbench/host";
  * import { firefox } from "playwright-core";
  *
  * export default defineConfig({

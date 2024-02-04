@@ -31,8 +31,8 @@
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
-import { onMounted, shallowRef } from "vue";
-import { createTable, runSuite, RunSuiteResult } from "@esbench/core/client";
+import { onMounted, onUnmounted, shallowRef } from "vue";
+import { createTable, runSuite, RunSuiteResult } from "esbench";
 import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../packages/reporter-html/src/index.ts";
 

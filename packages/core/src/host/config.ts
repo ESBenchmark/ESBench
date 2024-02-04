@@ -1,9 +1,9 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
-import { ESBenchResult } from "./client/summary.js";
+import { ESBenchResult } from "../summary.js";
 import { Builder, Executor } from "./toolchain.js";
-import noBuild from "./builder/default.js";
-import DirectExecutor from "./executor/direct.js";
-import textReporter from "./reporter/text.js";
+import noBuild from "../builder/default.js";
+import DirectExecutor from "../executor/direct.js";
+import textReporter from "../reporter/text.js";
 
 /**
  * You can assign a name for a tool (builder or executor). Each tool can only have one name.

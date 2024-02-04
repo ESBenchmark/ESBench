@@ -10,7 +10,7 @@ pnpm install vite playwright
 
 ```javascript
 // esbench.config.js
-import { defineConfig, PlaywrightExecutor, ViteBuilder } from "@esbench/core";
+import { defineConfig, PlaywrightExecutor, ViteBuilder } from "esbench/host";
 import { chromium, firefox, webkit } from "playwright";
 
 export default defineConfig({
@@ -28,7 +28,7 @@ export default defineConfig({
 And our suite file `benchmark/array-sum.js` contains the code:
 
 ```javascript
-import { defineSuite } from "@esbench/core/client";
+import { defineSuite } from "esbench";
 
 export default defineSuite({
 	name: "For-loop vs Array.reduce",

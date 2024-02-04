@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
-import { Reporter } from "../config.js";
+import { Reporter } from "../host/config.js";
 
 export const DEFAULT_NAME = "reports/benchmark_[date]_[time].json";
 

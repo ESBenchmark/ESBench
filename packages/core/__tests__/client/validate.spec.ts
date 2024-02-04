@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
-import { defineSuite } from "../../src/client/index.js";
+import { defineSuite } from "../../src/index.js";
 import { run } from "../helper.js";
-import { ValidationError } from "../../src/client/validate.js";
+import { ValidationError } from "../../src/validate.js";
 
 async function expectError(suite: any, properties: any) {
 	properties.cause ??= undefined;

@@ -2,7 +2,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { dirname, join } from "path";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import openBrowser from "open";
-import { ESBenchResult } from "../client/summary.js";
+import { ESBenchResult } from "../summary.js";
 
 export interface HtmlReporterOptions {
 	/**

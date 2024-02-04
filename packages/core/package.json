@@ -1,5 +1,5 @@
 {
-	"name": "@esbench/core",
+	"name": "esbench",
 	"version": "0.1.0",
 	"description": "JavaScript benchmark library",
 	"license": "MIT",
@@ -15,13 +15,13 @@
 	"type": "module",
 	"exports": {
 		".": "./lib/index.js",
-		"./client": "./lib/client/index.js"
+		"./host": "./lib/host/index.js"
 	},
 	"files": [
 		"lib/**/*.{js,d.ts}"
 	],
 	"bin": {
-		"esbench": "lib/cli.js"
+		"esbench": "lib/host/cli.js"
 	},
 	"scripts": {
 		"test": "vitest run"

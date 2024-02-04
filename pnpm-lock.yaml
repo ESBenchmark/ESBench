@@ -32,7 +32,7 @@ importers:
 
   docs:
     dependencies:
-      '@esbench/core':
+      esbench:
         specifier: workspace:^
         version: link:../packages/core
       monaco-editor:
@@ -48,12 +48,12 @@ importers:
 
   example:
     dependencies:
-      '@esbench/core':
-        specifier: workspace:^
-        version: link:../packages/core
       '@esbench/reporter-html':
         specifier: workspace:^
         version: link:../packages/reporter-html
+      esbench:
+        specifier: workspace:^
+        version: link:../packages/core
       playwright-core:
         specifier: ^1.41.2
         version: 1.41.2
@@ -122,6 +122,9 @@ importers:
       chartjs-chart-error-bars:
         specifier: ^4.3.4
         version: 4.3.4(chart.js@4.4.1)
+      esbench:
+        specifier: workspace:^
+        version: link:../core
       simple-statistics:
         specifier: ^7.8.3
         version: 7.8.3
@@ -129,9 +132,6 @@ importers:
         specifier: ^3.4.15
         version: 3.4.15(typescript@5.3.3)
     devDependencies:
-      '@esbench/core':
-        specifier: workspace:^
-        version: link:../core
       '@vitejs/plugin-vue':
         specifier: ^5.0.3
         version: 5.0.3(vite@5.0.12)(vue@3.4.15)

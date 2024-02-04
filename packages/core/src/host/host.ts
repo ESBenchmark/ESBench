@@ -7,8 +7,8 @@ import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
-import { ClientMessage, ESBenchResult } from "./client/index.js";
-import { consoleLogHandler, resolveRE, SharedModeFilter } from "./client/utils.js";
+import { ClientMessage, ESBenchResult } from "../index.js";
+import { consoleLogHandler, resolveRE, SharedModeFilter } from "../utils.js";
 
 interface Build {
 	name: string;
