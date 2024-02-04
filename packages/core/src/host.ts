@@ -1,5 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "fs";
-import { join, relative } from "path";
+import { join, relative, resolve } from "path";
 import { cwd, stdout } from "process";
 import { performance } from "perf_hooks";
 import chalk from "chalk";
@@ -14,10 +14,6 @@ interface Build {
 	name: string;
 	root: string;
 	files: string[];
-}
-
-function dotPrefixed(path: string) {
-	return path.charCodeAt(0) === 46 ? path : "./" + path;
 }
 
 class ToolchainJobGenerator {
@@ -37,22 +33,21 @@ class ToolchainJobGenerator {
 		const { include, builders, executors } = toolchain;
 		const ue = executors.map(this.unwrapNameable.bind(this, "run"));
 
-		const dotGlobs = include.map(dotPrefixed);
 		for (const builder of builders) {
 			const builderUsed = this.unwrapNameable("build", builder);
-			this.builderMap.add(builderUsed, ...dotGlobs);
+			this.builderMap.add(builderUsed, ...include);
 			this.executorMap.distribute(ue, builderUsed);
 		}
 	}
 
 	async build(filter: FilterOptions, shared?: string) {
 		const { directory, assetMap, nameMap } = this;
+		const workingDir = cwd();
 		let { file, builder: builderRE } = filter;
 
 		builderRE = resolveRE(builderRE);
 		if (file) {
-			file = relative(cwd(), file);
-			file = dotPrefixed(file.replaceAll("\\", "/"));
+			file = resolve(file).replaceAll("\\", "/");
 		}
 
 		const sharedFilter = new SharedModeFilter(shared);
@@ -62,7 +57,7 @@ class ToolchainJobGenerator {
 			if (!builderRE.test(name)) {
 				continue;
 			}
-			let files = await glob(include);
+			let files = await glob(include, { absolute: true });
 			if (file) {
 				if (files.includes(file)) {
 					files[0] = file;
@@ -77,6 +72,11 @@ class ToolchainJobGenerator {
 				continue;
 			}
 			stdout.write(`Building suites with ${name}... `);
+
+			files = files.map(p => {
+				p = relative(workingDir, p).replaceAll("\\", "/");
+				return /\.\.?\//.test(p) ? p : "./" + p;
+			});
 
 			const root = mkdtempSync(join(directory, "build-"));
 			const start = performance.now();
