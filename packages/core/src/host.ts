@@ -8,7 +8,7 @@ import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
-import { consoleLogHandler, RE_ANY } from "./client/utils.js";
+import { consoleLogHandler, resolveRE, SharedModeFilter } from "./client/utils.js";
 
 interface Build {
 	name: string;
@@ -18,41 +18,6 @@ interface Build {
 
 function dotPrefixed(path: string) {
 	return path.charCodeAt(0) === 46 ? path : "./" + path;
-}
-
-function resolveRE(pattern?: string | RegExp) {
-	if (!pattern) {
-		return RE_ANY;
-	}
-	if (pattern instanceof RegExp) {
-		return pattern;
-	}
-	return new RegExp(pattern);
-}
-
-class SharedModeFilter {
-
-	readonly index: number;
-	readonly count: number;
-
-	constructor(option?: string) {
-		if (!option) {
-			this.index = 0;
-			this.count = 1;
-		} else {
-			const [index, count] = option.split("/", 2);
-			this.count = parseInt(count);
-			this.index = parseInt(index) - 1;
-		}
-	}
-
-	select<T>(array: T[]) {
-		const { index, count } = this;
-		if (count === 1) {
-			return array;
-		}
-		return array.filter((_, i) => i % count === index);
-	}
 }
 
 class ToolchainJobGenerator {

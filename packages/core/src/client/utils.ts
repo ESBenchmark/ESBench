@@ -82,6 +82,44 @@ export function insertThousandCommas(text: string) {
 	return text.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+export function resolveRE(pattern?: string | RegExp) {
+	if (!pattern) {
+		return RE_ANY;
+	}
+	return pattern instanceof RegExp ? pattern : new RegExp(pattern);
+}
+
+export class SharedModeFilter {
+
+	readonly index: number;
+	readonly count: number;
+
+	constructor(option = "1/1") {
+		const match = /^(\d+)\/(\d+)$/.exec(option);
+		if (!match) {
+			throw new Error(`Invalid --shared parameter: ${option}`);
+		}
+		const [, index, count] = match;
+		this.count = parseInt(count);
+		this.index = parseInt(index) - 1;
+
+		if (this.index < 0) {
+			throw new Error("Shared index must be a positive number");
+		}
+		if (this.index >= this.count) {
+			throw new Error("Shared count can't be less than the index");
+		}
+	}
+
+	select<T>(array: T[]) {
+		const { index, count } = this;
+		if (count === 1) {
+			return array;
+		}
+		return array.filter((_, i) => i % count === index);
+	}
+}
+
 export class DefaultEventLogger implements Profiler {
 
 	private index = 0;

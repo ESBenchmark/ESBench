@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkParams, toDisplayName } from "../../src/client/utils.js";
+import { checkParams, SharedModeFilter, toDisplayName } from "../../src/client/utils.js";
 
 describe("checkParams", () => {
 	it.each([
@@ -48,5 +48,26 @@ describe("checkParams", () => {
 		};
 		expect(() => checkParams(params))
 			.toThrow("Parameter display name conflict (foo: 1234567_…1234567)");
+	});
+});
+
+describe("SharedModeFilter", () => {
+	it.each([
+		"", "/", "foo", "#1/4", "1/4#",
+		"-1/2", "1/0", "0/2", "3/2",
+	])("should check option valid: %s", option => {
+		expect(() => new SharedModeFilter(option)).toThrow();
+	});
+
+	it("should filter items", () => {
+		const filter = new SharedModeFilter("1/4");
+		const array = new Array(10);
+		expect(filter.select(array)).toHaveLength(3);
+	});
+
+	it("should not filter out items by default", () => {
+		const filter = new SharedModeFilter();
+		const array = new Array(10);
+		expect(filter.select(array)).toHaveLength(10);
 	});
 });
