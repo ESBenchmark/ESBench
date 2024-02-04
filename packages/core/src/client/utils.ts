@@ -4,6 +4,8 @@ import { LogHandler, Profiler, ProfilingContext } from "./runner.js";
 
 export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
 
+export const RE_ANY = new RegExp("");
+
 const NAME_LENGTH = 16;
 
 export const BUILTIN_FIELDS = ["Name", "Builder", "Executor"];

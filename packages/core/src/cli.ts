@@ -47,13 +47,21 @@ const program = yargs(hideBin(argv))
 			type: "string",
 			description: "Run only benchmark for specified file",
 		},
+		builder: {
+			type: "string",
+			description: "Limit the benchmarking to use certain builder which name matching the Regex pattern",
+		},
+		executor: {
+			type: "string",
+			description: "Limit the benchmarking to use certain executor which name matching the Regex pattern",
+		},
 		name: {
 			type: "string",
 			description: "Run benchmark with names matching the Regex pattern",
 		},
 	}, async args => {
-		const { config, file, name = "" } = args;
-		return new ESBenchHost(await loadConfig(config)).run(file, new RegExp(name));
+		const { config, ...filter } = args;
+		return new ESBenchHost(await loadConfig(config)).run(filter);
 	});
 
 program.version(false).strict().parseAsync();

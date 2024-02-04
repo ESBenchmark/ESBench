@@ -2,7 +2,15 @@ import { Awaitable, cartesianObject, noop } from "@kaciras/utilities/browser";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { BUILTIN_FIELDS, checkParams, consoleLogHandler, DefaultEventLogger, runFns, toDisplayName } from "./utils.js";
+import {
+	BUILTIN_FIELDS,
+	checkParams,
+	consoleLogHandler,
+	DefaultEventLogger,
+	RE_ANY,
+	runFns,
+	toDisplayName,
+} from "./utils.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -10,8 +18,6 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
 export type LogHandler = (level: LogLevel, message?: string) => Awaitable<any>;
-
-const MATCH_ANY = new RegExp("");
 
 export class ProfilingContext {
 
@@ -38,7 +44,7 @@ export class ProfilingContext {
 	constructor(suite: BenchmarkSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
 		this.profilers = profilers;
-		this.pattern = options.pattern ?? MATCH_ANY;
+		this.pattern = options.pattern ?? RE_ANY;
 		this.logHandler = options.log ?? consoleLogHandler;
 	}
 

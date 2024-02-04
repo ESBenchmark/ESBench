@@ -8,7 +8,7 @@ import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "./client/index.js";
-import { consoleLogHandler } from "./client/utils.js";
+import { consoleLogHandler, RE_ANY } from "./client/utils.js";
 
 interface Build {
 	name: string;
@@ -45,9 +45,21 @@ class ToolchainJobGenerator {
 		}
 	}
 
-	async build(file?: string) {
+	async build(filter: FilterOptions) {
 		const { directory, assetMap, nameMap } = this;
+		let { file, builder: builderRE } = filter;
+
+		builderRE = resolveRE(builderRE);
+		if (file) {
+			file = relative(cwd(), file);
+			file = dotPrefixed(file.replaceAll("\\", "/"));
+		}
+
 		for (const [builder, include] of this.builderMap) {
+			const name = nameMap.get(builder) ?? builder.name;
+			if (!builderRE.test(name)) {
+				continue;
+			}
 			const files = await glob(include);
 			if (file) {
 				if (files.includes(file)) {
@@ -60,7 +72,6 @@ class ToolchainJobGenerator {
 			if (files.length === 0) {
 				continue;
 			}
-			const name = nameMap.get(builder) ?? builder.name;
 			stdout.write(`Building suites with ${name}... `);
 
 			const root = mkdtempSync(join(directory, "build-"));
@@ -104,6 +115,23 @@ class ToolchainJobGenerator {
 	}
 }
 
+interface FilterOptions {
+	file?: string;
+	builder?: string | RegExp;
+	executor?: string | RegExp;
+	name?: string | RegExp;
+}
+
+function resolveRE(pattern?: string | RegExp) {
+	if (!pattern) {
+		return RE_ANY;
+	}
+	if (pattern instanceof RegExp) {
+		return pattern;
+	}
+	return new RegExp(pattern);
+}
+
 export class ESBenchHost {
 
 	private readonly config: NormalizedConfig;
@@ -123,14 +151,9 @@ export class ESBenchHost {
 		}
 	}
 
-	async run(file?: string, nameRegex?: RegExp) {
+	async run(filter: FilterOptions = {}) {
 		const { reporters, toolchains, tempDir, diff, cleanTempDir } = this.config;
 		const startTime = performance.now();
-
-		if (file) {
-			file = relative(cwd(), file);
-			file = dotPrefixed(file.replaceAll("\\", "/"));
-		}
 
 		mkdirSync(tempDir, { recursive: true });
 
@@ -138,31 +161,32 @@ export class ESBenchHost {
 		for (const toolchain of toolchains) {
 			generator.add(toolchain);
 		}
-		await generator.build(file);
+		await generator.build(filter);
 		const jobs = generator.getJobs();
 
 		if (jobs.size === 0) {
 			throw new Error("\nNo file matching the include pattern of toolchains");
 		}
-		console.log(`\n${jobs.count} toolchains for ${jobs.size} executors.`);
 
 		const context: Partial<RunOptions> = {
 			tempDir,
-			pattern: nameRegex?.source,
+			pattern: resolveRE(filter.name).source,
 		};
 
+		const executorRE = resolveRE(filter.executor);
 		for (const [executor, builds] of jobs) {
 			let executorName = await executor.start();
 			executorName = generator.nameMap.get(executor) ?? executorName;
-			console.log(`Running suites with: ${executorName}.`);
+			if (executorRE.test(executorName)) {
+				console.log(`Running suites with: ${executorName}.`);
 
-			for (const { name, root, files } of builds) {
-				context.handleMessage = this.onMessage.bind(this, executorName, name);
-				context.files = files;
-				context.root = root;
-				await executor.run(context as RunOptions);
+				for (const { name, root, files } of builds) {
+					context.handleMessage = this.onMessage.bind(this, executorName, name);
+					context.files = files;
+					context.root = root;
+					await executor.run(context as RunOptions);
+				}
 			}
-
 			await executor.close();
 		}
 
