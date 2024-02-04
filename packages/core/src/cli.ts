@@ -45,7 +45,7 @@ const program = yargs(hideBin(argv))
 		},
 		file: {
 			type: "string",
-			description: "Run only benchmark for specified file",
+			description: "Run only suite that contains the value in their paths",
 		},
 		builder: {
 			type: "string",

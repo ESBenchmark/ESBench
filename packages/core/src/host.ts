@@ -1,5 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "fs";
-import { join, relative, resolve } from "path";
+import { join, relative } from "path";
 import { cwd, stdout } from "process";
 import { performance } from "perf_hooks";
 import chalk from "chalk";
@@ -32,22 +32,28 @@ class ToolchainJobGenerator {
 	add(toolchain: Required<ToolchainOptions>) {
 		const { include, builders, executors } = toolchain;
 		const ue = executors.map(this.unwrapNameable.bind(this, "run"));
+		const workingDir = cwd();
+
+		// Ensure glob patterns is relative and starts with ./ or ../
+		const dotGlobs = include.map(p => {
+			p = relative(workingDir, p).replaceAll("\\", "/");
+			return /\.\.?\//.test(p) ? p : "./" + p;
+		});
 
 		for (const builder of builders) {
 			const builderUsed = this.unwrapNameable("build", builder);
-			this.builderMap.add(builderUsed, ...include);
+			this.builderMap.add(builderUsed, ...dotGlobs);
 			this.executorMap.distribute(ue, builderUsed);
 		}
 	}
 
 	async build(filter: FilterOptions, shared?: string) {
 		const { directory, assetMap, nameMap } = this;
-		const workingDir = cwd();
 		let { file, builder: builderRE } = filter;
 
 		builderRE = resolveRE(builderRE);
 		if (file) {
-			file = resolve(file).replaceAll("\\", "/");
+			file = relative(cwd(), file).replaceAll("\\", "/");
 		}
 
 		const sharedFilter = new SharedModeFilter(shared);
@@ -57,26 +63,15 @@ class ToolchainJobGenerator {
 			if (!builderRE.test(name)) {
 				continue;
 			}
-			let files = await glob(include, { absolute: true });
+			let files = sharedFilter.select(await glob(include));
 			if (file) {
-				if (files.includes(file)) {
-					files[0] = file;
-					files.length = 1;
-				} else {
-					files.length = 0;
-				}
+				files = files.filter(p => p.includes(file!));
 			}
-			files = sharedFilter.select(files);
 
 			if (files.length === 0) {
 				continue;
 			}
 			stdout.write(`Building suites with ${name}... `);
-
-			files = files.map(p => {
-				p = relative(workingDir, p).replaceAll("\\", "/");
-				return /\.\.?\//.test(p) ? p : "./" + p;
-			});
 
 			const root = mkdtempSync(join(directory, "build-"));
 			const start = performance.now();
