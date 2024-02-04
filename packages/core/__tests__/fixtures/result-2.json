@@ -1,0 +1,49 @@
+{
+	"For-loop vs Array.reduce": [
+		{
+			"executor": "NodeJS v21.4.0",
+			"builder": "NoBuild",
+			"name": "For-loop vs Array.reduce",
+			"notes": [],
+			"meta": {
+				"time": {
+					"format": "{duration.ms}",
+					"lowerBetter": true,
+					"analyze": 2
+				}
+			},
+			"baseline": {
+				"type": "Name",
+				"value": "For-index"
+			},
+			"paramDef": [
+				[
+					"size",
+					[
+						"0",
+						"100",
+						"1000"
+					]
+				]
+			],
+			"scenes": [
+				[
+					{
+						"name": "For-index",
+						"metrics": {
+							"time": [1,1,2,2]
+						}
+					},
+					{
+						"name": "Foo-Bar",
+						"metrics": {
+							"time": [0]
+						}
+					}
+				],
+				[],
+				[]
+			]
+		}
+	]
+}

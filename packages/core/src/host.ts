@@ -173,6 +173,10 @@ export class ESBenchHost {
 			await reporter(this.result, previous);
 		}
 
+		/*
+		 * We did not put the cleanup code to finally block,
+		 * so that you can check the build output when error occurred.
+		 */
 		if (cleanTempDir) {
 			try {
 				rmSync(tempDir, { recursive: true });
@@ -194,12 +198,19 @@ function loadJSON(path: string, throwIfMissing: boolean) {
 	}
 }
 
-export async function report(config: ESBenchConfig, file: string) {
+export async function report(config: ESBenchConfig, files: string[]) {
 	const { reporters, diff } = normalizeConfig(config);
 
-	const result = loadJSON(file, true) as ESBenchResult;
-	const previous = diff && loadJSON(diff, false);
+	const result = loadJSON(files[0], true) as ESBenchResult;
 
+	for (let i = 1; i < files.length; i++) {
+		const more = loadJSON(files[i], true) as ESBenchResult;
+		for (const [name, suite] of Object.entries(more)) {
+			(result[name] ??= []).push(...suite);
+		}
+	}
+
+	const previous = diff && loadJSON(diff, false);
 	for (const reporter of reporters) {
 		await reporter(result, previous);
 	}
