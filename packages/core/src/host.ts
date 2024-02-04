@@ -20,6 +20,41 @@ function dotPrefixed(path: string) {
 	return path.charCodeAt(0) === 46 ? path : "./" + path;
 }
 
+function resolveRE(pattern?: string | RegExp) {
+	if (!pattern) {
+		return RE_ANY;
+	}
+	if (pattern instanceof RegExp) {
+		return pattern;
+	}
+	return new RegExp(pattern);
+}
+
+class SharedModeFilter {
+
+	readonly index: number;
+	readonly count: number;
+
+	constructor(option?: string) {
+		if (!option) {
+			this.index = 0;
+			this.count = 1;
+		} else {
+			const [index, count] = option.split("/", 2);
+			this.count = parseInt(count);
+			this.index = parseInt(index) - 1;
+		}
+	}
+
+	select<T>(array: T[]) {
+		const { index, count } = this;
+		if (count === 1) {
+			return array;
+		}
+		return array.filter((_, i) => i % count === index);
+	}
+}
+
 class ToolchainJobGenerator {
 
 	readonly nameMap = new Map<any, string | null>();
@@ -45,7 +80,7 @@ class ToolchainJobGenerator {
 		}
 	}
 
-	async build(filter: FilterOptions) {
+	async build(filter: FilterOptions, shared?: string) {
 		const { directory, assetMap, nameMap } = this;
 		let { file, builder: builderRE } = filter;
 
@@ -55,12 +90,14 @@ class ToolchainJobGenerator {
 			file = dotPrefixed(file.replaceAll("\\", "/"));
 		}
 
+		const sharedFilter = new SharedModeFilter(shared);
+
 		for (const [builder, include] of this.builderMap) {
 			const name = nameMap.get(builder) ?? builder.name;
 			if (!builderRE.test(name)) {
 				continue;
 			}
-			const files = await glob(include);
+			let files = await glob(include);
 			if (file) {
 				if (files.includes(file)) {
 					files[0] = file;
@@ -69,6 +106,8 @@ class ToolchainJobGenerator {
 					files.length = 0;
 				}
 			}
+			files = sharedFilter.select(files);
+
 			if (files.length === 0) {
 				continue;
 			}
@@ -122,16 +161,6 @@ interface FilterOptions {
 	name?: string | RegExp;
 }
 
-function resolveRE(pattern?: string | RegExp) {
-	if (!pattern) {
-		return RE_ANY;
-	}
-	if (pattern instanceof RegExp) {
-		return pattern;
-	}
-	return new RegExp(pattern);
-}
-
 export class ESBenchHost {
 
 	private readonly config: NormalizedConfig;
@@ -151,7 +180,7 @@ export class ESBenchHost {
 		}
 	}
 
-	async run(filter: FilterOptions = {}) {
+	async run(filter: FilterOptions = {}, shared?: string) {
 		const { reporters, toolchains, tempDir, diff, cleanTempDir } = this.config;
 		const startTime = performance.now();
 
@@ -161,7 +190,7 @@ export class ESBenchHost {
 		for (const toolchain of toolchains) {
 			generator.add(toolchain);
 		}
-		await generator.build(filter);
+		await generator.build(filter, shared);
 		const jobs = generator.getJobs();
 
 		if (jobs.size === 0) {

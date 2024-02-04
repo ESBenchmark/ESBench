@@ -59,9 +59,13 @@ const program = yargs(hideBin(argv))
 			type: "string",
 			description: "Run benchmark with names matching the Regex pattern",
 		},
+		shared: {
+			type: "string",
+			description: "Execute suites in a specified shard",
+		},
 	}, async args => {
-		const { config, ...filter } = args;
-		return new ESBenchHost(await loadConfig(config)).run(filter);
+		const { config, shared, ...filter } = args;
+		return new ESBenchHost(await loadConfig(config)).run(filter, shared);
 	});
 
 program.version(false).strict().parseAsync();
