@@ -43,7 +43,7 @@ export function checkParams(params: CPSrcObject) {
 	const set = new Set<string>();
 
 	if (Object.getOwnPropertySymbols(params).length) {
-		throw new Error("Property with only string keys are allowed in param");
+		throw new Error("Only string keys are allowed in param");
 	}
 
 	for (let i = 0; i < entries.length; i++) {
@@ -62,6 +62,10 @@ export function checkParams(params: CPSrcObject) {
 			}
 			set.add(name);
 			current.push(name);
+		}
+
+		if (current.length === 0) {
+			throw new Error(`Suite parameter "${key}" must have a values`);
 		}
 	}
 

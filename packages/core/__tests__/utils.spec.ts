@@ -34,12 +34,17 @@ describe("checkParams", () => {
 
 	it("should restrict keys to be string", () => {
 		expect(() => checkParams({ [Symbol()]: [11] }))
-			.toThrow("Property with only string keys are allowed in param");
+			.toThrow("Only string keys are allowed in param");
 	});
 
 	it("should fail if a property is builtin parameter", () => {
 		expect(() => checkParams({ Builder: [11] }))
 			.toThrow("'Builder' is a builtin parameter");
+	});
+
+	it("should fail if a parameter does not have value", () => {
+		expect(() => checkParams({ foo: [] }))
+			.toThrow('Suite parameter "foo" must have a values');
 	});
 
 	it("should restrict parameters to have unique display names", () => {
