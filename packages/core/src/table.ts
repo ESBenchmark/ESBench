@@ -2,9 +2,9 @@ import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { Metrics, MetricsMeta } from "./runner.js";
+import { Metrics, MetricsAnalysis, MetricsMeta } from "./runner.js";
 import { BaselineOptions } from "./suite.js";
-import { BUILTIN_FIELDS, insertThousandCommas } from "./utils.js";
+import { BUILTIN_VARS, insertThousandCommas } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
 const { getMetrics } = Summary;
@@ -80,6 +80,36 @@ interface ColumnFactory {
 	getValue(data: FlattedResult, chalk: ChalkLike): any;
 }
 
+abstract class StatisticsColumn implements ColumnFactory {
+
+	protected readonly key: string;
+	protected readonly meta: MetricsMeta;
+
+	abstract readonly name: string;
+
+	constructor(key: string, meta: MetricsMeta) {
+		this.key = key;
+		this.meta = meta;
+	}
+
+	get format() {
+		return this.meta.format;
+	}
+
+	abstract calculate(values: number[]): number;
+
+	getValue(data: FlattedResult) {
+		const { key } = this;
+		const values = getMetrics(data)[key];
+		if (Array.isArray(values)) {
+			return this.calculate(values);
+		}
+		if (values !== undefined) {
+			throw new TypeError(`Metrics ${key} must be an array`);
+		}
+	}
+}
+
 class BaselineColumn implements ColumnFactory {
 
 	private readonly key: string;
@@ -97,12 +127,15 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	get name() {
-		return this.key + ".Ratio";
+		return this.key + ".ratio";
 	}
 
 	private toNumber(data: FlattedResult) {
 		const metrics = getMetrics(data)[this.key];
-		return Array.isArray(metrics) ? mean(metrics) : metrics as number;
+		if (Array.isArray(metrics)) {
+			return mean(metrics);
+		}
+		return typeof metrics === "number" ? metrics : 0;
 	}
 
 	prepare(cases: FlattedResult[]) {
@@ -129,43 +162,32 @@ class BaselineColumn implements ColumnFactory {
 	}
 }
 
-class StdDevColumn implements ColumnFactory {
-
-	readonly key: string;
-	readonly format?: string;
-
-	constructor(key: string, meta: MetricsMeta) {
-		this.key = key;
-		this.format = meta.format;
-	}
+class StdDevColumn extends StatisticsColumn {
 
 	get name() {
 		return this.key + ".SD";
 	}
 
-	getValue(data: FlattedResult) {
-		return standardDeviation(getMetrics(data)[this.key] as number[]);
+	calculate(values: number[]) {
+		return standardDeviation(values);
 	}
 }
 
-class PercentileColumn implements ColumnFactory {
+class PercentileColumn extends StatisticsColumn {
 
-	readonly p: number;
-	readonly key: string;
-	readonly format?: string;
+	private readonly p: number;
 
 	constructor(key: string, meta: MetricsMeta, p: number) {
+		super(key, meta);
 		this.p = p;
-		this.key = key;
-		this.format = meta.format;
 	}
 
 	get name() {
 		return `${this.key}.p${this.p}`;
 	}
 
-	getValue(data: FlattedResult) {
-		return quantileSorted(getMetrics(data)[this.key] as number[], this.p / 100);
+	calculate(values: number[]) {
+		return quantileSorted(values, this.p / 100);
 	}
 }
 
@@ -272,10 +294,13 @@ const kRowNumber = Symbol();
 function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult) {
 	const metrics = getMetrics(row);
 	for (const [name, meta] of summary.meta) {
-		if (meta.analyze !== 2) {
+		if (meta.analyze !== MetricsAnalysis.Statistics) {
 			continue;
 		}
-		const before = metrics[name] as number[];
+		const before = metrics[name];
+		if (!Array.isArray(before)) {
+			continue;
+		}
 		const after = new TukeyOutlierDetector(before).filter(before, mode);
 		metrics[name] = after;
 
@@ -310,10 +335,10 @@ export function createTable(
 	}
 	for (const [name, meta] of summary.meta) {
 		columnDefs.push(new RawMetricColumn(name, meta));
-		if (meta.analyze === 0) {
+		if (meta.analyze === MetricsAnalysis.None) {
 			continue;
 		}
-		if (meta.analyze === 2) {
+		if (meta.analyze === MetricsAnalysis.Statistics) {
 			if (stdDev) {
 				columnDefs.push(new StdDevColumn(name, meta));
 			}
@@ -412,7 +437,7 @@ const formatters: Record<string, GetFormatter> = {
 };
 
 function formatColumn(table: any[][], column: number, format: string, flex: boolean) {
-	const values = table.map(r => r[column]);
+	const values = table.map(r => r[column]).filter(v => v !== undefined);
 	const s = format.split(formatRE);
 	const p: FormatFn[] = [];
 
@@ -421,12 +446,17 @@ function formatColumn(table: any[][], column: number, format: string, flex: bool
 	}
 
 	for (const row of table) {
-		const parts = [];
-		for (let i = 0; i < p.length; i++) {
-			parts.push(s[i]);
-			parts.push(p[i](row[column]));
+		const value = row[column];
+		if (value === undefined) {
+			row[column] = "";
+		} else {
+			const parts = [];
+			for (let i = 0; i < p.length; i++) {
+				parts.push(s[i]);
+				parts.push(p[i](value));
+			}
+			parts.push(s[s.length - 1]);
+			row[column] = parts.join("");
 		}
-		parts.push(s[s.length - 1]);
-		row[column] = parts.join("");
 	}
 }
