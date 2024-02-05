@@ -68,4 +68,4 @@ const program = yargs(hideBin(argv))
 		return new ESBenchHost(await loadConfig(config)).run(filter, shared);
 	});
 
-program.version(false).strict().parseAsync();
+program.version(false).strict().showHelpOnFail(false).parseAsync();
