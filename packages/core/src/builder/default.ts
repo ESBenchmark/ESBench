@@ -12,7 +12,7 @@ export default function (channel, files, name) {
 }`;
 
 export default <Builder>{
-	name: "NoBuild",
+	name: "None",
 	build(outDir: string) {
 		const root = relative(outDir, process.cwd());
 		const code = template.replace("__ROOT__", root.replaceAll("\\", "/"));

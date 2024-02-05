@@ -1,4 +1,4 @@
-import { CPSrcObject, durationFmt, ellipsis } from "@kaciras/utilities/browser";
+import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
 import { BenchCase, HookFn, Scene } from "./suite.js";
 import { LogHandler, Profiler, ProfilingContext } from "./runner.js";
 
@@ -8,7 +8,7 @@ export const RE_ANY = new RegExp("");
 
 const NAME_LENGTH = 16;
 
-export const BUILTIN_FIELDS = ["Name", "Builder", "Executor"];
+export const BUILTIN_VARS = ["Name", "Builder", "Executor"];
 
 /**
  * Convert the value to a short (length <= 16) display string.
@@ -48,7 +48,7 @@ export function checkParams(params: CPSrcObject) {
 
 	for (let i = 0; i < entries.length; i++) {
 		const [key, values] = entries[i];
-		if (BUILTIN_FIELDS.includes(key)) {
+		if (BUILTIN_VARS.includes(key)) {
 			throw new Error(`'${key}' is a builtin parameter`);
 		}
 		const current: string[] = [];
@@ -65,7 +65,7 @@ export function checkParams(params: CPSrcObject) {
 		}
 
 		if (current.length === 0) {
-			throw new Error(`Suite parameter "${key}" must have a values`);
+			throw new Error(`Suite parameter "${key}" must have a value`);
 		}
 	}
 
@@ -74,12 +74,6 @@ export function checkParams(params: CPSrcObject) {
 
 export function runFns(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
-}
-
-export function timeDetail(time: number, count: number) {
-	const total = durationFmt.formatDiv(time, "ms");
-	const mean = durationFmt.formatDiv(time / count, "ms");
-	return `${count} operations, ${total}, ${mean}/op`;
 }
 
 export function insertThousandCommas(text: string) {
@@ -98,21 +92,25 @@ export class SharedModeFilter {
 	readonly index: number;
 	readonly count: number;
 
-	constructor(option = "1/1") {
+	constructor(index: number, count: number) {
+		this.count = count;
+		this.index = index;
+
+		if (index >= count) {
+			throw new Error("Shared count can't be less than the index");
+		}
+		if (index < 0) {
+			throw new Error("Shared index must be a positive number");
+		}
+	}
+
+	static parse(option = "1/1") {
 		const match = /^(\d+)\/(\d+)$/.exec(option);
 		if (!match) {
 			throw new Error(`Invalid --shared parameter: ${option}`);
 		}
 		const [, index, count] = match;
-		this.count = parseInt(count);
-		this.index = parseInt(index) - 1;
-
-		if (this.index < 0) {
-			throw new Error("Shared index must be a positive number");
-		}
-		if (this.index >= this.count) {
-			throw new Error("Shared count can't be less than the index");
-		}
+		return new SharedModeFilter(parseInt(index) - 1, parseInt(count));
 	}
 
 	select<T>(array: T[]) {

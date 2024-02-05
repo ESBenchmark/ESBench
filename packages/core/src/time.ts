@@ -2,7 +2,7 @@ import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/
 import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
-import { runFns, timeDetail } from "./utils.js";
+import { runFns } from "./utils.js";
 import { Metrics, MetricsAnalysis, Profiler, ProfilingContext } from "./runner.js";
 
 type Iterate = (count: number) => Awaitable<number>;
@@ -74,6 +74,12 @@ function createInvoker(factor: number, case_: BenchCase): Iterate {
 	} else {
 		return unroll(factor, isAsync).bind(null, fn);
 	}
+}
+
+function timeDetail(time: number, count: number) {
+	const total = durationFmt.formatDiv(time, "ms");
+	const mean = durationFmt.formatDiv(time / count, "ms");
+	return `${count} operations, ${total}, ${mean}/op`;
 }
 
 export interface TimingOptions {
@@ -222,8 +228,7 @@ export class TimeProfiler implements Profiler {
 		await ctx.info();
 		const overheads = await this.measure(ctx, "Overhead", iterate, iterations);
 
-		const pValue = welchTest(time, overheads, "greater");
-		if (pValue < 0.05) {
+		if (welchTest(time, overheads, "greater") < 0.05) {
 			const overhead = medianSorted(overheads);
 			for (let i = 0; i < time.length; i++) {
 				time[i] -= overhead;
@@ -250,7 +255,7 @@ export class TimeProfiler implements Profiler {
 
 			if (time === 0) {
 				count *= 2;
-				continue; // less than the precision, re-run with larger count.
+				continue; // Less than the precision, re-run with larger count.
 			}
 
 			const previous = count;

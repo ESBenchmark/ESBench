@@ -1,8 +1,10 @@
 import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/browser";
 import { runFns } from "./utils.js";
-import { ValidateOptions } from "./validate.js";
-import { TimingOptions } from "./time.js";
 import { Profiler } from "./runner.js";
+import { TimingOptions } from "./time.js";
+import { ValidateOptions } from "./validate.js";
+
+type Empty = Record<string, never>;
 
 export type HookFn = () => Awaitable<unknown>;
 
@@ -178,8 +180,6 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	 */
 	baseline?: BaselineOptions;
 }
-
-type Empty = Record<string, never>;
 
 /**
  * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.

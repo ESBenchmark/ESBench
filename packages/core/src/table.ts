@@ -211,7 +211,7 @@ class VariableColumn implements ColumnFactory {
 
 	constructor(key: string, chalk: ChalkLike) {
 		this.name = this.key = key;
-		if (!BUILTIN_FIELDS.includes(this.key)) {
+		if (!BUILTIN_VARS.includes(this.key)) {
 			this.name = chalk.magentaBright(this.name);
 		}
 	}

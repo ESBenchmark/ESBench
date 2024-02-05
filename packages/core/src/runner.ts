@@ -3,7 +3,7 @@ import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import {
-	BUILTIN_FIELDS,
+	BUILTIN_VARS,
 	checkParams,
 	consoleLogHandler,
 	DefaultEventLogger,
@@ -150,7 +150,7 @@ export interface CaseResult {
 	metrics: Metrics;
 }
 
-export type Metrics = Record<string, number | number[] | string>;
+export type Metrics = Record<string, number | number[] | string | undefined>;
 
 export enum MetricsAnalysis {
 	/**
@@ -209,7 +209,7 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 	const { name, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
 
 	if (baseline) {
-		if (!BUILTIN_FIELDS.includes(baseline.type)) {
+		if (!BUILTIN_VARS.includes(baseline.type)) {
 			baseline.value = toDisplayName(baseline.value);
 		}
 	}
@@ -261,6 +261,6 @@ export async function connect(channel: Channel, importer: Importer, files: strin
 			channel(await runSuite(suite, option));
 		}
 	} catch (e) {
-		channel({ log: `Suite execution failed: ${e.message}`, level: "error" });
+		channel({ level: "error", log: `Suite execution failed: ${e.message}`,  });
 	}
 }

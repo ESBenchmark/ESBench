@@ -44,7 +44,7 @@ describe("checkParams", () => {
 
 	it("should fail if a parameter does not have value", () => {
 		expect(() => checkParams({ foo: [] }))
-			.toThrow('Suite parameter "foo" must have a values');
+			.toThrow("Suite parameter \"foo\" must have a value");
 	});
 
 	it("should restrict parameters to have unique display names", () => {
@@ -60,18 +60,24 @@ describe("SharedModeFilter", () => {
 	it.each([
 		"", "/", "foo", "#1/4", "1/4#",
 		"-1/2", "1/0", "0/2", "3/2",
-	])("should check option valid: %s", option => {
-		expect(() => new SharedModeFilter(option)).toThrow();
+	])("should validate string: %s", option => {
+		expect(() => SharedModeFilter.parse(option)).toThrow();
+	});
+
+	it("should parse the string", () => {
+		const filter = SharedModeFilter.parse("1/4");
+		expect(filter.index).toBe(0);
+		expect(filter.count).toBe(4);
 	});
 
 	it("should filter items", () => {
-		const filter = new SharedModeFilter("1/4");
+		const filter = new SharedModeFilter(0, 4);
 		const array = new Array(10).fill(11);
 		expect(filter.select(array)).toHaveLength(3);
 	});
 
 	it("should not filter out items by default", () => {
-		const filter = new SharedModeFilter();
+		const filter = new SharedModeFilter(0, 1);
 		const array = new Array(10).fill(11);
 		expect(filter.select(array)).toHaveLength(10);
 	});

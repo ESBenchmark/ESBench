@@ -14,6 +14,8 @@ export interface ValidateOptions {
 
 	/**
 	 * Check to make sure the values returned by the function are equal.
+	 *
+	 * The value can be a function, or true means check with `===`.
 	 */
 	equality?: boolean | EqualityFn;
 }

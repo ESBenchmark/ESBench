@@ -56,7 +56,7 @@ class ToolchainJobGenerator {
 			file = relative(cwd(), file).replaceAll("\\", "/");
 		}
 
-		const sharedFilter = new SharedModeFilter(shared);
+		const sharedFilter = SharedModeFilter.parse(shared);
 
 		for (const [builder, include] of this.builderMap) {
 			const name = nameMap.get(builder) ?? builder.name;
