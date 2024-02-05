@@ -9,6 +9,8 @@ import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
 const { getMetrics } = Summary;
 
+type RatioStyle = "value" | "percentage" | "trend";
+
 export interface SummaryTableOptions {
 	/**
 	 * Allow values in the column have different unit.
@@ -62,12 +64,39 @@ export interface SummaryTableOptions {
 	 * @default "upper"
 	 */
 	outliers?: false | OutlierMode;
+
+	/**
+	 * Using ratioStyle, we can override the style of the diff and the baseline column.
+	 *
+	 * @example
+	 *             "percentage"      "trend"       "value"
+	 *      time | time.ratio | | time.ratio | | time.ratio |
+	 * 117.26 us |      0.00% | |    100.00% | |      1.00x | (baseline)
+	 * 274.14 us |   +133.79% | |    233.79% | |      2.34x |
+	 *  19.82 us |    -83.10% | |     16.90% | |      0.17x |
+	 *
+	 * @default "percentage“
+	 */
+	ratioStyle?: RatioStyle;
 }
 
 type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
 type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
+
+function convertRatioStyle(v: number, style: RatioStyle) {
+	switch (style) {
+		case "percentage":
+			v = (v - 1) * 100;
+			return v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`;
+		case "trend":
+			v *= 100;
+			return v > 0 ? `${v.toFixed(2)}%` : `${v.toFixed(2)}%`;
+		case "value":
+			return v > 0 ? `${v.toFixed(2)}x` : `${v.toFixed(2)}x`;
+	}
+}
 
 interface ColumnFactory {
 
@@ -116,14 +145,16 @@ class BaselineColumn implements ColumnFactory {
 	private readonly meta: MetricsMeta;
 	private readonly variable: string;
 	private readonly value: string;
+	private readonly style: RatioStyle;
 
 	private ratio1 = 0;
 
-	constructor(key: string, meta: MetricsMeta, baseline: BaselineOptions) {
+	constructor(key: string, meta: MetricsMeta, baseline: BaselineOptions, style: RatioStyle) {
 		this.key = key;
 		this.meta = meta;
 		this.variable = baseline.type;
 		this.value = baseline.value;
+		this.style = style;
 	}
 
 	get name() {
@@ -154,7 +185,7 @@ class BaselineColumn implements ColumnFactory {
 		if (!isFinite(ratio)) {
 			return chalk.blackBright("N/A");
 		}
-		const text = `${ratio.toFixed(2)}x`;
+		const text = convertRatioStyle(ratio, this.style);
 		if (ratio === 1) {
 			return text;
 		}
@@ -246,11 +277,13 @@ class DifferenceColumn implements ColumnFactory {
 	private readonly another: Summary;
 	private readonly key: string;
 	private readonly meta: MetricsMeta;
+	private readonly style: RatioStyle;
 
-	constructor(another: Summary, key: string, meta: MetricsMeta) {
+	constructor(another: Summary, key: string, meta: MetricsMeta, style: RatioStyle) {
 		this.another = another;
 		this.key = key;
 		this.meta = meta;
+		this.style = style;
 	}
 
 	get name() {
@@ -273,11 +306,11 @@ class DifferenceColumn implements ColumnFactory {
 		if (p === undefined || c === undefined) {
 			return "";
 		}
-		const d = (c - p) / p * 100;
+		const d = c / p;
 		if (Number.isNaN(d)) {
 			return "";
 		}
-		const text = d > 0 ? `+${d.toFixed(2)}%` : `${d.toFixed(2)}%`;
+		const text = convertRatioStyle(d, this.style);
 		return d === 0
 			? text : this.meta.lowerBetter === d < 0
 				? chalk.green(text) : chalk.red(text);
@@ -321,7 +354,15 @@ export function createTable(
 	options: SummaryTableOptions = {},
 	chalk: ChalkLike = noColors,
 ) {
-	const { stdDev = false, percentiles = [], outliers = "upper", flexUnit = false, hideSingle = true } = options;
+	const {
+		stdDev = false,
+		percentiles = [],
+		outliers = "upper",
+		flexUnit = false,
+		hideSingle = true,
+		ratioStyle = "percentage",
+	} = options;
+
 	const { baseline } = result[0];
 	const summary = new Summary(result);
 	const prev = new Summary(diff || []);
@@ -347,10 +388,10 @@ export function createTable(
 			}
 		}
 		if (baseline) {
-			columnDefs.push(new BaselineColumn(name, meta, baseline));
+			columnDefs.push(new BaselineColumn(name, meta, baseline, ratioStyle));
 		}
 		if (prev.meta.has(name)) {
-			columnDefs.push(new DifferenceColumn(prev, name, meta));
+			columnDefs.push(new DifferenceColumn(prev, name, meta, ratioStyle));
 		}
 	}
 

@@ -93,3 +93,27 @@ it("should allow optional metrics value", () => {
 		["1", "bar", "1.75 ms", "433.01 us", "2.00 ms", "N/A"],
 	]);
 });
+
+it.each([
+	["percentage", ["0.00%", "+100.00%", "-75.00%"]],
+	["value", ["1.00x", "2.00x", "0.25x"]],
+	["trend", ["100.00%", "200.00%", "25.00%"]],
+])("should apply ratio style: %s", (style, values) => {
+	const table = createTable([{
+		...defaultResult,
+		baseline: {
+			type: "Name",
+			value: "A",
+		},
+		scenes: [[
+			{ name: "A", metrics: { time: [4] } },
+			{ name: "B", metrics: { time: [8] } },
+			{ name: "C", metrics: { time: [1] } },
+		]],
+	}], undefined, {
+		ratioStyle: style as any,
+	});
+	expect(table[1][3]).toBe(values[0]);
+	expect(table[2][3]).toBe(values[1]);
+	expect(table[3][3]).toBe(values[2]);
+});
