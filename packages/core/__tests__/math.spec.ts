@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TukeyOutlierDetector, welchTest } from "../../src/math.js";
+import { TukeyOutlierDetector, welchTest } from "../src/math.js";
 
 describe("removeOutliers", () => {
 	it("should throw error with empty array", () => {

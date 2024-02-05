@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { run, sleep1 } from "../helper.js";
+import { run, sleep1 } from "./helper.js";
 
 it("should return the result", async () => {
 	const result = await run({

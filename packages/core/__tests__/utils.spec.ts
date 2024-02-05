@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkParams, SharedModeFilter, toDisplayName } from "../../src/utils.js";
+import { checkParams, SharedModeFilter, toDisplayName } from "../src/utils.js";
 
 describe("checkParams", () => {
 	it.each([

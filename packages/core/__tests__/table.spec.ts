@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createTable, MetricsAnalysis } from "../../src/index.js";
+import { createTable, MetricsAnalysis } from "../src/index.js";
 
 const time = {
 	format: "{duration.ms}",

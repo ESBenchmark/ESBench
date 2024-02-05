@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BenchCase, Scene } from "../../src/index.js";
+import { BenchCase, Scene } from "../src/index.js";
 
 describe("Scene", () => {
 	it("should avoid blank workload name", () => {
