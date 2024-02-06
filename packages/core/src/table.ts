@@ -85,16 +85,22 @@ type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
 
-function convertRatioStyle(v: number, style: RatioStyle) {
+function styleRatio(v: number, style: RatioStyle, meta: MetricsMeta, chalk: ChalkLike) {
+	if (!Number.isFinite(v)) {
+		return chalk.blackBright("N/A");
+	}
+	const color = v === 1
+		? identity : (v < 1 === meta.lowerBetter)
+			? chalk.green : chalk.red;
+
 	switch (style) {
+		case "trend":
+			return color(`${(v * 100).toFixed(2)}%`);
+		case "value":
+			return color(`${v.toFixed(2)}x`);
 		case "percentage":
 			v = (v - 1) * 100;
-			return v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`;
-		case "trend":
-			v *= 100;
-			return v > 0 ? `${v.toFixed(2)}%` : `${v.toFixed(2)}%`;
-		case "value":
-			return v > 0 ? `${v.toFixed(2)}x` : `${v.toFixed(2)}x`;
+			return color(v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`);
 	}
 }
 
@@ -179,17 +185,10 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {
-		const { ratio1, meta: { lowerBetter } } = this;
+		const { ratio1, meta } = this;
 
 		const ratio = this.toNumber(data) / ratio1;
-		if (!isFinite(ratio)) {
-			return chalk.blackBright("N/A");
-		}
-		const text = convertRatioStyle(ratio, this.style);
-		if (ratio === 1) {
-			return text;
-		}
-		return ratio < 1 === lowerBetter ? chalk.green(text) : chalk.red(text);
+		return styleRatio(ratio, this.style, meta, chalk);
 	}
 }
 
@@ -219,56 +218,6 @@ class PercentileColumn extends StatisticsColumn {
 
 	calculate(values: number[]) {
 		return quantileSorted(values, this.p / 100);
-	}
-}
-
-class RowNumberColumn implements ColumnFactory {
-
-	readonly name = "No.";
-
-	private index = 0;
-
-	getValue(data: FlattedResult) {
-		data[kRowNumber] = this.index;
-		return (this.index++).toString();
-	}
-}
-
-class VariableColumn implements ColumnFactory {
-
-	readonly name: string;
-
-	private readonly key: string;
-
-	constructor(key: string, chalk: ChalkLike) {
-		this.name = this.key = key;
-		if (!BUILTIN_VARS.includes(this.key)) {
-			this.name = chalk.magentaBright(this.name);
-		}
-	}
-
-	getValue(data: FlattedResult) {
-		return data[this.key];
-	}
-}
-
-class RawMetricColumn implements ColumnFactory {
-
-	readonly name: string;
-	readonly meta: MetricsMeta;
-
-	constructor(name: string, meta: MetricsMeta) {
-		this.name = name;
-		this.meta = meta;
-	}
-
-	get format() {
-		return this.meta.format;
-	}
-
-	getValue(data: FlattedResult) {
-		const metrics = getMetrics(data)[this.name];
-		return Array.isArray(metrics) ? mean(metrics) : metrics;
 	}
 }
 
@@ -306,14 +255,7 @@ class DifferenceColumn implements ColumnFactory {
 		if (p === undefined || c === undefined) {
 			return "";
 		}
-		const d = c / p;
-		if (Number.isNaN(d)) {
-			return "";
-		}
-		const text = convertRatioStyle(d, this.style);
-		return d === 0
-			? text : this.meta.lowerBetter === d < 0
-				? chalk.green(text) : chalk.red(text);
+		return styleRatio(c / p, this.style, this.meta, chalk);
 	}
 }
 
