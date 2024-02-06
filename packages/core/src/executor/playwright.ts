@@ -47,9 +47,12 @@ export default class PlaywrightExecutor implements Executor {
 	private readonly type: BrowserType;
 	private readonly options?: LaunchOptions;
 
+	readonly name: string;
+
 	private browser!: Browser;
 
 	constructor(type: BrowserType, options?: LaunchOptions) {
+		this.name = type.name();
 		this.type = type;
 		this.options = options;
 	}
@@ -57,9 +60,7 @@ export default class PlaywrightExecutor implements Executor {
 	async start() {
 		const { type, options } = this;
 		this.browser = await type.launch(options);
-
 		console.log("Launching browser...");
-		return `${type.name()} - ${this.browser.version()}`;
 	}
 
 	close() {

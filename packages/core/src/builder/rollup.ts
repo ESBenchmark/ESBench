@@ -60,11 +60,12 @@ export class RollupBuilder implements Builder {
 
 	private readonly config: RollupOptions;
 
-	readonly name: string;
-
-	constructor(name = "Rollup", config: RollupOptions = {}) {
-		this.name = name;
+	constructor(config: RollupOptions = {}) {
 		this.config = config;
+	}
+
+	get name() {
+		return "Rollup";
 	}
 
 	async build(dir: string, files: string[]) {
@@ -87,11 +88,12 @@ export class ViteBuilder implements Builder {
 
 	private readonly config: InlineConfig;
 
-	readonly name: string;
-
-	constructor(name = "Vite", config: InlineConfig = {}) {
-		this.name = name;
+	constructor(config: InlineConfig = {}) {
 		this.config = mergeConfig(defaults, config);
+	}
+
+	get name() {
+		return "Vite";
 	}
 
 	async build(outDir: string, files: string[]) {

@@ -1,5 +1,14 @@
 import { Awaitable } from "@kaciras/utilities/node";
 
+/*
+ * Version should not be included in the suggested name of tools, reasons:
+ * 1) The version number may be too long.
+ * 2) Dependencies may be updated frequently, in most cases we don't care about it,
+ *    but a change in the name can prevent comparisons.
+ * 3) If you want to compare the performance of different versions of the tool,
+ *    you should add them both to the configuration and set the name.
+ */
+
 export interface Builder {
 
 	/**
@@ -40,7 +49,12 @@ export interface RunOptions {
 
 export interface Executor {
 
-	start(): Awaitable<string>;
+	/**
+	 * Suggest a name for the executor, it will be used if no name specified from config.
+	 */
+	name: string;
+
+	start(): Awaitable<void>;
 
 	close(): Awaitable<void>;
 

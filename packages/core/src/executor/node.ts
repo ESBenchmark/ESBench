@@ -1,4 +1,4 @@
-import { env, execArgv, version } from "process";
+import { env } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path/posix";
 import { ChildProcess, fork } from "child_process";
@@ -23,14 +23,15 @@ export default class NodeExecutor implements Executor {
 		this.executable = executable;
 	}
 
+	get name() {
+		return "node";
+	}
+
 	start() {
 		const workerEnv = { ...env, ES_BENCH_WORKER: "true" };
 		this.process = fork(__filename, {
 			env: workerEnv,
 			execPath: this.executable,
-		});
-		return new Promise<string>(resolve => {
-			this.process.once("message", resolve);
 		});
 	}
 
@@ -50,7 +51,6 @@ export default class NodeExecutor implements Executor {
 
 if (env.ES_BENCH_WORKER === "true") {
 	const postMessage = process.send!.bind(process);
-	postMessage(`NodeJS ${version} (${execArgv.join(" ")})`);
 
 	process.on("message", async (message: any) => {
 		const { root, pattern, files } = message;

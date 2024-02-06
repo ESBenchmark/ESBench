@@ -1,4 +1,4 @@
-import { execArgv, version } from "process";
+import { release } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
 import { Executor, RunOptions } from "../host/toolchain.js";
@@ -8,11 +8,11 @@ import { Executor, RunOptions } from "../host/toolchain.js";
  */
 export default class DirectExecutor implements Executor {
 
-	start() {
-		return execArgv.length
-			? `NodeJS ${version} (${execArgv.join(" ")})`
-			: `NodeJS ${version}`;
+	get name() {
+		return release.name;
 	}
+
+	start() {}
 
 	close() {}
 

@@ -3,7 +3,7 @@ import { once } from "events";
 import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
-import { join, relative } from "path";
+import { basename, join, relative } from "path";
 import { writeFileSync } from "fs";
 import { Executor, RunOptions } from "../host/toolchain.js";
 
@@ -50,9 +50,17 @@ export default class ProcessExecutor implements Executor {
 			: (file) => `${command} ${file}`;
 	}
 
-	start() {
-		return `Command '${this.getCommand("<file>")}'`;
+	get name() {
+		const command = this.getCommand("<file>");
+
+		const file = command.charCodeAt(0) === 34
+			? /"(.+?)(?<!\\)"/.exec(command)?.[1]
+			: command.slice(0, command.indexOf(" ") + 1);
+
+		return file ? basename(file) : command;
 	}
+
+	start() {}
 
 	close() {
 		this.server.close();
