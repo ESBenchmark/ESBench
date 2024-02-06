@@ -1,5 +1,6 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
-import { Metrics, MetricsMeta, RunSuiteResult } from "./runner.js";
+import { RunSuiteResult } from "./runner.js";
+import { Metrics, MetricsMeta } from "./context.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 

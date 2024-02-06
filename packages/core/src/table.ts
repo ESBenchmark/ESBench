@@ -2,7 +2,7 @@ import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { Metrics, MetricsAnalysis, MetricsMeta } from "./runner.js";
+import { Metrics, MetricsAnalysis, MetricsMeta } from "./context.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS, insertThousandCommas } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";

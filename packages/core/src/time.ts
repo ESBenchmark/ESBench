@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns } from "./utils.js";
-import { Metrics, MetricsAnalysis, Profiler, ProfilingContext } from "./runner.js";
+import { Metrics, MetricsAnalysis, Profiler, ProfilingContext } from "./context.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 

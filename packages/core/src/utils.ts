@@ -1,6 +1,6 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
-import { BenchCase, HookFn, Scene } from "./suite.js";
-import { LogHandler, Profiler, ProfilingContext } from "./runner.js";
+import { HookFn } from "./suite.js";
+import { LogHandler } from "./context.js";
 
 export const consoleLogHandler: LogHandler = (level, message = "") => console[level](message);
 
@@ -119,29 +119,5 @@ export class SharedModeFilter {
 			return array;
 		}
 		return array.filter((_, i) => i % count === index);
-	}
-}
-
-export class DefaultEventLogger implements Profiler {
-
-	private index = 0;
-
-	onStart(ctx: ProfilingContext) {
-		return ctx.info(`\nSuite: ${ctx.suite.name}, ${ctx.sceneCount} scenes.`);
-	}
-
-	onScene(ctx: ProfilingContext, scene: Scene) {
-		const caseCount = scene.cases.length;
-		const { sceneCount } = ctx;
-
-		return caseCount === 0
-			? ctx.warn(`\nNo case found from scene #${this.index++}.`)
-			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
-	}
-
-	onCase(ctx: ProfilingContext, case_: BenchCase) {
-		const { name, isAsync, setupHooks, cleanHooks } = case_;
-		const hooks = setupHooks.length + cleanHooks.length > 0;
-		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
 	}
 }
