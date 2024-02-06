@@ -16,23 +16,30 @@ interface Build {
 	files: string[];
 }
 
-class ToolchainJobGenerator {
+class JobGenerator {
 
 	readonly nameMap = new Map<any, string | null>();
 	readonly assetMap = new Map<Builder, Build>();
 	readonly executorMap = new MultiMap<Executor, Builder>();
 	readonly builderMap = new MultiMap<Builder, string>();
 
-	readonly directory: string;
+	private readonly directory: string;
+	private readonly filter: FilterOptions;
 
-	constructor(directory: string) {
+	constructor(directory: string, filter: FilterOptions) {
 		this.directory = directory;
+		this.filter = filter;
 	}
 
 	add(toolchain: Required<ToolchainOptions>) {
 		const { include, builders, executors } = toolchain;
-		const ue = executors.map(this.unwrapNameable.bind(this, "run"));
+		const builderRE = resolveRE(this.filter.builder);
+		const executorRE = resolveRE(this.filter.executor);
 		const workingDir = cwd();
+
+		const ue = executors
+			.filter(executor => executorRE.test(executor.name))
+			.map(this.unwrapNameable.bind(this, "run"));
 
 		// Ensure glob patterns is relative and starts with ./ or ../
 		const dotGlobs = include.map(p => {
@@ -41,17 +48,19 @@ class ToolchainJobGenerator {
 		});
 
 		for (const builder of builders) {
+			if (!builderRE.test(builder.name)) {
+				continue;
+			}
 			const builderUsed = this.unwrapNameable("build", builder);
 			this.builderMap.add(builderUsed, ...dotGlobs);
 			this.executorMap.distribute(ue, builderUsed);
 		}
 	}
 
-	async build(filter: FilterOptions, shared?: string) {
+	async build(shared?: string) {
 		const { directory, assetMap, nameMap } = this;
-		let { file, builder: builderRE } = filter;
+		let { file } = this.filter;
 
-		builderRE = resolveRE(builderRE);
 		if (file) {
 			file = relative(cwd(), file).replaceAll("\\", "/");
 		}
@@ -59,10 +68,7 @@ class ToolchainJobGenerator {
 		const sharedFilter = SharedModeFilter.parse(shared);
 
 		for (const [builder, include] of this.builderMap) {
-			const name = nameMap.get(builder) ?? builder.name;
-			if (!builderRE.test(name)) {
-				continue;
-			}
+			const name = nameMap.get(builder)!;
 			let files = sharedFilter.select(await glob(include));
 			if (file) {
 				files = files.filter(p => p.includes(file!));
@@ -96,21 +102,29 @@ class ToolchainJobGenerator {
 		return jobs;
 	}
 
+	getName(tool: Builder | Executor) {
+		const name = this.nameMap.get(tool);
+		if (name) {
+			return name;
+		}
+		throw new Error(`Tool ${tool.name} does not exists`);
+	}
+
 	private unwrapNameable(keyMethod: string, tool: Nameable<any>) {
-		let name: string | null = null;
-		let unwrapped = tool;
-
-		if (unwrapped[keyMethod] === undefined) {
-			name = tool.name;
-			unwrapped = tool.use;
+		const { name } = tool;
+		if (!name) {
+			throw new Error("Tool name must be a non-empty string");
+		}
+		if (tool[keyMethod] === undefined) {
+			tool = tool.use;
 		}
 
-		const custom = this.nameMap.get(unwrapped);
-		if (custom === undefined || custom === name) {
-			this.nameMap.set(unwrapped, name);
-			return unwrapped;
+		const existing = this.nameMap.get(tool);
+		if (existing === undefined || existing === name) {
+			this.nameMap.set(tool, name);
+			return tool;
 		}
-		throw new Error("A tool can only have one name: " + custom ?? name);
+		throw new Error("A tool can only have one name: " + name);
 	}
 }
 
@@ -146,11 +160,11 @@ export class ESBenchHost {
 
 		mkdirSync(tempDir, { recursive: true });
 
-		const generator = new ToolchainJobGenerator(tempDir);
+		const generator = new JobGenerator(tempDir, filter);
 		for (const toolchain of toolchains) {
 			generator.add(toolchain);
 		}
-		await generator.build(filter, shared);
+		await generator.build(shared);
 		const jobs = generator.getJobs();
 
 		if (jobs.size === 0) {
@@ -162,21 +176,19 @@ export class ESBenchHost {
 			pattern: resolveRE(filter.name).source,
 		};
 
-		const executorRE = resolveRE(filter.executor);
 		for (const [executor, builds] of jobs) {
-			let executorName = await executor.start();
-			executorName = generator.nameMap.get(executor) ?? executorName;
-			if (executorRE.test(executorName)) {
-				console.log(`Running suites with: ${executorName}.`);
+			const eName = generator.getName(executor);
 
-				for (const { name, root, files } of builds) {
-					context.handleMessage = this.onMessage.bind(this, executorName, name);
-					context.files = files;
-					context.root = root;
-					await executor.run(context as RunOptions);
-				}
+			await executor.start?.();
+			console.log(`Running suites with: ${eName}.`);
+
+			for (const { name, root, files } of builds) {
+				context.handleMessage = this.onMessage.bind(this, eName, name);
+				context.files = files;
+				context.root = root;
+				await executor.run(context as RunOptions);
 			}
-			await executor.close();
+			await executor.close?.();
 		}
 
 		console.log(); // Add an empty line between running & reporting phase.

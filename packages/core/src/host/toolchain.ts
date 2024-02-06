@@ -54,9 +54,9 @@ export interface Executor {
 	 */
 	name: string;
 
-	start(): Awaitable<void>;
+	start?(): Awaitable<void>;
 
-	close(): Awaitable<void>;
+	close?(): Awaitable<void>;
 
 	run(options: RunOptions): Awaitable<unknown>;
 }
