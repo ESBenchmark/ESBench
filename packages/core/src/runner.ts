@@ -52,7 +52,10 @@ export interface RunSuiteOption {
 }
 
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
-	const { name, afterAll = noop, timing = {}, validate, params = {}, baseline } = suite;
+	const {
+		name, beforeAll = noop, afterAll = noop,
+		timing, validate, params = {}, baseline,
+	} = suite;
 
 	if (baseline) {
 		if (!BUILTIN_VARS.includes(baseline.type)) {
@@ -74,6 +77,7 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 	const paramDef = checkParams(params);
 	const context = new ProfilingContext(suite, profilers, options);
 
+	await beforeAll();
 	await context.run().finally(afterAll);
 
 	const { scenes, notes, meta } = context;

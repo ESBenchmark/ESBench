@@ -144,7 +144,7 @@ export class TimeProfiler implements Profiler {
 	private readonly iterations: number | string;
 	private readonly evaluateOverhead: boolean;
 
-	constructor(config: TimingOptions) {
+	constructor(config: TimingOptions = {}) {
 		this.evaluateOverhead = config.evaluateOverhead !== false;
 		this.throughput = config.throughput;
 		this.samples = config.samples ?? 10;

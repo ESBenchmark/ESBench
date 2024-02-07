@@ -25,6 +25,7 @@ it("should return the result", async () => {
 it("should call lifecycle hooks", async () => {
 	const invocations: any[] = [];
 
+	const beforeAll = () => invocations.push(beforeAll);
 	const beforeEach = () => invocations.push(beforeEach);
 	const beforeIter = () => invocations.push(beforeIter);
 	const workload = () => invocations.push(workload);
@@ -35,6 +36,7 @@ it("should call lifecycle hooks", async () => {
 	await run({
 		timing: { iterations: 1, samples: 1 },
 		params: { n: [10, 100] },
+		beforeAll,
 		afterAll,
 		setup(scene) {
 			beforeEach();
@@ -46,7 +48,7 @@ it("should call lifecycle hooks", async () => {
 	});
 
 	expect(invocations).toStrictEqual([
-		beforeEach, beforeIter, workload, afterIter, afterEach,
+		beforeAll, beforeEach, beforeIter, workload, afterIter, afterEach,
 		beforeEach, beforeIter, workload, afterIter, afterEach, afterAll,
 	]);
 });

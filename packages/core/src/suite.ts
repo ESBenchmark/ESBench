@@ -83,6 +83,8 @@ export class Scene<P = any> {
 
 	/**
 	 * Teardown function to run after all case in the scene are executed.
+	 *
+	 * There is no beforeEach(), just put the setup code to suite.setup().
 	 */
 	afterEach(fn: HookFn) {
 		this.cleanEach.push(fn);
@@ -137,6 +139,14 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	name: string;
 	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
 
+	/**
+	 * Runs a function before running the suite.
+	 */
+	beforeAll?: HookFn;
+
+	/**
+	 * Runs a function after the suite has finished running.
+	 */
 	afterAll?: HookFn;
 
 	/**
