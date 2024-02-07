@@ -12,10 +12,6 @@ export default class DirectExecutor implements Executor {
 		return release.name;
 	}
 
-	start() {}
-
-	close() {}
-
 	async run({ root, files, pattern, handleMessage }: RunOptions) {
 		const url = pathToFileURL(join(root, "index.js"));
 		const module = await import(url.toString());

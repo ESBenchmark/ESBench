@@ -60,8 +60,6 @@ export default class ProcessExecutor implements Executor {
 		return file ? basename(file) : command;
 	}
 
-	start() {}
-
 	close() {
 		this.server.close();
 		this.process.kill();

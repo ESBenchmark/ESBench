@@ -90,7 +90,7 @@ function styleRatio(v: number, style: RatioStyle, meta: MetricsMeta, chalk: Chal
 		return chalk.blackBright("N/A");
 	}
 	const color = v === 1
-		? identity : (v < 1 === meta.lowerBetter)
+		? identity : (v < 1 === meta.lowerIsBetter)
 			? chalk.green : chalk.red;
 
 	switch (style) {
@@ -113,6 +113,56 @@ interface ColumnFactory {
 	prepare?(cases: FlattedResult[]): void;
 
 	getValue(data: FlattedResult, chalk: ChalkLike): any;
+}
+
+class RowNumberColumn implements ColumnFactory {
+
+	readonly name = "No.";
+
+	private index = 0;
+
+	getValue(data: FlattedResult) {
+		data[kRowNumber] = this.index;
+		return (this.index++).toString();
+	}
+}
+
+class VariableColumn implements ColumnFactory {
+
+	readonly name: string;
+
+	private readonly key: string;
+
+	constructor(key: string, chalk: ChalkLike) {
+		this.name = this.key = key;
+		if (!BUILTIN_VARS.includes(this.key)) {
+			this.name = chalk.magentaBright(this.name);
+		}
+	}
+
+	getValue(data: FlattedResult) {
+		return data[this.key];
+	}
+}
+
+class RawMetricColumn implements ColumnFactory {
+
+	readonly name: string;
+	readonly meta: MetricsMeta;
+
+	constructor(name: string, meta: MetricsMeta) {
+		this.name = name;
+		this.meta = meta;
+	}
+
+	get format() {
+		return this.meta.format;
+	}
+
+	getValue(data: FlattedResult) {
+		const metrics = getMetrics(data)[this.name];
+		return Array.isArray(metrics) ? mean(metrics) : metrics;
+	}
 }
 
 abstract class StatisticsColumn implements ColumnFactory {
@@ -142,6 +192,35 @@ abstract class StatisticsColumn implements ColumnFactory {
 		if (values !== undefined) {
 			throw new TypeError(`Metrics ${key} must be an array`);
 		}
+	}
+}
+
+class StdDevColumn extends StatisticsColumn {
+
+	get name() {
+		return this.key + ".SD";
+	}
+
+	calculate(values: number[]) {
+		return standardDeviation(values);
+	}
+}
+
+class PercentileColumn extends StatisticsColumn {
+
+	private readonly p: number;
+
+	constructor(key: string, meta: MetricsMeta, p: number) {
+		super(key, meta);
+		this.p = p;
+	}
+
+	get name() {
+		return `${this.key}.p${this.p}`;
+	}
+
+	calculate(values: number[]) {
+		return quantileSorted(values, this.p / 100);
 	}
 }
 
@@ -189,35 +268,6 @@ class BaselineColumn implements ColumnFactory {
 
 		const ratio = this.toNumber(data) / ratio1;
 		return styleRatio(ratio, this.style, meta, chalk);
-	}
-}
-
-class StdDevColumn extends StatisticsColumn {
-
-	get name() {
-		return this.key + ".SD";
-	}
-
-	calculate(values: number[]) {
-		return standardDeviation(values);
-	}
-}
-
-class PercentileColumn extends StatisticsColumn {
-
-	private readonly p: number;
-
-	constructor(key: string, meta: MetricsMeta, p: number) {
-		super(key, meta);
-		this.p = p;
-	}
-
-	get name() {
-		return `${this.key}.p${this.p}`;
-	}
-
-	calculate(values: number[]) {
-		return quantileSorted(values, this.p / 100);
 	}
 }
 
@@ -269,7 +319,7 @@ const kRowNumber = Symbol();
 function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult) {
 	const metrics = getMetrics(row);
 	for (const [name, meta] of summary.meta) {
-		if (meta.analyze !== MetricsAnalysis.Statistics) {
+		if (meta.analysis !== MetricsAnalysis.Statistics) {
 			continue;
 		}
 		const before = metrics[name];
@@ -318,10 +368,10 @@ export function createTable(
 	}
 	for (const [name, meta] of summary.meta) {
 		columnDefs.push(new RawMetricColumn(name, meta));
-		if (meta.analyze === MetricsAnalysis.None) {
+		if (!meta.analysis /* 0 or undefined */) {
 			continue;
 		}
-		if (meta.analyze === MetricsAnalysis.Statistics) {
+		if (meta.analysis === MetricsAnalysis.Statistics) {
 			if (stdDev) {
 				columnDefs.push(new StdDevColumn(name, meta));
 			}

@@ -92,6 +92,9 @@ export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
 
 /**
  * A function that post messages to the host. Provided by executors.
+ *
+ * If you implement an executor that does not support continuous transmission
+ * of messages, you can ignore logs.
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 

@@ -25,7 +25,7 @@ export function unroll(factor: number, isAsync: boolean) {
 
 /*
  * One idea is treat iteration hooks as overhead, run them with an empty benchmark,
- * then minus the time from result.
+ * then subtract the time from result.
  * but this cannot handle some cases. for example, consider the code:
  *
  * let data = null;
@@ -34,8 +34,7 @@ export function unroll(factor: number, isAsync: boolean) {
  *     if (data) heavyCleanup(data);
  * });
  *
- * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called,
- * we will get a wrong overhead time.
+ * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
 
 function createInvoker(factor: number, case_: BenchCase): Iterate {
@@ -171,14 +170,14 @@ export class TimeProfiler implements Profiler {
 		if (throughput) {
 			ctx.meta.throughput = {
 				format: `{number} ops/${throughput}`,
-				lowerBetter: false,
-				analyze: MetricsAnalysis.Statistics,
+				lowerIsBetter: false,
+				analysis: MetricsAnalysis.Statistics,
 			};
 		} else {
 			ctx.meta.time = {
 				format: "{duration.ms}",
-				lowerBetter: true,
-				analyze: MetricsAnalysis.Statistics,
+				lowerIsBetter: true,
+				analysis: MetricsAnalysis.Statistics,
 			};
 		}
 	}
@@ -189,7 +188,6 @@ export class TimeProfiler implements Profiler {
 
 		const iterate = createInvoker(unrollFactor, case_);
 
-		// noinspection SuspiciousTypeOfGuard
 		if (typeof iterations === "string") {
 			iterations = await this.estimate(ctx, iterate, iterations);
 			await ctx.info();

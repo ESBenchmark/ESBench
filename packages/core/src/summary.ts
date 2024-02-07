@@ -18,7 +18,7 @@ export type FlattedResult = Record<string, string> & {
 	Builder?: string;
 	Executor?: string;
 
-	// Retrieved by `SummaryTableFilter.getMetrics`
+	// Retrieved by `Summary.getMetrics`
 	[kMetrics]: Metrics;
 
 	// You can add custom properties with symbol keys.

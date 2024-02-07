@@ -50,7 +50,7 @@ it("should support custom metrics", () => {
 	const table = createTable([{
 		...defaultResult,
 		meta: {
-			foo: { format: "{number}", analyze: MetricsAnalysis.Statistics },
+			foo: { format: "{number}", analysis: MetricsAnalysis.Statistics },
 			bar: { format: "{dataSize.KiB}" },
 			baz: {},
 		},

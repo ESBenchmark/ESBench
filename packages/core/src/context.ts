@@ -24,22 +24,38 @@ export enum MetricsAnalysis {
 	None,
 
 	/**
-	 * Reporters should show diff with another result if present for the metrics.
-	 * The metrics value must be a number.
+	 * Reporters should show diff & ratio with another result if present for the metrics.
+	 * The metrics value must be a number or an array of number with at least 1 element.
 	 */
 	Compare,
 
 	/**
 	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metrics.
 	 * The metrics value must be an array of number with at least 1 element.
+	 *
+	 * Setting this value will also apply MetricsAnalysis.Compare
 	 */
 	Statistics,
 }
 
 export interface MetricsMeta {
+	/**
+	 * Specific the format when this metric displayed as text.
+	 * This option is ignored if the value is a string.
+	 */
 	format?: string;
-	analyze?: MetricsAnalysis;
-	lowerBetter?: boolean;
+
+	/**
+	 * Control which metrics can be derived from this.
+	 *
+	 * @default MetricsAnalysis.None
+	 */
+	analysis?: MetricsAnalysis;
+
+	/**
+	 * Does a smaller value of the metric mean better performance?
+	 */
+	lowerIsBetter?: boolean;
 }
 
 export interface Note {
