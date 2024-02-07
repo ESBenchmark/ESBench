@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
-import { createTable, MetricsAnalysis } from "../src/index.js";
+import { createTable, MetricAnalysis } from "../src/index.js";
 
 const time = {
 	format: "{duration.ms}",
-	analyze: MetricsAnalysis.Statistics,
+	analyze: MetricAnalysis.Statistics,
 };
 
 const defaultResult = {
@@ -50,7 +50,7 @@ it("should support custom metrics", () => {
 	const table = createTable([{
 		...defaultResult,
 		meta: {
-			foo: { format: "{number}", analysis: MetricsAnalysis.Statistics },
+			foo: { format: "{number}", analysis: MetricAnalysis.Statistics },
 			bar: { format: "{dataSize.KiB}" },
 			baz: {},
 		},

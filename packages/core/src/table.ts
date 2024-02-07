@@ -2,7 +2,7 @@ import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
-import { Metrics, MetricsAnalysis, MetricsMeta } from "./context.js";
+import { MetricAnalysis, MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS, insertThousandCommas } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
@@ -85,7 +85,7 @@ type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
 
-function styleRatio(v: number, style: RatioStyle, meta: MetricsMeta, chalk: ChalkLike) {
+function styleRatio(v: number, style: RatioStyle, meta: MetricMeta, chalk: ChalkLike) {
 	if (!Number.isFinite(v)) {
 		return chalk.blackBright("N/A");
 	}
@@ -148,9 +148,9 @@ class VariableColumn implements ColumnFactory {
 class RawMetricColumn implements ColumnFactory {
 
 	readonly name: string;
-	readonly meta: MetricsMeta;
+	readonly meta: MetricMeta;
 
-	constructor(name: string, meta: MetricsMeta) {
+	constructor(name: string, meta: MetricMeta) {
 		this.name = name;
 		this.meta = meta;
 	}
@@ -160,19 +160,19 @@ class RawMetricColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult) {
-		const metrics = getMetrics(data)[this.name];
-		return Array.isArray(metrics) ? mean(metrics) : metrics;
+		const metric = getMetrics(data)[this.name];
+		return Array.isArray(metric) ? mean(metric) : metric;
 	}
 }
 
 abstract class StatisticsColumn implements ColumnFactory {
 
 	protected readonly key: string;
-	protected readonly meta: MetricsMeta;
+	protected readonly meta: MetricMeta;
 
 	abstract readonly name: string;
 
-	constructor(key: string, meta: MetricsMeta) {
+	constructor(key: string, meta: MetricMeta) {
 		this.key = key;
 		this.meta = meta;
 	}
@@ -190,7 +190,7 @@ abstract class StatisticsColumn implements ColumnFactory {
 			return this.calculate(values);
 		}
 		if (values !== undefined) {
-			throw new TypeError(`Metrics ${key} must be an array`);
+			throw new TypeError(`Metric ${key} must be an array`);
 		}
 	}
 }
@@ -210,7 +210,7 @@ class PercentileColumn extends StatisticsColumn {
 
 	private readonly p: number;
 
-	constructor(key: string, meta: MetricsMeta, p: number) {
+	constructor(key: string, meta: MetricMeta, p: number) {
 		super(key, meta);
 		this.p = p;
 	}
@@ -227,14 +227,14 @@ class PercentileColumn extends StatisticsColumn {
 class BaselineColumn implements ColumnFactory {
 
 	private readonly key: string;
-	private readonly meta: MetricsMeta;
+	private readonly meta: MetricMeta;
 	private readonly variable: string;
 	private readonly value: string;
 	private readonly style: RatioStyle;
 
 	private ratio1 = 0;
 
-	constructor(key: string, meta: MetricsMeta, baseline: BaselineOptions, style: RatioStyle) {
+	constructor(key: string, meta: MetricMeta, baseline: BaselineOptions, style: RatioStyle) {
 		this.key = key;
 		this.meta = meta;
 		this.variable = baseline.type;
@@ -247,11 +247,11 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	private toNumber(data: FlattedResult) {
-		const metrics = getMetrics(data)[this.key];
-		if (Array.isArray(metrics)) {
-			return mean(metrics);
+		const metric = getMetrics(data)[this.key];
+		if (Array.isArray(metric)) {
+			return mean(metric);
 		}
-		return typeof metrics === "number" ? metrics : 0;
+		return typeof metric === "number" ? metric : 0;
 	}
 
 	prepare(cases: FlattedResult[]) {
@@ -275,10 +275,10 @@ class DifferenceColumn implements ColumnFactory {
 
 	private readonly another: Summary;
 	private readonly key: string;
-	private readonly meta: MetricsMeta;
+	private readonly meta: MetricMeta;
 	private readonly style: RatioStyle;
 
-	constructor(another: Summary, key: string, meta: MetricsMeta, style: RatioStyle) {
+	constructor(another: Summary, key: string, meta: MetricMeta, style: RatioStyle) {
 		this.another = another;
 		this.key = key;
 		this.meta = meta;
@@ -290,8 +290,8 @@ class DifferenceColumn implements ColumnFactory {
 	}
 
 	private toNumber(data: Metrics): number | undefined {
-		const metrics = data[this.key];
-		return Array.isArray(metrics) ? mean(metrics) : metrics as number;
+		const metric = data[this.key];
+		return Array.isArray(metric) ? mean(metric) : metric as number;
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {
@@ -319,7 +319,7 @@ const kRowNumber = Symbol();
 function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult) {
 	const metrics = getMetrics(row);
 	for (const [name, meta] of summary.meta) {
-		if (meta.analysis !== MetricsAnalysis.Statistics) {
+		if (meta.analysis !== MetricAnalysis.Statistics) {
 			continue;
 		}
 		const before = metrics[name];
@@ -371,7 +371,7 @@ export function createTable(
 		if (!meta.analysis /* 0 or undefined */) {
 			continue;
 		}
-		if (meta.analysis === MetricsAnalysis.Statistics) {
+		if (meta.analysis === MetricAnalysis.Statistics) {
 			if (stdDev) {
 				columnDefs.push(new StdDevColumn(name, meta));
 			}

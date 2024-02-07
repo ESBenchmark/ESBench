@@ -17,28 +17,28 @@ export interface CaseResult {
 
 export type Metrics = Record<string, number | number[] | string | undefined>;
 
-export enum MetricsAnalysis {
+export enum MetricAnalysis {
 	/**
-	 * There is no analyze performed to the metrics. This is the default value.
+	 * There is no analyze performed to the metric. This is the default value.
 	 */
 	None,
 
 	/**
-	 * Reporters should show diff & ratio with another result if present for the metrics.
-	 * The metrics value must be a number or an array of number with at least 1 element.
+	 * Reporters should show diff & ratio with another result if present for the metric.
+	 * The metric value must be a number or an array of number with at least 1 element.
 	 */
 	Compare,
 
 	/**
-	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metrics.
-	 * The metrics value must be an array of number with at least 1 element.
+	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metric.
+	 * The metric value must be an array of number with at least 1 element.
 	 *
-	 * Setting this value will also apply MetricsAnalysis.Compare
+	 * Setting this value will also apply MetricAnalysis.Compare
 	 */
 	Statistics,
 }
 
-export interface MetricsMeta {
+export interface MetricMeta {
 	/**
 	 * Specific the format when this metric displayed as text.
 	 * This option is ignored if the value is a string.
@@ -48,9 +48,9 @@ export interface MetricsMeta {
 	/**
 	 * Control which metrics can be derived from this.
 	 *
-	 * @default MetricsAnalysis.None
+	 * @default MetricAnalysis.None
 	 */
-	analysis?: MetricsAnalysis;
+	analysis?: MetricAnalysis;
 
 	/**
 	 * Does a smaller value of the metric mean better performance?
@@ -87,7 +87,7 @@ export class ProfilingContext {
 	 */
 	readonly notes: Note[] = [];
 
-	readonly meta: Record<string, MetricsMeta> = {};
+	readonly meta: Record<string, MetricMeta> = {};
 
 	readonly suite: BenchmarkSuite;
 	readonly profilers: Profiler[];

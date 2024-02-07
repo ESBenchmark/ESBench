@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns } from "./utils.js";
-import { Metrics, MetricsAnalysis, Profiler, ProfilingContext } from "./context.js";
+import { MetricAnalysis, Metrics, Profiler, ProfilingContext } from "./context.js";
 
 type Iterate = (count: number) => Awaitable<number>;
 
@@ -171,13 +171,13 @@ export class TimeProfiler implements Profiler {
 			ctx.meta.throughput = {
 				format: `{number} ops/${throughput}`,
 				lowerIsBetter: false,
-				analysis: MetricsAnalysis.Statistics,
+				analysis: MetricAnalysis.Statistics,
 			};
 		} else {
 			ctx.meta.time = {
 				format: "{duration.ms}",
 				lowerIsBetter: true,
-				analysis: MetricsAnalysis.Statistics,
+				analysis: MetricAnalysis.Statistics,
 			};
 		}
 	}

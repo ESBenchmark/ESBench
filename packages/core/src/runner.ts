@@ -3,7 +3,7 @@ import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { BUILTIN_VARS, checkParams, toDisplayName } from "./utils.js";
-import { CaseResult, LogHandler, LogLevel, MetricsMeta, Note, Profiler, ProfilingContext } from "./context.js";
+import { CaseResult, LogHandler, LogLevel, MetricMeta, Note, Profiler, ProfilingContext } from "./context.js";
 
 class DefaultEventLogger implements Profiler {
 
@@ -32,7 +32,7 @@ class DefaultEventLogger implements Profiler {
 export interface RunSuiteResult {
 	name: string;
 	paramDef: Array<[string, string[]]>;
-	meta: Record<string, MetricsMeta>;
+	meta: Record<string, MetricMeta>;
 	notes: Note[];
 	scenes: CaseResult[][];
 	baseline?: BaselineOptions;

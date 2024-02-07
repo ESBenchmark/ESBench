@@ -1,6 +1,6 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
 import { RunSuiteResult } from "./runner.js";
-import { Metrics, MetricsMeta } from "./context.js";
+import { MetricMeta, Metrics } from "./context.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
@@ -58,7 +58,7 @@ export class Summary {
 	 *
 	 * @see ProfilingContext.meta
 	 */
-	readonly meta = new Map<string, MetricsMeta>();
+	readonly meta = new Map<string, MetricMeta>();
 
 	readonly table: FlattedResult[] = [];
 
