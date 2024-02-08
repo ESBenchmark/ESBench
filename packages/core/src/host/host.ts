@@ -18,10 +18,11 @@ interface Build {
 
 class JobGenerator {
 
-	readonly nameMap = new Map<any, string | null>();
-	readonly assetMap = new Map<Builder, Build>();
-	readonly executorMap = new MultiMap<Executor, Builder>();
-	readonly builderMap = new MultiMap<Builder, string>();
+	readonly nameMap = new Map<any /* Builder | Executor */, string>();
+
+	private readonly builderMap = new MultiMap<Builder, string>();
+	private readonly executorMap = new MultiMap<Executor, Builder>();
+	private readonly assetMap = new Map<Builder, Build>();
 
 	private readonly directory: string;
 	private readonly filter: FilterOptions;
@@ -119,12 +120,21 @@ class JobGenerator {
 			tool = tool.use;
 		}
 
-		const existing = this.nameMap.get(tool);
-		if (existing === undefined || existing === name) {
-			this.nameMap.set(tool, name);
-			return tool;
+		const n = this.nameMap.get(tool);
+		if (n !== undefined && n !== name) {
+			throw new Error(`A tool can only have one name (${name} vs ${n})`);
 		}
-		throw new Error("A tool can only have one name: " + name);
+
+		for (const [t, n] of this.nameMap) {
+			if (t[keyMethod] === undefined) {
+				continue;
+			}
+			if (n === name) {
+				throw new Error("Each tool must have a unique name: " + name);
+			}
+		}
+		this.nameMap.set(tool, name);
+		return tool;
 	}
 }
 
