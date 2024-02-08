@@ -17,7 +17,7 @@ it("should set default properties", () => {
 	expect(config.reporters).toHaveLength(1);
 	expect(config.toolchains).toHaveLength(1);
 
-	const { include ,builders, executors } = config.toolchains[0];
+	const { include, builders, executors } = config.toolchains[0];
 	expect(builders).toHaveLength(1);
 	expect(executors).toHaveLength(1);
 	expect(include).toStrictEqual(["./benchmark/**/*.[jt]s?(x)"]);
@@ -31,4 +31,16 @@ it("should not modify the user config", () => {
 	expect(config.toolchains[0].builders).toHaveLength(1);
 	expect(config.toolchains[0].executors).toHaveLength(1);
 	expect(input).toStrictEqual({ toolchains: [{}] });
+});
+
+it("should fallback to singleton builder & executor", () => {
+	const config = normalizeConfig({
+		toolchains: [
+			{ include: ["foo"] },
+			{ include: ["bar"] },
+		],
+	});
+	const [t0, t1] = config.toolchains;
+	expect(t0.builders[0]).toBe(t1.builders[0]);
+	expect(t0.executors[0]).toBe(t1.executors[0]);
 });

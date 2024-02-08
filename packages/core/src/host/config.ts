@@ -2,7 +2,7 @@ import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "../summary.js";
 import { Builder, Executor } from "./toolchain.js";
 import noBuild from "../builder/default.js";
-import DirectExecutor from "../executor/direct.js";
+import direct from "../executor/direct.js";
 import textReporter from "../reporter/text.js";
 
 /**
@@ -115,7 +115,7 @@ export function normalizeConfig(input: ESBenchConfig) {
 		toolchain = {
 			include: ["./benchmark/**/*.[jt]s?(x)"],
 			builders: [noBuild],
-			executors: [new DirectExecutor()],
+			executors: [direct],
 			...toolchain,
 		};
 		config.toolchains!.push(toolchain);
