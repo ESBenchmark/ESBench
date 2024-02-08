@@ -1,4 +1,4 @@
-import type { Browser, BrowserType, LaunchOptions } from "playwright-core";
+import type { Browser, BrowserContext, BrowserType, LaunchOptions } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
 import mime from "mime";
@@ -50,6 +50,7 @@ export default class PlaywrightExecutor implements Executor {
 	readonly name: string;
 
 	private browser!: Browser;
+	private context!: BrowserContext;
 
 	constructor(type: BrowserType, options?: LaunchOptions) {
 		this.name = type.name();
@@ -59,25 +60,22 @@ export default class PlaywrightExecutor implements Executor {
 
 	async start() {
 		const { type, options } = this;
+		console.log("[Playwright] Launching browser...");
 		this.browser = await type.launch(options);
-		console.log("Launching browser...");
+		this.context = await this.browser.newContext({ baseURL });
 	}
 
 	close() {
 		return this.browser.close();
 	}
 
-	launchContext() {
-		return this.browser.newContext({ baseURL });
-	}
-
 	async run(options: RunOptions) {
 		const { files, pattern, root, handleMessage } = options;
+		const page = await this.context.newPage();
 
-		const context = await this.launchContext();
-		await context.exposeFunction("_ESBenchChannel", handleMessage);
+		await page.exposeFunction("_ESBenchChannel", handleMessage);
 
-		await context.route("**/*", (route, request) => {
+		await page.route("**/*", (route, request) => {
 			const url = request.url();
 			if (url === baseURL) {
 				return route.fulfill(PageHTML);
@@ -87,11 +85,8 @@ export default class PlaywrightExecutor implements Executor {
 			return route.fulfill({ body, contentType: mime.getType(path)! });
 		});
 
-		const page = await context.newPage();
 		await page.goto("/");
 		await page.evaluate(client, { files, pattern });
-
 		await page.close();
-		await context.close();
 	}
 }
