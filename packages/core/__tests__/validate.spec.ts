@@ -129,3 +129,18 @@ it("should support custom equality function", () => {
 
 	return expect(run(suite)).resolves.toBeTruthy();
 });
+
+it("should check equality in scene scope", () => {
+	const suite = defineSuite({
+		name: "Test Suite",
+		params: {
+			size: [11, 22],
+		},
+		validate: { equality: true },
+		setup(scene) {
+			scene.bench("A", () => scene.params.size);
+			scene.bench("B", () => scene.params.size);
+		},
+	});
+	return expect(run(suite)).resolves.toBeTruthy();
+});

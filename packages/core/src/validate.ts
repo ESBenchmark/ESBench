@@ -55,6 +55,7 @@ class PreValidateProfiler implements Profiler {
 
 	onScene(_: ProfilingContext, scene: Scene) {
 		this.params = scene.params;
+		this.valueA = NONE;
 	}
 
 	async onCase(_: ProfilingContext, case_: BenchCase) {
