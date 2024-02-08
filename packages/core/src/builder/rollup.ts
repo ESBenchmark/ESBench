@@ -52,6 +52,7 @@ const defaults: InlineConfig = {
 		lib: {
 			entry: entryId,
 			formats: ["es"],
+			fileName: "index",
 		},
 	},
 };
@@ -103,9 +104,9 @@ export class ViteBuilder implements Builder {
 				// Override lib.entry which resolves our virtual module to absolute path.
 				rollupOptions: {
 					input: entryId,
-				},
-				lib: {
-					fileName: "index",
+					output: {
+						entryFileNames: "[name].js",
+					},
 				},
 			},
 			plugins: [entryPlugin(files)],
