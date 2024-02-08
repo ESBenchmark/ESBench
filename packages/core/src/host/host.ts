@@ -16,7 +16,7 @@ interface Build {
 	files: string[];
 }
 
-class JobGenerator {
+export class JobGenerator {
 
 	readonly nameMap = new Map<any /* Builder | Executor */, string>();
 
@@ -121,8 +121,11 @@ class JobGenerator {
 		}
 
 		const n = this.nameMap.get(tool);
-		if (n !== undefined && n !== name) {
-			throw new Error(`A tool can only have one name (${name} vs ${n})`);
+		if (n !== undefined) {
+			if (n === name) {
+				return tool;
+			}
+			throw new Error(`A tool can only have one name (${n} vs ${name})`);
 		}
 
 		for (const [t, n] of this.nameMap) {
