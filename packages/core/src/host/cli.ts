@@ -3,7 +3,7 @@ import { resolve } from "path";
 import { pathToFileURL } from "url";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { ESBenchHost, report } from "./host.js";
+import { report, start } from "./host.js";
 import { ESBenchConfig } from "./config.js";
 
 process.title = "node (esbench)";
@@ -65,7 +65,7 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, shared, ...filter } = args;
-		return new ESBenchHost(await loadConfig(config)).run(filter, shared);
+		return start(await loadConfig(config), filter, shared);
 	});
 
 program.version(false).strict().showHelpOnFail(false).parseAsync();

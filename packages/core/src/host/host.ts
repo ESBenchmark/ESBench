@@ -7,9 +7,16 @@ import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { deserializeError } from "serialize-error";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
-import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
+import { ESBenchConfig, Nameable, normalizeConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "../index.js";
 import { consoleLogHandler, resolveRE, SharedModeFilter } from "../utils.js";
+
+interface FilterOptions {
+	file?: string;
+	builder?: string | RegExp;
+	executor?: string | RegExp;
+	name?: string | RegExp;
+}
 
 interface Build {
 	name: string;
@@ -142,99 +149,6 @@ export class JobGenerator {
 	}
 }
 
-interface FilterOptions {
-	file?: string;
-	builder?: string | RegExp;
-	executor?: string | RegExp;
-	name?: string | RegExp;
-}
-
-export class ESBenchHost {
-
-	private readonly config: NormalizedConfig;
-
-	readonly result: ESBenchResult = {};
-
-	constructor(config: ESBenchConfig) {
-		this.config = normalizeConfig(config);
-	}
-
-	private onMessage(executor: string, builder: string, message: ClientMessage) {
-		if ("e" in message) {
-			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
-			if (message.params) {
-				console.error(`At scene ${message.params}`);
-			}
-			throw deserializeError(message.e);
-		} else if ("level" in message) {
-			consoleLogHandler(message.level, message.log);
-		} else {
-			const { name } = message;
-			(this.result[name] ??= []).push({ executor, builder, ...message });
-		}
-	}
-
-	async run(filter: FilterOptions = {}, shared?: string) {
-		const { reporters, toolchains, tempDir, diff, cleanTempDir } = this.config;
-		const startTime = performance.now();
-
-		mkdirSync(tempDir, { recursive: true });
-
-		const generator = new JobGenerator(tempDir, filter);
-		for (const toolchain of toolchains) {
-			generator.add(toolchain);
-		}
-		await generator.build(shared);
-		const jobs = generator.getJobs();
-
-		if (jobs.size === 0) {
-			throw new Error("\nNo file matching the include pattern of toolchains");
-		}
-
-		const context: Partial<RunOptions> = {
-			tempDir,
-			pattern: resolveRE(filter.name).source,
-		};
-
-		for (const [executor, builds] of jobs) {
-			const eName = generator.getName(executor);
-
-			await executor.start?.();
-			console.log(`Running suites with: ${eName}.`);
-
-			for (const { name, root, files } of builds) {
-				context.handleMessage = this.onMessage.bind(this, eName, name);
-				context.files = files;
-				context.root = root;
-				await executor.run(context as RunOptions);
-			}
-			await executor.close?.();
-		}
-
-		console.log(); // Add an empty line between running & reporting phase.
-
-		const previous = diff && loadJSON(diff, false);
-		for (const reporter of reporters) {
-			await reporter(this.result, previous);
-		}
-
-		/*
-		 * We did not put the cleanup code to finally block,
-		 * so that you can check the build output when error occurred.
-		 */
-		if (cleanTempDir) {
-			try {
-				rmSync(tempDir, { recursive: true });
-			} catch (e) {
-				console.error(e); // It's ok to keep running.
-			}
-		}
-
-		const timeUsage = performance.now() - startTime;
-		console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
-	}
-}
-
 function loadJSON(path: string, throwIfMissing: boolean) {
 	try {
 		return JSON.parse(readFileSync(path, "utf8"));
@@ -259,4 +173,81 @@ export async function report(config: ESBenchConfig, files: string[]) {
 	for (const reporter of reporters) {
 		await reporter(result, previous);
 	}
+}
+
+export async function start(config: ESBenchConfig, filter: FilterOptions = {}, shared?: string) {
+	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
+	const result: ESBenchResult = {};
+
+	function onMessage(executor: string, builder: string, message: ClientMessage) {
+		if ("e" in message) {
+			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
+			if (message.params) {
+				console.error(`At scene ${message.params}`);
+			}
+			throw deserializeError(message.e);
+		} else if ("level" in message) {
+			consoleLogHandler(message.level, message.log);
+		} else {
+			const { name } = message;
+			(result[name] ??= []).push({ executor, builder, ...message });
+		}
+	}
+
+	const startTime = performance.now();
+
+	mkdirSync(tempDir, { recursive: true });
+
+	const generator = new JobGenerator(tempDir, filter);
+	for (const toolchain of toolchains) {
+		generator.add(toolchain);
+	}
+	await generator.build(shared);
+	const jobs = generator.getJobs();
+
+	if (jobs.size === 0) {
+		throw new Error("\nNo file matching the include pattern of toolchains");
+	}
+
+	const context: Partial<RunOptions> = {
+		tempDir,
+		pattern: resolveRE(filter.name).source,
+	};
+
+	for (const [executor, builds] of jobs) {
+		const eName = generator.getName(executor);
+
+		await executor.start?.();
+		console.log(`Running suites with: ${eName}.`);
+
+		for (const { name, root, files } of builds) {
+			context.handleMessage = onMessage.bind(null, eName, name);
+			context.files = files;
+			context.root = root;
+			await executor.run(context as RunOptions);
+		}
+		await executor.close?.();
+	}
+
+	console.log(); // Add an empty line between running & reporting phase.
+
+	const previous = diff && loadJSON(diff, false);
+	for (const reporter of reporters) {
+		await reporter(result, previous);
+	}
+
+	/*
+	 * We did not put the cleanup code to finally block,
+	 * so that you can check the build output when error occurred.
+	 */
+	if (cleanTempDir) {
+		try {
+			rmSync(tempDir, { recursive: true });
+		} catch (e) {
+			console.error(e); // It's ok to keep running.
+		}
+	}
+
+	const timeUsage = performance.now() - startTime;
+	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }
