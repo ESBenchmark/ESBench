@@ -1,8 +1,10 @@
-import type { Browser, BrowserContext, BrowserType, LaunchOptions } from "playwright-core";
+import type { Browser, BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { pathToFileURL } from "url";
 import mime from "mime";
 import { Executor, RunOptions } from "../host/toolchain.js";
+import { ClientMessage } from "../runner.js";
 
 declare function _ESBenchChannel(message: any): void;
 
@@ -69,11 +71,51 @@ export default class PlaywrightExecutor implements Executor {
 		return this.browser.close();
 	}
 
+	fixStacktrace(error: any, page: Page, root: string) {
+		const { name, message, stack } = error;
+		const { origin } = new URL(page.url());
+		const lines = stack.split("\n") as string[];
+		let re: RegExp;
+
+		if (this.type.name() !== "chromium") {
+			re = /(.*?)@(.+)/;
+		} else {
+			lines.splice(0, 1);
+			re = / {4}at (.+?) \((.+?)\)/;
+		}
+
+		for (let i = 0; i < lines.length; i++) {
+			let [, fn, pos] = re.exec(lines[i]) ?? [];
+			if (!pos) {
+				continue;
+			}
+			if (fn) {
+				fn = fn.replace("*", " ");
+			} else {
+				fn = "<anonymous>";
+			}
+			if (pos.startsWith(origin)) {
+				pos = root + pos.slice(origin.length);
+				pos = pathToFileURL(pos).toString();
+			}
+			lines[i] = `    at ${fn} (${pos})`;
+		}
+
+		error.stack = `${name}: ${message}\n` + lines.join("\n");
+	}
+
 	async run(options: RunOptions) {
 		const { files, pattern, root, handleMessage } = options;
 		const page = await this.context.newPage();
 
-		await page.exposeFunction("_ESBenchChannel", handleMessage);
+		const channel = (message: ClientMessage) => {
+			if ("e" in message) {
+				this.fixStacktrace(message.e, page, root);
+			}
+			handleMessage(message);
+		};
+
+		await page.exposeFunction("_ESBenchChannel", channel);
 
 		await page.route("**/*", (route, request) => {
 			const url = request.url();
