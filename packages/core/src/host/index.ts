@@ -1,6 +1,6 @@
 export * from "./config.js";
 export * from "./toolchain.js";
-export { ESBenchHost, report } from "./host.js";
+export { start, report } from "./host.js";
 
 export { default as textReporter } from "../reporter/text.js";
 export { default as rawReporter } from "../reporter/raw.js";

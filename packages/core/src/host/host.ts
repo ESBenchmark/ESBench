@@ -179,21 +179,6 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}, s
 	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
 	const result: ESBenchResult = {};
 
-	function onMessage(executor: string, builder: string, message: ClientMessage) {
-		if ("e" in message) {
-			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
-			if (message.params) {
-				console.error(`At scene ${message.params}`);
-			}
-			throw deserializeError(message.e);
-		} else if ("level" in message) {
-			consoleLogHandler(message.level, message.log);
-		} else {
-			const { name } = message;
-			(result[name] ??= []).push({ executor, builder, ...message });
-		}
-	}
-
 	const startTime = performance.now();
 
 	mkdirSync(tempDir, { recursive: true });
@@ -209,24 +194,10 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}, s
 		throw new Error("\nNo file matching the include pattern of toolchains");
 	}
 
-	const context: Partial<RunOptions> = {
-		tempDir,
-		pattern: resolveRE(filter.name).source,
-	};
-
 	for (const [executor, builds] of jobs) {
-		const eName = generator.getName(executor);
-
-		await executor.start?.();
-		console.log(`Running suites with: ${eName}.`);
-
-		for (const { name, root, files } of builds) {
-			context.handleMessage = onMessage.bind(null, eName, name);
-			context.files = files;
-			context.root = root;
-			await executor.run(context as RunOptions);
-		}
-		await executor.close?.();
+		const name = generator.getName(executor);
+		const driver = new ExecutorDriver(name, executor, result);
+		await driver.execute(builds, tempDir, filter);
 	}
 
 	console.log(); // Add an empty line between running & reporting phase.
@@ -250,4 +221,64 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}, s
 
 	const timeUsage = performance.now() - startTime;
 	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
+}
+
+class ExecutorDriver {
+
+	private readonly result: ESBenchResult;
+	private readonly name: string;
+	private readonly executor: Executor;
+	private readonly monitor: Promise<void>;
+
+	private reject!: (reason?: any) => void;
+	private current!: Build;
+
+	constructor(name: string, executor: Executor, result: ESBenchResult) {
+		this.result = result;
+		this.name = name;
+		this.executor = executor;
+		this.monitor = new Promise((_, reject) => this.reject = reject);
+		this.onMessage = this.onMessage.bind(this);
+	}
+
+	onMessage(message: ClientMessage) {
+		const { name: executor, current: { name: builder } } = this;
+
+		if ("e" in message) {
+			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
+			if (message.params) {
+				console.error(`At scene ${message.params}`);
+			}
+			this.reject(deserializeError(message.e));
+		} else if ("level" in message) {
+			consoleLogHandler(message.level, message.log);
+		} else {
+			const { name } = message;
+			(this.result[name] ??= []).push({ executor, builder, ...message });
+		}
+	}
+
+	async execute(builds: Build[], tempDir: string, filter: FilterOptions) {
+		const { executor, name, monitor } = this;
+		const context = <RunOptions>{
+			tempDir,
+			pattern: resolveRE(filter.name).source,
+		};
+
+		await executor.start?.();
+		console.log(`Running suites with: ${name}.`);
+
+		try {
+			for (const build of builds) {
+				this.current = build;
+				context.handleMessage = this.onMessage;
+				context.files = build.files;
+				context.root = build.root;
+				const task = executor.run(context);
+				await Promise.race([task, monitor]);
+			}
+		} finally {
+			await executor.close?.();
+		}
+	}
 }
