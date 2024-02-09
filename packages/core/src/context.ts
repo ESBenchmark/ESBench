@@ -96,6 +96,7 @@ export class ProfilingContext {
 
 	private hasRun = false;
 	private caseIndex = 0;
+	private workingParams: any;
 
 	constructor(suite: BenchmarkSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
@@ -147,38 +148,38 @@ export class ProfilingContext {
 	 * Run the profiling, the result is saved at `scenes` & `notes` properties.
 	 */
 	async run() {
-		const { hasRun, pattern, suite } = this;
+		const { hasRun, suite: { params = {} } } = this;
 		if (hasRun) {
-			throw new Error("A context can only be run once.");
+			throw new Error("A ProfilingContext can only be run once.");
 		}
 		this.hasRun = true;
 
-		const { params = {}, setup } = suite;
 		await this.runHooks("onStart");
-
 		for (const comb of cartesianObject(params)) {
-			const scene = new Scene(comb, pattern);
-			await setup(scene);
-			try {
-				await this.runScene(scene);
-			} finally {
-				await runFns(scene.cleanEach);
-			}
+			this.workingParams = comb;
+			await this.runScene(comb);
+			this.workingParams = undefined;
 		}
 		return this.runHooks("onFinish");
 	}
 
-	private async runScene(scene: Scene) {
-		await this.runHooks("onScene", scene);
+	private async runScene(params: any) {
+		const scene = new Scene(params, this.pattern);
+		await this.suite.setup(scene);
+		try {
+			await this.runHooks("onScene", scene);
 
-		const workloads: CaseResult[] = [];
-		this.scenes.push(workloads);
+			const workloads: CaseResult[] = [];
+			this.scenes.push(workloads);
 
-		for (const case_ of scene.cases) {
-			case_.id = this.caseIndex++;
-			const metrics = {};
-			await this.runHooks("onCase", case_, metrics);
-			workloads.push({ name: case_.name, metrics });
+			for (const case_ of scene.cases) {
+				case_.id = this.caseIndex++;
+				const metrics = {};
+				await this.runHooks("onCase", case_, metrics);
+				workloads.push({ name: case_.name, metrics });
+			}
+		} finally {
+			await runFns(scene.cleanEach);
 		}
 	}
 

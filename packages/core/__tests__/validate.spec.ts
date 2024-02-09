@@ -1,146 +1,81 @@
 import { expect, it, vi } from "vitest";
-import { defineSuite } from "../src/index.js";
-import { run } from "./helper.js";
-import { ValidationError } from "../src/validate.js";
+import { Profiler } from "../src/index.js";
+import { PartialSuite, runProfilers } from "./helper.js";
+import { ExecutionValidator, ValidateOptions } from "../src/validate.js";
 
-async function expectError(suite: any, properties: any) {
-	properties.cause ??= undefined;
-	const promise = run(suite);
-	await expect(promise).rejects.toThrow(ValidationError);
-	try {
-		await promise;
-	} catch (e) {
-		const { message, cause, ...rest } = e;
-		expect({ message, cause, ...rest }).toStrictEqual(properties);
-	}
+function runWithValidator(options: ValidateOptions, suite: PartialSuite) {
+	return runProfilers([new ExecutionValidator(options)], suite);
 }
 
-it("should not validate if the option is false", async () => {
-	const cause = new TypeError("Stub Error");
-	const previous = vi.fn();
+it("should validate the execution at the beginning", async () => {
+	const e = new TypeError("Stub Error");
+	const mockProfiler: Profiler = { onCase: vi.fn() };
+	const profilers = [mockProfiler, new ExecutionValidator({})];
 
-	const suite = defineSuite({
-		name: "Test Suite",
-		timing: {
-			samples: 11,
-		},
-		setup(scene) {
-			scene.bench("foo", previous);
-			scene.bench("bar", () => {throw cause;});
-		},
-	});
-
-	await expect(run(suite)).rejects.toThrow(cause);
-	expect(previous).toHaveBeenCalledTimes(11);
-});
-
-it("should validate executions", async () => {
-	const cause = new TypeError("Stub Error");
-	const previous = vi.fn();
-
-	const suite = defineSuite({
-		name: "Test Suite",
-		timing: {
-			samples: 2,
-		},
-		validate: {},
+	const promise = runProfilers(profilers, {
 		params: {
 			n: [10, 100, 1000],
 		},
 		setup(scene) {
-			scene.bench("foo", previous);
-
+			scene.benchAsync("foo", vi.fn());
 			if (scene.params.n === 100) {
-				scene.bench("bar", () => {throw cause;});
+				scene.bench("bar", () => {throw e;});
 			}
 		},
 	});
-
-	await expectError(suite, {
-		cause,
-		params: { n: 100 },
-		workload: "bar",
-		message: "Failed to execute benchmark \"bar\"",
-	});
-	expect(previous).toHaveBeenCalledTimes(2);
-});
-
-it("should run in new context",async () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		validate: {},
-		setup(scene) {
-			scene.benchAsync("foo", vi.fn());
-			scene.benchAsync("bar", vi.fn());
-		},
-	});
-	const result = await run(suite);
-	expect(result.scenes).toHaveLength(1);
-	expect(result.scenes[0]).toHaveLength(2);
+	await expect(promise).rejects.toThrow(e);
+	expect(mockProfiler.onCase).not.toHaveBeenCalled();
 });
 
 it("should validate the return value", () => {
 	const cause = new TypeError("Stub Error");
-	const suite = defineSuite({
-		name: "Test Suite",
-		validate: {
-			check: () => {throw cause;},
-		},
+
+	const promise = runWithValidator({
+		check: () => { throw cause; },
+	},{
 		setup(scene) {
 			scene.bench("foo", () => 11);
 			scene.bench("bar", () => 22);
 		},
 	});
-
-	return expectError(suite, {
-		cause,
-		params: {},
-		workload: "foo",
-		message: "\"foo\" returns incorrect value",
-	});
+	return expect(promise).rejects.toThrow(cause);
 });
 
 it("should check return values are equal", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		validate: { equality: true },
+	const promise = runWithValidator({
+		equality: true,
+	},{
 		setup(scene) {
 			scene.bench("foo", () => 11);
 			scene.bench("bar", () => 22);
 		},
 	});
-
-	return expectError(suite, {
-		params: {},
-		workload: "bar",
-		message: "\"foo\" and \"bar\" returns different value.",
-	});
+	return expect(promise).rejects.toThrow('"foo" and "bar" returns different value.');
 });
 
 it("should support custom equality function", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
-		validate: { equality: () => true },
+	const promise = runWithValidator({
+		equality: () => true,
+	}, {
 		setup(scene) {
 			scene.bench("A", () => 11);
 			scene.bench("B", () => 22);
 		},
 	});
-
-	return expect(run(suite)).resolves.toBeTruthy();
+	return expect(promise).resolves.toBeTruthy();
 });
 
 it("should check equality in scene scope", () => {
-	const suite = defineSuite({
-		name: "Test Suite",
+	const promise = runWithValidator({
+		equality: true,
+	}, {
 		params: {
 			size: [11, 22],
 		},
-		validate: { equality: true },
 		setup(scene) {
 			scene.bench("A", () => scene.params.size);
 			scene.bench("B", () => scene.params.size);
 		},
 	});
-	return expect(run(suite)).resolves.toBeTruthy();
+	return expect(promise).resolves.toBeTruthy();
 });

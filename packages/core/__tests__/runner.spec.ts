@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { run, sleep1 } from "./helper.js";
+import { RunSuiteError } from "../src/index.js";
 
 it("should return the result", async () => {
 	const result = await run({
@@ -105,4 +106,22 @@ it("should call profiler hooks in order", async () => {
 		["onCase", "bar"],
 		["onFinish"],
 	]);
+});
+
+it("should wrap exception with RunSuiteError", () => {
+	return expect(run({})).rejects.toThrow(RunSuiteError);
+});
+
+it("should port params if the error threw from scene", async () => {
+	const promise = run({
+		params: {
+			foo: [11],
+			bar: [22, 33],
+		},
+		setup() {
+			throw new Error("test");
+		},
+	});
+	await expect(promise).rejects.toThrow(RunSuiteError);
+	await expect(promise).rejects.toHaveProperty("params", { foo: 11, bar: 22 });
 });

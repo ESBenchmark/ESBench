@@ -29,6 +29,27 @@ class DefaultEventLogger implements Profiler {
 	}
 }
 
+export class RunSuiteError extends Error {
+
+	/**
+	 * The params property of the scene that threw the error,
+	 * or undefined if the error did not occur in a scene.
+	 */
+	readonly params?: object;
+
+	/** JSON represent of the params */
+	readonly paramStr?: string;
+
+	constructor(message: string, cause: Error, params?: object, ps?: string) {
+		super(message, { cause });
+		this.params = params;
+		this.paramStr = ps;
+		this.cause = cause; // For compatibility.
+	}
+}
+
+RunSuiteError.prototype.name = "RunSuiteError";
+
 export interface RunSuiteResult {
 	name: string;
 	paramDef: Array<[string, string[]]>;
@@ -63,25 +84,40 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 		}
 	}
 
-	const profilers: Profiler[] = [new DefaultEventLogger()];
-	if (suite.profilers) {
-		profilers.push(...suite.profilers);
-	}
-	if (validate) {
-		profilers.push(new ExecutionValidator(validate));
-	}
-	if (timing !== false) {
-		profilers.push(new TimeProfiler(timing === true ? {} : timing));
-	}
+	let context: ProfilingContext | undefined = undefined;
+	try {
+		const profilers: Profiler[] = [new DefaultEventLogger()];
+		if (suite.profilers) {
+			profilers.push(...suite.profilers);
+		}
+		if (validate) {
+			profilers.push(new ExecutionValidator(validate));
+		}
+		if (timing !== false) {
+			profilers.push(new TimeProfiler(timing === true ? {} : timing));
+		}
 
-	const paramDef = checkParams(params);
-	const context = new ProfilingContext(suite, profilers, options);
+		const paramDef = checkParams(params);
+		context = new ProfilingContext(suite, profilers, options);
 
-	await beforeAll();
-	await context.run().finally(afterAll);
+		await beforeAll();
+		await context.run().finally(afterAll);
 
-	const { scenes, notes, meta } = context;
-	return { name, notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
+		const { scenes, notes, meta } = context;
+		return { name, notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
+	} catch (e) {
+		const wp = (context as any)?.workingParams;
+		if (wp) {
+			const p: Record<string, string> = {};
+			for (const [k, v] of Object.entries(wp)) {
+				p[k] = toDisplayName(v);
+			}
+			const s = JSON.stringify(p);
+			const message = "Error occurred in scene " + s;
+			throw new RunSuiteError(message, e, wp, s);
+		}
+		throw new RunSuiteError("Error occurred when running suite.", e);
+	}
 }
 
 export type ClientMessage = RunSuiteResult | {

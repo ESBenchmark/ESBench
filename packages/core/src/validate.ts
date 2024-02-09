@@ -1,5 +1,5 @@
 import { alwaysTrue, noop } from "@kaciras/utilities/browser";
-import { BenchCase, Scene } from "./suite.js";
+import { BenchCase } from "./suite.js";
 import { Profiler, ProfilingContext } from "./context.js";
 
 type EqualityFn = (a: any, b: any) => boolean;
@@ -20,23 +20,6 @@ export interface ValidateOptions {
 	equality?: boolean | EqualityFn;
 }
 
-export class ValidationError extends Error {
-
-	/** Name of the benchmark */
-	readonly workload: string;
-
-	/** Parameters of the scene */
-	readonly params: object;
-
-	constructor(params: object, workload: string, message: string, options?: any) {
-		super(message, options);
-		this.params = params;
-		this.workload = workload;
-	}
-}
-
-ValidationError.prototype.name = "ValidationError";
-
 const NONE = Symbol();
 
 class PreValidateProfiler implements Profiler {
@@ -44,7 +27,6 @@ class PreValidateProfiler implements Profiler {
 	private readonly isEqual: EqualityFn;
 	private readonly check: CheckFn;
 
-	private params!: object;
 	private nameA!: string;
 	private valueA: any = NONE;
 
@@ -53,8 +35,7 @@ class PreValidateProfiler implements Profiler {
 		this.isEqual = isEqual;
 	}
 
-	onScene(_: ProfilingContext, scene: Scene) {
-		this.params = scene.params;
+	onScene() {
 		this.valueA = NONE;
 	}
 
@@ -62,29 +43,15 @@ class PreValidateProfiler implements Profiler {
 		const { nameA, valueA, isEqual, check } = this;
 		const { name } = case_;
 
-		let returnValue;
-		try {
-			returnValue = await case_.invoke();
-		} catch (cause) {
-			this.fail(name, `Failed to execute benchmark "${name}"`, cause);
-		}
-
-		try {
-			check(returnValue);
-		} catch (cause) {
-			this.fail(name, `"${name}" returns incorrect value`, cause);
-		}
+		const returnValue = await case_.invoke();
+		check(returnValue);
 
 		if (valueA === NONE) {
 			this.valueA = returnValue;
 			this.nameA = name;
 		} else if (!isEqual(valueA, returnValue)) {
-			this.fail(name, `"${nameA}" and "${name}" returns different value.`);
+			throw new Error(`"${nameA}" and "${name}" returns different value.`);
 		}
-	}
-
-	private fail(name: string, message: string, cause?: Error) {
-		throw new ValidationError(this.params, name, message, { cause });
 	}
 }
 
