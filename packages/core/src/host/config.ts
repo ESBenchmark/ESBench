@@ -15,7 +15,7 @@ import textReporter from "../reporter/text.js";
  *       new ViteBuilder({ build: { minify: false } }),
  *       {
  *           name: "Vite Minified"
- *           use: new ViteBuilder({ build: { minify: true } }),
+ *           use: new ViteBuilder({ build: { lib: false, minify: true } }),
  *       }
  *     ]
  *   }]

@@ -1,4 +1,5 @@
 import { Awaitable, noop } from "@kaciras/utilities/browser";
+import { ErrorObject, serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
@@ -120,10 +121,19 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 	}
 }
 
-export type ClientMessage = RunSuiteResult | {
-	log?: string;
-	level: LogLevel;
-};
+type ErrorMessage = { e: ErrorObject; params?: string };
+
+type LogMessage = { log?: string; level: LogLevel };
+
+/**
+ * Some types of objects that need to be sent to the host.
+ *
+ * How to detect the type:
+ * - "level" in message: it's a LogMessage.
+ * - "e" in message: it's an ErrorMessage.
+ * - otherwise it is a RunSuiteResult object.
+ */
+export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
 
 /**
  * A function that load benchmark suites. Provided by builders.
@@ -133,23 +143,35 @@ export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
 /**
  * A function that post messages to the host. Provided by executors.
  *
+ * Log messages are sent multiple times, others are sent only once.
+ *
  * If you implement an executor that does not support continuous transmission
  * of messages, you can ignore logs.
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 
-export async function connect(channel: Channel, importer: Importer, files: string[], regex?: string) {
+export async function connect(
+	postMessage: Channel,
+	importer: Importer,
+	files: string[],
+	pattern?: string,
+) {
 	const option: RunSuiteOption = {
-		log: (level, log) => channel({ level: level, log }),
-		pattern: regex ? new RegExp(regex) : undefined,
+		log: (level, log) => postMessage({ level, log }),
+		pattern: pattern ? new RegExp(pattern) : undefined,
 	};
 
 	try {
 		for (const file of files) {
-			const { default: suite } = await importer(file);
-			channel(await runSuite(suite, option));
+			const suite = await importer(file);
+			postMessage(await runSuite(suite.default, option));
 		}
 	} catch (e) {
-		channel({ level: "error", log: `Suite execution failed: ${e.message}` });
+		let params: string | undefined;
+		if (e.name === "RunSuiteError") {
+			params = e.paramStr;
+			e = e.cause;
+		}
+		postMessage({ e: serializeError(e), params });
 	}
 }

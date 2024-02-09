@@ -5,6 +5,7 @@ import { performance } from "perf_hooks";
 import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
+import { deserializeError } from "serialize-error";
 import { Builder, Executor, RunOptions } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, NormalizedConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "../index.js";
@@ -159,7 +160,13 @@ export class ESBenchHost {
 	}
 
 	private onMessage(executor: string, builder: string, message: ClientMessage) {
-		if ("level" in message) {
+		if ("e" in message) {
+			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
+			if (message.params) {
+				console.error(`At scene ${message.params}`);
+			}
+			throw deserializeError(message.e);
+		} else if ("level" in message) {
 			consoleLogHandler(message.level, message.log);
 		} else {
 			const { name } = message;
