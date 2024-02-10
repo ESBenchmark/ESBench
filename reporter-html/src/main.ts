@@ -1,4 +1,4 @@
-import type { ESBenchResult } from "@esbench/core/client";
+import type { ESBenchResult } from "esbench";
 import { createApp } from "vue";
 import "./app.css";
 import { Page } from "./index.ts";

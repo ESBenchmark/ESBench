@@ -21,7 +21,7 @@ pnpm-debug.log*
 # Generated files
 .esbench-tmp
 reports
-packages/core/html
-packages/core/lib
-packages/reporter-html/build
-docs/.vitepress/cache
+/core/html
+/core/lib
+/reporter-html/build
+/docs/.vitepress/cache

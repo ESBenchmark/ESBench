@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ESBenchResult } from "@esbench/core/client";
+import type { ESBenchResult } from "esbench";
 import { computed, shallowRef } from "vue";
 import SuiteReport from "./SuiteReport.vue";
 

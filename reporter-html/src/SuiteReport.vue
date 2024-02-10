@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { SummaryTableFilter, type ToolchainResult } from "@esbench/core/client";
+import { Summary, type ToolchainResult } from "@esbench/core/lib/index.ts";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
 import useDataFilter from "./useDataFilter.ts";
@@ -54,12 +54,12 @@ interface SuiteReportProps {
 
 const props = defineProps<SuiteReportProps>();
 
-const { getMetrics } = SummaryTableFilter;
+const { getMetrics } = Summary;
 
 const errorBarType = shallowRef(valueRange);
 const canvasRef = shallowRef();
 
-const stf = computed(() => new SummaryTableFilter(props.result));
+const stf = computed(() => new Summary(props.result));
 
 let chart: BarWithErrorBarsChart;
 
