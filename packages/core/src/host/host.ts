@@ -6,7 +6,7 @@ import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { deserializeError } from "serialize-error";
-import { Builder, Executor, RunOptions } from "./toolchain.js";
+import { Builder, ExecuteOptions, Executor } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "../index.js";
 import { consoleLogHandler, resolveRE, SharedModeFilter } from "../utils.js";
@@ -178,7 +178,6 @@ export async function report(config: ESBenchConfig, files: string[]) {
 export async function start(config: ESBenchConfig, filter: FilterOptions = {}, shared?: string) {
 	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
 	const result: ESBenchResult = {};
-
 	const startTime = performance.now();
 
 	mkdirSync(tempDir, { recursive: true });
@@ -260,7 +259,7 @@ class ExecutorDriver {
 
 	async execute(builds: Build[], tempDir: string, filter: FilterOptions) {
 		const { executor, name, monitor } = this;
-		const context = <RunOptions>{
+		const context = <ExecuteOptions>{
 			tempDir,
 			pattern: resolveRE(filter.name).source,
 		};

@@ -1,9 +1,9 @@
 import { Awaitable } from "@kaciras/utilities/node";
 
 /*
- * Version should not be included in the suggested name of tools, reasons:
+ * Version should not be included in the suggested name, reasons:
  * 1) The version number may be too long.
- * 2) Dependencies may be updated frequently, in most cases we don't care about it,
+ * 2) Dependencies cloud be updated frequently, in most cases we don't care about it,
  *    but a change in the name can prevent comparisons.
  * 3) If you want to compare the performance of different versions of the tool,
  *    you should add them both to the configuration and set the name.
@@ -26,7 +26,7 @@ export interface Builder {
 	build(outDir: string, files: string[]): Awaitable<void>;
 }
 
-export interface RunOptions {
+export interface ExecuteOptions {
 	/**
 	 * A folder where the executor can save temporal files.
 	 */
@@ -37,6 +37,9 @@ export interface RunOptions {
 	 */
 	root: string;
 
+	/**
+	 * Paths (relative to cwd) of suite files to run.
+	 */
 	files: string[];
 
 	/**
@@ -58,5 +61,5 @@ export interface Executor {
 
 	close?(): Awaitable<void>;
 
-	run(options: RunOptions): Awaitable<unknown>;
+	run(options: ExecuteOptions): Awaitable<unknown>;
 }

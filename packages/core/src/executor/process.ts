@@ -5,7 +5,7 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { basename, join, relative } from "path";
 import { writeFileSync } from "fs";
-import { Executor, RunOptions } from "../host/toolchain.js";
+import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const template = `\
 import connect from "__ENTRY__";
@@ -65,7 +65,7 @@ export default class ProcessExecutor implements Executor {
 		this.process.kill();
 	}
 
-	async run(options: RunOptions) {
+	async run(options: ExecuteOptions) {
 		const { tempDir, root, files, pattern, handleMessage } = options;
 		const { getCommand } = this;
 

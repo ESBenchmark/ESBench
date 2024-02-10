@@ -182,7 +182,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	 *
 	 * @example
 	 * // The result with baseline: { type: "Name", value: "map" }
-	 * | No. |         Name |      time | time.Ratio |
+	 * | No. |         Name |      time | time.ratio |
 	 * | --: | -----------: | --------: | ---------: |
 	 * |   0 |    For-index |  11.39 us |      1.00x |
 	 * |   1 |       For-of |  27.36 us |      2.40x |

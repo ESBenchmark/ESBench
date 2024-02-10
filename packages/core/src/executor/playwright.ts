@@ -3,7 +3,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import mime from "mime";
-import { Executor, RunOptions } from "../host/toolchain.js";
+import { ExecuteOptions, Executor } from "../host/toolchain.js";
 import { ClientMessage } from "../runner.js";
 
 declare function _ESBenchChannel(message: any): void;
@@ -71,40 +71,7 @@ export default class PlaywrightExecutor implements Executor {
 		return this.browser.close();
 	}
 
-	fixStacktrace(error: any, page: Page, root: string) {
-		const { name, message, stack } = error;
-		const { origin } = new URL(page.url());
-		const lines = stack.split("\n") as string[];
-		let re: RegExp;
-
-		if (this.type.name() !== "chromium") {
-			re = /(.*?)@(.+)/;
-		} else {
-			lines.splice(0, 1);
-			re = / {4}at (.+?) \((.+?)\)/;
-		}
-
-		for (let i = 0; i < lines.length; i++) {
-			let [, fn, pos] = re.exec(lines[i]) ?? [];
-			if (!pos) {
-				continue;
-			}
-			if (fn) {
-				fn = fn.replace("*", " ");
-			} else {
-				fn = "<anonymous>";
-			}
-			if (pos.startsWith(origin)) {
-				pos = root + pos.slice(origin.length);
-				pos = pathToFileURL(pos).toString();
-			}
-			lines[i] = `    at ${fn} (${pos})`;
-		}
-
-		error.stack = `${name}: ${message}\n` + lines.join("\n");
-	}
-
-	async run(options: RunOptions) {
+	async run(options: ExecuteOptions) {
 		const { files, pattern, root, handleMessage } = options;
 		const page = await this.context.newPage();
 
@@ -130,5 +97,41 @@ export default class PlaywrightExecutor implements Executor {
 		await page.goto("/");
 		await page.evaluate(client, { files, pattern });
 		await page.close();
+	}
+
+	/**
+	 * Convert stack trace to Node format, and resolve location to file URL.
+	 */
+	fixStacktrace(error: any, page: Page, root: string) {
+		const { name, message, stack } = error;
+		const { origin } = new URL(page.url());
+		const lines = stack.split("\n") as string[];
+		let re: RegExp;
+
+		if (this.type.name() === "chromium") {
+			lines.splice(0, 1);
+			re = / {4}at (.+?) \((.+?)\)/;
+		} else {
+			re = /(.*?)@(.+)/;
+		}
+
+		for (let i = 0; i < lines.length; i++) {
+			let [, fn, pos] = re.exec(lines[i]) ?? [];
+			if (!pos) {
+				continue;
+			}
+			if (fn) {
+				fn = fn.replace("*", " ");
+			} else {
+				fn = "<anonymous>";
+			}
+			if (pos.startsWith(origin)) {
+				pos = root + pos.slice(origin.length);
+				pos = pathToFileURL(pos).toString();
+			}
+			lines[i] = `    at ${fn} (${pos})`;
+		}
+
+		error.stack = `${name}: ${message}\n` + lines.join("\n");
 	}
 }

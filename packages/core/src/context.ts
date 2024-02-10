@@ -87,6 +87,12 @@ export class ProfilingContext {
 	 */
 	readonly notes: Note[] = [];
 
+	/**
+	 * Descriptions of metrics. Profiler should add the metric descriptions they need to report on.
+	 *
+	 * Values in the case metric without corresponding description will not be shown in the report,
+	 * but they will still be serialized.
+	 */
 	readonly meta: Record<string, MetricMeta> = {};
 
 	readonly suite: BenchmarkSuite;
@@ -128,7 +134,7 @@ export class ProfilingContext {
 	/**
 	 * Add a note to result, it will print a log and displayed in the report.
 	 *
-	 * The different between notes and logs is note is that
+	 * The different between notes and logs is that
 	 * notes are only relevant to the result, while logs can record anything.
 	 *
 	 * @param type Type of the note, "info" or "warn".
@@ -140,6 +146,9 @@ export class ProfilingContext {
 		return this.logHandler(type, text);
 	}
 
+	/**
+	 * Create a new ProfilingContext for the same suite.
+	 */
 	newWorkflow(profilers: Profiler[], options: RunSuiteOption = {}) {
 		return new ProfilingContext(this.suite, profilers, options);
 	}

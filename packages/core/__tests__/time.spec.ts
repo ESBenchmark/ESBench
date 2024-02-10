@@ -29,13 +29,13 @@ it("should reduce overhead by unrolling", async () => {
 });
 
 it.each([
-	[{ unrollFactor: 0 }, "The unrollFactor must be at least 1."],
-	[{ samples: 0 }, "The number of samples must be at least 1."],
-	[{ iterations: 0 }, "The number of iterations cannot be 0 or negative."],
-	[{ iterations: "0m" }, "Iteration time cannot be 0."],
+	[{ unrollFactor: 0 }, "The unrollFactor must be at least 1"],
+	[{ samples: 0 }, "The number of samples must be at least 1"],
+	[{ iterations: 0 }, "The number of iterations cannot be 0 or negative"],
+	[{ iterations: "0m" }, "Iteration time cannot be 0"],
 	[
 		{ unrollFactor: 2, iterations: 3 },
-		"iterations must be a multiple of unrollFactor.",
+		"iterations must be a multiple of unrollFactor",
 	],
 ])("should validate options %#", (options, msg) => {
 	return expect(async () => measureTime(options)).rejects.toThrow(msg);

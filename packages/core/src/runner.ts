@@ -30,6 +30,10 @@ class DefaultEventLogger implements Profiler {
 	}
 }
 
+/**
+ * Wrap the original error and provide more information.
+ * The original error can be retrieved by the cause property.
+ */
 export class RunSuiteError extends Error {
 
 	/**
@@ -73,6 +77,9 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
+/**
+ * Run a benchmark suite. Any exception that occur within this function is wrapped in a RunSuiteError,.
+ */
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
 	const {
 		name, beforeAll = noop, afterAll = noop,

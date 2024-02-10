@@ -3,7 +3,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path/posix";
 import { ChildProcess, fork } from "child_process";
 import { once } from "events";
-import { Executor, RunOptions } from "../host/toolchain.js";
+import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -39,7 +39,7 @@ export default class NodeExecutor implements Executor {
 		this.process.kill();
 	}
 
-	run(options: RunOptions) {
+	run(options: ExecuteOptions) {
 		const { root, files, pattern, handleMessage } = options;
 
 		this.process.removeAllListeners("message");

@@ -57,6 +57,10 @@ const defaults: InlineConfig = {
 	},
 };
 
+/**
+ * Transform suites with Rollup for benchmark, you have to
+ * install rollup and add a plugin to perform Node resolving.
+ */
 export class RollupBuilder implements Builder {
 
 	private readonly config: RollupOptions;
@@ -85,6 +89,9 @@ export class RollupBuilder implements Builder {
 	}
 }
 
+/**
+ * Transform suites with Rollup for benchmark, you have to install vite.
+ */
 export class ViteBuilder implements Builder {
 
 	private readonly config: InlineConfig;

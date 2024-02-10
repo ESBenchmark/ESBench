@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
-import { createTable, MetricAnalysis } from "../src/index.js";
+import { createTable, MetricAnalysis, MetricMeta } from "../src/index.js";
 
-const time = {
+const time: MetricMeta = {
 	format: "{duration.ms}",
-	analyze: MetricAnalysis.Statistics,
+	analysis: MetricAnalysis.Statistics,
 };
 
 const defaultResult = {

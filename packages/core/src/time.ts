@@ -153,10 +153,10 @@ export class TimeProfiler implements Profiler {
 		this.iterations = config.iterations ?? "1s";
 
 		if (this.unrollFactor < 1) {
-			throw new Error("The unrollFactor must be at least 1.");
+			throw new Error("The unrollFactor must be at least 1");
 		}
 		if (this.samples <= 0) {
-			throw new Error("The number of samples must be at least 1.");
+			throw new Error("The number of samples must be at least 1");
 		}
 	}
 
@@ -194,11 +194,11 @@ export class TimeProfiler implements Profiler {
 		} else if (iterations % unrollFactor === 0) {
 			iterations /= unrollFactor;
 		} else {
-			throw new Error("iterations must be a multiple of unrollFactor.");
+			throw new Error("iterations must be a multiple of unrollFactor");
 		}
 
 		if (iterations <= 0) {
-			throw new Error("The number of iterations cannot be 0 or negative.");
+			throw new Error("The number of iterations cannot be 0 or negative");
 		}
 
 		const time = await this.measure(ctx, "Actual", iterate, iterations);
@@ -267,7 +267,7 @@ export class TimeProfiler implements Profiler {
 				return previous;
 			}
 		}
-		throw new Error("Iteration time is too long and the fn runs too fast.");
+		throw new Error("Iteration time is too long and the fn runs too fast");
 	}
 
 	async measure(ctx: ProfilingContext, name: string, iterate: Iterate, count: number) {

@@ -50,7 +50,7 @@ class PreValidateProfiler implements Profiler {
 			this.valueA = returnValue;
 			this.nameA = name;
 		} else if (!isEqual(valueA, returnValue)) {
-			throw new Error(`"${nameA}" and "${name}" returns different value.`);
+			throw new Error(`"${nameA}" and "${name}" returns different value`);
 		}
 	}
 }

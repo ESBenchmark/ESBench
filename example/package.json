@@ -2,8 +2,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"run-all": "esbench --file=src/array-",
-		"report": "esbench report reports/result-1.json"
+		"run-all": "esbench",
+		"report": "esbench report reports/result.json"
 	},
 	"dependencies": {
 		"esbench": "workspace:^",
