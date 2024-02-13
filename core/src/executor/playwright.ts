@@ -23,8 +23,8 @@ const PageHTML = {
 
 async function client({ files, pattern }: any) {
 	// @ts-ignore This module resolved by the custom router.
-	const connect = await import("./index.js");
-	return connect.default(_ESBenchChannel, files, pattern);
+	const loader = await import("./index.js");
+	return loader.default(_ESBenchChannel, files, pattern);
 }
 
 /**
@@ -71,18 +71,16 @@ export default class PlaywrightExecutor implements Executor {
 		return this.browser.close();
 	}
 
-	async run(options: ExecuteOptions) {
-		const { files, pattern, root, handleMessage } = options;
+	async execute(options: ExecuteOptions) {
+		const { files, pattern, root, dispatch } = options;
 		const page = await this.context.newPage();
 
-		const channel = (message: ClientMessage) => {
+		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
 			if ("e" in message) {
 				this.fixStacktrace(message.e, page, root);
 			}
-			handleMessage(message);
-		};
-
-		await page.exposeFunction("_ESBenchChannel", channel);
+			dispatch(message);
+		});
 
 		await page.route("**/*", (route, request) => {
 			const url = request.url();

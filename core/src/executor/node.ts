@@ -39,11 +39,11 @@ export default class NodeExecutor implements Executor {
 		this.process.kill();
 	}
 
-	run(options: ExecuteOptions) {
-		const { root, files, pattern, handleMessage } = options;
+	execute(options: ExecuteOptions) {
+		const { root, files, pattern, dispatch } = options;
 
 		this.process.removeAllListeners("message");
-		this.process.on("message", handleMessage);
+		this.process.on("message", dispatch);
 		this.process.send({ root, pattern, files });
 		return once(this.process, "exit");
 	}

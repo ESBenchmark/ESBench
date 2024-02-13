@@ -30,6 +30,7 @@ export default class ProcessExecutor implements Executor {
 
 	private process!: ChildProcess;
 	private server!: Server;
+	private dispatch!: (message: any) => void;
 
 	/**
 	 * Create new ProcessExecutor with a command line template.
@@ -60,21 +61,25 @@ export default class ProcessExecutor implements Executor {
 		return file ? basename(file) : command;
 	}
 
-	close() {
-		this.server.close();
-		this.process.kill();
-	}
-
-	async run(options: ExecuteOptions) {
-		const { tempDir, root, files, pattern, handleMessage } = options;
-		const { getCommand } = this;
-
+	start() {
 		this.server = createServer((request, response) => {
 			response.end();
-			json(request).then(handleMessage);
+			return json(request).then(this.dispatch);
 		});
-
 		this.server.listen();
+		return once(this.server, "listening");
+	}
+
+	close() {
+		this.process.kill();
+		this.server.close();
+	}
+
+	async execute(options: ExecuteOptions) {
+		const { tempDir, root, files, pattern, dispatch } = options;
+		const { getCommand } = this;
+
+		this.dispatch = dispatch;
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 

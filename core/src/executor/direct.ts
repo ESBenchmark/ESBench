@@ -10,9 +10,9 @@ export default <Executor>{
 
 	name: release.name,
 
-	async run({ root, files, pattern, handleMessage }: ExecuteOptions) {
+	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {
 		const url = pathToFileURL(join(root, "index.js"));
 		const module = await import(url.toString());
-		return module.default(handleMessage, files, pattern);
+		return module.default(dispatch, files, pattern);
 	},
 };

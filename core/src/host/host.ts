@@ -18,7 +18,7 @@ interface FilterOptions {
 	name?: string | RegExp;
 }
 
-interface Build {
+interface BuildResult {
 	name: string;
 	root: string;
 	files: string[];
@@ -30,7 +30,7 @@ export class JobGenerator {
 
 	private readonly builderMap = new MultiMap<Builder, string>();
 	private readonly executorMap = new MultiMap<Executor, Builder>();
-	private readonly assetMap = new Map<Builder, Build>();
+	private readonly assetMap = new Map<Builder, BuildResult>();
 
 	private readonly directory: string;
 	private readonly filter: FilterOptions;
@@ -48,7 +48,7 @@ export class JobGenerator {
 
 		const ue = executors
 			.filter(executor => executorRE.test(executor.name))
-			.map(this.unwrapNameable.bind(this, "run"));
+			.map(this.unwrapNameable.bind(this, "execute"));
 
 		// Ensure glob patterns is relative and starts with ./ or ../
 		const dotGlobs = include.map(p => {
@@ -99,7 +99,7 @@ export class JobGenerator {
 	}
 
 	getJobs() {
-		const jobs = new MultiMap<Executor, Build>();
+		const jobs = new MultiMap<Executor, BuildResult>();
 		for (const [executor, builders] of this.executorMap) {
 			for (const builder of builders) {
 				const builds = this.assetMap.get(builder);
@@ -230,7 +230,7 @@ class ExecutorDriver {
 	private readonly monitor: Promise<void>;
 
 	private reject!: (reason?: any) => void;
-	private current!: Build;
+	private current!: BuildResult;
 
 	constructor(name: string, executor: Executor, result: ESBenchResult) {
 		this.result = result;
@@ -257,7 +257,7 @@ class ExecutorDriver {
 		}
 	}
 
-	async execute(builds: Build[], tempDir: string, filter: FilterOptions) {
+	async execute(builds: BuildResult[], tempDir: string, filter: FilterOptions) {
 		const { executor, name, monitor } = this;
 		const context = <ExecuteOptions>{
 			tempDir,
@@ -270,10 +270,10 @@ class ExecutorDriver {
 		try {
 			for (const build of builds) {
 				this.current = build;
-				context.handleMessage = this.onMessage;
+				context.dispatch = this.onMessage;
 				context.files = build.files;
 				context.root = build.root;
-				const task = executor.run(context);
+				const task = executor.execute(context);
 				await Promise.race([task, monitor]);
 			}
 		} finally {

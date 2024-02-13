@@ -1,4 +1,5 @@
 import { Awaitable } from "@kaciras/utilities/node";
+import { ClientMessage } from "../runner.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -47,7 +48,7 @@ export interface ExecuteOptions {
 	 */
 	pattern?: string;
 
-	handleMessage(message: any): void;
+	dispatch(message: ClientMessage): void;
 }
 
 export interface Executor {
@@ -57,9 +58,9 @@ export interface Executor {
 	 */
 	name: string;
 
-	start?(): Awaitable<void>;
+	start?(): Awaitable<unknown>;
 
-	close?(): Awaitable<void>;
+	close?(): Awaitable<unknown>;
 
-	run(options: ExecuteOptions): Awaitable<unknown>;
+	execute(options: ExecuteOptions): Awaitable<unknown>;
 }
