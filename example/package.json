@@ -7,6 +7,10 @@
 	},
 	"dependencies": {
 		"esbench": "workspace:^",
-		"playwright-core": "^1.41.2"
+		"playwright-core": "^1.41.2",
+		"chrome-remote-interface": "^0.33.0"
+	},
+	"devDependencies": {
+		"@types/firefox-webext-browser": "^120.0.0"
 	}
 }

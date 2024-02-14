@@ -1,4 +1,8 @@
 import { defineConfig, DirectExecutor, rawReporter, textReporter, ViteBuilder } from "esbench/host";
+import { chromium } from "playwright-core";
+import WebextExecutor from "./executor/webextension.js";
+
+const viteBuilder = new ViteBuilder();
 
 export default defineConfig({
 	reporters: [
@@ -7,14 +11,16 @@ export default defineConfig({
 	],
 	diff: "reports/result-1.json",
 	toolchains: [{
-		include: ["./src/*.js"],
-		builders: [
-			new ViteBuilder(),
-		// 	new RollupBuilder(),
-		],
+		include: ["./src/loop-*.js"],
+		// builders: [
+		// 	viteBuilder,
+			// new RollupBuilder(),
+		// ],
 		executors: [
-			new DirectExecutor(),
-			// new NodeExecutor(),
+			// new NodeDebugExecutor(false),
+			// new NodeDebugExecutor(true),
+			DirectExecutor,
+			// ne,
 			//
 			// new PlaywrightExecutor(firefox),
 			// new PlaywrightExecutor(chromium),
@@ -27,5 +33,9 @@ export default defineConfig({
 			// new ProcessExecutor("deno run --allow-net"),
 			// new ProcessExecutor("D:/qjs"),
 		],
+	},{
+		include: ["./webext/*.js"],
+		builders: [viteBuilder],
+		executors: [new WebextExecutor(chromium)],
 	}],
 });
