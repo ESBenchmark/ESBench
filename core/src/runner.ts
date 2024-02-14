@@ -136,11 +136,11 @@ type LogMessage = { log?: string; level: LogLevel };
  * Some types of objects that need to be sent to the host.
  *
  * How to detect the type:
- * - "level" in message: it's a LogMessage.
+ * - Array.isArray(message): it is a RunSuiteResult array.
  * - "e" in message: it's an ErrorMessage.
- * - otherwise it is a RunSuiteResult object.
+ * - "level" in message: it's a LogMessage.
  */
-export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
+export type ClientMessage = RunSuiteResult[] | ErrorMessage | LogMessage;
 
 /**
  * A function that load benchmark suites. Provided by builders.
@@ -168,11 +168,13 @@ export async function connect(
 		pattern: pattern ? new RegExp(pattern) : undefined,
 	};
 
+	const results: RunSuiteResult[] = [];
 	try {
 		for (const file of files) {
 			const suite = await importer(file);
-			postMessage(await runSuite(suite.default, option));
+			results.push(await runSuite(suite.default, option));
 		}
+		postMessage(results);
 	} catch (e) {
 		let params: string | undefined;
 		if (e.name === "RunSuiteError") {

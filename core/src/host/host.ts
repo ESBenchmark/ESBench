@@ -252,8 +252,9 @@ class ExecutorDriver {
 		} else if ("level" in message) {
 			consoleLogHandler(message.level, message.log);
 		} else {
-			const { name } = message;
-			(this.result[name] ??= []).push({ executor, builder, ...message });
+			for (const result of message) {
+				(this.result[result.name] ??= []).push({ executor, builder, ...result });
+			}
 		}
 	}
 
