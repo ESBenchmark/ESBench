@@ -1,5 +1,6 @@
 import { computed, ComputedRef, ref, Ref, watch } from "vue";
-import { firstItem, FlattedResult, Summary } from "@esbench/core/lib/index.ts";
+import { FlattedResult, Summary } from "esbench";
+import { firstItem } from "@kaciras/utilities/browser";
 
 export interface UseDataFilterReturn {
 	variables: Ref<string[]>;

@@ -2,10 +2,6 @@
 	<div :class='$style.container'>
 		<header>
 			<h2>{{ name }}</h2>
-		</header>
-
-		<section :class='$style.main'>
-			<canvas ref='canvasRef'/>
 
 			<LabeledSelect
 				v-model='errorBarType'
@@ -16,6 +12,32 @@
 				<option :value='stdDev'>Standard Deviation</option>
 				<option :value='stdErr'>Standard Error</option>
 			</LabeledSelect>
+		</header>
+
+		<section :class='$style.main'>
+			<canvas ref='canvasRef'/>
+
+			<div v-if='stf.notes.length' :class="$style.notes">
+				<h2>Notes</h2>
+
+				<p
+					v-for='note of stf.notes'
+				>
+					<IconAlertTriangleFilled
+						v-if='note.type === "warn"'
+						:class='$style.warn'
+					/>
+					<IconInfoCircleFilled
+						v-else
+						:class='$style.info'
+					/>
+
+					<template v-if='note.row'>
+						{{ note.row[xAxis] }}:
+					</template>
+					{{ note.text }}
+				</p>
+			</div>
 		</section>
 
 		<section :class='$style.params'>
@@ -41,9 +63,10 @@
 
 <script setup lang="ts">
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { Summary, type ToolchainResult } from "@esbench/core/lib/index.ts";
+import { MetricAnalysis, Summary, type ToolchainResult } from "esbench";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
+import { IconAlertTriangleFilled, IconInfoCircleFilled } from "@tabler/icons-vue";
 import useDataFilter from "./useDataFilter.ts";
 import LabeledSelect from "./LabeledSelect.vue";
 
@@ -88,10 +111,22 @@ function valueRange(values: number[]) {
 
 const data = computed(() => {
 	const labels = [...stf.value.vars.get(xAxis.value)!];
-	const datasets = [{
-		label: "time",
-		data: matches.value.map(r => errorBarType.value(getMetrics(r).time)),
-	}];
+	const datasets = [];
+
+	for (const [name, meta] of stf.value.meta) {
+		if (meta.analysis === MetricAnalysis.Statistics) {
+			datasets.push({
+				label: name,
+				data: matches.value.map(r => errorBarType.value(getMetrics(r)[name])),
+			});
+		} else if (meta.analysis === MetricAnalysis.Compare) {
+			datasets.push({
+				label: name,
+				data: matches.value.map(r => getMetrics(r)[name]),
+			});
+		}
+	}
+
 	return { labels, datasets } as any;
 });
 
@@ -128,6 +163,20 @@ header {
 
 .main {
 	grid-area: main;
+}
+
+.notes > p {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}
+
+.info {
+	color: #3498db;
+}
+
+.warn {
+	color: #f1c40f;
 }
 
 .params {
