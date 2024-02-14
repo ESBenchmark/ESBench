@@ -37,7 +37,7 @@ export function unroll(factor: number, isAsync: boolean) {
  * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
 
-function createInvoker(factor: number, case_: BenchCase): Iterate {
+function createIterator(factor: number, case_: BenchCase): Iterate {
 	const { fn, isAsync, setupHooks, cleanHooks } = case_;
 
 	async function syncWithHooks(count: number) {
@@ -158,6 +158,18 @@ export class TimeProfiler implements Profiler {
 		if (this.samples <= 0) {
 			throw new Error("The number of samples must be at least 1");
 		}
+
+		const { unrollFactor, iterations } = this;
+		if (typeof iterations === "number") {
+			if (iterations <= 0) {
+				throw new Error("The number of iterations cannot be 0 or negative");
+			}
+			if (iterations < unrollFactor) {
+				this.unrollFactor = iterations;
+			} else if (iterations % unrollFactor !== 0) {
+				throw new Error("iterations must be a multiple of unrollFactor");
+			}
+		}
 	}
 
 	async onStart(ctx: ProfilingContext) {
@@ -186,19 +198,11 @@ export class TimeProfiler implements Profiler {
 		const { throughput, samples, unrollFactor, evaluateOverhead } = this;
 		let { iterations } = this;
 
-		const iterate = createInvoker(unrollFactor, case_);
+		const iterate = createIterator(unrollFactor, case_);
 
 		if (typeof iterations === "string") {
 			iterations = await this.estimate(ctx, iterate, iterations);
 			await ctx.info();
-		} else if (iterations % unrollFactor === 0) {
-			iterations /= unrollFactor;
-		} else {
-			throw new Error("iterations must be a multiple of unrollFactor");
-		}
-
-		if (iterations <= 0) {
-			throw new Error("The number of iterations cannot be 0 or negative");
 		}
 
 		const time = await this.measure(ctx, "Actual", iterate, iterations);
@@ -217,7 +221,7 @@ export class TimeProfiler implements Profiler {
 	async subtractOverhead(ctx: ProfilingContext, case_: BenchCase, iterations: number, time: number[]) {
 		const { unrollFactor } = this;
 
-		const iterate = createInvoker(unrollFactor, <any>{
+		const iterate = createIterator(unrollFactor, <any>{
 			setupHooks: [],
 			cleanHooks: [],
 			isAsync: case_.isAsync,

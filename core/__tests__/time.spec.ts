@@ -9,7 +9,6 @@ function measureTime(options: TimingOptions, suite?: PartialSuite) {
 		iterations: 1,
 		samples: 1,
 		warmup: 0,
-		unrollFactor: 1,
 		...options,
 	});
 	return runProfilers([profiler], suite);
@@ -56,6 +55,7 @@ it("should support specify number of iterations", async () => {
 	const fn = vi.fn(sleep1);
 	const result = await measureTime({
 		iterations: 33,
+		unrollFactor: 1,
 	}, {
 		setup: scene => scene.benchAsync("Test", fn),
 	});
