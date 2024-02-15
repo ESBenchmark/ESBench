@@ -1,8 +1,15 @@
+import * as os from "os";
+import { mkdtempSync } from "fs";
+import { join } from "path";
 import { describe, expect, it, vi } from "vitest";
 import { JobGenerator, report } from "../../src/host/host.js";
 import result1And2 from "../fixtures/result-1+2.json" assert { type: " json" };
 import { noBuild, ViteBuilder } from "../../src/host/index.js";
 import direct from "../../src/executor/direct.js";
+import { useTempDirectory } from "../helper.js";
+
+const tempDir = mkdtempSync(os.tmpdir());
+useTempDirectory(tempDir);
 
 it("should merge results", async () => {
 	const mockReporter = vi.fn();
@@ -17,7 +24,7 @@ it("should merge results", async () => {
 
 describe("JobGenerator", () => {
 	it("should throw error if a tool have more than 1 names", () => {
-		const generator = new JobGenerator("", {});
+		const generator = new JobGenerator(tempDir, {});
 		expect(() => generator.add({
 			executors: [direct],
 			include: ["test"],
@@ -29,7 +36,7 @@ describe("JobGenerator", () => {
 	});
 
 	it("should throw error if a name used for more than 1 tools", () => {
-		const generator = new JobGenerator("", {});
+		const generator = new JobGenerator(tempDir, {});
 		expect(() => generator.add({
 			executors: [direct],
 			include: ["test"],
@@ -41,19 +48,86 @@ describe("JobGenerator", () => {
 	});
 
 	it("should allow a tool used in different toolchain", () => {
-		const generator = new JobGenerator("", {});
+		const generator = new JobGenerator(tempDir, {});
 		const builder = noBuild;
 
+		generator.add({ executors: [direct], include: ["a"], builders: [builder] });
+		generator.add({ executors: [direct], include: ["b"], builders: [builder] });
+	});
+
+	it("should skip build if no file matching", async () => {
+		const build = vi.fn();
+		const generator = new JobGenerator(tempDir, { file: "src" });
+
 		generator.add({
+			include: ["./__tests__/fixtures/**/*"],
 			executors: [direct],
-			include: ["foo"],
-			builders: [builder],
+			builders: [{ name: "test", build }],
+		});
+
+		await generator.build();
+		expect(build).not.toHaveBeenCalled();
+	});
+
+	it("should filter files to build", async () => {
+		const build = vi.fn();
+		const generator = new JobGenerator(tempDir, {
+			file: "error-inside",
 		});
 
 		generator.add({
+			include: ["./__tests__/fixtures/**/*"],
 			executors: [direct],
-			include: ["bar"],
-			builders: [builder],
+			builders: [{ name: "test", build }],
 		});
+		await generator.build();
+
+		const [root, files] = build.mock.calls[0];
+		expect(build).toHaveBeenCalledOnce();
+		expect(root).toMatch(join(tempDir, "build"));
+		expect(files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
+	});
+
+	it("should skip execution if no file matching", async () => {
+		const generator = new JobGenerator(tempDir, { file: "src" });
+
+		generator.add({
+			include: ["./__tests__/fixtures/**/*"],
+			builders: [noBuild],
+			executors: [direct],
+		});
+
+		await generator.build();
+		expect(generator.getJobs().count).toBe(0);
+	});
+
+	it("should generate jobs with files needed", async () => {
+		const generator = new JobGenerator(tempDir, {});
+		const executorStub = { name: "test", execute: vi.fn() };
+
+		generator.add({
+			include: ["./__tests__/fixtures/*-inside/*"],
+			builders: [noBuild],
+			executors: [direct],
+		});
+		generator.add({
+			include: [
+				"./__tests__/fixtures/success-*/*",
+				"./__tests__/fixtures/*-outside/*",
+			],
+			builders: [noBuild],
+			executors: [executorStub],
+		});
+
+		await generator.build();
+		const jobs = generator.getJobs();
+		const bundles = jobs.get(executorStub);
+
+		expect(jobs.size).toBe(2);
+		expect(bundles).toHaveLength(1);
+		expect(bundles![0].files).toStrictEqual([
+			"./__tests__/fixtures/error-outside/index.js",
+			"./__tests__/fixtures/success-suite/index.js",
+		]);
 	});
 });

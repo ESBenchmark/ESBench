@@ -1,15 +1,18 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { join, relative } from "path";
+import { normalize } from "path/posix";
 import { cwd, stdout } from "process";
 import { performance } from "perf_hooks";
 import chalk from "chalk";
 import glob from "fast-glob";
 import { durationFmt, MultiMap } from "@kaciras/utilities/node";
 import { deserializeError } from "serialize-error";
+import picomatch from "picomatch";
 import { Builder, ExecuteOptions, Executor } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, ToolchainOptions } from "./config.js";
 import { ClientMessage, ESBenchResult } from "../index.js";
 import { consoleLogHandler, resolveRE, SharedModeFilter } from "../utils.js";
+import noBuild from "../builder/default.js";
 
 interface FilterOptions {
 	file?: string;
@@ -29,6 +32,7 @@ export class JobGenerator {
 	readonly nameMap = new Map<any /* Builder | Executor */, string>();
 
 	private readonly builderMap = new MultiMap<Builder, string>();
+	private readonly executorPattern = new MultiMap<Executor, string>();
 	private readonly executorMap = new MultiMap<Executor, Builder>();
 	private readonly assetMap = new Map<Builder, BuildResult>();
 
@@ -64,6 +68,10 @@ export class JobGenerator {
 			this.builderMap.add(builderUsed, ...dotGlobs);
 			this.executorMap.distribute(ue, builderUsed);
 		}
+
+		for (const executor of ue) {
+			this.executorPattern.add(executor, ...dotGlobs);
+		}
 	}
 
 	async build(shared?: string) {
@@ -86,14 +94,19 @@ export class JobGenerator {
 			if (files.length === 0) {
 				continue;
 			}
-			stdout.write(`Building suites with ${name}... `);
+			if (builder !== noBuild) {
+				stdout.write(`Building suites with ${name}... `);
+			}
 
 			const root = mkdtempSync(join(directory, "build-"));
 			const start = performance.now();
 			await builder.build(root, files);
 			const time = performance.now() - start;
 
-			console.log(chalk.greenBright(durationFmt.formatDiv(time, "ms")));
+			if (builder !== noBuild) {
+				const t = durationFmt.formatDiv(time, "ms");
+				console.log(chalk.greenBright(t));
+			}
 			assetMap.set(builder, { name, root, files });
 		}
 	}
@@ -101,10 +114,15 @@ export class JobGenerator {
 	getJobs() {
 		const jobs = new MultiMap<Executor, BuildResult>();
 		for (const [executor, builders] of this.executorMap) {
+			const isMatch = picomatch(this.executorPattern.get(executor)!);
 			for (const builder of builders) {
 				const builds = this.assetMap.get(builder);
-				if (builds) {
-					jobs.add(executor, builds);
+				if (!builds) {
+					continue;
+				}
+				const files = builds.files.filter(p => isMatch(normalize(p)));
+				if (files.length > 0) {
+					jobs.add(executor, { ...builds, files });
 				}
 			}
 		}

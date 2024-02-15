@@ -1,10 +1,26 @@
+import { mkdirSync, rmSync } from "fs";
 import tp from "timers/promises";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
+import { afterEach, beforeEach } from "vitest";
 import { BenchmarkSuite, Profiler, ProfilingContext, runSuite, RunSuiteOption } from "../src/index.js";
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
 export const sleep1 = tp.setTimeout.bind(null, 1);
+
+/**
+ * Ensure the directory exists before tests and delete it after.
+ *
+ * @param path A path to a directory
+ */
+export function useTempDirectory(path: string) {
+	beforeEach(() => {
+		mkdirSync(path, { recursive: true });
+	});
+	afterEach(() => {
+		rmSync(path, { force: true, recursive: true });
+	});
+}
 
 export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: RegExp) {
 	suite.name ??= "Test Suite";
