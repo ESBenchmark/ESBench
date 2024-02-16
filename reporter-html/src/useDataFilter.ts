@@ -17,8 +17,10 @@ export default function (stf: Ref<Summary>) {
 	});
 
 	function reset() {
-		xAxis.value = firstItem(stf.value.vars.keys())!;
-		variables.value = stf.value.createVariableArray();
+		const summary = stf.value;
+		xAxis.value = summary.baseline?.type ??
+			firstItem(summary.vars.keys())!;
+		variables.value = summary.createVariableArray();
 	}
 
 	watch(stf, reset, { immediate: true });

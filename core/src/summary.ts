@@ -1,6 +1,7 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
 import { RunSuiteResult } from "./runner.js";
-import { MetricMeta, Metrics } from "./context.js";
+import { MetricMeta, Metrics, Note } from "./context.js";
+import { BaselineOptions } from "./suite.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
@@ -72,6 +73,8 @@ export class Summary {
 
 	readonly hashTable = new Map<string, FlattedResult>();
 
+	baseline?: BaselineOptions;
+
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
 		this.vars.set("Name", new Set());
@@ -85,6 +88,7 @@ export class Summary {
 		const { executor, builder, paramDef, scenes, notes } = toolchain;
 		const offset = this.table.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
+		this.baseline = toolchain.baseline;
 
 		if (builder) {
 			this.addToVar("Builder", builder);
