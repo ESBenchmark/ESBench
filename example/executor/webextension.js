@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync } from "fs";
-import { join, relative, resolve } from "path";
+import { mkdtempSync, rmdirSync, writeFileSync } from "fs";
+import { join } from "path";
+import os from "os";
 import { PlaywrightExecutor } from "esbench/host";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
@@ -12,21 +13,10 @@ const PageHTML = {
 	body: "<html><head></head><body></body></html>",
 };
 
-async function client({ files, pattern }) {
-	// @ts-ignore This module resolved by the custom router.
-	const loader = await import("./index.js");
-	return loader.default(_ESBenchChannel, files, pattern);
-}
-
-const UUID = "{CA54AB6B-7DE6-48AD-B5AF-12E841A3132C}";
-
 const manifest = {
 	name: "ESBench-Webext-Executor",
 	manifest_version: 3,
 	version: "1.0.0",
-	browser_specific_settings: {
-		gecko: { id: UUID },
-	},
 	host_permissions: ["*://*/*"],
 	cross_origin_embedder_policy: {
 		value: "require-corp",
@@ -54,84 +44,41 @@ export default class WebextExecutor extends PlaywrightExecutor {
 
 	async start() {
 		console.log("[Playwright] Launching browser...");
-	}
+		const dataDir = mkdtempSync(join(os.tmpdir(), "browser-"));
 
-	close() {
-		return this.context.close();
-	}
+		writeFileSync(join(dataDir, "manifest.json"), JSON.stringify(manifest));
+		writeFileSync(join(dataDir, "index.html"), PageHTML.body);
 
-	async execute(options) {
-		const { tempDir, files, pattern, root, dispatch } = options;
-
-		writeFileSync(join(tempDir, "manifest.json"), JSON.stringify({
-			...manifest,
-		}));
-
-		const specifier = relative(tempDir, join(root, "index.js"))
-			.replaceAll("\\", "/");
-
-		const template = `\
-import connect from "__ENTRY__";
-connect(_ESBenchChannel, __FILES__, __PATTERN__);`;
-
-		const loaderCode = template
-			.replace("__FILES__", JSON.stringify(files))
-			.replace("__PATTERN__", JSON.stringify(pattern))
-			.replace("__ENTRY__", "./" + specifier);
-
-		// No need to make the filename unique because only one executor can run at the same time.
-		const script = join(tempDir, "main.js");
-		writeFileSync(script, loaderCode);
-
-		const dataDir = resolve(tempDir);
-		const context = this.context = await this.type.launchPersistentContext(dataDir, {
+		this.context = await this.type.launchPersistentContext(dataDir, {
 			headless: false,
 			args: [
 				`--load-extension=${dataDir}`,
 				`--disable-extensions-except=${dataDir}`,
 			],
 		});
+		this.context.on("close", () => rmdirSync(dataDir));
+	}
 
-		await context.exposeFunction("_ESBenchChannel", (message) => {
-			if ("e" in message) {
-				this.fixStacktrace(message.e, page, root);
-			}
-			dispatch(message);
-		});
-
-		const extensionId = await this.getExtensionId(context);
+	async execute(options) {
+		const extensionId = await this.findChromiumExtensionId(manifest.name);
 		const baseURL = `chrome-extension://${extensionId}/`;
 
-		const page = await context.newPage();
-
-		await page.route(new RegExp(), (route, request) => {
-			const url = request.url();
-			if (url === baseURL) {
-				return route.fulfill(PageHTML);
-			}
-			const path = decodeURIComponent(url.slice(baseURL.length - 1));
-			const body = readFileSync(join(root, path));
-			return route.fulfill({ body, contentType: "text/javascript" });
-		});
-
-		await page.goto(baseURL + "index.html");
-		await page.evaluate(client, { files, pattern });
-		await page.close();
+		const page = await this.context.newPage();
+		await this.initialize(page, options, baseURL + "index.html");
 	}
 
 	// https://webdriver.io/docs/extension-testing/web-extensions/#test-popup-modal-in-chrome
-	async getExtensionId(context) {
-		if (this.type.name() === "firefox") {
-			return UUID;
+	async findChromiumExtensionId(name) {
+		if (this.type.name() !== "chromium") {
+			throw new Error("Playwright only supports install extension for chromium");
 		}
-		const page = await context.newPage();
-		context.setDefaultTimeout(0);
+		const page = await this.context.newPage();
 		try {
 			await page.goto("chrome://extensions");
 			const extensions = await page.$$("extensions-item");
 			for (const extension of extensions) {
 				const nameEl = await extension.$("#name");
-				if (await nameEl.textContent() === manifest.name) {
+				if (await nameEl.textContent() === name) {
 					return await extension.getAttribute("id");
 				}
 			}

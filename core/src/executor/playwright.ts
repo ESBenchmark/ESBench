@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
+import type { BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
@@ -46,13 +46,11 @@ async function client({ files, pattern }: any) {
  */
 export default class PlaywrightExecutor implements Executor {
 
-	private readonly type: BrowserType;
-	private readonly options?: LaunchOptions;
-
+	readonly type: BrowserType;
+	readonly options?: LaunchOptions;
 	readonly name: string;
 
-	private browser!: Browser;
-	private context!: BrowserContext;
+	context!: BrowserContext;
 
 	constructor(type: BrowserType, options?: LaunchOptions) {
 		this.name = type.name();
@@ -61,19 +59,23 @@ export default class PlaywrightExecutor implements Executor {
 	}
 
 	async start() {
-		const { type, options } = this;
 		console.log("[Playwright] Launching browser...");
-		this.browser = await type.launch(options);
-		this.context = await this.browser.newContext({ baseURL });
+		const browser = await this.type.launch(this.options);
+		this.context = await browser.newContext({ baseURL });
 	}
 
-	close() {
-		return this.browser.close();
+	async close() {
+		await this.context.close();
+		await this.context.browser()?.close();
 	}
 
-	async execute(options: ExecuteOptions) {
+	async initialize(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
-		const page = await this.context.newPage();
+		const match = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url);
+		if (!match) {
+			throw new Error("Invalid URL?");
+		}
+		const origin = match[0];
 
 		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
 			if ("e" in message) {
@@ -81,20 +83,27 @@ export default class PlaywrightExecutor implements Executor {
 			}
 			dispatch(message);
 		});
-
 		await page.route("**/*", (route, request) => {
 			const url = request.url();
-			if (url === baseURL) {
+			if (!url.startsWith(origin)) {
+				return route.continue();
+			}
+			const path = decodeURIComponent(url.slice(origin.length));
+			if (path === "/") {
 				return route.fulfill(PageHTML);
 			}
-			const path = decodeURIComponent(url.slice(baseURL.length - 1));
 			const body = readFileSync(join(root, path));
 			return route.fulfill({ body, contentType: mime.getType(path)! });
 		});
 
-		await page.goto("/");
+		await page.goto(url);
 		await page.evaluate(client, { files, pattern });
 		await page.close();
+	}
+
+	async execute(options: ExecuteOptions) {
+		const page = await this.context.newPage();
+		await this.initialize(page, options, "/");
 	}
 
 	/**
