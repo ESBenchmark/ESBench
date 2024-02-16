@@ -22,11 +22,12 @@ function postMessage(message) {
 connect(postMessage, __FILES__, __PATTERN__);`;
 
 function parseFilename(command: string) {
-	const file = command.charCodeAt(0) === 34 /* " */
-		? /"(.+?)(?<!\\)"/.exec(command)?.[1]
-		: command.slice(0, command.indexOf(" ") + 1);
-
-	return file ? basename(file) : command;
+	const quoted = /^"(.+?)(?<!\\)"/.exec(command);
+	if (quoted) {
+		return basename(quoted[1]);
+	}
+	const i = command.indexOf(" ");
+	return basename(i === -1 ? command : command.slice(0, i));
 }
 
 /**
