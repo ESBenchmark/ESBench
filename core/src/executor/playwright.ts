@@ -1,5 +1,5 @@
 import type { BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
-import { readFileSync } from "fs";
+import { readFileSync, rmSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import mime from "mime";
@@ -51,6 +51,7 @@ export default class PlaywrightExecutor implements Executor {
 	readonly name: string;
 
 	context!: BrowserContext;
+	dataDir?: string;
 
 	constructor(type: BrowserType, options?: LaunchOptions) {
 		this.name = type.name();
@@ -67,28 +68,23 @@ export default class PlaywrightExecutor implements Executor {
 	async close() {
 		await this.context.close();
 		await this.context.browser()?.close();
+		if (this.dataDir) {
+			rmSync(this.dataDir, { recursive: true });
+		}
 	}
 
 	async initialize(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
-		const match = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url);
-		if (!match) {
-			throw new Error("Invalid URL?");
-		}
-		const origin = match[0];
+		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
 
 		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
 			if ("e" in message) {
-				this.fixStacktrace(message.e, page, root);
+				this.fixStacktrace(message.e, origin, root);
 			}
 			dispatch(message);
 		});
-		await page.route("**/*", (route, request) => {
-			const url = request.url();
-			if (!url.startsWith(origin)) {
-				return route.continue();
-			}
-			const path = decodeURIComponent(url.slice(origin.length));
+		await page.route(origin + "/**", (route, request) => {
+			const path = decodeURIComponent(request.url().slice(origin.length));
 			if (path === "/") {
 				return route.fulfill(PageHTML);
 			}
@@ -109,9 +105,8 @@ export default class PlaywrightExecutor implements Executor {
 	/**
 	 * Convert stack trace to Node format, and resolve location to file URL.
 	 */
-	fixStacktrace(error: any, page: Page, root: string) {
+	fixStacktrace(error: any, origin: string, root: string) {
 		const { name, message, stack } = error;
-		const { origin } = new URL(page.url());
 		const lines = stack.split("\n") as string[];
 		let re: RegExp;
 

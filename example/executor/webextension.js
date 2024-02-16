@@ -1,6 +1,6 @@
-import { mkdtempSync, rmdirSync, writeFileSync } from "fs";
+import { mkdtempSync, writeFileSync } from "fs";
 import { join } from "path";
-import os from "os";
+import { tmpdir } from "os";
 import { PlaywrightExecutor } from "esbench/host";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
@@ -44,7 +44,7 @@ export default class WebextExecutor extends PlaywrightExecutor {
 
 	async start() {
 		console.log("[Playwright] Launching browser...");
-		const dataDir = mkdtempSync(join(os.tmpdir(), "browser-"));
+		const dataDir = this.dataDir = mkdtempSync(join(tmpdir(), "browser-"));
 
 		writeFileSync(join(dataDir, "manifest.json"), JSON.stringify(manifest));
 		writeFileSync(join(dataDir, "index.html"), PageHTML.body);
@@ -56,7 +56,6 @@ export default class WebextExecutor extends PlaywrightExecutor {
 				`--disable-extensions-except=${dataDir}`,
 			],
 		});
-		this.context.on("close", () => rmdirSync(dataDir));
 	}
 
 	async execute(options) {
