@@ -3,12 +3,14 @@ import { once } from "events";
 import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
-import { basename, join, relative } from "path";
 import { writeFileSync } from "fs";
+import { basename, join, relative } from "path";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
+type GetCommand = (file: string) => string;
+
 const template = `\
-import connect from "__ENTRY__";
+import connect from "./__ENTRY__";
 
 function postMessage(message) {
     return fetch(__ADDRESS__, {
@@ -19,18 +21,24 @@ function postMessage(message) {
 
 connect(postMessage, __FILES__, __PATTERN__);`;
 
-type GetCommand = (file: string) => string;
+function parseFilename(command: string) {
+	const file = command.charCodeAt(0) === 34 /* " */
+		? /"(.+?)(?<!\\)"/.exec(command)?.[1]
+		: command.slice(0, command.indexOf(" ") + 1);
+
+	return file ? basename(file) : command;
+}
 
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.
  */
 export default class ProcessExecutor implements Executor {
 
-	private readonly getCommand: GetCommand;
+	protected readonly getCommand: GetCommand;
 
-	private process!: ChildProcess;
-	private server!: Server;
-	private dispatch!: (message: any) => void;
+	protected process!: ChildProcess;
+	protected server!: Server;
+	protected dispatch!: (message: any) => void;
 
 	/**
 	 * Create new ProcessExecutor with a command line template.
@@ -52,13 +60,7 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	get name() {
-		const command = this.getCommand("<file>");
-
-		const file = command.charCodeAt(0) === 34
-			? /"(.+?)(?<!\\)"/.exec(command)?.[1]
-			: command.slice(0, command.indexOf(" ") + 1);
-
-		return file ? basename(file) : command;
+		return parseFilename(this.getCommand("<file>"));
 	}
 
 	start() {
@@ -75,29 +77,34 @@ export default class ProcessExecutor implements Executor {
 		this.server.close();
 	}
 
-	async execute(options: ExecuteOptions) {
-		const { tempDir, root, files, pattern, dispatch } = options;
-		const { getCommand } = this;
-
+	execute(options: ExecuteOptions) {
+		const { tempDir, dispatch } = options;
 		this.dispatch = dispatch;
+
+		// No need to make the filename unique because only one executor can run at the same time.
+		const file = join(tempDir, "main.js");
+		this.writeEntry(file, options);
+		return this.executeInProcess(file);
+	}
+
+	protected writeEntry(file: string, options: ExecuteOptions) {
+		const { tempDir, root, files, pattern } = options;
+
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 
 		// relative() from path/posix also uses system-depend slash.
-		const specifier = relative(tempDir, join(root, "index.js"))
-			.replaceAll("\\", "/");
+		const specifier = relative(tempDir, join(root, "index.js"));
 
-		const loaderCode = template
-			.replace("__FILES__", JSON.stringify(files))
+		writeFileSync(file, template
 			.replace("__PATTERN__", JSON.stringify(pattern))
 			.replace("__ADDRESS__", JSON.stringify(address))
-			.replace("__ENTRY__", "./" + specifier);
+			.replace("__FILES__", JSON.stringify(files))
+			.replace("__ENTRY__", specifier.replaceAll("\\", "/")));
+	}
 
-		// No need to make the filename unique because only one executor can run at the same time.
-		const script = join(tempDir, "main.js");
-		writeFileSync(script, loaderCode);
-
-		const command = getCommand(script);
+	protected async executeInProcess(entry: string) {
+		const command = this.getCommand(entry);
 		this.process?.kill();
 		this.process = exec(command);
 
