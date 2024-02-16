@@ -208,11 +208,14 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}, s
 	const jobs = generator.getJobs();
 
 	if (jobs.size === 0) {
-		throw new Error("\nNo file matching the include pattern of toolchains");
+		return console.warn("\nNo suite to run, check your CLI parameters.");
 	}
+	console.log(`\n${jobs.count} jobs for ${jobs.size} executors.`);
 
 	for (const [executor, builds] of jobs) {
 		const name = generator.getName(executor);
+		console.log(`Running suites with: ${name}.`);
+
 		const driver = new ExecutorDriver(name, executor, result);
 		await driver.execute(builds, tempDir, filter);
 	}
@@ -277,15 +280,13 @@ class ExecutorDriver {
 	}
 
 	async execute(builds: BuildResult[], tempDir: string, filter: FilterOptions) {
-		const { executor, name, monitor } = this;
+		const { executor, monitor } = this;
 		const context = <ExecuteOptions>{
 			tempDir,
 			pattern: resolveRE(filter.name).source,
 		};
 
 		await executor.start?.();
-		console.log(`Running suites with: ${name}.`);
-
 		try {
 			for (const build of builds) {
 				this.current = build;

@@ -8,7 +8,8 @@ import { CaseResult, LogHandler, LogLevel, MetricMeta, Note, Profiler, Profiling
 
 class DefaultEventLogger implements Profiler {
 
-	private index = 0;
+	private sceneIndex = 0;
+	private caseOfScene = 0;
 
 	onStart(ctx: ProfilingContext) {
 		return ctx.info(`\nSuite: ${ctx.suite.name}, ${ctx.sceneCount} scenes.`);
@@ -18,15 +19,19 @@ class DefaultEventLogger implements Profiler {
 		const caseCount = scene.cases.length;
 		const { sceneCount } = ctx;
 
+		this.caseOfScene = 0;
+		const i = ++this.sceneIndex;
+
 		return caseCount === 0
-			? ctx.warn(`\nNo case found from scene #${this.index++}.`)
-			: ctx.info(`\nScene ${this.index++} of ${sceneCount}, ${caseCount} cases.`);
+			? ctx.warn(`\nNo case found from scene #${i}.`)
+			: ctx.info(`\nScene #${i} of ${sceneCount}, ${caseCount} cases.`);
 	}
 
 	onCase(ctx: ProfilingContext, case_: BenchCase) {
 		const { name, isAsync, setupHooks, cleanHooks } = case_;
 		const hooks = setupHooks.length + cleanHooks.length > 0;
-		return ctx.info(`\nCase: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
+		const i = ++this.caseOfScene;
+		return ctx.info(`\nCase #${i}: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
 	}
 }
 

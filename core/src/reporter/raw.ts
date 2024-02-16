@@ -33,6 +33,6 @@ export default function (name = DEFAULT_NAME): Reporter {
 
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, JSON.stringify(result));
-		console.info("Benchmark result saved to: " + file);
+		console.info(`Benchmark result saved to: ${file}\n`);
 	};
 }

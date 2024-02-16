@@ -35,7 +35,7 @@ async function print(
 		const diff = previous?.[name];
 		const table = createTable(toolchains, diff, options, chalk);
 
-		out.write(chalk.greenBright("\n\nSuite: "));
+		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);
 		out.write("\n");
 		out.write(markdownTable(table, { stringLength, align: "r" }));
@@ -56,6 +56,8 @@ async function print(
 				out.write("\n");
 			}
 		}
+
+		out.write("\n");
 	}
 }
 
