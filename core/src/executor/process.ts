@@ -1,9 +1,10 @@
-import { ChildProcess, exec } from "child_process";
+import { ChildProcess, execFile } from "child_process";
 import { once } from "events";
 import { createServer, Server } from "http";
 import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { writeFileSync } from "fs";
+import { setPriority } from "os";
 import { basename, join, relative } from "path";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -21,13 +22,14 @@ function postMessage(message) {
 
 connect(postMessage, __FILES__, __PATTERN__);`;
 
-function parseFilename(command: string) {
+function splitCommand(command: string) {
 	const quoted = /^"(.+?)(?<!\\)"/.exec(command);
-	if (quoted) {
-		return basename(quoted[1]);
+	if (!quoted) {
+		const [first, args] = command.split(" ", 2);
+		return [first, args ?? ""];
 	}
-	const i = command.indexOf(" ");
-	return basename(i === -1 ? command : command.slice(0, i));
+	const [first, unquoted] = quoted;
+	return [unquoted, command.slice(first.length)];
 }
 
 /**
@@ -61,7 +63,7 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	get name() {
-		return parseFilename(this.getCommand("<file>"));
+		return basename(splitCommand(this.getCommand("<file>"))[0]);
 	}
 
 	start() {
@@ -74,7 +76,9 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	close() {
-		this.process.kill();
+		if (this.process.pid) {
+			this.process.kill();
+		}
 		this.server.close();
 	}
 
@@ -106,8 +110,14 @@ export default class ProcessExecutor implements Executor {
 
 	protected async executeInProcess(entry: string) {
 		const command = this.getCommand(entry);
+		const [file, args] = splitCommand(command);
+
 		this.process?.kill();
-		this.process = exec(command);
+		this.process = execFile(file, [args]);
+
+		this.process.on("spawn", () => {
+			setPriority(this.process.pid!, -20);
+		});
 
 		const [code] = await once(this.process, "exit");
 		if (code !== 0) {

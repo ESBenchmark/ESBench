@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
 import { ChildProcess, fork } from "child_process";
 import { once } from "events";
+import { setPriority } from "os";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 // Must resolve the filename to generated JS for test.
@@ -41,13 +42,15 @@ export default class NodeExecutor implements Executor {
 				ES_BENCH_WORKER: "true",
 			},
 		});
-		this.process.removeAllListeners("message");
+		this.process.on("spawn", () => {
+			setPriority(this.process!.pid!, -20);
+		});
 		this.process.on("message", dispatch);
 		this.process.send({ root, pattern, files });
 
 		const [code] = await once(this.process, "exit");
 		if (code !== 0) {
-			throw new Error(`Node execute Failed (exitCode=${code}).`);
+			throw new Error(`Node execute Failed (exitCode=${code})`);
 		}
 	}
 }
