@@ -81,26 +81,45 @@ function studentOneTail(t: number, df: number) {
 	return t < 0 ? 1 - studentTwoTail(t, df) / 2 : studentTwoTail(-t, df) / 2;
 }
 
+// https://www.math.ucla.edu/~tom/distributions/tDist.html
 function studentTwoTail(t: number, df: number) {
-	const g = Math.exp(logGamma(df / 2) + logGamma(0.5) - logGamma(df / 2 + 0.5));
-	const b = df / (t * t + df);
-
-	function f(r: number) {
-		return Math.pow(r, df / 2 - 1) / Math.sqrt(1 - r);
+	const A = df / 2;
+	const S = A + 0.5;
+	const Z = df / (df + t * t);
+	const BT = Math.exp(
+		logGamma(S) - logGamma(0.5) - logGamma(A)
+		+ A * Math.log(Z) + 0.5 * Math.log(1 - Z),
+	);
+	if (Z < (A + 1) / (S + 2)) {
+		return BT * betinc(Z, A, 0.5);
+	} else {
+		return 1 - BT * betinc(1 - Z, 0.5, A);
 	}
-
-	// n = 10000 seems more than enough here.
-	return simpson(0, b, 10000, f) / g;
 }
 
-function simpson(a: number, b: number, n: number, f: (r: number) => number) {
-	const h = (b - a) / n;
-	let sum = 0;
-	for (let i = 0; i < n; i++) {
-		const x = a + i * h;
-		sum += (f(x) + 4 * f(x + h / 2) + f(x + h)) / 6;
+function betinc(x: number, a: number, b: number) {
+	let a0 = 0;
+	let b0 = 1;
+	let a1 = 1;
+	let b1 = 1;
+	let m9 = 0;
+	let a2 = 0;
+	let c9;
+	while (Math.abs((a1 - a2) / a1) > 0.00001) {
+		a2 = a1;
+		c9 = -(a + m9) * (a + b + m9) * x / (a + 2 * m9) / (a + 2 * m9 + 1);
+		a0 = a1 + c9 * a0;
+		b0 = b1 + c9 * b0;
+		m9 = m9 + 1;
+		c9 = m9 * (b - m9) * x / (a + 2 * m9) / (a + 2 * m9 - 1);
+		a1 = a0 + c9 * a1;
+		b1 = b0 + c9 * b1;
+		a0 = a0 / b1;
+		b0 = b0 / b1;
+		a1 = a1 / b1;
+		b1 = 1;
 	}
-	return sum * h;
+	return a1 / a;
 }
 
 function logGamma(z: number) {
