@@ -2,12 +2,12 @@
 	"private": true,
 	"type": "module",
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^2.6.3",
-		"@kaciras/eslint-config-typescript": "^2.6.3",
-		"@kaciras/eslint-config-vue": "^2.6.3",
-		"@types/node": "^20.11.17",
+		"@kaciras/eslint-config-core": "^2.6.4",
+		"@kaciras/eslint-config-typescript": "^2.6.4",
+		"@kaciras/eslint-config-vue": "^2.6.4",
+		"@types/node": "^20.11.19",
 		"eslint": "^8.56.0",
 		"typescript": "^5.3.3",
-		"vitest": "^1.2.2"
+		"vitest": "^1.3.0"
 	}
 }

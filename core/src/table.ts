@@ -1,10 +1,17 @@
 import type { ForegroundColorName } from "chalk";
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
-import { dataSizeIEC, decimalPrefix, durationFmt, identity, UnitConvertor } from "@kaciras/utilities/browser";
+import {
+	dataSizeIEC,
+	decimalPrefix,
+	durationFmt,
+	identity,
+	separateThousand,
+	UnitConvertor,
+} from "@kaciras/utilities/browser";
 import { OutlierMode, TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
-import { BUILTIN_VARS, insertThousandCommas } from "./utils.js";
+import { BUILTIN_VARS } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
 const { getMetrics } = Summary;
@@ -457,10 +464,10 @@ function unitFormatter(
 	unit?: string,
 ) {
 	if (flex) {
-		return (value: number) => insertThousandCommas(this.formatDiv(value, unit));
+		return (value: number) => separateThousand(this.formatDiv(value, unit));
 	}
 	const format = this.homogeneous(values, unit);
-	return (value: number) => insertThousandCommas(format(value));
+	return (value: number) => separateThousand(format(value));
 }
 
 const formatters: Record<string, GetFormatter> = {

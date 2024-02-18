@@ -6,6 +6,7 @@ import { AddressInfo } from "net";
 import { writeFileSync } from "fs";
 import { setPriority } from "os";
 import { basename, join, relative } from "path";
+import { splitCLI } from "@kaciras/utilities/browser";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 type GetCommand = (file: string) => string;
@@ -21,16 +22,6 @@ function postMessage(message) {
 }
 
 connect(postMessage, __FILES__, __PATTERN__);`;
-
-function splitCommand(command: string) {
-	const quoted = /^"(.+?)(?<!\\)"/.exec(command);
-	if (!quoted) {
-		const [first, args] = command.split(" ", 2);
-		return [first, args ?? ""];
-	}
-	const [first, unquoted] = quoted;
-	return [unquoted, command.slice(first.length)];
-}
 
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.
@@ -63,7 +54,7 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	get name() {
-		return basename(splitCommand(this.getCommand("<file>"))[0]);
+		return basename(splitCLI(this.getCommand("<file>"))[0]);
 	}
 
 	start() {
@@ -110,10 +101,10 @@ export default class ProcessExecutor implements Executor {
 
 	protected async executeInProcess(entry: string) {
 		const command = this.getCommand(entry);
-		const [file, args] = splitCommand(command);
+		const [file, ...args] = splitCLI(command);
 
 		this.process?.kill();
-		this.process = execFile(file, [args]);
+		this.process = execFile(file, args);
 
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid!, -20);
