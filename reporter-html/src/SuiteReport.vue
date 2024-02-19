@@ -20,7 +20,7 @@
 			<div v-if='summary.notes.length' :class='$style.notes'>
 				<h2>Notes</h2>
 				<p
-					v-for='(note, i) of summary.notes'
+					v-for='(note, i) of summary.notes.filter(isRelevant)'
 					:key='i'
 				>
 					<IconAlertTriangleFilled
@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { FlattedResult, Summary, type ToolchainResult } from "esbench";
+import { FlattedResult, ResolvedNote, Summary, type ToolchainResult } from "esbench";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
 import { IconAlertTriangleFilled, IconInfoCircleFilled } from "@tabler/icons-vue";
@@ -109,6 +109,10 @@ const canvasRef = shallowRef();
 const summary = computed(() => new Summary(props.result));
 const previous = computed(() => new Summary(props.prev));
 
+function isRelevant(note: ResolvedNote) {
+	return !note.row || matches.value.includes(note.row);
+}
+
 let chart: BarWithErrorBarsChart;
 
 const { variables, matches, xAxis } = useDataFilter(summary);
@@ -135,7 +139,7 @@ const data = computed(() => {
 
 		if (meta.analysis && previous.value.meta.get(name)) {
 			datasets.push({
-				label: `${name}-prev`,
+				label: `${name} (prev)`,
 				data: matches.value.map(r => {
 					const d = previous.value.find(r);
 					if (!d) {
