@@ -76,7 +76,9 @@ interface SuiteReportProps {
 	prev?: ToolchainResult[];
 }
 
-const props = defineProps<SuiteReportProps>();
+const props = withDefaults(defineProps<SuiteReportProps>(), {
+	prev: () => ([]),
+});
 
 const { getMetrics } = Summary;
 
@@ -105,22 +107,27 @@ const errorBarType = shallowRef(pointFactories.valueRange);
 const canvasRef = shallowRef();
 
 const summary = computed(() => new Summary(props.result));
-const previous = computed(() => new Summary(props.prev ?? []));
+const previous = computed(() => new Summary(props.prev));
 
 let chart: BarWithErrorBarsChart;
 
 const { variables, matches, xAxis } = useDataFilter(summary);
 
 function getDataAndRange(name: string, result: FlattedResult) {
-	const value = getMetrics(result)[name];
-	return Array.isArray(value) ? errorBarType.value(value) : value;
+	const y = getMetrics(result)[name];
+	return Array.isArray(y) ? errorBarType.value(y) : { y };
 }
 
 const data = computed(() => {
 	const labels = [...summary.value.vars.get(xAxis.value)!];
 	const datasets = [];
+	const scales: Record<string, any> = {};
 
 	for (const [name, meta] of summary.value.meta) {
+		scales.y = {
+			title: { display: true, text: name },
+		};
+
 		datasets.push({
 			label: name,
 			data: matches.value.map(r => getDataAndRange(name, r)),
@@ -131,30 +138,35 @@ const data = computed(() => {
 				label: `${name}-prev`,
 				data: matches.value.map(r => {
 					const d = previous.value.find(r);
-					return d && getDataAndRange(name, d);
+					if (!d) {
+						return { y: 0 };
+					}
+					return getDataAndRange(name, d);
 				}),
 			});
 		}
 	}
 
-	return { labels, datasets } as any;
-});
-
-watch(data, newData => {
-	chart.data = newData;
-	chart.update("none");
-});
-
-onMounted(() => {
-	chart = new BarWithErrorBarsChart(canvasRef.value, {
-		data: data.value,
+	return {
+		data: { labels, datasets },
 		options: {
+			scales,
 			responsive: true,
 			plugins: {
 				legend: { position: "top" },
 			},
 		},
-	});
+	};
+});
+
+watch(data, newData => {
+	chart.data = newData.data;
+	chart.options = newData.options;
+	chart.update("none");
+});
+
+onMounted(() => {
+	chart = new BarWithErrorBarsChart(canvasRef.value, data.value);
 });
 </script>
 
