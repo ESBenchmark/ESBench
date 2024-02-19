@@ -113,11 +113,11 @@
 			]
 		}
 	],
-	"For-loop vs Array.reduce": [
+	"Sum using for-loop vs Array.reduce": [
 		{
 			"executor": "node",
 			"builder": "None",
-			"name": "For-loop vs Array.reduce",
+			"name": "Sum using for-loop vs Array.reduce",
 			"notes": [
 				{
 					"type": "warn",
@@ -302,7 +302,7 @@
 		{
 			"executor": "bun ",
 			"builder": "None",
-			"name": "For-loop vs Array.reduce",
+			"name": "Sum using for-loop vs Array.reduce",
 			"notes": [],
 			"meta": {
 				"time": {
@@ -312,8 +312,8 @@
 				}
 			},
 			"baseline": {
-				"type": "Name",
-				"value": "For-index"
+				"type": "size",
+				"value": "1000"
 			},
 			"paramDef": [
 				[

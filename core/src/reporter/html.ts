@@ -27,13 +27,17 @@ export default function (options: HtmlReporterOptions = {}) {
 	const { file = "reports/benchmark.html", open } = options;
 	const template = readFileSync(dist, "utf8");
 
-	return async (result: ESBenchResult) => {
-		const code = JSON.stringify(result);
-		const html = template.replace(
-			"<!--ESBench-Result-->",
-			`<script>window.ESBenchResult=${code}</script>`,
-		);
+	function interpolate(html: string, p: string, r: ESBenchResult) {
+		p = `<!--ESBench-${p}-->"`;
+		const code = JSON.stringify(r);
+		return html.replace(p, `<script>window.${p}=${code}</script>`);
+	}
 
+	return async (result: ESBenchResult, prev: ESBenchResult) => {
+		let html = interpolate(template, "Result", result);
+		if (prev) {
+			html = interpolate(html, "Previous", prev);
+		}
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, html);
 

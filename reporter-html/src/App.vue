@@ -16,6 +16,7 @@
 		:class='$style.report'
 		:name='selected'
 		:result='toolchains'
+		:prev='previous'
 	/>
 
 	<main v-else>
@@ -30,6 +31,7 @@ import SuiteReport from "./SuiteReport.vue";
 
 interface AppProps {
 	result: ESBenchResult;
+	previous: ESBenchResult;
 }
 
 const props = defineProps<AppProps>();
@@ -44,6 +46,7 @@ const initName = getSuiteName() || names[0];
 const selected = shallowRef(initName);
 
 const toolchains = computed(() => props.result[selected.value]);
+const previous = computed(() => props.previous[selected.value]);
 
 window.addEventListener("hashchange", () => {
 	selected.value = getSuiteName();

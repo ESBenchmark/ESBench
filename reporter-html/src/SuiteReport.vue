@@ -7,21 +7,21 @@
 				v-model='errorBarType'
 				label='Error bar type'
 			>
-				<option :value='none'>None</option>
-				<option :value='valueRange'>Value Range</option>
-				<option :value='stdDev'>Standard Deviation</option>
-				<option :value='stdErr'>Standard Error</option>
+				<option :value='pointFactories.none'>None</option>
+				<option :value='pointFactories.valueRange'>Value Range</option>
+				<option :value='pointFactories.stdDev'>Standard Deviation</option>
+				<option :value='pointFactories.stdErr'>Standard Error</option>
 			</LabeledSelect>
 		</header>
 
 		<section :class='$style.main'>
 			<canvas ref='canvasRef'/>
 
-			<div v-if='stf.notes.length' :class="$style.notes">
+			<div v-if='summary.notes.length' :class='$style.notes'>
 				<h2>Notes</h2>
-
 				<p
-					v-for='note of stf.notes'
+					v-for='(note, i) of summary.notes'
+					:key='i'
 				>
 					<IconAlertTriangleFilled
 						v-if='note.type === "warn"'
@@ -44,7 +44,7 @@
 			<h1>Variables</h1>
 
 			<LabeledSelect
-				v-for='([name, values], i) of stf.vars'
+				v-for='([name, values], i) of summary.vars'
 				:key='i'
 				v-model='variables[i]'
 				:label='name'
@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { MetricAnalysis, Summary, type ToolchainResult } from "esbench";
+import { FlattedResult, Summary, type ToolchainResult } from "esbench";
 import { mean, standardDeviation } from "simple-statistics";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
 import { IconAlertTriangleFilled, IconInfoCircleFilled } from "@tabler/icons-vue";
@@ -73,56 +73,66 @@ import LabeledSelect from "./LabeledSelect.vue";
 interface SuiteReportProps {
 	name: string;
 	result: ToolchainResult[];
+	prev?: ToolchainResult[];
 }
 
 const props = defineProps<SuiteReportProps>();
 
 const { getMetrics } = Summary;
 
-const errorBarType = shallowRef(valueRange);
+const pointFactories = {
+	none: (values: number[]) => ({ y: mean(values) }),
+
+	stdDev(values: number[]) {
+		const e = standardDeviation(values);
+		const y = mean(values);
+		return { y, yMin: y - e, yMax: y + e };
+	},
+
+	stdErr(values: number[]) {
+		const e = standardDeviation(values) / Math.sqrt(values.length);
+		const y = mean(values);
+		return { y, yMin: y - e, yMax: y + e };
+	},
+
+	valueRange(values: number[]) {
+		const y = mean(values);
+		return { y, yMin: values.at(0), yMax: values.at(-1) };
+	},
+};
+
+const errorBarType = shallowRef(pointFactories.valueRange);
 const canvasRef = shallowRef();
 
-const stf = computed(() => new Summary(props.result));
+const summary = computed(() => new Summary(props.result));
+const previous = computed(() => new Summary(props.prev ?? []));
 
 let chart: BarWithErrorBarsChart;
 
-const { variables, matches, xAxis } = useDataFilter(stf);
+const { variables, matches, xAxis } = useDataFilter(summary);
 
-function none(values: number[]) {
-	return { y: mean(values) };
-}
-
-function stdDev(values: number[]) {
-	const e = standardDeviation(values);
-	const y = mean(values);
-	return { y, yMin: y - e, yMax: y + e };
-}
-
-function stdErr(values: number[]) {
-	const e = standardDeviation(values) / Math.sqrt(values.length);
-	const y = mean(values);
-	return { y, yMin: y - e, yMax: y + e };
-}
-
-function valueRange(values: number[]) {
-	const y = mean(values);
-	return { y, yMin: values.at(0), yMax: values.at(-1) };
+function getDataAndRange(name: string, result: FlattedResult) {
+	const value = getMetrics(result)[name];
+	return Array.isArray(value) ? errorBarType.value(value) : value;
 }
 
 const data = computed(() => {
-	const labels = [...stf.value.vars.get(xAxis.value)!];
+	const labels = [...summary.value.vars.get(xAxis.value)!];
 	const datasets = [];
 
-	for (const [name, meta] of stf.value.meta) {
-		if (meta.analysis === MetricAnalysis.Statistics) {
+	for (const [name, meta] of summary.value.meta) {
+		datasets.push({
+			label: name,
+			data: matches.value.map(r => getDataAndRange(name, r)),
+		});
+
+		if (meta.analysis && previous.value.meta.get(name)) {
 			datasets.push({
-				label: name,
-				data: matches.value.map(r => errorBarType.value(getMetrics(r)[name])),
-			});
-		} else if (meta.analysis === MetricAnalysis.Compare) {
-			datasets.push({
-				label: name,
-				data: matches.value.map(r => getMetrics(r)[name]),
+				label: `${name}-prev`,
+				data: matches.value.map(r => {
+					const d = previous.value.find(r);
+					return d && getDataAndRange(name, d);
+				}),
 			});
 		}
 	}

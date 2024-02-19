@@ -7,7 +7,10 @@ const debugDataPlugin: Plugin = {
 	name: "debug-data",
 	transformIndexHtml(html) {
 		const data = readFileSync("./dev-data.json", "utf8");
-		return html.replace("<!--ESBench-Result-->", `<script>window.ESBenchResult=${data}</script>`);
+		const prev = readFileSync("./dev-prev.json", "utf8");
+		return html
+			.replace("<!--ESBench-Result-->", `<script>window.Result=${data}</script>`)
+			.replace("<!--ESBench-Previous-->", `<script>window.Previous=${prev}</script>`);
 	},
 };
 
@@ -18,6 +21,7 @@ export default defineConfig(({ mode }) => ({
 		mode === "development" && debugDataPlugin,
 	],
 	build: {
+		target: "esnext",
 		emptyOutDir: false,
 		outDir: mode === "plugin" ? "../core/html" : undefined,
 	},

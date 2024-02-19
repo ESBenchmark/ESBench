@@ -4,9 +4,15 @@ import "./app.css";
 import { Page } from "./index.ts";
 
 declare global {
-	interface Window { ESBenchResult: ESBenchResult }
+	interface Window {
+		Result: ESBenchResult;
+		Previous: ESBenchResult;
+	}
 }
 
+const app = createApp(Page, {
+	result: window.Result,
+	previous: window.Previous,
+});
 
-createApp(Page, { result: window.ESBenchResult })
-	.mount(document.body);
+app.mount(document.body);
