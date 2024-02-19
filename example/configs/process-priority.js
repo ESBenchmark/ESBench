@@ -1,7 +1,8 @@
 import { execFile } from "child_process";
 import { once } from "events";
 import { setPriority } from "os";
-import { ProcessExecutor } from "esbench/host";
+import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
+import { splitCLI } from "@kaciras/utilities/browser";
 
 /*
  * Suite: Escape regexp
@@ -13,18 +14,7 @@ import { ProcessExecutor } from "esbench/host";
  * |   2 | use regex |       node | 11.97 us |  71.43 ns |      0.00% |
  * |   3 | use regex | node (Low) | 12.28 us |  38.98 ns |     +2.64% |
  */
-
-function splitCommand(command) {
-	const quoted = /^"(.+?)(?<!\\)"/.exec(command);
-	if (!quoted) {
-		const [first, args] = command.split(" ", 2);
-		return [first, args ?? ""];
-	}
-	const [first, unquoted] = quoted;
-	return [unquoted, command.slice(first.length)];
-}
-
-export default class LowPriorityExecutor extends ProcessExecutor {
+class LowPriorityExecutor extends ProcessExecutor {
 
 	get name() {
 		return super.name + " (Low)";
@@ -32,10 +22,10 @@ export default class LowPriorityExecutor extends ProcessExecutor {
 
 	async executeInProcess(entry) {
 		const command = this.getCommand(entry);
-		const [file, args] = splitCommand(command);
+		const [file, ...args] = splitCLI(command);
 
 		this.process?.kill();
-		this.process = execFile(file, [args]);
+		this.process = execFile(file, args);
 
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid, 19);
@@ -47,3 +37,14 @@ export default class LowPriorityExecutor extends ProcessExecutor {
 		}
 	}
 }
+
+export default defineConfig({
+	reporters: [textReporter({ stdDev: true })],
+	toolchains: [{
+		include: ["./src/*.js"],
+		executors: [
+			new ProcessExecutor("node"),
+			new LowPriorityExecutor("node"),
+		],
+	}],
+});
