@@ -2,7 +2,15 @@
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
 			<button
-				:disabled='running'
+				v-if='running'
+				:class='$style.toolButton'
+				type='button'
+				@click='resolve2'
+			>
+				Stop
+			</button>
+			<button
+				v-else
 				:class='$style.toolButton'
 				type='button'
 				@click='startBenchmark'
@@ -12,13 +20,13 @@
 		</section>
 		<section :class='$style.editor' ref='editorEl'/>
 		<section :class='$style.output'>
-			<pre :class='$style.console'>
+			<pre id='console'>
 				{{ logMessage }}
 			</pre>
 			<SuiteReport
 				v-if='result'
-				:name='result.name'
-				:result='[result]'
+				:name='result[0].name'
+				:result='result'
 			/>
 		</section>
 		<section :class='$style.tabList'>
@@ -32,9 +40,10 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { onMounted, onUnmounted, shallowRef } from "vue";
-import { createTable, runSuite, RunSuiteResult } from "esbench";
+import { createTable, RunSuiteResult } from "esbench";
 import defaultCode from "./template.js?raw";
-import { SuiteReport } from "../../packages/reporter-html/src/index.ts";
+import { SuiteReport } from "../../reporter-html/src/index.ts";
+import { createSandbox } from "./sandbox.js";
 
 // @ts-ignore
 globalThis.MonacoEnvironment = {
@@ -60,21 +69,13 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 
 const editorEl = shallowRef<HTMLElement>();
 const running = shallowRef(false);
-const logMessage = shallowRef("");
-const result = shallowRef<RunSuiteResult>();
+const logMessage = shallowRef("In order to be able to perform DOM operations, the benchmark will run in the main thread and the current page may be unresponsive until it finishes.");
+const result = shallowRef<RunSuiteResult[]>();
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
-async function importCode(code: string) {
-	const blob = new Blob([code], {
-		type: "text/javascript",
-	});
-	const dataURL = URL.createObjectURL(blob);
-	try {
-		return await import(/* @vite-ignore */ dataURL);
-	} finally {
-		URL.revokeObjectURL(dataURL);
-	}
+function createModule(code: string) {
+	return URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
 }
 
 // IDEA Darcula theme
@@ -105,24 +106,59 @@ const logChalk = new Proxy<any>(logColors, {
 	},
 });
 
+const loaderTemplate = `\
+import { connect } from "esbench";
+
+const post = message => {
+	parent.postMessage(message);
+	return new Promise(r => setTimeout(r));
+};
+
+const doImport = file => import(file);
+
+connect(post, doImport, ["__FILE__"])`;
+
+let resolve2: any;
+
 async function startBenchmark() {
-	const module = await importCode(editor.getValue());
 	logMessage.value = "";
 	running.value = true;
-	result.value = await runSuite(module.default, {
-		log: (_, message) => {
-			if (message) {
-				logMessage.value += message + "\n";
-			} else {
-				logMessage.value += "\n";
-			}
-			return new Promise(requestAnimationFrame);
-		},
-	});
-	running.value = false;
+	result.value = undefined;
 
-	const {table}= createTable([result.value], {}, logChalk);
-	console.table(table);
+	const module = createModule(editor.getValue());
+	const loader = createModule(loaderTemplate.replace("__FILE__", module));
+	const iframe = createSandbox(loader);
+
+	try {
+		await new Promise<void>((resolve) => {
+			resolve2 = resolve;
+			window.addEventListener("message", ({ source, data }) => {
+				if (source !== iframe.contentWindow) {
+					return;
+				}
+				if (Array.isArray(data)) {
+					resolve();
+					result.value = data;
+				} else if ("e" in data) {
+					resolve();
+					logMessage.value += data.e.stack;
+				} else {
+					logMessage.value += (data.log ?? "") + "\n";
+					document.getElementById("console")!.scrollIntoView(false);
+				}
+			});
+		});
+	} finally {
+		iframe.remove();
+		URL.revokeObjectURL(module);
+		URL.revokeObjectURL(loader);
+	}
+
+	running.value = false;
+	if (result.value) {
+		const table = createTable(result.value, undefined, {}, logChalk);
+		console.table(table);
+	}
 }
 
 onMounted(() => {
@@ -133,6 +169,8 @@ onMounted(() => {
 	});
 	editor.focus();
 });
+
+onUnmounted(() => editor.dispose());
 </script>
 
 <style module>
@@ -188,6 +226,10 @@ onMounted(() => {
 	overflow: scroll;
 	color: whitesmoke;
 	background: #2b2b2b;
+}
+
+#console {
+	margin: 0;
 }
 
 :global(#sandbox) {
