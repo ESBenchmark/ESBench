@@ -81,4 +81,11 @@ describe("SharedModeFilter", () => {
 		const array = new Array(10).fill(11);
 		expect(filter.select(array)).toHaveLength(10);
 	});
+
+	it("should keep the internal counter", () => {
+		const filter = new SharedModeFilter(0, 4);
+		expect(filter.select([11])).toHaveLength(1);
+		expect(filter.select([11, 22])).toHaveLength(0);
+		expect(filter.select([11, 22])).toHaveLength(1);
+	});
 });

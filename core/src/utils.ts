@@ -92,6 +92,8 @@ export class SharedModeFilter {
 	readonly index: number;
 	readonly count: number;
 
+	private state = 0;
+
 	constructor(index: number, count: number) {
 		this.count = count;
 		this.index = index;
@@ -114,10 +116,17 @@ export class SharedModeFilter {
 	}
 
 	select<T>(array: T[]) {
-		const { index, count } = this;
+		const { state, index, count } = this;
 		if (count === 1) {
 			return array;
 		}
-		return array.filter((_, i) => i % count === index);
+		const s = array.length;
+		const filtered = [];
+		let i = index + state;
+		for (; i < s; i += count) {
+			filtered.push(array[i]);
+		}
+		this.state = (i - s) % count;
+		return filtered;
 	}
 }
