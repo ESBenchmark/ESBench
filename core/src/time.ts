@@ -83,8 +83,7 @@ function timeDetail(time: number, count: number) {
 
 export interface TimingOptions {
 	/**
-	 * Measure throughput (ops/<unit>) instead of time (time/op).
-	 * The value can be a duration unit.
+	 * Measure throughput (ops/<unit>) instead of time (time/op). The value can be a duration unit.
 	 *
 	 * @example
 	 * defineSuite({ timing: { throughput: "s" } });

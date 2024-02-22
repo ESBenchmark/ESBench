@@ -48,6 +48,9 @@ export interface ExecuteOptions {
 	 */
 	pattern?: string;
 
+	/**
+	 * Executor should forward messages from suites to this function.
+	 */
 	dispatch(message: ClientMessage): void;
 }
 

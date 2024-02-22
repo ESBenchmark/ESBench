@@ -62,14 +62,14 @@ export interface ESBenchConfig {
 	toolchains?: ToolchainOptions[];
 
 	/**
-	 * Choose dir that ESBench uses for mutation testing.
+	 * Choose dir that ESBench uses to save temporary files.
 	 *
 	 * @default ".esbench-tmp"
 	 */
 	tempDir?: string;
 
 	/**
-	 * Choose whether or not to clean temporary files.
+	 * Choose whether or not to remove the temporary directory after benchmark.
 	 *
 	 * @default true
 	 */

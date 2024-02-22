@@ -261,13 +261,14 @@ class BaselineColumn implements ColumnFactory {
 		return typeof metric === "number" ? metric : 0;
 	}
 
-	prepare(cases: FlattedResult[]) {
+	prepare(cases: Iterable<FlattedResult>) {
 		const { variable, value } = this;
-		const ratio1Row = cases.find(d => d[variable] === value);
-		if (!ratio1Row) {
-			throw new Error(`Baseline (${variable}=${value}) does not in the table`);
+		for (const row of cases) {
+			if (row[variable] === value) {
+				return this.ratio1 = this.toNumber(row);
+			}
 		}
-		this.ratio1 = this.toNumber(ratio1Row);
+		throw new Error(`Baseline (${variable}=${value}) does not in the table`);
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {
@@ -362,9 +363,9 @@ export function createTable(
 		ratioStyle = "percentage",
 	} = options;
 
-	const { baseline } = result[0];
 	const summary = new Summary(result);
 	const prev = new Summary(diff || []);
+	const { baseline } = summary;
 
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
@@ -401,10 +402,10 @@ export function createTable(
 	table.warnings = [];
 
 	// 3. Fill the body
-	let groups = [summary.table][Symbol.iterator]();
-	if (baseline) {
-		groups = summary.group(baseline.type).values();
-	}
+	const groups = baseline
+		? summary.group(baseline.type).values()
+		: [summary.table];
+
 	for (const group of groups) {
 		// 3-1. Preprocess
 		if (outliers) {

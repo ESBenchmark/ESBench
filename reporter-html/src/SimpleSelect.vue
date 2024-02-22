@@ -1,7 +1,7 @@
 <template>
 	<div :class='$style.container'>
 		<select
-			v-model='forward'
+			v-model='selected'
 			:class='$style.select'
 			:disabled='disabled'
 		>
@@ -12,18 +12,15 @@
 </template>
 
 <script setup lang="ts">
-import { useVModel } from "@vueuse/core";
 import { IconCaretDownFilled } from "@tabler/icons-vue";
 
 export interface SelectProps {
-	modelValue: any;
 	disabled?: boolean;
 }
 
-const props = defineProps<SelectProps>();
-const emit = defineEmits(["update:modelValue"]);
+defineProps<SelectProps>();
 
-const forward = useVModel(props, "modelValue", emit);
+const selected = defineModel();
 </script>
 
 <style module>

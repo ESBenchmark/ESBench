@@ -64,8 +64,8 @@ const program = yargs(hideBin(argv))
 			description: "Execute suites in a specified shard",
 		},
 	}, async args => {
-		const { config, shared, ...filter } = args;
-		return start(await loadConfig(config), filter, shared);
+		const { config, ...filter } = args;
+		return start(await loadConfig(config), filter);
 	});
 
 program.version(false).strict().showHelpOnFail(false).parseAsync();

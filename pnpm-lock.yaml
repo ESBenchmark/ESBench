@@ -104,6 +104,9 @@ importers:
 
   example:
     dependencies:
+      '@kaciras/utilities':
+        specifier: ^0.12.2
+        version: 0.12.2
       chrome-remote-interface:
         specifier: ^0.33.0
         version: 0.33.0

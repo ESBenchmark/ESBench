@@ -19,6 +19,7 @@ interface FilterOptions {
 	builder?: string | RegExp;
 	executor?: string | RegExp;
 	name?: string | RegExp;
+	shared?: string;
 }
 
 interface BuildResult {
@@ -74,21 +75,18 @@ export class JobGenerator {
 		}
 	}
 
-	async build(shared?: string) {
+	async build() {
 		const { directory, assetMap, nameMap } = this;
-		let { file } = this.filter;
+		const { file, shared } = this.filter;
 
-		if (file) {
-			file = relative(cwd(), file).replaceAll("\\", "/");
-		}
-
+		const pathFilter = file && relative(cwd(), file).replaceAll("\\", "/");
 		const sharedFilter = SharedModeFilter.parse(shared);
 
 		for (const [builder, include] of this.builderMap) {
 			const name = nameMap.get(builder)!;
 			let files = sharedFilter.select(await glob(include));
-			if (file) {
-				files = files.filter(p => p.includes(file!));
+			if (pathFilter) {
+				files = files.filter(p => p.includes(pathFilter));
 			}
 
 			if (files.length === 0) {
@@ -193,7 +191,7 @@ export async function report(config: ESBenchConfig, files: string[]) {
 	}
 }
 
-export async function start(config: ESBenchConfig, filter: FilterOptions = {}, shared?: string) {
+export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
 	const result: ESBenchResult = {};
 	const startTime = performance.now();
@@ -204,7 +202,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}, s
 	for (const toolchain of toolchains) {
 		generator.add(toolchain);
 	}
-	await generator.build(shared);
+	await generator.build();
 	const jobs = generator.getJobs();
 
 	if (jobs.size === 0) {

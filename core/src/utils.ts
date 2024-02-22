@@ -76,10 +76,6 @@ export function runFns(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
 }
 
-export function insertThousandCommas(text: string) {
-	return text.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
 export function resolveRE(pattern?: string | RegExp) {
 	if (!pattern) {
 		return RE_ANY;
