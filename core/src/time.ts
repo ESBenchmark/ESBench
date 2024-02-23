@@ -178,19 +178,17 @@ export class TimeProfiler implements Profiler {
 		}
 
 		const { throughput } = this;
-		if (throughput) {
-			ctx.meta.throughput = {
-				format: `{number} ops/${throughput}`,
-				lowerIsBetter: false,
-				analysis: MetricAnalysis.Statistics,
-			};
-		} else {
-			ctx.meta.time = {
-				format: "{duration.ms}",
-				lowerIsBetter: true,
-				analysis: MetricAnalysis.Statistics,
-			};
-		}
+		ctx.defineMetric(throughput ? {
+			key: "throughput",
+			format: `{number} ops/${throughput}`,
+			lowerIsBetter: false,
+			analysis: MetricAnalysis.Statistics,
+		} : {
+			key: "time",
+			format: "{duration.ms}",
+			lowerIsBetter: true,
+			analysis: MetricAnalysis.Statistics,
+		});
 	}
 
 	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {

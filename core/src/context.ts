@@ -40,6 +40,11 @@ export enum MetricAnalysis {
 
 export interface MetricMeta {
 	/**
+	 * Property name of the metric in case metrics.
+	 */
+	key: string;
+
+	/**
 	 * Specific the format when this metric displayed as text.
 	 * This option is ignored if the value is a string.
 	 */
@@ -114,6 +119,10 @@ export class ProfilingContext {
 	get sceneCount() {
 		const lists: unknown[][] = Object.values(this.suite.params ?? {});
 		return lists.length === 0 ? 1 : lists.reduce((s, v) => s + v.length, 0);
+	}
+
+	defineMetric(description: MetricMeta) {
+		this.meta[description.key] = description;
 	}
 
 	/**

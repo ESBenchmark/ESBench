@@ -7,6 +7,7 @@
 			"notes": [],
 			"meta": {
 				"time": {
+					"key": "time",
 					"format": "{duration.ms}",
 					"lowerIsBetter": true,
 					"analysis": 2
@@ -57,12 +58,13 @@
 			]
 		},
 		{
-			"executor": "bun ",
+			"executor": "bun",
 			"builder": "None",
 			"name": "Escape regexp",
 			"notes": [],
 			"meta": {
 				"time": {
+					"key": "time",
 					"format": "{duration.ms}",
 					"lowerIsBetter": true,
 					"analysis": 2
@@ -127,6 +129,7 @@
 			],
 			"meta": {
 				"time": {
+					"key": "time",
 					"format": "{duration.ms}",
 					"lowerIsBetter": true,
 					"analysis": 2
@@ -300,12 +303,13 @@
 			]
 		},
 		{
-			"executor": "bun ",
+			"executor": "bun",
 			"builder": "None",
 			"name": "Sum using for-loop vs Array.reduce",
 			"notes": [],
 			"meta": {
 				"time": {
+					"key": "time",
 					"format": "{duration.ms}",
 					"lowerIsBetter": true,
 					"analysis": 2

@@ -154,12 +154,12 @@ class VariableColumn implements ColumnFactory {
 
 class RawMetricColumn implements ColumnFactory {
 
-	readonly name: string;
 	readonly meta: MetricMeta;
+	readonly name: string;
 
-	constructor(name: string, meta: MetricMeta) {
-		this.name = name;
+	constructor(meta: MetricMeta) {
 		this.meta = meta;
+		this.name = meta.key;
 	}
 
 	get format() {
@@ -174,13 +174,11 @@ class RawMetricColumn implements ColumnFactory {
 
 abstract class StatisticsColumn implements ColumnFactory {
 
-	protected readonly key: string;
 	protected readonly meta: MetricMeta;
 
 	abstract readonly name: string;
 
-	constructor(key: string, meta: MetricMeta) {
-		this.key = key;
+	constructor(meta: MetricMeta) {
 		this.meta = meta;
 	}
 
@@ -191,7 +189,7 @@ abstract class StatisticsColumn implements ColumnFactory {
 	abstract calculate(values: number[]): number;
 
 	getValue(data: FlattedResult) {
-		const { key } = this;
+		const { key } = this.meta;
 		const values = getMetrics(data)[key];
 		if (Array.isArray(values)) {
 			return this.calculate(values);
@@ -205,7 +203,7 @@ abstract class StatisticsColumn implements ColumnFactory {
 class StdDevColumn extends StatisticsColumn {
 
 	get name() {
-		return this.key + ".SD";
+		return this.meta.key + ".SD";
 	}
 
 	calculate(values: number[]) {
@@ -217,13 +215,13 @@ class PercentileColumn extends StatisticsColumn {
 
 	private readonly p: number;
 
-	constructor(key: string, meta: MetricMeta, p: number) {
-		super(key, meta);
+	constructor(meta: MetricMeta, p: number) {
+		super(meta);
 		this.p = p;
 	}
 
 	get name() {
-		return `${this.key}.p${this.p}`;
+		return `${this.meta.key}.p${this.p}`;
 	}
 
 	calculate(values: number[]) {
@@ -233,7 +231,6 @@ class PercentileColumn extends StatisticsColumn {
 
 class BaselineColumn implements ColumnFactory {
 
-	private readonly key: string;
 	private readonly meta: MetricMeta;
 	private readonly variable: string;
 	private readonly value: string;
@@ -241,8 +238,7 @@ class BaselineColumn implements ColumnFactory {
 
 	private ratio1 = 0;
 
-	constructor(key: string, meta: MetricMeta, baseline: BaselineOptions, style: RatioStyle) {
-		this.key = key;
+	constructor(meta: MetricMeta, baseline: BaselineOptions, style: RatioStyle) {
 		this.meta = meta;
 		this.variable = baseline.type;
 		this.value = baseline.value;
@@ -250,11 +246,11 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	get name() {
-		return this.key + ".ratio";
+		return this.meta.key + ".ratio";
 	}
 
 	private toNumber(data: FlattedResult) {
-		const metric = getMetrics(data)[this.key];
+		const metric = getMetrics(data)[this.meta.key];
 		if (Array.isArray(metric)) {
 			return mean(metric);
 		}
@@ -282,23 +278,21 @@ class BaselineColumn implements ColumnFactory {
 class DifferenceColumn implements ColumnFactory {
 
 	private readonly another: Summary;
-	private readonly key: string;
 	private readonly meta: MetricMeta;
 	private readonly style: RatioStyle;
 
-	constructor(another: Summary, key: string, meta: MetricMeta, style: RatioStyle) {
+	constructor(another: Summary, meta: MetricMeta, style: RatioStyle) {
 		this.another = another;
-		this.key = key;
 		this.meta = meta;
 		this.style = style;
 	}
 
 	get name() {
-		return `${this.key}.diff`;
+		return `${this.meta.key}.diff`;
 	}
 
 	private toNumber(data: Metrics): number | undefined {
-		const metric = data[this.key];
+		const metric = data[this.meta.key];
 		return Array.isArray(metric) ? mean(metric) : metric as number;
 	}
 
@@ -374,24 +368,24 @@ export function createTable(
 			columnDefs.push(new VariableColumn(p, chalk));
 		}
 	}
-	for (const [name, meta] of summary.meta) {
-		columnDefs.push(new RawMetricColumn(name, meta));
+	for (const meta of summary.meta.values()) {
+		columnDefs.push(new RawMetricColumn(meta));
 		if (!meta.analysis /* 0 or undefined */) {
 			continue;
 		}
 		if (meta.analysis === MetricAnalysis.Statistics) {
 			if (stdDev) {
-				columnDefs.push(new StdDevColumn(name, meta));
+				columnDefs.push(new StdDevColumn(meta));
 			}
 			for (const k of percentiles) {
-				columnDefs.push(new PercentileColumn(name, meta, k));
+				columnDefs.push(new PercentileColumn(meta, k));
 			}
 		}
 		if (baseline) {
-			columnDefs.push(new BaselineColumn(name, meta, baseline, ratioStyle));
+			columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
 		}
-		if (prev.meta.has(name)) {
-			columnDefs.push(new DifferenceColumn(prev, name, meta, ratioStyle));
+		if (prev.meta.has(meta.key)) {
+			columnDefs.push(new DifferenceColumn(prev, meta, ratioStyle));
 		}
 	}
 
