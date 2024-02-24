@@ -16,13 +16,19 @@ __filename = join(__filename, "../../../lib/executor/node.js");
 export default class NodeExecutor implements Executor {
 
 	private readonly executable?: string;
+	private readonly args: string[];
+
 	private process?: ChildProcess;
 
 	/**
+	 * Create a new executor that runs suites with Node.
+	 *
 	 * @param executable Path of the Node executable file.
+	 * @param args List of string arguments passed to the executable.
 	 */
-	constructor(executable?: string) {
+	constructor(executable?: string, args: string[] = []) {
 		this.executable = executable;
+		this.args = args;
 	}
 
 	get name() {
@@ -35,6 +41,7 @@ export default class NodeExecutor implements Executor {
 
 	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {
 		this.process = fork(__filename, {
+			execArgv: this.args,
 			stdio: "ignore",
 			execPath: this.executable,
 			env: {
