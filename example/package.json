@@ -7,11 +7,11 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^0.12.2",
+		"chrome-remote-interface": "^0.33.0",
 		"esbench": "workspace:^",
-		"playwright-core": "^1.41.2",
-		"chrome-remote-interface": "^0.33.0"
+		"playwright-core": "^1.41.2"
 	},
 	"devDependencies": {
-		"@types/firefox-webext-browser": "^120.0.0"
+		"@types/firefox-webext-browser": "^120.0.1"
 	}
 }
