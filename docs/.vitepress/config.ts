@@ -1,16 +1,26 @@
 import { defineConfig } from "vitepress";
 
+// The site should be deployed to a platform that supports custom headers.
+// https://github.com/vuejs/vitepress/issues/2195
+const customHeaders = {
+	name: "context-isolation-headers",
+
+	middleware(_, res, next) {
+		res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+		res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+		return next();
+	},
+
+	configureServer(server) {
+		server.middlewares.use(customHeaders.middleware);
+	},
+};
+
 export default defineConfig({
 	title: "ESBench",
 	description: "A VitePress Site",
 	vite: {
-		// The site should be deployed to a platform that supports these headers.
-		server: {
-			headers: {
-				"Cross-Origin-Opener-Policy": "same-origin",
-				"Cross-Origin-Embedder-Policy": "require-corp",
-			},
-		},
+		plugins: [customHeaders],
 	},
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
