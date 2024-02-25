@@ -5,7 +5,7 @@
 				v-if='running'
 				:class='$style.toolButton'
 				type='button'
-				@click='resolve2'
+				@click='stopBenchmark'
 			>
 				Stop
 			</button>
@@ -40,10 +40,10 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { onMounted, onUnmounted, shallowRef } from "vue";
-import { createTable, RunSuiteResult } from "esbench";
+import { ClientMessage, createTable, RunSuiteResult } from "esbench";
 import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
-import { createSandbox } from "./sandbox.js";
+import { execute } from "./iframe-executor.js";
 
 // @ts-ignore
 globalThis.MonacoEnvironment = {
@@ -74,10 +74,6 @@ const result = shallowRef<RunSuiteResult[]>();
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
-function createModule(code: string) {
-	return URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
-}
-
 // IDEA Darcula theme
 const logColors: Record<string, string> = {
 	black: "#000",
@@ -106,52 +102,40 @@ const logChalk = new Proxy<any>(logColors, {
 	},
 });
 
-const loaderTemplate = `\
-import { connect } from "esbench";
+let promise: Promise<RunSuiteResult[]>;
+let resolve: typeof Promise.resolve<RunSuiteResult[]>;
+let reject: typeof Promise.reject;
 
-const post = message => {
-	parent.postMessage(message);
-	return new Promise(r => setTimeout(r));
-};
+function stopBenchmark() {
+	reject(new Error("Benchmark Stopped"));
+}
 
-const doImport = file => import(file);
-
-connect(post, doImport, ["__FILE__"])`;
-
-let resolve2: any;
+function handleMessage(data: ClientMessage) {
+	if (Array.isArray(data)) {
+		resolve(data);
+	} else if ("e" in data) {
+		reject(data.e);
+	} else {
+		logMessage.value += (data.log ?? "") + "\n";
+		document.getElementById("console")!.scrollIntoView(false);
+	}
+}
 
 async function startBenchmark() {
 	logMessage.value = "";
 	running.value = true;
 	result.value = undefined;
 
-	const module = createModule(editor.getValue());
-	const loader = createModule(loaderTemplate.replace("__FILE__", module));
-	const iframe = createSandbox(loader);
+	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
+		resolve = resolve1;
+		reject = reject1;
+	});
 
 	try {
-		await new Promise<void>((resolve) => {
-			resolve2 = resolve;
-			window.addEventListener("message", ({ source, data }) => {
-				if (source !== iframe.contentWindow) {
-					return;
-				}
-				if (Array.isArray(data)) {
-					resolve();
-					result.value = data;
-				} else if ("e" in data) {
-					resolve();
-					logMessage.value += data.e.stack;
-				} else {
-					logMessage.value += (data.log ?? "") + "\n";
-					document.getElementById("console")!.scrollIntoView(false);
-				}
-			});
-		});
-	} finally {
-		iframe.remove();
-		URL.revokeObjectURL(module);
-		URL.revokeObjectURL(loader);
+		await execute(editor.getValue(), handleMessage, promise);
+		result.value = await promise;
+	} catch (e) {
+		logMessage.value += e.stack;
 	}
 
 	running.value = false;
