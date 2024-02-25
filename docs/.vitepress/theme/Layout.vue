@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from "vue";
 import { useRoute } from "vitepress";
 import VPDefault from "vitepress/theme";
-import PlaygroundPage from "../../playground/PlaygroundPage.vue";
+
+const Playground = defineAsyncComponent(() => import("../../playground/PlaygroundPage.vue"));
 
 const route = useRoute();
 const DefaultLayout = VPDefault.Layout;
 </script>
 
 <template>
-	<PlaygroundPage v-if='route.path === "/playground.html"'/>
+	<Playground v-if='route.path === "/playground.html"'/>
 	<DefaultLayout v-else/>
 </template>
