@@ -1,6 +1,26 @@
 <template>
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
+			Execute in:
+			<label>
+				<input
+					v-model='executor'
+					type='radio'
+					name='executor'
+					:value='executeWorker'
+				>
+				Worker
+			</label>
+			<label>
+				<input
+					v-model='executor'
+					type='radio'
+					name='executor'
+					:value='executeIFrame'
+				>
+				iframe
+			</label>
+
 			<button
 				v-if='running'
 				:class='$style.toolButton'
@@ -41,9 +61,10 @@ import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker"
 import * as monaco from "monaco-editor";
 import { onMounted, onUnmounted, shallowRef } from "vue";
 import { ClientMessage, createTable, RunSuiteResult } from "esbench";
+import { IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
-import { execute } from "./iframe-executor.js";
+import { executeIFrame, executeWorker } from "./executor.ts";
 
 window.MonacoEnvironment = {
 	getWorker(_: any, label: string) {
@@ -66,6 +87,7 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 });
 
 const editorEl = shallowRef<HTMLElement>();
+const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
 const logMessage = shallowRef("In order to be able to perform DOM operations, the benchmark will run in the main thread and the current page may be unresponsive until it finishes.");
 const result = shallowRef<RunSuiteResult[]>();
@@ -130,7 +152,7 @@ async function startBenchmark() {
 	});
 
 	try {
-		await execute(editor.getValue(), handleMessage, promise);
+		await executor.value(editor.getValue(), handleMessage, promise);
 		result.value = await promise;
 	} catch (e) {
 		logMessage.value += `\n${e.message}\n`;
@@ -169,6 +191,9 @@ onUnmounted(() => editor.dispose());
 
 .toolbar {
 	grid-area: toolbar;
+	display: flex;
+	align-items: center;
+
 	background: #eee;
 }
 
