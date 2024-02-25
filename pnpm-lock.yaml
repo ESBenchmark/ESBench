@@ -98,6 +98,9 @@ importers:
         specifier: ^3.4.19
         version: 3.4.19(typescript@5.3.3)
     devDependencies:
+      vite:
+        specifier: ^5.1.4
+        version: 5.1.4(@types/node@20.11.20)
       vitepress:
         specifier: 1.0.0-rc.44
         version: 1.0.0-rc.44(@algolia/client-search@4.22.1)(@types/node@20.11.20)(search-insights@2.13.0)(typescript@5.3.3)

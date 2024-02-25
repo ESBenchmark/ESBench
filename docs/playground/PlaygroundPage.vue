@@ -45,11 +45,9 @@ import defaultCode from "./template.js?raw";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
 import { execute } from "./iframe-executor.js";
 
-// @ts-ignore
-globalThis.MonacoEnvironment = {
+window.MonacoEnvironment = {
 	getWorker(_: any, label: string) {
 		switch (label) {
-			// case "typescript":
 			case "javascript":
 				return new tsWorker();
 		}
@@ -103,8 +101,8 @@ const logChalk = new Proxy<any>(logColors, {
 });
 
 let promise: Promise<RunSuiteResult[]>;
-let resolve: typeof Promise.resolve<RunSuiteResult[]>;
-let reject: typeof Promise.reject;
+let resolve: (value: RunSuiteResult[]) => void;
+let reject: (reason?: any) => void;
 
 function stopBenchmark() {
 	reject(new Error("Benchmark Stopped"));
@@ -135,6 +133,7 @@ async function startBenchmark() {
 		await execute(editor.getValue(), handleMessage, promise);
 		result.value = await promise;
 	} catch (e) {
+		logMessage.value += `\n${e.message}\n`;
 		logMessage.value += e.stack;
 	}
 
