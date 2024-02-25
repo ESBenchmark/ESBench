@@ -7,6 +7,7 @@
 					v-model='executor'
 					type='radio'
 					name='executor'
+					:disabled='running'
 					:value='executeWorker'
 				>
 				Worker
@@ -16,6 +17,7 @@
 					v-model='executor'
 					type='radio'
 					name='executor'
+					:disabled='running'
 					:value='executeIFrame'
 				>
 				iframe
@@ -23,10 +25,11 @@
 
 			<button
 				v-if='running'
-				:class='$style.toolButton'
+				:class='$style.stop'
 				type='button'
 				@click='stopBenchmark'
 			>
+				<IconPlayerStopFilled/>
 				Stop
 			</button>
 			<button
@@ -35,14 +38,13 @@
 				type='button'
 				@click='startBenchmark'
 			>
+				<IconPlayerPlayFilled/>
 				Run
 			</button>
 		</section>
 		<section :class='$style.editor' ref='editorEl'/>
 		<section :class='$style.output'>
-			<pre id='console'>
-				{{ logMessage }}
-			</pre>
+			<pre id='console'>{{ logMessage }}</pre>
 			<SuiteReport
 				v-if='result'
 				:name='result[0].name'
@@ -59,7 +61,7 @@
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
-import { onMounted, onUnmounted, shallowRef } from "vue";
+import { onMounted, onUnmounted, shallowRef, watchEffect } from "vue";
 import { ClientMessage, createTable, RunSuiteResult } from "esbench";
 import { IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import defaultCode from "./template.js?raw";
@@ -79,7 +81,7 @@ window.MonacoEnvironment = {
 monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 
 interface PlaygroundProps {
-	initCode: string;
+	initCode?: string;
 }
 
 const props = withDefaults(defineProps<PlaygroundProps>(), {
@@ -89,7 +91,7 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 const editorEl = shallowRef<HTMLElement>();
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
-const logMessage = shallowRef("In order to be able to perform DOM operations, the benchmark will run in the main thread and the current page may be unresponsive until it finishes.");
+const logMessage = shallowRef();
 const result = shallowRef<RunSuiteResult[]>();
 
 let editor: monaco.editor.IStandaloneCodeEditor;
@@ -125,6 +127,12 @@ const logChalk = new Proxy<any>(logColors, {
 let promise: Promise<RunSuiteResult[]>;
 let resolve: (value: RunSuiteResult[]) => void;
 let reject: (reason?: any) => void;
+
+watchEffect(() => {
+	logMessage.value = executor.value === executeWorker
+		? ""
+		: "Run in iframe allow DOM operations, but the current page may be unresponsive until it finishes.";
+});
 
 function stopBenchmark() {
 	reject(new Error("Benchmark Stopped"));
@@ -198,20 +206,28 @@ onUnmounted(() => editor.dispose());
 }
 
 .toolButton {
+	display: inline-flex;
+	gap: 5px;
+
 	padding: 4px 8px;
+	margin-left: auto;
+	color: white;
+	background: #06af08;
+	transition: .15s;
 
 	&:where(:hover, :focus-visible) {
-		background: rgba(0, 0, 0, 0.07);
+		filter: brightness(1.1);
 	}
 
 	&:where(:active) {
-		background: rgba(0, 0, 0, 0.05);
+		filter: brightness(0.95);
 	}
+}
 
-	&:disabled {
-		opacity: 0.75;
-		background: none;
-	}
+.stop {
+	composes: toolButton;
+
+	background: #d01a1a;
 }
 
 .tabList {
@@ -236,8 +252,9 @@ onUnmounted(() => editor.dispose());
 	background: #2b2b2b;
 }
 
-#console {
+:global(#console) {
 	margin: 0;
+	white-space: pre-wrap;
 }
 
 :global(#sandbox) {

@@ -26,7 +26,7 @@ export default defineConfig({
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
-			{ text: "Playground", link: "/playground/index" },
+			{ text: "Playground", link: "/playground" },
 		],
 		sidebar: [
 			{

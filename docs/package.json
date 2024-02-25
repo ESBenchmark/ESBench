@@ -8,6 +8,7 @@
 	"dependencies": {
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.46.0",
+		"@tabler/icons-vue": "^2.47.0",
 		"vue": "^3.4.19"
 	},
 	"devDependencies": {
