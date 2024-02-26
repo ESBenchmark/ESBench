@@ -284,12 +284,7 @@ function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOp
 		if (Array.isArray(message)) {
 			resolve(message);
 		} else if ("e" in message) {
-			const cause = deserializeError(message.e);
-			if (message.params) {
-				fail(new RunSuiteError("", cause, undefined, message.params));
-			} else {
-				fail(cause);
-			}
+			fail(deserializeError(message.e));
 		} else {
 			consoleLogHandler(message.level, message.log);
 		}

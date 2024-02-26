@@ -42,8 +42,9 @@ class DefaultEventLogger implements Profiler {
 export class RunSuiteError extends Error {
 
 	/**
-	 * The params property of the scene that threw the error,
-	 * or undefined if the error did not occur in a scene.
+	 * The params property of the scene that threw the error.
+	 *
+	 * This property is not serializable, it will be undefined in the host side.
 	 */
 	readonly params?: object;
 
@@ -55,6 +56,14 @@ export class RunSuiteError extends Error {
 		this.params = params;
 		this.paramStr = ps;
 		this.cause = cause; // For compatibility.
+	}
+
+	toJSON() {
+		const { name, stack, message, paramStr } = this;
+		return {
+			name, stack, message, paramStr,
+			cause: serializeError(this.cause),
+		};
 	}
 }
 
@@ -181,11 +190,6 @@ export async function connect(
 		}
 		postMessage(results);
 	} catch (e) {
-		let params: string | undefined;
-		if (e.name === "RunSuiteError") {
-			params = e.paramStr;
-			e = e.cause;
-		}
-		postMessage({ e: serializeError(e), params });
+		postMessage({ e: serializeError(e) });
 	}
 }
