@@ -62,7 +62,7 @@ export default class PlaywrightExecutor implements Executor {
 	async start() {
 		console.log("[Playwright] Launching browser...");
 		const browser = await this.type.launch(this.options);
-		this.context = await browser.newContext({ baseURL });
+		this.context = await browser.newContext();
 	}
 
 	async close() {
@@ -94,12 +94,13 @@ export default class PlaywrightExecutor implements Executor {
 
 		await page.goto(url);
 		await page.evaluate(client, { files, pattern });
-		await page.close();
+
+		await Promise.all(this.context.pages().map(p => p.close()));
 	}
 
 	async execute(options: ExecuteOptions) {
 		const page = await this.context.newPage();
-		await this.initialize(page, options, "/");
+		await this.initialize(page, options, baseURL);
 	}
 
 	/**
