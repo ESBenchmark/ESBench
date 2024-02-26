@@ -2,7 +2,6 @@ import { env } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
 import { ChildProcess, fork } from "child_process";
-import { once } from "events";
 import { setPriority } from "os";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -39,7 +38,9 @@ export default class NodeExecutor implements Executor {
 		this.process?.kill();
 	}
 
-	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {
+	execute({ root, files, pattern, dispatch, fail }: ExecuteOptions) {
+		this.process?.kill();
+
 		this.process = fork(__filename, {
 			execArgv: this.args,
 			stdio: "ignore",
@@ -54,11 +55,11 @@ export default class NodeExecutor implements Executor {
 		});
 		this.process.on("message", dispatch);
 		this.process.send({ root, pattern, files });
-
-		const [code] = await once(this.process, "exit");
-		if (code !== 0) {
-			throw new Error(`Node execute Failed (exitCode=${code})`);
-		}
+		this.process.on("exit", code => {
+			if (code !== 0) {
+				fail(new Error(`Node execute Failed (exitCode=${code})`));
+			}
+		});
 	}
 }
 

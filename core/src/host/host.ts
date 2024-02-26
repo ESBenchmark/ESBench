@@ -10,7 +10,7 @@ import { deserializeError } from "serialize-error";
 import picomatch from "picomatch";
 import { Builder, ExecuteOptions, Executor } from "./toolchain.js";
 import { ESBenchConfig, Nameable, normalizeConfig, ToolchainOptions } from "./config.js";
-import { ClientMessage, ESBenchResult } from "../index.js";
+import { ClientMessage, ESBenchResult, RunSuiteError, ToolchainResult } from "../index.js";
 import { consoleLogHandler, resolveRE, SharedModeFilter } from "../utils.js";
 import noBuild from "../builder/default.js";
 
@@ -212,10 +212,38 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 
 	for (const [executor, builds] of jobs) {
 		const name = generator.getName(executor);
+		let builder = "";
 		console.log(`Running suites with: ${name}.`);
 
-		const driver = new ExecutorDriver(name, executor, result);
-		await driver.execute(builds, tempDir, filter);
+		await executor.start?.();
+		try {
+			for (const build of builds) {
+				builder = build.name;
+
+				const context = newExecuteContext(tempDir, build, filter);
+				const [tcs] = await Promise.all([
+					context.promise,
+					executor.execute(context),
+				]);
+
+				for (const tc of tcs as any) {
+					(result[tc.name] ??= []).push({
+						...tc,
+						executor: name,
+						builder,
+					});
+				}
+			}
+		} catch (e) {
+			console.error(`Failed to run suite with (builder=${builder}, executor=${name})`);
+			if (e.name !== "RunSuiteError") {
+				throw e;
+			}
+			console.error(`At scene ${e.paramStr}`);
+			throw e.cause;
+		} finally {
+			await executor.close?.();
+		}
 	}
 
 	console.log(); // Add an empty line between running & reporting phase.
@@ -241,61 +269,31 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }
 
-class ExecutorDriver {
+function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
+	const { files, root } = build;
+	const pattern = resolveRE(filter.name).source;
+	let resolve: (value: ToolchainResult[]) => void;
+	let fail!: (reason?: Error) => void;
 
-	private readonly result: ESBenchResult;
-	private readonly name: string;
-	private readonly executor: Executor;
-	private readonly monitor: Promise<void>;
+	const promise = new Promise<ToolchainResult[]>((resolve1, reject1) => {
+		resolve = resolve1;
+		fail = reject1;
+	});
 
-	private reject!: (reason?: any) => void;
-	private current!: BuildResult;
-
-	constructor(name: string, executor: Executor, result: ESBenchResult) {
-		this.result = result;
-		this.name = name;
-		this.executor = executor;
-		this.monitor = new Promise((_, reject) => this.reject = reject);
-		this.onMessage = this.onMessage.bind(this);
-	}
-
-	onMessage(message: ClientMessage) {
-		const { name: executor, current: { name: builder } } = this;
-
-		if ("e" in message) {
-			console.error(`Failed to run suite with (builder=${builder}, executor=${executor})`);
+	function dispatch(message: ClientMessage) {
+		if (Array.isArray(message)) {
+			resolve(message);
+		} else if ("e" in message) {
+			const cause = deserializeError(message.e);
 			if (message.params) {
-				console.error(`At scene ${message.params}`);
+				fail(new RunSuiteError("", cause, undefined, message.params));
+			} else {
+				fail(cause);
 			}
-			this.reject(deserializeError(message.e));
-		} else if ("level" in message) {
-			consoleLogHandler(message.level, message.log);
 		} else {
-			for (const result of message) {
-				(this.result[result.name] ??= []).push({ executor, builder, ...result });
-			}
+			consoleLogHandler(message.level, message.log);
 		}
 	}
 
-	async execute(builds: BuildResult[], tempDir: string, filter: FilterOptions) {
-		const { executor, monitor } = this;
-		const context = <ExecuteOptions>{
-			tempDir,
-			pattern: resolveRE(filter.name).source,
-		};
-
-		await executor.start?.();
-		try {
-			for (const build of builds) {
-				this.current = build;
-				context.dispatch = this.onMessage;
-				context.files = build.files;
-				context.root = build.root;
-				const task = executor.execute(context);
-				await Promise.race([task, monitor]);
-			}
-		} finally {
-			await executor.close?.();
-		}
-	}
+	return { tempDir, pattern, files, root, dispatch, fail, promise } as ExecuteOptions;
 }

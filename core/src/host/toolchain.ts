@@ -49,6 +49,18 @@ export interface ExecuteOptions {
 	pattern?: string;
 
 	/**
+	 * Used to wait runner finish, it will resolve when receive result message,
+	 * and reject when receive error message or `fail` is called.
+	 */
+	promise: Promise<unknown>;
+
+	/**
+	 *
+	 * @param error
+	 */
+	fail(error: Error): void;
+
+	/**
 	 * Executor should forward messages from suites to this function.
 	 */
 	dispatch(message: ClientMessage): void;
