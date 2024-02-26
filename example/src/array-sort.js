@@ -1,13 +1,11 @@
 import { defineSuite } from "esbench";
+import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Array sort algorithms",
 	setup(scene) {
-		const template = [];
+		const template = randomNumbers(1000);
 		let array = [];
-		for (let i = 0; i < 1000; i++) {
-			template.push(Math.random());
-		}
 
 		scene.beforeIteration(() => array = template.slice());
 
