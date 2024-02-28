@@ -184,6 +184,10 @@ export class WebextExecutor extends PlaywrightExecutor {
 		this.dataDir = dataDir;
 	}
 
+	get name() {
+		return this.type.name() + " addon";
+	}
+
 	async start() {
 		console.log("[Playwright] Launching browser...");
 		const dataDir = this.dataDir ??= mkdtempSync(join(tmpdir(), "browser-"));
