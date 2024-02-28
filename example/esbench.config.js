@@ -5,9 +5,9 @@ import {
 	rawReporter,
 	textReporter,
 	ViteBuilder,
+	WebextExecutor,
 } from "esbench/host";
-import { chromium, firefox } from "playwright-core";
-import WebextExecutor from "./executor/webextension.js";
+import { chromium } from "playwright-core";
 
 const viteBuilder = new ViteBuilder();
 
