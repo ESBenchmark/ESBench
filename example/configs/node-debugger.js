@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import * as readline from "readline";
 import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
 import CDP from "chrome-remote-interface";
@@ -22,6 +21,13 @@ class NodeDebugExecutor extends ProcessExecutor {
 		return this.connect ? "node-debug-connect" : "node-debug";
 	}
 
+	async postprocess(entry, fail) {
+		if (this.connect) {
+			this.attachDebugger();
+		}
+		return super.postprocess(entry, fail);
+	}
+
 	attachDebugger() {
 		const rl = readline.createInterface(this.process.stderr);
 		rl.on("line", async line => {
@@ -34,22 +40,6 @@ class NodeDebugExecutor extends ProcessExecutor {
 				const client = await CDP({ port: 33333 });
 				await client.Runtime.runIfWaitingForDebugger();
 				this.process.on("exit", () => client.close());
-			}
-		});
-	}
-
-	async executeInProcess(entry, fail) {
-		const command = this.getCommand(entry);
-		this.process?.kill();
-		this.process = exec(command);
-
-		if (this.connect) {
-			this.attachDebugger();
-		}
-
-		this.process.on("exit", code => {
-			if (code !== 0) {
-				fail(new Error(`Execute Failed (${code}), Command: ${command}`));
 			}
 		});
 	}

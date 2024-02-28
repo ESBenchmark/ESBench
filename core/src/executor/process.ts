@@ -74,13 +74,19 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	execute(options: ExecuteOptions) {
-		const { tempDir, dispatch, fail } = options;
+		const { tempDir, dispatch } = options;
+		this.process?.kill();
 		this.dispatch = dispatch;
 
 		// No need to make the filename unique because only one executor can run at the same time.
-		const file = join(tempDir, "main.js");
-		this.writeEntry(file, options);
-		return this.executeInProcess(file, fail);
+		const entry = join(tempDir, "main.js");
+		this.writeEntry(entry, options);
+
+		const command = this.getCommand(entry);
+		const [file, ...args] = splitCLI(command);
+		this.process = execFile(file, args);
+
+		return this.postprocess(command, options);
 	}
 
 	protected writeEntry(file: string, options: ExecuteOptions) {
@@ -99,19 +105,14 @@ export default class ProcessExecutor implements Executor {
 			.replace("__ENTRY__", specifier.replaceAll("\\", "/")));
 	}
 
-	protected async executeInProcess(entry: string, fail: (e: any) => void) {
-		const command = this.getCommand(entry);
-		const [file, ...args] = splitCLI(command);
-
-		this.process?.kill();
-		this.process = execFile(file, args);
-
+	protected postprocess(cmd: string, options: ExecuteOptions) {
+		const { fail } = options;
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid!, -20);
 		});
 		this.process.on("exit", code => {
 			if (code !== 0) {
-				fail(new Error(`Execute Failed (${code}), Command: ${command}`));
+				fail(new Error(`Execute Failed (${code}), Command: ${cmd}`));
 			}
 		});
 	}

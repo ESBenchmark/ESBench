@@ -1,10 +1,8 @@
-import { execFile } from "child_process";
-import { once } from "events";
 import { setPriority } from "os";
 import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
-import { splitCLI } from "@kaciras/utilities/browser";
 
 /*
+ *
  * Suite: Escape regexp
  * | No. |      Name |   Executor |     time |   time.SD | time.ratio |
  * | --: | --------: | ---------: | -------: | --------: | ---------: |
@@ -20,21 +18,12 @@ class LowPriorityExecutor extends ProcessExecutor {
 		return super.name + " (Low)";
 	}
 
-	async executeInProcess(entry) {
-		const command = this.getCommand(entry);
-		const [file, ...args] = splitCLI(command);
-
-		this.process?.kill();
-		this.process = execFile(file, args);
-
+	postprocess(entry, options) {
+		super.postprocess(entry, options);
+		this.process.removeAllListeners("spawn");
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid, 19);
 		});
-
-		const [code] = await once(this.process, "exit");
-		if (code !== 0) {
-			throw new Error(`Execute Failed (${code}), Command: ${command}`);
-		}
 	}
 }
 
