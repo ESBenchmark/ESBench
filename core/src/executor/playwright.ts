@@ -196,7 +196,9 @@ export class WebextExecutor extends PlaywrightExecutor {
 		writeFileSync(join(dataDir, "index.html"), pageHTML.body);
 
 		this.context = await this.type.launchPersistentContext(dataDir, {
+			headless: false,
 			args: [
+				"--headless=new",
 				`--load-extension=${dataDir}`,
 				`--disable-extensions-except=${dataDir}`,
 			],
