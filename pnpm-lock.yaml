@@ -88,6 +88,9 @@ importers:
 
   docs:
     dependencies:
+      '@tabler/icons-vue':
+        specifier: ^2.47.0
+        version: 2.47.0(vue@3.4.19)
       esbench:
         specifier: workspace:^
         version: link:../core
@@ -141,9 +144,6 @@ importers:
       chartjs-chart-error-bars:
         specifier: ^4.3.4
         version: 4.3.4(chart.js@4.4.1)
-      chartjs-plugin-annotation:
-        specifier: ^3.0.1
-        version: 3.0.1(chart.js@4.4.1)
       esbench:
         specifier: workspace:^
         version: link:../core
@@ -1380,14 +1380,6 @@ packages:
     resolution: {integrity: sha512-EQdWsbiMZ5hatjEFEIeKEzhArJsbbd10h6jfx9LTdDl4Ywyoel5ApbJX5iqqm9jXGfaEw3ZdpuzzmEvswQqfDw==}
     peerDependencies:
       chart.js: ^4.1.0
-    dependencies:
-      chart.js: 4.4.1
-    dev: false
-
-  /chartjs-plugin-annotation@3.0.1(chart.js@4.4.1):
-    resolution: {integrity: sha512-hlIrXXKqSDgb+ZjVYHefmlZUXK8KbkCPiynSVrTb/HjTMkT62cOInaT1NTQCKtxKKOm9oHp958DY3RTAFKtkHg==}
-    peerDependencies:
-      chart.js: '>=4.0.0'
     dependencies:
       chart.js: 4.4.1
     dev: false

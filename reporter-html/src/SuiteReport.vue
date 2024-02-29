@@ -122,20 +122,67 @@ function getDataAndRange(name: string, result: FlattedResult) {
 	return Array.isArray(y) ? errorBarType.value(y) : { y };
 }
 
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d")!;
+
+function createPattern(background: string) {
+	canvas.width = 20;
+	canvas.height = 20;
+
+	ctx.fillStyle = background;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	const halfSize = 20 / 2;
+	ctx.beginPath();
+	setStrokeProps();
+	drawDiagonalLine();
+	drawDiagonalLine(halfSize, halfSize);
+	ctx.stroke();
+
+	const pattern = ctx.createPattern(canvas, "repeat")!;
+	canvas.width = 40;
+	canvas.height = 40;
+	pattern.shapeType = "square";
+	return pattern;
+}
+
+function setStrokeProps() {
+	ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+	ctx.lineJoin = "round";
+	ctx.lineCap = "round";
+	ctx.lineWidth = 20 / 10;
+}
+
+function drawDiagonalLine(offsetX = 0, offsetY = 0) {
+	const halfSize = 20 / 2;
+	const gap = 1;
+	ctx.moveTo((halfSize - gap) - offsetX, (gap * -1) + offsetY);
+	ctx.lineTo((20 + 1) - offsetX, (halfSize + 1) + offsetY);
+	ctx.closePath();
+}
+
+const CHART_COLORS = [
+	"rgb(54, 162, 235, .5)",
+	"rgb(255, 99, 132, .5)",
+	"rgb(255, 159, 64, .5)",
+	"rgb(255, 205, 86, .5)",
+	"rgb(75, 192, 192, .5)",
+	"rgb(153, 102, 255, .5)",
+	"rgb(201, 203, 207, .5)",
+];
+
 const data = computed(() => {
 	const labels = [...summary.value.vars.get(xAxis.value)!];
 	const datasets = [];
 	const scales: Record<string, any> = {};
 
+	let i = 0;
 	for (const [name, meta] of summary.value.meta) {
+		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
+
 		scales.y = {
 			title: { display: true, text: name },
 		};
-
-		datasets.push({
-			label: name,
-			data: matches.value.map(r => getDataAndRange(name, r)),
-		});
 
 		if (meta.analysis && previous.value.meta.get(name)) {
 			datasets.push({
@@ -147,8 +194,15 @@ const data = computed(() => {
 					}
 					return getDataAndRange(name, d);
 				}),
+				backgroundColor: createPattern(color),
 			});
 		}
+
+		datasets.push({
+			label: name,
+			data: matches.value.map(r => getDataAndRange(name, r)),
+			backgroundColor: color,
+		});
 	}
 
 	return {
