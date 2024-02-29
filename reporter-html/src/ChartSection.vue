@@ -115,14 +115,16 @@ const data = computed(() => {
 	let i = 0;
 	for (const [name, meta] of summary.meta) {
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
+		const yAxisID = `y-${name}`;
 
-		scales.y = {
+		scales[yAxisID] = {
 			title: { display: true, text: name },
 		};
 
 		if (meta.analysis && previous.meta.get(name)) {
 			datasets.push({
 				label: `${name} (prev)`,
+				yAxisID,
 				data: matches.value.map(r => {
 					const d = previous.find(r);
 					if (!d) {
@@ -136,6 +138,7 @@ const data = computed(() => {
 
 		datasets.push({
 			label: name,
+			yAxisID,
 			data: matches.value.map(r => getDataAndRange(name, r)),
 			backgroundColor: color,
 		});
