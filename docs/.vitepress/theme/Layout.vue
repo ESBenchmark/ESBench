@@ -3,10 +3,10 @@ import { defineAsyncComponent } from "vue";
 import { useRoute } from "vitepress";
 import VPDefault from "vitepress/theme";
 
-const Playground = defineAsyncComponent(() => import("../../playground/PlaygroundPage.vue"));
+const DefaultLayout = VPDefault.Layout;
+const Playground = defineAsyncComponent(() => import("../../playground/Playground.vue"));
 
 const route = useRoute();
-const DefaultLayout = VPDefault.Layout;
 </script>
 
 <template>

@@ -34,26 +34,34 @@
 			</button>
 			<button
 				v-else
-				:class='$style.toolButton'
+				:class='$style.start'
 				type='button'
 				@click='startBenchmark'
 			>
 				<IconPlayerPlayFilled/>
 				Run
 			</button>
+
+			<button
+				:class='$style.toolButton'
+				type='button'
+				@click='showChart=true'
+			>
+				<IconChartBar/>
+				Chart Report
+			</button>
+
+			|
+
+			<a href='/guide'>Guide</a>
+			<a href='https://github.com/Kaciras/ESBench'>GitHub</a>
 		</section>
 		<section :class='$style.editor' ref='editorEl'/>
 		<section :class='$style.output'>
 			<pre id='console'>{{ logMessage }}</pre>
-			<SuiteReport
-				v-if='result'
-				:name='result[0].name'
-				:result='result'
-			/>
 		</section>
-		<section :class='$style.tabList'>
 
-		</section>
+		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
 </template>
 
@@ -62,11 +70,11 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { onMounted, onUnmounted, shallowRef, watchEffect } from "vue";
-import { ClientMessage, createTable, RunSuiteResult } from "esbench";
-import { IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
+import { ClientMessage, RunSuiteResult } from "esbench";
+import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import defaultCode from "./template.js?raw";
-import { SuiteReport } from "../../reporter-html/src/index.ts";
 import { executeIFrame, executeWorker } from "./executor.ts";
+import ReportView from "./ReportView.vue";
 
 window.MonacoEnvironment = {
 	getWorker(_: any, label: string) {
@@ -80,7 +88,13 @@ window.MonacoEnvironment = {
 
 monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 
-interface PlaygroundProps {
+export interface BenchmarkHistory {
+	name: string;
+	time: Date;
+	result: RunSuiteResult[];
+}
+
+export interface PlaygroundProps {
 	initCode?: string;
 }
 
@@ -92,7 +106,8 @@ const editorEl = shallowRef<HTMLElement>();
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
 const logMessage = shallowRef();
-const result = shallowRef<RunSuiteResult[]>();
+const results = shallowRef<BenchmarkHistory[]>([]);
+const showChart = shallowRef(false);
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
@@ -152,7 +167,6 @@ function handleMessage(data: ClientMessage) {
 async function startBenchmark() {
 	logMessage.value = "";
 	running.value = true;
-	result.value = undefined;
 
 	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
 		resolve = resolve1;
@@ -161,16 +175,17 @@ async function startBenchmark() {
 
 	try {
 		await executor.value(editor.getValue(), handleMessage, promise);
-		result.value = await promise;
+		const result = await promise;
+		results.value.push({
+			name: result[0].name,
+			result,
+			time: new Date(),
+		});
 	} catch (e) {
 		logMessage.value += `\n${e.message}\n`;
-		logMessage.value += e.stack;
-	}
-
-	running.value = false;
-	if (result.value) {
-		const table = createTable(result.value, undefined, {}, logChalk);
-		console.table(table);
+		return logMessage.value += e.stack;
+	} finally {
+		running.value = false;
 	}
 }
 
@@ -181,6 +196,7 @@ onMounted(() => {
 		minimap: { enabled: false },
 	});
 	editor.focus();
+	document.title = "ESBench Playground";
 });
 
 onUnmounted(() => editor.dispose());
@@ -189,7 +205,7 @@ onUnmounted(() => editor.dispose());
 <style module>
 .playground {
 	display: grid;
-	grid-template-areas: "toolbar tabs" "editor output";
+	grid-template-areas: "toolbar toolbar" "editor output";
 	grid-template-rows: auto 1fr;
 	grid-template-columns: 1fr 1fr;
 
@@ -200,19 +216,24 @@ onUnmounted(() => editor.dispose());
 .toolbar {
 	grid-area: toolbar;
 	display: flex;
+	gap: 10px;
 	align-items: center;
+	padding: 0 10px;
 
-	background: #eee;
+	z-index: 9;
+	box-shadow: 0 0 4px #aaa;
 }
 
 .toolButton {
 	display: inline-flex;
 	gap: 5px;
 
-	padding: 4px 8px;
-	margin-left: auto;
+	margin: 6px 0;
+	padding: 5px 8px;
+	border-radius: 4px;
+
 	color: white;
-	background: #06af08;
+	background: #0f4a85;
 	transition: .15s;
 
 	&:where(:hover, :focus-visible) {
@@ -224,9 +245,13 @@ onUnmounted(() => editor.dispose());
 	}
 }
 
+.start {
+	composes: toolButton;
+	background: #06af08;
+}
+
 .stop {
 	composes: toolButton;
-
 	background: #d01a1a;
 }
 
