@@ -56,10 +56,10 @@
 			<a href='/guide'>Guide</a>
 			<a href='https://github.com/Kaciras/ESBench'>GitHub</a>
 		</section>
+
 		<section :class='$style.editor' ref='editorEl'/>
-		<section :class='$style.output'>
-			<pre id='console'>{{ logMessage }}</pre>
-		</section>
+		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
+		<pre id='console'>{{ logMessage }}</pre>
 
 		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
@@ -69,7 +69,7 @@
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
-import { onMounted, onUnmounted, shallowRef, watchEffect } from "vue";
+import { nextTick, onMounted, onUnmounted, shallowRef, watchEffect } from "vue";
 import { ClientMessage, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import defaultCode from "./template.js?raw";
@@ -103,6 +103,8 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 });
 
 const editorEl = shallowRef<HTMLElement>();
+
+const editorWidth = shallowRef("50%");
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
 const logMessage = shallowRef();
@@ -189,6 +191,24 @@ async function startBenchmark() {
 	}
 }
 
+function handleDragEnd() {
+	document.removeEventListener("mouseup", handleDragEnd);
+	document.removeEventListener("mousemove", handleMouseMove);
+}
+
+function handleDragStart() {
+	document.addEventListener("mouseup", handleDragEnd);
+	document.addEventListener("mousemove", handleMouseMove);
+}
+
+function handleMouseMove(event: MouseEvent) {
+	const p = event.pageX / window.innerWidth * 100;
+	if (p > 20 && p < 80) {
+		editorWidth.value = p + "%";
+		nextTick(() => editor.layout());
+	}
+}
+
 onMounted(() => {
 	editor = monaco.editor.create(editorEl.value!, {
 		value: props.initCode,
@@ -207,10 +227,12 @@ onUnmounted(() => editor.dispose());
 	display: grid;
 	grid-template-areas: "toolbar toolbar" "editor output";
 	grid-template-rows: auto 1fr;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: var(--editor-width) 1fr;
 
 	width: 100vw;
 	height: 100vh;
+
+	--editor-width: v-bind(editorWidth);
 }
 
 .toolbar {
@@ -255,30 +277,28 @@ onUnmounted(() => editor.dispose());
 	background: #d01a1a;
 }
 
-.tabList {
-	grid-area: tabs;
-	background: #eee;
-}
-
-.tab {
-
-}
-
 .editor {
 	grid-area: editor;
 }
 
-.output {
+.dragger {
+	position: absolute;
+	z-index: 3;
+	top: 0;
+	bottom: 0;
+	left: calc(var(--editor-width) - 4px);
+	width: 8px;
+	cursor: ew-resize;
+}
+
+:global(#console) {
 	grid-area: output;
+	margin: 0;
 	padding: 1em;
 	font-size: 0.875em;
 	overflow: scroll;
 	color: whitesmoke;
 	background: #2b2b2b;
-}
-
-:global(#console) {
-	margin: 0;
 	white-space: pre-wrap;
 }
 
