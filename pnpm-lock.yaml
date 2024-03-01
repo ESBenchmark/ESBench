@@ -91,6 +91,9 @@ importers:
       '@tabler/icons-vue':
         specifier: ^2.47.0
         version: 2.47.0(vue@3.4.19)
+      '@vueuse/core':
+        specifier: ^10.8.0
+        version: 10.8.0(vue@3.4.19)
       esbench:
         specifier: workspace:^
         version: link:../core

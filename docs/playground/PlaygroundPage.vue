@@ -109,7 +109,7 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 const editorEl = shallowRef<HTMLElement>();
 const consoleEl = shallowRef<HTMLElement>();
 
-const editorWidth = shallowRef("50%");
+const editorWidth = useLocalStorage("EW", "50%");
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
 const results = shallowRef<BenchmarkHistory[]>([]);
