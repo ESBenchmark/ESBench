@@ -1,5 +1,5 @@
 <template>
-	<div v-if='modelValue' :class='$style.container'>
+	<div v-if='open' :class='$style.container'>
 		<aside :class='$style.menu'>
 			<div
 				v-for='history of summaries'
@@ -19,7 +19,7 @@
 			title='Back to playground'
 			:class='$style.close'
 			type='button'
-			@click='modelValue=false'
+			@click='open = false'
 		>
 			<IconX/>
 		</button>
@@ -52,17 +52,19 @@ const dtf = new Intl.DateTimeFormat("sv", {
 <script setup lang="ts">
 import type { BenchmarkHistory } from "./Playground.vue";
 import { IconX } from "@tabler/icons-vue";
-import { shallowRef, watch, watchEffect } from "vue";
+import { shallowRef, watch } from "vue";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
 
 interface ReportViewProps {
 	summaries: BenchmarkHistory[];
 }
 
-defineProps<ReportViewProps>();
-defineModel<boolean>({ required: true });
+const props = defineProps<ReportViewProps>();
+const open = defineModel<boolean>({ required: true });
 
 const current = shallowRef<BenchmarkHistory>();
+
+watch(props, p => current.value ??= p.summaries[0]);
 </script>
 
 <style module>

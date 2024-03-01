@@ -2,7 +2,7 @@
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
 			<h1 :class='$style.h1'>ESBench Playground</h1>
-|
+			|
 			<div>
 				Execute in:
 				<label>
@@ -48,6 +48,7 @@
 
 			<button
 				:class='$style.toolButton'
+				data-right
 				type='button'
 				@click='showChart=true'
 			>
@@ -60,6 +61,7 @@
 		</section>
 
 		<section :class='$style.editor' ref='editorEl'/>
+
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
 		<pre ref='consoleEl' :class='$style.console'/>
 
@@ -180,7 +182,7 @@ function handleMessage(data: ClientMessage) {
 }
 
 async function startBenchmark() {
-	consoleEl.value!.textContent = "";
+	consoleEl.value!.textContent = "Start Benchmark\n";
 	running.value = true;
 
 	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
@@ -231,9 +233,6 @@ onMounted(() => {
 		minimap: { enabled: false },
 	});
 	editor.focus();
-	document.title = "ESBench Playground";
-
-	consoleEl.value!.textContent = "4";
 });
 
 onUnmounted(() => editor.dispose());
@@ -279,6 +278,10 @@ onUnmounted(() => editor.dispose());
 	background: #0f4a85;
 	transition: .15s;
 
+	&[data-right] {
+		margin-left: auto;
+	}
+
 	&:where(:hover, :focus-visible) {
 		filter: brightness(1.1);
 	}
@@ -290,7 +293,6 @@ onUnmounted(() => editor.dispose());
 
 .start {
 	composes: toolButton;
-	margin-right: auto;
 	background: #06af08;
 }
 
