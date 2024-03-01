@@ -59,7 +59,7 @@
 
 		<section :class='$style.editor' ref='editorEl'/>
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
-		<pre id='console'>{{ logMessage }}</pre>
+		<pre ref='consoleEl' :class='$style.console'/>
 
 		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
@@ -69,7 +69,7 @@
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
-import { nextTick, onMounted, onUnmounted, shallowRef, watchEffect } from "vue";
+import { nextTick, onMounted, onUnmounted, shallowRef } from "vue";
 import { ClientMessage, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import defaultCode from "./template.js?raw";
@@ -103,11 +103,11 @@ const props = withDefaults(defineProps<PlaygroundProps>(), {
 });
 
 const editorEl = shallowRef<HTMLElement>();
+const consoleEl = shallowRef<HTMLElement>();
 
 const editorWidth = shallowRef("50%");
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
-const logMessage = shallowRef();
 const results = shallowRef<BenchmarkHistory[]>([]);
 const showChart = shallowRef(false);
 
@@ -133,6 +133,10 @@ const logColors: Record<string, string> = {
 	whiteBright: "#fff",
 	yellow: "#A68A0D",
 	yellowBright: "#E5BF00",
+
+	// Log Levels
+	error: "#F0524F",
+	warning: "#E5BF00",
 };
 
 const logChalk = new Proxy<any>(logColors, {
@@ -145,14 +149,22 @@ let promise: Promise<RunSuiteResult[]>;
 let resolve: (value: RunSuiteResult[]) => void;
 let reject: (reason?: any) => void;
 
-watchEffect(() => {
-	logMessage.value = executor.value === executeWorker
-		? ""
-		: "Run in iframe allow DOM operations, but the current page may be unresponsive until it finishes.";
-});
-
 function stopBenchmark() {
-	reject(new Error("Benchmark Stopped"));
+	reject(new Error("\nBenchmark Stopped"));
+}
+
+function appendLog(message = "", level = "info") {
+	const el = consoleEl.value!;
+	switch (level) {
+		case "error":
+			message = logChalk.red(message);
+			break;
+		case "warn":
+			message = logChalk.yellowBright(message);
+			break;
+	}
+	el.innerHTML += message + "\n";
+	el.scrollIntoView(false);
 }
 
 function handleMessage(data: ClientMessage) {
@@ -161,13 +173,12 @@ function handleMessage(data: ClientMessage) {
 	} else if ("e" in data) {
 		reject(data.e);
 	} else {
-		logMessage.value += (data.log ?? "") + "\n";
-		document.getElementById("console")!.scrollIntoView(false);
+		appendLog(data.log, data.level);
 	}
 }
 
 async function startBenchmark() {
-	logMessage.value = "";
+	consoleEl.value!.textContent = "";
 	running.value = true;
 
 	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
@@ -183,9 +194,11 @@ async function startBenchmark() {
 			result,
 			time: new Date(),
 		});
+		appendLog("Benchmark Completed.");
 	} catch (e) {
-		logMessage.value += `\n${e.message}\n`;
-		return logMessage.value += e.stack;
+		appendLog();
+		appendLog(e.message, "error");
+		appendLog(e.stack, "error");
 	} finally {
 		running.value = false;
 	}
@@ -225,7 +238,7 @@ onUnmounted(() => editor.dispose());
 <style module>
 .playground {
 	display: grid;
-	grid-template-areas: "toolbar toolbar" "editor output";
+	grid-template-areas: "toolbar toolbar" "editor console";
 	grid-template-rows: auto 1fr;
 	grid-template-columns: var(--editor-width) 1fr;
 
@@ -291,8 +304,8 @@ onUnmounted(() => editor.dispose());
 	cursor: ew-resize;
 }
 
-:global(#console) {
-	grid-area: output;
+.console {
+	grid-area: console;
 	margin: 0;
 	padding: 1em;
 	font-size: 0.875em;
