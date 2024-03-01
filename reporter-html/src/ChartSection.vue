@@ -7,7 +7,7 @@
 			<option :value='pointFactories.stdErr'>Standard Error</option>
 		</LabeledSelect>
 
-		<canvas ref='canvasRef'/>
+		<canvas ref='canvasRef' :class="$style.canvas"/>
 	</section>
 </template>
 
@@ -168,5 +168,7 @@ onMounted(() => {
 </script>
 
 <style module>
-
+.canvas {
+	aspect-ratio: 1/2;
+}
 </style>

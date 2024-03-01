@@ -30,8 +30,13 @@ const delegate = emit.bind(null, "update:modelValue");
 <style module>
 .label {
 	display: block;
+	color: #666;
+	font-size: 0.875em;
 }
+
 .select {
+	color: initial;
+	font-size: initial;
     margin-top: 4px;
 }
 </style>

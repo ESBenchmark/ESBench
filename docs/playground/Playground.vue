@@ -1,27 +1,31 @@
 <template>
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
-			Execute in:
-			<label>
-				<input
-					v-model='executor'
-					type='radio'
-					name='executor'
-					:disabled='running'
-					:value='executeWorker'
-				>
-				Worker
-			</label>
-			<label>
-				<input
-					v-model='executor'
-					type='radio'
-					name='executor'
-					:disabled='running'
-					:value='executeIFrame'
-				>
-				iframe
-			</label>
+			<h1 :class='$style.h1'>ESBench Playground</h1>
+|
+			<div>
+				Execute in:
+				<label>
+					<input
+						v-model='executor'
+						type='radio'
+						name='executor'
+						:disabled='running'
+						:value='executeWorker'
+					>
+					Worker
+				</label>
+				<label>
+					<input
+						v-model='executor'
+						type='radio'
+						name='executor'
+						:disabled='running'
+						:value='executeIFrame'
+					>
+					iframe
+				</label>
+			</div>
 
 			<button
 				v-if='running'
@@ -51,10 +55,8 @@
 				Chart Report
 			</button>
 
-			|
-
-			<a href='/guide'>Guide</a>
-			<a href='https://github.com/Kaciras/ESBench'>GitHub</a>
+			<a :class='$style.link' href='/'>Document</a>
+			<a :class='$style.link' href='https://github.com/Kaciras/ESBench'>GitHub</a>
 		</section>
 
 		<section :class='$style.editor' ref='editorEl'/>
@@ -150,7 +152,7 @@ let resolve: (value: RunSuiteResult[]) => void;
 let reject: (reason?: any) => void;
 
 function stopBenchmark() {
-	reject(new Error("\nBenchmark Stopped"));
+	reject(new Error("Benchmark Stopped"));
 }
 
 function appendLog(message = "", level = "info") {
@@ -163,8 +165,8 @@ function appendLog(message = "", level = "info") {
 			message = logChalk.yellowBright(message);
 			break;
 	}
-	el.innerHTML += message + "\n";
-	el.scrollIntoView(false);
+	el.insertAdjacentHTML("beforeend", message + "\n");
+	el.scrollTop = el.scrollHeight;
 }
 
 function handleMessage(data: ClientMessage) {
@@ -194,7 +196,7 @@ async function startBenchmark() {
 			result,
 			time: new Date(),
 		});
-		appendLog("Benchmark Completed.");
+		appendLog("\nBenchmark Completed.");
 	} catch (e) {
 		appendLog();
 		appendLog(e.message, "error");
@@ -230,6 +232,8 @@ onMounted(() => {
 	});
 	editor.focus();
 	document.title = "ESBench Playground";
+
+	consoleEl.value!.textContent = "4";
 });
 
 onUnmounted(() => editor.dispose());
@@ -248,10 +252,14 @@ onUnmounted(() => editor.dispose());
 	--editor-width: v-bind(editorWidth);
 }
 
+.h1 {
+	font-size: 18px;
+}
+
 .toolbar {
 	grid-area: toolbar;
 	display: flex;
-	gap: 10px;
+	gap: 15px;
 	align-items: center;
 	padding: 0 10px;
 
@@ -282,12 +290,21 @@ onUnmounted(() => editor.dispose());
 
 .start {
 	composes: toolButton;
+	margin-right: auto;
 	background: #06af08;
 }
 
 .stop {
 	composes: toolButton;
 	background: #d01a1a;
+}
+
+.link {
+	color: var(--vp-c-text-1);
+
+	&:hover,&:focus-visible {
+		color: var(--vp-c-brand-1);
+	}
 }
 
 .editor {

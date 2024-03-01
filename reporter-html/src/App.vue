@@ -1,6 +1,6 @@
 <template>
 	<nav :class='$style.nav'>
-		<h2>Suite Name</h2>
+		<h1>Suite Name</h1>
 		<a
 			v-for='name of names'
 			:key='name'
@@ -58,6 +58,7 @@ window.addEventListener("hashchange", () => {
     width: 320px;
     padding: 0 20px;
     background: #f6f6f7;
+	overflow-y: scroll;
 }
 
 .report {

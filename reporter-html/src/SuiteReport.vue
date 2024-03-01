@@ -1,8 +1,6 @@
 <template>
 	<div :class='$style.container'>
-		<header>
-			<h2>{{ name }}</h2>
-		</header>
+		<h1 :class='$style.title'>{{ name }}</h1>
 
 		<ChartSection
 			:class='$style.main'
@@ -12,7 +10,6 @@
 		/>
 
 		<section v-if='summary.notes.length' :class='$style.notes'>
-			<h2>Notes</h2>
 			<p
 				v-for='(note, i) of summary.notes.filter(isRelevant)'
 				:key='i'
@@ -33,8 +30,8 @@
 			</p>
 		</section>
 
-		<section :class='$style.params'>
-			<h1>Variables</h1>
+		<section :class='$style.vars'>
+			<h2 :class='$style.title'>Variables</h2>
 
 			<LabeledSelect
 				v-for='([name, values], i) of summary.vars'
@@ -86,14 +83,17 @@ function isRelevant(note: ResolvedNote) {
 <style module>
 .container {
 	display: grid;
-	grid-template-areas: "header params" "main params" "notes params";
-	grid-template-rows: auto 1fr;
-	grid-template-columns: 1fr 400px;
+	grid-template-areas: "header vars" "main vars" "notes vars";
+	grid-template-rows: auto auto 1fr;
+	grid-template-columns: 1fr 360px;
+	gap: 20px;
+	margin: 20px;
 }
 
-header {
-	grid-area: header;
-	padding: 10px;
+.title {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 600;
 }
 
 .main {
@@ -103,21 +103,26 @@ header {
 .notes > p {
 	grid-area: notes;
 	display: flex;
-	align-items: center;
 	gap: 0.5em;
+	margin-top: 0;
 }
 
 .info {
 	color: #3498db;
+	flex-shrink: 0;
 }
 
 .warn {
 	color: #f1c40f;
+	flex-shrink: 0;
 }
 
-.params {
-	grid-area: params;
-	padding: 20px;
+.vars {
+	grid-area: vars;
+
+	& > .title {
+		margin-bottom: 20px;
+	}
 }
 
 .variable {

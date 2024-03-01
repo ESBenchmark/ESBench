@@ -39,6 +39,9 @@
 
 <script lang='ts'>
 const dtf = new Intl.DateTimeFormat("sv", {
+	month: "numeric",
+	day: "numeric",
+	year: "numeric",
 	hour: "numeric",
 	hour12: false,
 	minute: "2-digit",
