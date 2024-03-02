@@ -446,7 +446,7 @@ export function createTable(
 	return table as TableWithNotes;
 }
 
-const formatRE = /\{(\w+)(?:\.(\w+))?}/ig;
+const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
 type FormatFn = (value: any) => string;
 
@@ -473,25 +473,16 @@ const formatters: Record<string, GetFormatter> = {
 
 function formatColumn(table: any[][], column: number, format: string, flex: boolean) {
 	const values = table.map(r => r[column]).filter(v => v !== undefined);
-	const s = format.split(formatRE);
-	const p: FormatFn[] = [];
-
-	for (const [, type, unit] of format.matchAll(formatRE)) {
-		p.push(formatters[type](flex, values, unit));
+	const match = formatRE.exec(format);
+	if (!match) {
+		throw new Error("Invalid metric format: " + format);
 	}
+	const [pattern, type, unit] = match;
+	const suffix = format.slice(pattern.length);
+	const convert = formatters[type](flex, values, unit);
 
 	for (const row of table) {
 		const value = row[column];
-		if (value === undefined) {
-			row[column] = "";
-		} else {
-			const parts = [];
-			for (let i = 0; i < p.length; i++) {
-				parts.push(s[i]);
-				parts.push(p[i](value));
-			}
-			parts.push(s[s.length - 1]);
-			row[column] = parts.join("");
-		}
+		row[column] = value === undefined ? "" : convert(value) + suffix;
 	}
 }
