@@ -28,14 +28,19 @@ interface BuildResult {
 	files: string[];
 }
 
+interface Job {
+	executorName: string;
+	executor: Executor;
+	builds: BuildResult[];
+}
+
 export class JobGenerator {
 
-	readonly nameMap = new Map<any /* Builder | Executor */, string>();
-
-	private readonly builderMap = new MultiMap<Builder, string>();
-	private readonly executorPattern = new MultiMap<Executor, string>();
-	private readonly executorMap = new MultiMap<Executor, Builder>();
-	private readonly assetMap = new Map<Builder, BuildResult>();
+	private readonly t2n = new Map<Builder | Executor, string>();
+	private readonly bInclude = new MultiMap<Builder, string>();
+	private readonly eInclude = new MultiMap<Executor, string>();
+	private readonly e2b = new MultiMap<Executor, Builder>();
+	private readonly bOutput = new Map<Builder, BuildResult>();
 
 	private readonly directory: string;
 	private readonly filter: FilterOptions;
@@ -66,24 +71,24 @@ export class JobGenerator {
 				continue;
 			}
 			const builderUsed = this.unwrapNameable("build", builder);
-			this.builderMap.add(builderUsed, ...dotGlobs);
-			this.executorMap.distribute(ue, builderUsed);
+			this.bInclude.add(builderUsed, ...dotGlobs);
+			this.e2b.distribute(ue, builderUsed);
 		}
 
 		for (const executor of ue) {
-			this.executorPattern.add(executor, ...dotGlobs);
+			this.eInclude.add(executor, ...dotGlobs);
 		}
 	}
 
 	async build() {
-		const { directory, assetMap, nameMap } = this;
+		const { directory, bOutput, t2n } = this;
 		const { file, shared } = this.filter;
 
 		const pathFilter = file && relative(cwd(), file).replaceAll("\\", "/");
 		const sharedFilter = SharedModeFilter.parse(shared);
 
-		for (const [builder, include] of this.builderMap) {
-			const name = nameMap.get(builder)!;
+		for (const [builder, include] of this.bInclude) {
+			const name = t2n.get(builder)!;
 			let files = sharedFilter.select(await glob(include));
 			if (pathFilter) {
 				files = files.filter(p => p.includes(pathFilter));
@@ -105,30 +110,34 @@ export class JobGenerator {
 				const t = durationFmt.formatDiv(time, "ms");
 				console.log(chalk.greenBright(t));
 			}
-			assetMap.set(builder, { name, root, files });
+			bOutput.set(builder, { name, root, files });
 		}
 	}
 
-	getJobs() {
-		const jobs = new MultiMap<Executor, BuildResult>();
-		for (const [executor, builders] of this.executorMap) {
-			const isMatch = picomatch(this.executorPattern.get(executor)!);
-			for (const builder of builders) {
-				const builds = this.assetMap.get(builder);
-				if (!builds) {
+	* getJobs() {
+		for (const [executor, builders] of this.e2b) {
+			const isMatch = picomatch(this.eInclude.get(executor)!);
+			const builds = [];
+
+			for (const name of builders) {
+				const output = this.bOutput.get(name)!;
+				if (!output) {
 					continue;
 				}
-				const files = builds.files.filter(p => isMatch(normalize(p)));
-				if (files.length > 0) {
-					jobs.add(executor, { ...builds, files });
-				}
+				const files = output.files.filter(p => isMatch(normalize(p)));
+				builds.push({ ...output, files });
 			}
+
+			if (builds.length === 0) {
+				continue;
+			}
+			const executorName = this.t2n.get(executor)!;
+			yield { executorName, executor, builds } as Job;
 		}
-		return jobs;
 	}
 
 	getName(tool: Builder | Executor) {
-		const name = this.nameMap.get(tool);
+		const name = this.t2n.get(tool);
 		if (name) {
 			return name;
 		}
@@ -144,7 +153,7 @@ export class JobGenerator {
 			tool = tool.use;
 		}
 
-		const n = this.nameMap.get(tool);
+		const n = this.t2n.get(tool);
 		if (n !== undefined) {
 			if (n === name) {
 				return tool;
@@ -152,7 +161,7 @@ export class JobGenerator {
 			throw new Error(`A tool can only have one name (${n} vs ${name})`);
 		}
 
-		for (const [t, n] of this.nameMap) {
+		for (const [t, n] of this.t2n as any) {
 			if (t[keyMethod] === undefined) {
 				continue;
 			}
@@ -160,7 +169,7 @@ export class JobGenerator {
 				throw new Error("Each tool must have a unique name: " + name);
 			}
 		}
-		this.nameMap.set(tool, name);
+		this.t2n.set(tool, name);
 		return tool;
 	}
 }
@@ -203,17 +212,17 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 		generator.add(toolchain);
 	}
 	await generator.build();
-	const jobs = generator.getJobs();
+	const jobs = Array.from(generator.getJobs());
 
-	if (jobs.size === 0) {
+	if (jobs.length === 0) {
 		return console.warn("\nNo suite to run, check your CLI parameters.");
 	}
-	console.log(`\n${jobs.count} jobs for ${jobs.size} executors.`);
+	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
+	console.log(`\n${count} jobs for ${jobs.length} executors.`);
 
-	for (const [executor, builds] of jobs) {
-		const name = generator.getName(executor);
+	for (const { executorName, executor, builds } of jobs) {
 		let builder = "";
-		console.log(`Running suites with: ${name}.`);
+		console.log(`Running suites with: ${executorName}.`);
 
 		await executor.start?.();
 		try {
@@ -229,13 +238,13 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				for (const tc of tcs as any) {
 					(result[tc.name] ??= []).push({
 						...tc,
-						executor: name,
 						builder,
+						executor: executorName,
 					});
 				}
 			}
 		} catch (e) {
-			console.error(`Failed to run suite with (builder=${builder}, executor=${name})`);
+			console.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
 			if (e.name !== "RunSuiteError") {
 				throw e;
 			}
