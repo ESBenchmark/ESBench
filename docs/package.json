@@ -7,11 +7,11 @@
 		"docs:preview": "vitepress preview"
 	},
 	"dependencies": {
-		"@vueuse/core": "^10.8.0",
+		"@tabler/icons-vue": "^2.47.0",
+		"@vueuse/core": "^10.9.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.46.0",
-		"@tabler/icons-vue": "^2.47.0",
-		"vue": "^3.4.19"
+		"vue": "^3.4.21"
 	},
 	"devDependencies": {
 		"vite": "^5.1.4",

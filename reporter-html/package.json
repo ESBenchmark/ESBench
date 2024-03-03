@@ -22,14 +22,14 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.12.2",
+		"@kaciras/utilities": "^0.12.3",
 		"@tabler/icons-vue": "^2.47.0",
-		"@vueuse/core": "^10.8.0",
-		"chart.js": "^4.4.1",
+		"@vueuse/core": "^10.9.0",
+		"chart.js": "^4.4.2",
 		"chartjs-chart-error-bars": "^4.3.4",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.19"
+		"vue": "^3.4.21"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^5.0.4",
