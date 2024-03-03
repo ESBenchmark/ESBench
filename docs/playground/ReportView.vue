@@ -50,7 +50,7 @@ const dtf = new Intl.DateTimeFormat("sv", {
 </script>
 
 <script setup lang="ts">
-import type { BenchmarkHistory } from "./Playground.vue";
+import type { BenchmarkHistory } from "./PlaygroundPage.vue";
 import { IconX } from "@tabler/icons-vue";
 import { shallowRef, watch } from "vue";
 import { SuiteReport } from "../../reporter-html/src/index.ts";

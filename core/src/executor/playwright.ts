@@ -78,7 +78,6 @@ export class PlaywrightExecutor implements Executor {
 	readonly options?: LaunchOptions;
 
 	context!: BrowserContext;
-	dataDir?: string;
 
 	constructor(type: BrowserType, options?: LaunchOptions) {
 		this.type = type;
@@ -98,9 +97,6 @@ export class PlaywrightExecutor implements Executor {
 	async close() {
 		await this.context.close();
 		await this.context.browser()?.close();
-		if (this.dataDir) {
-			rmSync(this.dataDir, { recursive: true });
-		}
 	}
 
 	async initialize(page: Page, options: ExecuteOptions, url: string) {
@@ -174,6 +170,10 @@ export class PlaywrightExecutor implements Executor {
  */
 export class WebextExecutor extends PlaywrightExecutor {
 
+	private readonly cleanDataDir: boolean;
+
+	private dataDir?: string;
+
 	/**
 	 * @param type Currently only support chromium.
 	 * @param dataDir Path to a User Data Directory, which stores browser session data like cookies and local storage.
@@ -181,11 +181,23 @@ export class WebextExecutor extends PlaywrightExecutor {
 	 */
 	constructor(type: BrowserType, dataDir?: string) {
 		super(type);
+		if (type.name() !== "chromium") {
+			throw new Error("Playwright is only support running extensions chromium");
+		}
 		this.dataDir = dataDir;
+		this.cleanDataDir = dataDir === undefined;
 	}
 
 	get name() {
 		return this.type.name() + " addon";
+	}
+
+	async close() {
+		const { cleanDataDir, dataDir } = this;
+		await super.close();
+		if (dataDir && cleanDataDir) {
+			rmSync(dataDir, { recursive: true });
+		}
 	}
 
 	async start() {

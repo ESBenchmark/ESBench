@@ -4,7 +4,7 @@ import { durationFmt } from "@kaciras/utilities/node";
 import { deserializeError } from "serialize-error";
 import JobGenerator, { BuildResult, ExecuteOptions } from "./toolchain.js";
 import { ESBenchConfig, normalizeConfig } from "./config.js";
-import { ClientMessage, ESBenchResult, RunSuiteError, ToolchainResult } from "../index.js";
+import { ClientMessage, ESBenchResult, ToolchainResult } from "../index.js";
 import { consoleLogHandler, resolveRE } from "../utils.js";
 
 export interface FilterOptions {

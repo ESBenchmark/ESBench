@@ -45,11 +45,11 @@ export interface MetricMeta {
 	key: string;
 
 	/**
-	 * Specific the format when this metric displayed as text. This option is ignored if the value is a string.
+	 * Specific the format when this metric displayed as text.
+	 * This option is ignored if the value is a string.
 	 *
-	 * The value must in format: "{<TYPE>}<SUFFIX>" while.
 	 * @example
-	 * "{duration.ms}" // The metric is millisecond and should be formatted as relative time.
+	 * "{duration.ms}" // The metric is millisecond and should be formatted as duration.
 	 * "{number} ops/s" // The value 2000 will be formatted to "2K ops/s".
 	 */
 	format?: string;

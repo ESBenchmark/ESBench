@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from "vue";
+import { defineAsyncComponent, watchEffect } from "vue";
 import { useRoute } from "vitepress";
 import VPDefault from "vitepress/theme";
 
 const DefaultLayout = VPDefault.Layout;
-const Playground = defineAsyncComponent(() => import("../../playground/Playground.vue"));
+const PlaygroundPage = defineAsyncComponent(() => import("../../playground/PlaygroundPage.vue"));
 
 const route = useRoute();
+
+watchEffect(() => {
+	if (route.path === "/playground.html") {
+		document.title = "ESBench Playground";
+	}
+});
 </script>
 
 <template>
-	<Playground v-if='route.path === "/playground.html"'/>
+	<PlaygroundPage v-if='route.path === "/playground.html"'/>
 	<DefaultLayout v-else/>
 </template>

@@ -67,8 +67,7 @@ export interface ExecuteOptions {
 	promise: Promise<unknown>;
 
 	/**
-	 *
-	 * @param error
+	 * Make execution fail, useful for executions that can't wait to finish.
 	 */
 	fail(error: Error): void;
 
@@ -128,7 +127,7 @@ export default class JobGenerator {
 
 		const ue = executors
 			.filter(executor => executorRE.test(executor.name))
-			.map(this.unwrapNameable.bind(this, "execute"));
+			.map(this.unwrap.bind(this, "execute"));
 
 		// Ensure glob patterns is relative and starts with ./ or ../
 		const dotGlobs = include.map(p => {
@@ -140,7 +139,7 @@ export default class JobGenerator {
 			if (!builderRE.test(builder.name)) {
 				continue;
 			}
-			const builderUsed = this.unwrapNameable("build", builder);
+			const builderUsed = this.unwrap("build", builder);
 			this.bInclude.add(builderUsed, ...dotGlobs);
 			this.e2b.distribute(ue, builderUsed);
 		}
@@ -206,32 +205,32 @@ export default class JobGenerator {
 		}
 	}
 
-	private unwrapNameable(keyMethod: string, tool: Nameable<any>) {
+	private unwrap(keyMethod: string, tool: Nameable<any>) {
 		const { name } = tool;
 		if (!name) {
 			throw new Error("Tool name must be a non-empty string");
 		}
-		if (tool[keyMethod] === undefined) {
+		if (!tool[keyMethod]) {
 			tool = tool.use;
 		}
 
-		const n = this.t2n.get(tool);
-		if (n !== undefined) {
-			if (n === name) {
-				return tool;
+		for (const [t, n] of this.t2n) {
+			if (!(t as any)[keyMethod]) {
+				continue; // Allow builder and executor to have the same name.
 			}
-			throw new Error(`A tool can only have one name (${n} vs ${name})`);
-		}
-
-		for (const [t, n] of this.t2n as any) {
-			if (t[keyMethod] === undefined) {
-				continue;
-			}
-			if (n === name) {
+			if (t !== tool && n === name) {
 				throw new Error("Each tool must have a unique name: " + name);
 			}
 		}
-		this.t2n.set(tool, name);
-		return tool;
+
+		const exist = this.t2n.get(tool);
+		if (exist === name) {
+			return tool;
+		} else if (!exist) {
+			this.t2n.set(tool, name);
+			return tool;
+		} else {
+			throw new Error(`A tool can only have one name (${exist} vs ${name})`);
+		}
 	}
 }

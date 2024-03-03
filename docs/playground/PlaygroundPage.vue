@@ -63,7 +63,10 @@
 		<section :class='$style.editor' ref='editorEl'/>
 
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
-		<pre ref='consoleEl' :class='$style.console'/>
+
+		<pre ref='consoleEl' :class='$style.console'>
+Execute in iframe allow DOM operations, but the current page may be unresponsive until it finishes.
+		</pre>
 
 		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
@@ -76,6 +79,7 @@ import * as monaco from "monaco-editor";
 import { nextTick, onMounted, onUnmounted, shallowRef } from "vue";
 import { ClientMessage, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
+import { useLocalStorage } from "@vueuse/core";
 import defaultCode from "./template.js?raw";
 import { executeIFrame, executeWorker } from "./executor.ts";
 import ReportView from "./ReportView.vue";
@@ -243,12 +247,10 @@ onUnmounted(() => editor.dispose());
 	display: grid;
 	grid-template-areas: "toolbar toolbar" "editor console";
 	grid-template-rows: auto 1fr;
-	grid-template-columns: var(--editor-width) 1fr;
+	grid-template-columns: v-bind(editorWidth) 1fr;
 
 	width: 100vw;
 	height: 100vh;
-
-	--editor-width: v-bind(editorWidth);
 }
 
 .h1 {
@@ -318,7 +320,7 @@ onUnmounted(() => editor.dispose());
 	z-index: 3;
 	top: 0;
 	bottom: 0;
-	left: calc(var(--editor-width) - 4px);
+	left: calc(v-bind(editorWidth) - 4px);
 	width: 8px;
 	cursor: ew-resize;
 }

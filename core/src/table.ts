@@ -450,19 +450,14 @@ const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
 type FormatFn = (value: any) => string;
 
-type GetFormatter = (flex: boolean, values: any[], unit?: string) => FormatFn;
+type GetFormatter = (values?: any[], unit?: string) => FormatFn;
 
-function unitFormatter(
-	this: UnitConvertor<readonly any[]>,
-	flex: boolean,
-	values: any[],
-	unit?: string,
-) {
-	if (flex) {
-		return (value: number) => separateThousand(this.formatDiv(value, unit));
+function unitFormatter(this: UnitConvertor<readonly any[]>, values?: any[], unit?: string) {
+	if (values) {
+		const format = this.homogeneous(values, unit);
+		return (value: number) => separateThousand(format(value));
 	}
-	const format = this.homogeneous(values, unit);
-	return (value: number) => separateThousand(format(value));
+	return (value: number) => separateThousand(this.formatDiv(value, unit));
 }
 
 const formatters: Record<string, GetFormatter> = {
@@ -479,7 +474,7 @@ function formatColumn(table: any[][], column: number, format: string, flex: bool
 	}
 	const [pattern, type, unit] = match;
 	const suffix = format.slice(pattern.length);
-	const convert = formatters[type](flex, values, unit);
+	const convert = formatters[type](flex ? values : undefined, unit);
 
 	for (const row of table) {
 		const value = row[column];
