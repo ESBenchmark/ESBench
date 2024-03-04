@@ -33,6 +33,11 @@ it("should throw error if exception occurred outside connect()", () => {
 	return expect(promise).rejects.toThrow("Execute Failed (1), Command: node main.js");
 });
 
+it("should suggest the filename as executor name", () => {
+	const command = '"/path/to/mock app.sh" -foo --bar';
+	expect(new ProcessExecutor(command).name).toBe("mock app.sh");
+});
+
 it("should support add arguments", () => {
 	const executor = new ProcessExecutor(f => `node --expose_gc ${f} "foo bar"`);
 	const promise = testExecute(executor, {

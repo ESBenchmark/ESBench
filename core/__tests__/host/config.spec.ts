@@ -4,6 +4,7 @@ import { ESBenchConfig, normalizeConfig } from "../../src/host/index.js";
 it.each<ESBenchConfig>([
 	{ toolchains: [{ executors: [] }] },
 	{ toolchains: [{ include: [] }] },
+	{ toolchains: [{ builders: [] }] },
 	{ toolchains: [] },
 ])("should fail when required option is empty", config => {
 	expect(() => normalizeConfig(config)).toThrow();

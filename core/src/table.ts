@@ -474,7 +474,7 @@ function formatColumn(table: any[][], column: number, format: string, flex: bool
 	}
 	const [pattern, type, unit] = match;
 	const suffix = format.slice(pattern.length);
-	const convert = formatters[type](flex ? values : undefined, unit);
+	const convert = formatters[type](flex ? undefined : values, unit);
 
 	for (const row of table) {
 		const value = row[column];

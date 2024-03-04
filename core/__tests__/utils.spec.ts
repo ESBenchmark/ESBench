@@ -9,6 +9,7 @@ describe("checkParams", () => {
 		[Object.create(null), "[object null]"],
 		[{}, "[object Object]"],
 		[{ foo: 11 }, "[object Object]"],
+		[[11, 22], "[11,22]"],
 
 		[123, "123"],
 		[undefined, "undefined"],
