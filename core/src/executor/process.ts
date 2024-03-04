@@ -6,7 +6,7 @@ import { AddressInfo } from "net";
 import { writeFileSync } from "fs";
 import { setPriority } from "os";
 import { basename, join, relative } from "path";
-import { splitCLI } from "@kaciras/utilities/browser";
+import { buildCLI, splitCLI } from "@kaciras/utilities/node";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 type GetCommand = (file: string) => string;
@@ -86,7 +86,7 @@ export default class ProcessExecutor implements Executor {
 		const [file, ...args] = splitCLI(command);
 		this.process = execFile(file, args);
 
-		return this.postprocess(command, options);
+		return this.postprocess(options);
 	}
 
 	protected writeEntry(file: string, options: ExecuteOptions) {
@@ -105,14 +105,15 @@ export default class ProcessExecutor implements Executor {
 			.replace("__ENTRY__", specifier.replaceAll("\\", "/")));
 	}
 
-	protected postprocess(cmd: string, options: ExecuteOptions) {
-		const { fail } = options;
+	protected postprocess(options: ExecuteOptions) {
+		const { reject } = options;
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid!, -20);
 		});
 		this.process.on("exit", code => {
 			if (code !== 0) {
-				fail(new Error(`Execute Failed (${code}), Command: ${cmd}`));
+				const cmd = buildCLI(...this.process.spawnargs);
+				reject(new Error(`Execute Failed (${code}), Command: ${cmd}`));
 			}
 		});
 	}
