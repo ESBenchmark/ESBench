@@ -6,7 +6,11 @@ export default defineConfig({
 	},
 	publicDir: false,
 	test: {
+		coverage: {
+			reporter: ["lcov"],
+			provider: "v8",
+		},
 		mockReset: true,
-		include: ["**/__tests__/**/*.spec.[tj]s"],
+		include: ["**/__tests__/**/*.spec.ts"],
 	},
 });
