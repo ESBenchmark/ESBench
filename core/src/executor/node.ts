@@ -38,7 +38,7 @@ export default class NodeExecutor implements Executor {
 		this.process?.kill();
 	}
 
-	execute({ root, files, pattern, dispatch, fail }: ExecuteOptions) {
+	execute({ root, files, pattern, dispatch, reject }: ExecuteOptions) {
 		this.process?.kill();
 
 		this.process = fork(__filename, {
@@ -57,7 +57,8 @@ export default class NodeExecutor implements Executor {
 		this.process.send({ root, pattern, files });
 		this.process.on("exit", code => {
 			if (code !== 0) {
-				fail(new Error(`Node execute Failed (exitCode=${code})`));
+				const args = JSON.stringify(this.args);
+				reject(new Error(`Node execute Failed (${code}), args=${args}`));
 			}
 		});
 	}

@@ -1,52 +1,34 @@
-import { expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import NodeExecutor from "../../src/executor/node.js";
-
-const log = { level: "info", log: "log message" };
-const empty = { name: "Test", paramDef: [], meta: {}, notes: [], scenes: [] };
-const err = { e: { name: "Error", message: "Stub Error" } };
+import { executorFixtures, testExecute } from "../helper.ts";
 
 it("should transfer log messages", async () => {
-	const dispatch = vi.fn();
 	const executor = new NodeExecutor();
-
-	await executor.execute({
-		dispatch,
-		root: "__tests__/fixtures/success-suite",
-		tempDir: ".",
+	const dispatch = await testExecute(executor, {
 		files: ["./foo.js"],
+		root: "__tests__/fixtures/success-suite",
 	});
 
 	const { calls } = dispatch.mock;
 	expect(calls).toHaveLength(2);
-	expect(calls[0][0]).toStrictEqual(log);
-	expect(calls[1][0]).toStrictEqual(empty);
+	expect(calls[0][0]).toStrictEqual(executorFixtures.log);
+	expect(calls[1][0]).toStrictEqual(executorFixtures.empty);
 });
 
 it("should forward errors from connect()", async () => {
-	const dispatch = vi.fn(() => executor.close());
 	const executor = new NodeExecutor();
-
-	const promise = executor.execute({
-		dispatch,
-		root: "__tests__/fixtures/error-inside",
-		tempDir: ".",
+	const promise = testExecute(executor, {
 		files: ["./foo.js"],
+		root: "__tests__/fixtures/error-inside",
 	});
-
-	await expect(promise).rejects.toThrow();
-	expect(dispatch).toHaveBeenCalledOnce();
-	expect(dispatch).toHaveBeenCalledWith(err, undefined);
+	await expect(promise).rejects.toThrow(executorFixtures.error);
 });
 
 it("should throw error if exception occurred outside connect()", () => {
-	const dispatch = vi.fn();
 	const executor = new NodeExecutor();
-
-	const promise = executor.execute({
-		dispatch,
-		root: "__tests__/fixtures/error-outside",
-		tempDir: ".",
+	const promise = testExecute(executor, {
 		files: ["./foo.js"],
+		root: "__tests__/fixtures/error-outside",
 	});
-	return expect(promise).rejects.toThrow("Node execute Failed (exitCode=1)");
+	return expect(promise).rejects.toThrow("Node execute Failed (1), args=[]");
 });

@@ -119,26 +119,26 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }
 
-function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
+export function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
 	const { files, root } = build;
 	const pattern = resolveRE(filter.name).source;
 	let resolve: (value: ToolchainResult[]) => void;
-	let fail!: (reason?: Error) => void;
+	let reject!: (reason?: Error) => void;
 
 	const promise = new Promise<ToolchainResult[]>((resolve1, reject1) => {
 		resolve = resolve1;
-		fail = reject1;
+		reject = reject1;
 	});
 
 	function dispatch(message: ClientMessage) {
 		if (Array.isArray(message)) {
 			resolve(message);
 		} else if ("e" in message) {
-			fail(deserializeError(message.e));
+			reject(deserializeError(message.e));
 		} else {
 			consoleLogHandler(message.level, message.log);
 		}
 	}
 
-	return { tempDir, pattern, files, root, dispatch, fail, promise } as ExecuteOptions;
+	return { tempDir, pattern, files, root, dispatch, reject, promise } as ExecuteOptions;
 }
