@@ -108,7 +108,11 @@ export default class ProcessExecutor implements Executor {
 	protected postprocess(options: ExecuteOptions) {
 		const { reject } = options;
 		this.process.on("spawn", () => {
-			setPriority(this.process.pid!, -20);
+			try {
+				setPriority(this.process.pid!, -20);
+			} catch (e) {
+				// Access may be denied.
+			}
 		});
 		this.process.on("exit", code => {
 			if (code !== 0) {

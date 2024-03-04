@@ -51,7 +51,11 @@ export default class NodeExecutor implements Executor {
 			},
 		});
 		this.process.on("spawn", () => {
-			setPriority(this.process!.pid!, -20);
+			try {
+				setPriority(this.process!.pid!, -20);
+			} catch (e) {
+				// Access may be denied.
+			}
 		});
 		this.process.on("message", dispatch);
 		this.process.send({ root, pattern, files });
