@@ -62,14 +62,14 @@ export interface ExecuteOptions {
 
 	/**
 	 * Used to wait runner finish, it will resolve when receive result message,
-	 * and reject when receive error message or `fail` is called.
+	 * and reject when receive error message or `reject` is called.
 	 */
 	promise: Promise<unknown>;
 
 	/**
 	 * Make execution fail, useful for executions that can't wait to finish.
 	 */
-	fail(error: Error): void;
+	reject(error: Error): void;
 
 	/**
 	 * Executor should forward messages from suites to this function.
@@ -207,15 +207,15 @@ export default class JobGenerator {
 
 	private unwrap(keyMethod: string, tool: Nameable<any>) {
 		const { name } = tool;
-		if (!name) {
-			throw new Error("Tool name must be a non-empty string");
+		if (/^\s*$/.test(name)) {
+			throw new Error("Tool name must be a non-blank string");
 		}
-		if (!tool[keyMethod]) {
+		if (!(keyMethod in tool)) {
 			tool = tool.use;
 		}
 
 		for (const [t, n] of this.t2n) {
-			if (!(t as any)[keyMethod]) {
+			if (!(keyMethod in t)) {
 				continue; // Allow builder and executor to have the same name.
 			}
 			if (t !== tool && n === name) {

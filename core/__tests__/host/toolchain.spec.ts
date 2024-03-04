@@ -36,6 +36,18 @@ describe("JobGenerator", () => {
 		})).toThrow("Each tool must have a unique name: foo");
 	});
 
+	it("should throw error if a tool has invalid name", () => {
+		const generator = new JobGenerator(tempDir, {});
+		expect(() => generator.add({
+			executors: [direct],
+			include: ["a"],
+			builders: [{
+				name: "",
+				use: noBuild,
+			}],
+		})).toThrow("Tool name must be a non-blank string");
+	});
+
 	it("should allow a tool used in different toolchain", () => {
 		const generator = new JobGenerator(tempDir, {});
 		const builder = noBuild;
