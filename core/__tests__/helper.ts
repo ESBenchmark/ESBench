@@ -1,5 +1,4 @@
 import { mkdirSync, rmSync } from "fs";
-import tp from "timers/promises";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { afterEach, beforeEach, Mock, vi } from "vitest";
 import { BenchmarkSuite, ClientMessage, Profiler, ProfilingContext, runSuite, RunSuiteOption } from "../src/index.js";
@@ -8,7 +7,13 @@ import { newExecuteContext } from "../src/host/host.ts";
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
-export const sleep1 = tp.setTimeout.bind(null, 1);
+/**
+ * setTimeout() has a large error, so we use a synchronized loop for delay.
+ */
+export function spin1ms() {
+	// noinspection StatementWithEmptyBodyJS
+	for (let s = performance.now(), e = s; e - s < 1; e = performance.now());
+}
 
 /**
  * Ensure the directory exists before tests and delete it after.

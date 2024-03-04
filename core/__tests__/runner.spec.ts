@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { run, sleep1 } from "./helper.js";
+import { run, spin1ms } from "./helper.js";
 import { RunSuiteError } from "../src/index.js";
 
 it("should return the result", async () => {
@@ -9,7 +9,7 @@ it("should return the result", async () => {
 			n: [10, 100, 1000],
 		},
 		setup(scene) {
-			scene.benchAsync("Test", sleep1);
+			scene.bench("Test", spin1ms);
 		},
 	});
 	expect(result.paramDef).toStrictEqual([

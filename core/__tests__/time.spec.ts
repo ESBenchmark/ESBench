@@ -1,7 +1,7 @@
 import * as tp from "timers/promises";
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { PartialSuite, runProfilers, sleep1 } from "./helper.js";
+import { PartialSuite, runProfilers, spin1ms } from "./helper.js";
 import { TimeProfiler, TimingOptions, unroll } from "../src/time.js";
 
 function measureTime(options: TimingOptions, suite?: PartialSuite) {
@@ -41,23 +41,23 @@ it.each([
 });
 
 it("should support specify number of samples", async () => {
-	const fn = vi.fn(sleep1);
+	const fn = vi.fn(spin1ms);
 	const result = await measureTime({
 		samples: 22,
 	}, {
-		setup: scene => scene.benchAsync("Test", fn),
+		setup: scene => scene.bench("Test", fn),
 	});
 	expect(fn).toHaveBeenCalledTimes(22);
 	expect(result.scenes[0][0].metrics.time).toHaveLength(22);
 });
 
 it("should support specify number of iterations", async () => {
-	const fn = vi.fn(sleep1);
+	const fn = vi.fn(spin1ms);
 	const result = await measureTime({
 		iterations: 33,
 		unrollFactor: 1,
 	}, {
-		setup: scene => scene.benchAsync("Test", fn),
+		setup: scene => scene.bench("Test", fn),
 	});
 	expect(fn).toHaveBeenCalledTimes(33);
 	expect(result.scenes[0][0].metrics.time).toHaveLength(1);
@@ -102,4 +102,35 @@ it("should skip overhead stage if evaluateOverhead is false", async () => {
 	});
 	expect(stubFn).toHaveBeenCalledTimes(1);
 	expect((result.scenes[0][0].metrics as any).time[0]).toBeGreaterThan(0);
+});
+
+it("should measure time as duration", async () => {
+	const result = await measureTime({
+		iterations: 32,
+	}, {
+		setup: scene => scene.bench("Test", spin1ms),
+	});
+
+	expect(result.meta.time).toBeDefined();
+
+	const { metrics } = result.scenes[0][0];
+	expect((metrics.time as number[])[0]).toBeCloseTo(1, 1);
+});
+
+it("should measure time as throughput", async () => {
+	const result = await measureTime({
+		throughput: "s",
+		iterations: 32,
+	}, {
+		setup: scene => scene.bench("Test", spin1ms),
+	});
+
+	expect(result.meta.time).toBeUndefined();
+	expect(result.meta.throughput).toBeDefined();
+
+	const { metrics } = result.scenes[0][0];
+	const [throughput] = metrics.throughput as number[];
+	expect(metrics.time).toBeUndefined();
+	expect(throughput).toBeLessThan(1005);
+	expect(throughput).toBeGreaterThan(995);
 });
