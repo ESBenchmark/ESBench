@@ -5,7 +5,10 @@ import { BenchCase } from "./suite.js";
 import { runFns } from "./utils.js";
 import { MetricAnalysis, Metrics, Profiler, ProfilingContext } from "./context.js";
 
-type Iterate = (count: number) => Awaitable<number>;
+interface Iterator {
+	calls: number;
+	iterate: (count: number) => Awaitable<number>;
+}
 
 const asyncNoop = async () => {};
 
@@ -37,7 +40,7 @@ export function unroll(factor: number, isAsync: boolean) {
  * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
 
-function createIterator(factor: number, case_: BenchCase): Iterate {
+function createIterator(factor: number, case_: BenchCase): Iterator {
 	const { fn, isAsync, setupHooks, cleanHooks } = case_;
 
 	async function syncWithHooks(count: number) {
@@ -69,9 +72,15 @@ function createIterator(factor: number, case_: BenchCase): Iterate {
 	}
 
 	if (setupHooks.length | cleanHooks.length) {
-		return isAsync ? asyncWithHooks : syncWithHooks;
+		return {
+			calls: 1,
+			iterate: isAsync ? asyncWithHooks : syncWithHooks,
+		};
 	} else {
-		return unroll(factor, isAsync).bind(null, fn);
+		return {
+			calls: factor,
+			iterate: unroll(factor, isAsync).bind(null, fn),
+		};
 	}
 }
 
@@ -195,14 +204,14 @@ export class TimeProfiler implements Profiler {
 		const { throughput, samples, unrollFactor, evaluateOverhead } = this;
 		let { iterations } = this;
 
-		const iterate = createIterator(unrollFactor, case_);
+		const iterator = createIterator(unrollFactor, case_);
 
 		if (typeof iterations === "string") {
-			iterations = await this.estimate(ctx, iterate, iterations);
+			iterations = await this.estimate(ctx, iterator, iterations);
 			await ctx.info();
 		}
 
-		const time = await this.measure(ctx, "Actual", iterate, iterations);
+		const time = await this.measure(ctx, "Actual", iterator, iterations);
 		if (evaluateOverhead && samples > 1) {
 			await this.subtractOverhead(ctx, case_, iterations, time);
 		}
@@ -240,7 +249,8 @@ export class TimeProfiler implements Profiler {
 		}
 	}
 
-	async estimate(ctx: ProfilingContext, iterate: Iterate, target: string) {
+	async estimate(ctx: ProfilingContext, iterator: Iterator, target: string) {
+		const { iterate, calls } = iterator;
 		const targetMS = durationFmt.parse(target, "ms");
 		if (targetMS === 0) {
 			throw new Error("Iteration time cannot be 0");
@@ -250,7 +260,7 @@ export class TimeProfiler implements Profiler {
 		let downCount = 0;
 		while (count < Number.MAX_SAFE_INTEGER) {
 			const time = await iterate(count);
-			await ctx.info(`Pilot: ${timeDetail(time, count)}`);
+			await ctx.info(`Pilot: ${timeDetail(time, count * calls)}`);
 
 			if (time === 0) {
 				count *= 2;
@@ -271,21 +281,24 @@ export class TimeProfiler implements Profiler {
 		throw new Error("Iteration time is too long and the fn runs too fast");
 	}
 
-	async measure(ctx: ProfilingContext, name: string, iterate: Iterate, count: number) {
+	async measure(ctx: ProfilingContext, name: string, iterator: Iterator, count: number) {
 		const { warmup, samples } = this;
+		const { iterate, calls } = iterator;
+
 		const timeUsageList = [];
+		const n = count * calls;
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
-			await ctx.info(`${name} Warmup: ${timeDetail(time, count)}`);
+			await ctx.info(`${name} Warmup: ${timeDetail(time, n)}`);
 		}
 
 		await ctx.info();
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
-			timeUsageList.push(time / count);
-			await ctx.info(`${name}: ${timeDetail(time, count)}`);
+			timeUsageList.push(time / n);
+			await ctx.info(`${name}: ${timeDetail(time, n)}`);
 		}
 
 		return timeUsageList.sort((a, b) => a - b);

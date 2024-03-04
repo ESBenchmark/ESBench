@@ -64,15 +64,18 @@ it("should support specify number of iterations", async () => {
 });
 
 it("should estimate number of iterations", async () => {
-	const iterate = async (count: number) => {
-		const start = performance.now();
-		await tp.setTimeout(count);
-		return performance.now() - start;
+	const iterator = {
+		calls: 1,
+		async iterate(count: number) {
+			const start = performance.now();
+			await tp.setTimeout(count);
+			return performance.now() - start;
+		},
 	};
 	const profiler = new TimeProfiler({});
 	const ctx = { info: noop } as any;
 
-	const iterations = await profiler.estimate(ctx, iterate, "100ms");
+	const iterations = await profiler.estimate(ctx, iterator, "100ms");
 
 	expect(iterations).toBeLessThan(110);
 	expect(iterations).toBeGreaterThan(90);
