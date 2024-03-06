@@ -12,7 +12,7 @@ export default defineSuite({
 		localStorage.setItem("foo", JSON.stringify(packageJson));
 		await browser.storage.local.set(packageJson);
 		const cs = await caches.open("test");
-		cs.put("http://example.com", new Response(JSON.stringify(packageJson)));
+		await cs.put("http://example.com", new Response(JSON.stringify(packageJson)));
 
 		scene.bench("localStorage", () => {
 			return JSON.parse(localStorage.getItem("foo"));

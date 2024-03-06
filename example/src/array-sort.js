@@ -3,6 +3,10 @@ import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Array sort algorithms",
+	baseline: {
+		type: "Name",
+		value: "builtin",
+	},
 	setup(scene) {
 		const template = randomNumbers(1000);
 		let array = [];

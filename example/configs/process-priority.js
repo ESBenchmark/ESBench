@@ -4,13 +4,13 @@ import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
 /*
  *
  * Suite: Escape regexp
- * | No. |      Name |   Executor |     time |   time.SD | time.ratio |
- * | --: | --------: | ---------: | -------: | --------: | ---------: |
- * |   0 |  use loop |       node | 31.46 us | 100.16 ns |      0.00% |
- * |   1 |  use loop | node (Low) | 32.45 us |  71.61 ns |     +3.15% |
- * |     |           |            |          |           |            |
- * |   2 | use regex |       node | 11.97 us |  71.43 ns |      0.00% |
- * |   3 | use regex | node (Low) | 12.28 us |  38.98 ns |     +2.64% |
+ * | No. |      Name |   Executor |      time | time.SD | time.ratio |
+ * | --: | --------: | ---------: | --------: | ------: | ---------: |
+ * |   0 |  use loop |       node |   2.04 us | 3.34 ns |      0.00% |
+ * |   1 |  use loop | node (Low) |   2.09 us | 3.69 ns |     +2.38% |
+ * |     |           |            |           |         |            |
+ * |   2 | use regex |       node | 748.09 ns | 3.08 ns |      0.00% |
+ * |   3 | use regex | node (Low) | 775.58 ns | 3.50 ns |     +3.68% |
  */
 class LowPriorityExecutor extends ProcessExecutor {
 

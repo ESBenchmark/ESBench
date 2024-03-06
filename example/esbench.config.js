@@ -38,7 +38,7 @@ export default defineConfig({
 	}, {
 		include: ["./web/*.js"],
 		builders: [viteBuilder],
-		executors: [new PlaywrightExecutor(firefox, { headless: false })],
+		executors: [new PlaywrightExecutor(chromium)],
 	}, {
 		include: ["./webext/*.js"],
 		builders: [viteBuilder],

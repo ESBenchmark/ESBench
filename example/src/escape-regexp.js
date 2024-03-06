@@ -10,8 +10,8 @@ export default defineSuite({
 		equality: true,
 	},
 	baseline: {
-		type: "Name",
-		value: "use regex",
+		type: "Executor",
+		value: "node",
 	},
 	setup(scene) {
 		scene.bench("use loop", () => {
