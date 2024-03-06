@@ -12,7 +12,11 @@ export default <Executor>{
 	name: release.name,
 
 	start() {
-		setPriority(pid, -20);
+		try {
+			setPriority(pid, -20);
+		} catch (e) {
+			// Access may be denied.
+		}
 	},
 
 	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {

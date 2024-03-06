@@ -30,7 +30,7 @@ it("should throw error if exception occurred outside connect()", () => {
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-outside",
 	});
-	return expect(promise).rejects.toThrow("Execute Failed (1), Command: node main.js");
+	return expect(promise).rejects.toThrow("Execute Failed (1), Command: node .esbench-temp-test\\main.js");
 });
 
 it("should suggest the filename as executor name", () => {
@@ -44,5 +44,6 @@ it("should support add arguments", () => {
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-outside",
 	});
-	return expect(promise).rejects.toThrow('Execute Failed (1), Command: node --expose_gc main.js "foo bar"');
+	return expect(promise).rejects
+		.toThrow('Execute Failed (1), Command: node --expose_gc .esbench-temp-test\\main.js "foo bar"');
 });

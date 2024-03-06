@@ -52,15 +52,20 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite, option
 	return context.run().then(() => context);
 }
 
+const BUILD_OUT_DIR = ".esbench-temp-test";
+
 export async function testExecute(executor: Executor, build: any) {
-	const context = newExecuteContext(".", build, {});
+	const context = newExecuteContext(BUILD_OUT_DIR, build, {});
 	context.dispatch = vi.fn(context.dispatch);
+
+	mkdirSync(BUILD_OUT_DIR, { recursive: true });
 	await executor.start?.();
 	try {
 		const w = executor.execute(context);
 		await Promise.all([context.promise, w]);
 	} finally {
 		await executor.close?.();
+		rmSync(BUILD_OUT_DIR, { force: true, recursive: true });
 	}
 	return context.dispatch as Mock<[ClientMessage, ...any[]]>;
 }
