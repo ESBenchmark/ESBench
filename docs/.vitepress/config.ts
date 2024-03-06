@@ -22,6 +22,9 @@ export default defineConfig({
 	vite: {
 		plugins: [customHeaders],
 	},
+	head: [
+		['link', { rel: 'icon', href: '/favicon.svg' }]
+	],
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
