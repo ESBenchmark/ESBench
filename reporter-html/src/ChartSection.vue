@@ -14,9 +14,10 @@
 <script setup lang="ts">
 import { mean, standardDeviation } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
-import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
+import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
 import { parseFormat, Summary } from "esbench";
 import { UnitConvertor } from "@kaciras/utilities/browser";
+import { TooltipItem } from "chart.js";
 import LabeledSelect from "./LabeledSelect.vue";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
 
@@ -136,6 +137,7 @@ const data = computed(() => {
 
 		let scale: number;
 		let newUnit: string;
+		let uas: string;
 
 		if (meta.analysis && previous.meta.get(name)) {
 			const pv = matches.value.map(v => {
@@ -146,10 +148,12 @@ const data = computed(() => {
 
 			cn.push(...pn);
 			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
+			uas = newUnit + suffix;
 
 			datasets.push({
 				label: `${name}-prev`,
 				yAxisID,
+				unit: uas,
 				data: pv.map((d, i) => {
 					if (!Array.isArray(d)) {
 						return { y: (d ?? 0) * scale };
@@ -160,15 +164,20 @@ const data = computed(() => {
 			});
 		} else {
 			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
+			uas = newUnit + suffix;
 		}
 
 		scales[yAxisID] = {
-			title: { display: true, text: `${name} (${newUnit}${suffix})` },
+			title: {
+				display: true,
+				text: `${name} (${newUnit}${suffix})`,
+			},
 		};
 
 		datasets.push({
 			label: name,
 			yAxisID,
+			unit: uas,
 			data: cv.map((r, i) => {
 				if (!Array.isArray(r)) {
 					return { y: (r ?? 0) * scale };
@@ -186,10 +195,26 @@ const data = computed(() => {
 			responsive: true,
 			plugins: {
 				legend: { position: "top" },
+				tooltip: {
+					callbacks: {
+						label: customTooltip,
+					},
+				},
 			},
 		},
 	};
 });
+
+function customTooltip(item: TooltipItem<"barWithErrorBars">) {
+	const { label, unit, data } = item.dataset as any;
+	const { y, yMin, yMax } = data[item.dataIndex] as IErrorBarXYDataPoint;
+
+	const base = `${label}: ${y.toFixed(2)} ${unit}`;
+	if (typeof yMin !== "number" || typeof yMax !== "number") {
+		return base;
+	}
+	return `${base} (${yMin.toFixed(2)} ~ ${yMax.toFixed(2)})`;
+}
 
 watch(data, newData => {
 	chart.data = newData.data;
