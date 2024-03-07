@@ -450,34 +450,45 @@ const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
 type FormatFn = (value: any) => string;
 
-type GetFormatter = (values?: any[], unit?: string) => FormatFn;
-
-function unitFormatter(this: UnitConvertor<readonly any[]>, values?: any[], unit?: string) {
-	if (values) {
-		const format = this.homogeneous(values, unit);
-		return (value: number) => separateThousand(format(value));
-	}
-	return (value: number) => separateThousand(this.formatDiv(value, unit));
-}
-
-const formatters: Record<string, GetFormatter> = {
-	number: unitFormatter.bind(decimalPrefix),
-	duration: unitFormatter.bind(durationFmt),
-	dataSize: unitFormatter.bind(dataSizeIEC),
+const formatters: Record<string, UnitConvertor<readonly any[]>> = {
+	number: decimalPrefix,
+	duration: durationFmt,
+	dataSize: dataSizeIEC,
 };
 
-function formatColumn(table: any[][], column: number, format: string, flex: boolean) {
+export function parseFormat(template: string) {
+	const match = formatRE.exec(template);
+	if (match) {
+		const [p, type, unit] = match;
+		return {
+			formatter: formatters[type],
+			unit,
+			suffix: template.slice(p.length),
+		};
+	}
+	throw new Error("Invalid metric format: " + template);
+}
+
+function formatColumn(table: any[][], column: number, template: string, flex: boolean) {
 	const values = table.map(r => r[column]).filter(v => v !== undefined);
-	const match = formatRE.exec(format);
+	const match = formatRE.exec(template);
 	if (!match) {
-		throw new Error("Invalid metric format: " + format);
+		throw new Error("Invalid metric format: " + template);
 	}
 	const [pattern, type, unit] = match;
-	const suffix = format.slice(pattern.length);
-	const convert = formatters[type](flex ? undefined : values, unit);
+	const suffix = template.slice(pattern.length);
+
+	const formatter = formatters[type];
+	let format: FormatFn;
+	if (flex) {
+		format = (value: number) => separateThousand(formatter.formatDiv(value, unit));
+	} else {
+		const fixed = formatter.homogeneous(values, unit);
+		format = (value: number) => separateThousand(fixed(value));
+	}
 
 	for (const row of table) {
 		const value = row[column];
-		row[column] = value === undefined ? "" : convert(value) + suffix;
+		row[column] = value === undefined ? "" : format(value) + suffix;
 	}
 }

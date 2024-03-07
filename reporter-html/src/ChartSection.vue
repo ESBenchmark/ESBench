@@ -7,7 +7,7 @@
 			<option :value='pointFactories.stdErr'>Standard Error</option>
 		</LabeledSelect>
 
-		<canvas ref='canvasRef' :class="$style.canvas"/>
+		<canvas ref='canvasRef' :class='$style.canvas'/>
 	</section>
 </template>
 
@@ -15,7 +15,8 @@
 import { mean, standardDeviation } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart } from "chartjs-chart-error-bars";
-import { FlattedResult, Summary } from "esbench";
+import { parseFormat, Summary } from "esbench";
+import { UnitConvertor } from "@kaciras/utilities/browser";
 import LabeledSelect from "./LabeledSelect.vue";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
 
@@ -39,22 +40,19 @@ const CHART_COLORS = [
 ];
 
 const pointFactories = {
-	none: (values: number[]) => ({ y: mean(values) }),
+	none: (y: number, values: number[]) => ({ y }),
 
-	stdDev(values: number[]) {
+	stdDev(y: number, values: number[]) {
 		const e = standardDeviation(values);
-		const y = mean(values);
 		return { y, yMin: y - e, yMax: y + e };
 	},
 
-	stdErr(values: number[]) {
+	stdErr(y: number, values: number[]) {
 		const e = standardDeviation(values) / Math.sqrt(values.length);
-		const y = mean(values);
 		return { y, yMin: y - e, yMax: y + e };
 	},
 
-	valueRange(values: number[]) {
-		const y = mean(values);
+	valueRange(y: number, values: number[]) {
 		return { y, yMin: values.at(0), yMax: values.at(-1) };
 	},
 };
@@ -63,11 +61,6 @@ const errorBarType = shallowRef(pointFactories.valueRange);
 const canvasRef = shallowRef();
 
 let chart: BarWithErrorBarsChart;
-
-function getDataAndRange(name: string, result: FlattedResult) {
-	const y = getMetrics(result)[name];
-	return Array.isArray(y) ? errorBarType.value(y) : { y };
-}
 
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d")!;
@@ -104,6 +97,26 @@ function drawDiagonalLine(offsetX = 0, offsetY = 0) {
 	ctx.closePath();
 }
 
+function homogeneous(this: UnitConvertor, values: Iterable<number | undefined | null>, unit?: string) {
+	const { fractions, units } = this;
+	const x = this.getFraction(unit);
+	let min = Infinity;
+
+	for (let value of values) {
+		value = Math.abs(value ?? 0);
+		min = value === 0 // 0 is equal in any unit.
+			? min
+			: Math.min(min, this.suit(value * x));
+	}
+	if (min === Infinity) {
+		min = 0; // All values are 0, use the minimum unit.
+	}
+
+	const scale = x / fractions[min];
+	const newUnit = units[min];
+	return { scale, newUnit };
+}
+
 const data = computed(() => {
 	const { summary, previous, filter } = props;
 	const { matches, xAxis } = filter;
@@ -116,30 +129,52 @@ const data = computed(() => {
 	for (const [name, meta] of summary.meta) {
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
 		const yAxisID = `y-${name}`;
+		const { formatter, unit, suffix } = parseFormat(meta.format);
 
-		scales[yAxisID] = {
-			title: { display: true, text: name },
-		};
+		const cv = matches.value.map(v => getMetrics(v)[name]);
+		const cn = cv.map(m => Array.isArray(m) ? mean(m) : m);
+
+		let scale: number;
+		let newUnit: string;
 
 		if (meta.analysis && previous.meta.get(name)) {
+			const pv = matches.value.map(v => {
+				const p = previous.find(v);
+				return p && getMetrics(p)[name];
+			});
+			const pn = pv.map(m => Array.isArray(m) ? mean(m) : m);
+
+			cn.push(...pn);
+			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
+
 			datasets.push({
-				label: `${name} (prev)`,
+				label: `${name}-prev`,
 				yAxisID,
-				data: matches.value.map(r => {
-					const d = previous.find(r);
-					if (!d) {
-						return { y: 0 };
+				data: pv.map((d, i) => {
+					if (!Array.isArray(d)) {
+						return { y: (d ?? 0) * scale };
 					}
-					return getDataAndRange(name, d);
+					return errorBarType.value(pn[i] as number * scale, d.map(n => n * scale));
 				}),
 				backgroundColor: createPattern(color),
 			});
+		} else {
+			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
 		}
+
+		scales[yAxisID] = {
+			title: { display: true, text: `${name} (${newUnit}${suffix})` },
+		};
 
 		datasets.push({
 			label: name,
 			yAxisID,
-			data: matches.value.map(r => getDataAndRange(name, r)),
+			data: cv.map((r, i) => {
+				if (!Array.isArray(r)) {
+					return { y: (r ?? 0) * scale };
+				}
+				return errorBarType.value(cn[i] as number * scale, r.map(n => n * scale));
+			}),
 			backgroundColor: color,
 		});
 	}
