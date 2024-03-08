@@ -24,6 +24,7 @@
 		"esbench": "lib/host/cli.js"
 	},
 	"scripts": {
+		"build": "tsc",
 		"test": "vitest run"
 	},
 	"dependencies": {

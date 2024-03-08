@@ -18,5 +18,9 @@ jobs:
           version: 8
           run_install: true
 
+      # NodeExecutor required
+      - run: pnpm run build
+        working-directory: core
+
       - run: pnpm run test
         working-directory: core
