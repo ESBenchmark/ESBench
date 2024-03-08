@@ -1,25 +1,17 @@
 <template>
-	<section>
-		<LabeledSelect v-model='errorBarType' label='Error bar type'>
-			<option :value='pointFactories.none'>None</option>
-			<option :value='pointFactories.valueRange'>Value Range</option>
-			<option :value='pointFactories.stdDev'>Standard Deviation</option>
-			<option :value='pointFactories.stdErr'>Standard Error</option>
-		</LabeledSelect>
-
-		<canvas ref='canvasRef' :class='$style.canvas'/>
-	</section>
+	<!-- Chart.js uses parent container to update display sizes -->
+	<section><canvas ref='canvasRef'/></section>
 </template>
 
 <script setup lang="ts">
-import { mean, standardDeviation } from "simple-statistics";
+import { mean } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
 import { FlattedResult, MetricMeta, parseFormat, Summary } from "esbench";
 import { UnitConvertor } from "@kaciras/utilities/browser";
 import { TooltipItem } from "chart.js";
-import LabeledSelect from "./LabeledSelect.vue";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
+import { diagonalPattern } from "./utils.ts";
 
 interface ChartDataPoint {
 	y: number;
@@ -46,44 +38,25 @@ const CHART_COLORS = [
 	"rgba(201, 203, 207, .5)",
 ];
 
-const pointFactories: Record<string, (v: number[]) => ChartDataPoint> = {
-	none: (values: number[]) => ({ y: mean(values) }),
-
-	stdDev(values: number[]) {
-		const e = standardDeviation(values);
-		const y = mean(values);
-		return { y, yMin: y - e, yMax: y + e };
-	},
-
-	stdErr(values: number[]) {
-		const e = standardDeviation(values) / Math.sqrt(values.length);
-		const y = mean(values);
-		return { y, yMin: y - e, yMax: y + e };
-	},
-
-	valueRange(values: number[]) {
-		const y = mean(values);
-		return { y, yMin: values.at(0), yMax: values.at(-1) };
-	},
-};
-
-const errorBarType = shallowRef(pointFactories.valueRange);
 const canvasRef = shallowRef();
 
 function getDataPoint(name: string, result?: FlattedResult): ChartDataPoint {
 	if (!result) {
 		return { y: 0 };
 	}
-	const y = getMetrics(result)[name];
-	switch (typeof y) {
+	const value = getMetrics(result)[name];
+	switch (typeof value) {
 		case "undefined":
 		case "string":
 			return { y: 0 };
 		case "number":
-			return { y };
-		default:
-			return errorBarType.value(y);
+			return { y: value };
 	}
+	return {
+		y: mean(value),
+		yMin: Math.min(...value),
+		yMax: Math.max(...value),
+	};
 }
 
 let chart: BarWithErrorBarsChart;
@@ -251,9 +224,3 @@ onMounted(() => {
 	chart = new BarWithErrorBarsChart(canvasRef.value, data.value);
 });
 </script>
-
-<style module>
-.canvas {
-	aspect-ratio: 1/2;
-}
-</style>
