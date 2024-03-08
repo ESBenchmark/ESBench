@@ -459,10 +459,10 @@ const formatters: Record<string, UnitConvertor<readonly any[]>> = {
 export function parseFormat(template: string) {
 	const match = formatRE.exec(template);
 	if (match) {
-		const [p, type, unit] = match;
+		const [p, type, rawUnit] = match;
 		return {
 			formatter: formatters[type],
-			unit,
+			rawUnit,
 			suffix: template.slice(p.length),
 		};
 	}

@@ -15,11 +15,17 @@
 import { mean, standardDeviation } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
-import { parseFormat, Summary } from "esbench";
+import { FlattedResult, MetricMeta, parseFormat, Summary } from "esbench";
 import { UnitConvertor } from "@kaciras/utilities/browser";
 import { TooltipItem } from "chart.js";
 import LabeledSelect from "./LabeledSelect.vue";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
+
+interface ChartDataPoint {
+	y: number;
+	yMin?: number;
+	yMax?: number;
+}
 
 interface ChartSectionProps {
 	summary: Summary;
@@ -40,20 +46,23 @@ const CHART_COLORS = [
 	"rgba(201, 203, 207, .5)",
 ];
 
-const pointFactories = {
-	none: (y: number, values: number[]) => ({ y }),
+const pointFactories: Record<string, (v: number[]) => ChartDataPoint> = {
+	none: (values: number[]) => ({ y: mean(values) }),
 
-	stdDev(y: number, values: number[]) {
+	stdDev(values: number[]) {
 		const e = standardDeviation(values);
+		const y = mean(values);
 		return { y, yMin: y - e, yMax: y + e };
 	},
 
-	stdErr(y: number, values: number[]) {
+	stdErr(values: number[]) {
 		const e = standardDeviation(values) / Math.sqrt(values.length);
+		const y = mean(values);
 		return { y, yMin: y - e, yMax: y + e };
 	},
 
-	valueRange(y: number, values: number[]) {
+	valueRange(values: number[]) {
+		const y = mean(values);
 		return { y, yMin: values.at(0), yMax: values.at(-1) };
 	},
 };
@@ -61,41 +70,55 @@ const pointFactories = {
 const errorBarType = shallowRef(pointFactories.valueRange);
 const canvasRef = shallowRef();
 
+function getDataPoint(name: string, result?: FlattedResult): ChartDataPoint {
+	if (!result) {
+		return { y: 0 };
+	}
+	const y = getMetrics(result)[name];
+	switch (typeof y) {
+		case "undefined":
+		case "string":
+			return { y: 0 };
+		case "number":
+			return { y };
+		default:
+			return errorBarType.value(y);
+	}
+}
+
 let chart: BarWithErrorBarsChart;
 
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d")!;
 
-function createPattern(background: string) {
-	canvas.width = 20;
-	canvas.height = 20;
+// https://github.com/ashiguruma/patternomaly/blob/master/src/shapes/diagonal.js
+function createPattern(background: string, size = 20) {
+	const halfSize = size / 2;
+	canvas.width = size;
+	canvas.height = size;
 
 	ctx.fillStyle = background;
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-	const halfSize = 20 / 2;
 	ctx.beginPath();
 	ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
 	ctx.lineJoin = "round";
 	ctx.lineCap = "round";
-	ctx.lineWidth = 20 / 10;
+	ctx.lineWidth = size / 10;
 
-	drawDiagonalLine();
-	drawDiagonalLine(halfSize, halfSize);
+	drawDiagonalLine(size);
+	drawDiagonalLine(size, halfSize, halfSize);
+	ctx.closePath();
+
 	ctx.stroke();
-
-	const pattern = ctx.createPattern(canvas, "repeat")!;
-	canvas.width = 40;
-	canvas.height = 40;
-	return pattern;
+	return ctx.createPattern(canvas, null)!;
 }
 
-function drawDiagonalLine(offsetX = 0, offsetY = 0) {
+function drawDiagonalLine(size: number, offsetX = 0, offsetY = 0) {
 	const halfSize = 20 / 2;
 	const gap = 1;
 	ctx.moveTo((halfSize - gap) - offsetX, (gap * -1) + offsetY);
-	ctx.lineTo((20 + 1) - offsetX, (halfSize + 1) + offsetY);
-	ctx.closePath();
+	ctx.lineTo((size + 1) - offsetX, (halfSize + 1) + offsetY);
 }
 
 function homogeneous(this: UnitConvertor, values: Iterable<number | undefined | null>, unit?: string) {
@@ -118,6 +141,27 @@ function homogeneous(this: UnitConvertor, values: Iterable<number | undefined | 
 	return { scale, newUnit };
 }
 
+function scale(meta: MetricMeta, points: ChartDataPoint[]) {
+	if (!meta.format) {
+		return "";
+	}
+	const yValues = points.map(p => p.y);
+	const { formatter, rawUnit, suffix } = parseFormat(meta.format);
+	const { scale, newUnit } = homogeneous.call(formatter, yValues, rawUnit);
+
+	for (const point of points) {
+		point.y *= scale;
+		if (point.yMin) {
+			point.yMin *= scale;
+		}
+		if (point.yMax) {
+			point.yMax *= scale;
+		}
+	}
+
+	return newUnit + suffix;
+}
+
 const data = computed(() => {
 	const { summary, previous, filter } = props;
 	const { matches, xAxis } = filter;
@@ -130,62 +174,38 @@ const data = computed(() => {
 	for (const [name, meta] of summary.meta) {
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
 		const yAxisID = `y-${name}`;
-		const { formatter, unit, suffix } = parseFormat(meta.format);
+		const toDataPoint = getDataPoint.bind(null, name);
 
-		const cv = matches.value.map(v => getMetrics(v)[name]);
-		const cn = cv.map(m => Array.isArray(m) ? mean(m) : m);
-
-		let scale: number;
-		let newUnit: string;
-		let uas: string;
+		const cv = matches.value.map(toDataPoint);
+		let pv: typeof cv = [];
 
 		if (meta.analysis && previous.meta.get(name)) {
-			const pv = matches.value.map(v => {
-				const p = previous.find(v);
-				return p && getMetrics(p)[name];
-			});
-			const pn = pv.map(m => Array.isArray(m) ? mean(m) : m);
+			pv = matches.value.map(v => toDataPoint(previous.find(v)));
+		}
 
-			cn.push(...pn);
-			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
-			uas = newUnit + suffix;
+		const unit = scale(meta, [...cv, ...pv]);
 
+		if (meta.analysis && previous.meta.get(name)) {
 			datasets.push({
 				label: `${name}-prev`,
 				yAxisID,
-				unit: uas,
-				data: pv.map((d, i) => {
-					if (!Array.isArray(d)) {
-						return { y: (d ?? 0) * scale };
-					}
-					return errorBarType.value(pn[i] as number * scale, d.map(n => n * scale));
-				}),
+				unit,
+				data: pv,
 				backgroundColor: createPattern(color),
 			});
-		} else {
-			({ scale, newUnit } = homogeneous.call(formatter, cn as any, unit));
-			uas = newUnit + suffix;
 		}
-
-		scales[yAxisID] = {
-			title: {
-				display: true,
-				text: `${name} (${newUnit}${suffix})`,
-			},
-		};
 
 		datasets.push({
 			label: name,
 			yAxisID,
-			unit: uas,
-			data: cv.map((r, i) => {
-				if (!Array.isArray(r)) {
-					return { y: (r ?? 0) * scale };
-				}
-				return errorBarType.value(cn[i] as number * scale, r.map(n => n * scale));
-			}),
+			unit,
+			data: cv,
 			backgroundColor: color,
 		});
+
+		scales[yAxisID] = {
+			title: { display: true, text: `${name} (${unit})` },
+		};
 	}
 
 	return {
@@ -207,8 +227,13 @@ const data = computed(() => {
 
 function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	const { label, unit, data } = item.dataset as any;
-	const { y, yMin, yMax } = data[item.dataIndex] as IErrorBarXYDataPoint;
+	const point = data[item.dataIndex] as IErrorBarXYDataPoint;
 
+	if (!point) {
+		return console.log("No Point");
+	}
+
+	const { y, yMin, yMax } = point;
 	const base = `${label}: ${y.toFixed(2)} ${unit}`;
 	if (typeof yMin !== "number" || typeof yMax !== "number") {
 		return base;
