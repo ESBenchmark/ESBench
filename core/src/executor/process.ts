@@ -5,7 +5,8 @@ import { json } from "stream/consumers";
 import { AddressInfo } from "net";
 import { writeFileSync } from "fs";
 import { setPriority } from "os";
-import { basename, join, relative } from "path";
+import { basename, relative } from "path";
+import { join } from "path/posix";
 import { buildCLI, splitCLI } from "@kaciras/utilities/node";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
