@@ -86,12 +86,11 @@ function isRelevant(note: ResolvedNote) {
 	grid-template-areas: "header vars" "main vars" "notes vars";
 	grid-template-rows: auto auto 1fr;
 	grid-template-columns: 1fr 360px;
-	gap: 20px;
-	margin: 20px;
+	margin-left: 20px;
 }
 
 .title {
-	margin: 0;
+	margin: 20px 0;
 	font-size: 24px;
 	font-weight: 600;
 }
@@ -100,11 +99,14 @@ function isRelevant(note: ResolvedNote) {
 	grid-area: main;
 }
 
-.notes > p {
+.notes {
 	grid-area: notes;
-	display: flex;
-	gap: 0.5em;
-	margin-top: 0;
+	overflow-y: auto;
+
+	& > p {
+		display: flex;
+		gap: 0.5em;
+	}
 }
 
 .info {
@@ -119,6 +121,8 @@ function isRelevant(note: ResolvedNote) {
 
 .vars {
 	grid-area: vars;
+	padding: 0 20px;
+	overflow-y: auto;
 
 	& > .title {
 		margin-bottom: 20px;
