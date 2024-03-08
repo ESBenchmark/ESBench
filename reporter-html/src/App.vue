@@ -1,6 +1,6 @@
 <template>
 	<nav :class='$style.nav'>
-		<h1>Suite Name</h1>
+		<h1>Suite</h1>
 		<a
 			v-for='name of names'
 			:key='name'
@@ -54,6 +54,28 @@ window.addEventListener("hashchange", () => {
 </script>
 
 <style module>
+:root {
+	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	color: #222;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-text-size-adjust: 100%;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	display: flex;
+	margin: 0;
+	height: 100vh;
+}
+
 .nav {
     width: 320px;
     padding: 0 20px;
