@@ -1,5 +1,9 @@
 <template>
-	<div v-if='open' :class='$style.container'>
+	<dialog
+		:class='$style.container'
+		ref='self'
+		@close='open = false'
+	>
 		<aside :class='$style.menu'>
 			<div
 				v-for='history of summaries'
@@ -19,7 +23,7 @@
 			title='Back to playground'
 			:class='$style.close'
 			type='button'
-			@click='open = false'
+			@click='handleCloseClick'
 		>
 			<IconX/>
 		</button>
@@ -34,7 +38,7 @@
 			No result found.
 			Please run a benchmark first.
 		</div>
-	</div>
+	</dialog>
 </template>
 
 <script lang='ts'>
@@ -53,7 +57,6 @@ const dtf = new Intl.DateTimeFormat("sv", {
 import type { BenchmarkHistory } from "./PlaygroundPage.vue";
 import { IconX } from "@tabler/icons-vue";
 import { shallowRef, watch } from "vue";
-import { useEventListener } from "@vueuse/core";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
 
 interface ReportViewProps {
@@ -62,27 +65,36 @@ interface ReportViewProps {
 
 const props = defineProps<ReportViewProps>();
 const open = defineModel<boolean>({ required: true });
-
+const self = shallowRef<HTMLDialogElement>();
 const current = shallowRef<BenchmarkHistory>();
 
 watch(props, p => current.value ??= p.summaries[0]);
 
-useEventListener(document, "keyup", event => {
-	if (event.key === "Escape") open.value = false;
-});
+function handleCloseClick() {
+	open.value = false;
+	self.value!.close();
+}
+
+watch(open, isOpen => isOpen && self.value!.showModal());
 </script>
 
 <style module>
 .container {
-	position: fixed;
-	top: 0;
-	left: 0;
+	max-width: 100vw;
+	max-height: 100vh;
 	width: 100vw;
 	height: 100vh;
 
-	display: flex;
+	margin: 0;
+	padding: 0;
+	border: none;
+
 	background: white;
 	z-index: 10;
+
+	&[open] {
+		display: flex;
+	}
 }
 
 .close {
