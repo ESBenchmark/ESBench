@@ -18,7 +18,7 @@ const customHeaders = {
 
 export default defineConfig({
 	title: "ESBench",
-	description: "A VitePress Site",
+	description: "Powerful JavaScript Benchmarking Tool",
 	vite: {
 		plugins: [customHeaders],
 	},
@@ -28,6 +28,9 @@ export default defineConfig({
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
 		logo: "/favicon.svg",
+		search: {
+			provider: 'local'
+		},
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
 			{ text: "Playground", link: "/playground" },
@@ -49,5 +52,9 @@ export default defineConfig({
 		socialLinks: [
 			{ icon: "github", link: "https://github.com/Kaciras/esbench" },
 		],
+		footer: {
+			message: 'Released under the MIT License.',
+			copyright: 'Copyright © 2024 ESBench contributors',
+		},
 	},
 });

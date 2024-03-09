@@ -3,23 +3,28 @@
 layout: home
 
 hero:
-  name: "ESBench"
-  text: "A VitePress Site"
-  tagline: My great project tagline
+  name: ESBench
+  text: Powerful JavaScript Benchmarking Tool
+
+  image:
+    src: /logo-blight.svg
+    alt: ESBench
+    
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Get Started
+      link: /guide/introduction
+      
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: Try it online
+      link: ./playground/examples
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Cross-runtime
+    details: Run your benchmark on Node, Deno, Bun, browsers, and more...
+  - title: Parameterization
+    details: Provide a series of parameters and see the performance of each combination.
+  - title: IDE Integration
+    details: Run specific suite or function with a click of the mouse, support WebStorm and VSCode.
 ---
 
