@@ -27,6 +27,7 @@ export default defineConfig({
 	],
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
+		logo: "/favicon.svg",
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
 			{ text: "Playground", link: "/playground" },

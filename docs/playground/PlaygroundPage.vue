@@ -1,7 +1,10 @@
 <template>
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
-			<h1 :class='$style.h1'>ESBench Playground</h1>
+			<h1 :class='$style.h1'>
+				<img alt='logo' src='/favicon.svg'>
+				ESBench Playground
+			</h1>
 			|
 			<div>
 				Execute in:
@@ -254,7 +257,16 @@ onUnmounted(() => editor.dispose());
 }
 
 .h1 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	font-size: 18px;
+
+	& > img {
+		display: inline-block;
+		width: 28px;
+		height: 28px;
+	}
 }
 
 .toolbar {
