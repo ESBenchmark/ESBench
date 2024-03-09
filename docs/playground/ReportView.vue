@@ -53,6 +53,7 @@ const dtf = new Intl.DateTimeFormat("sv", {
 import type { BenchmarkHistory } from "./PlaygroundPage.vue";
 import { IconX } from "@tabler/icons-vue";
 import { shallowRef, watch } from "vue";
+import { useEventListener } from "@vueuse/core";
 import { SuiteReport } from "../../reporter-html/src/index.ts";
 
 interface ReportViewProps {
@@ -65,6 +66,10 @@ const open = defineModel<boolean>({ required: true });
 const current = shallowRef<BenchmarkHistory>();
 
 watch(props, p => current.value ??= p.summaries[0]);
+
+useEventListener(document, "keyup", event => {
+	if (event.key === "Escape") open.value = false;
+});
 </script>
 
 <style module>
