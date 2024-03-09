@@ -3,6 +3,13 @@
 	<section><canvas ref='canvasRef'/></section>
 </template>
 
+<script lang="ts">
+import { BarController, BarElement, CategoryScale, Chart, Legend, LinearScale, Tooltip } from "chart.js";
+import { BarWithErrorBarsController } from "chartjs-chart-error-bars";
+
+Chart.register(BarWithErrorBarsController, BarController, Tooltip, CategoryScale, LinearScale, BarElement, Legend);
+</script>
+
 <script setup lang="ts">
 import { mean } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";

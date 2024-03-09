@@ -1,6 +1,6 @@
 import type { ESBenchResult } from "esbench";
 import { createApp } from "vue";
-import { Page } from "./index.ts";
+import App from "./App.vue";
 
 declare global {
 	interface Window {
@@ -9,7 +9,7 @@ declare global {
 	}
 }
 
-const app = createApp(Page, {
+const app = createApp(App, {
 	result: window.Result,
 	previous: window.Previous,
 });

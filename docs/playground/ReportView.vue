@@ -57,7 +57,7 @@ const dtf = new Intl.DateTimeFormat("sv", {
 import type { BenchmarkHistory } from "./PlaygroundPage.vue";
 import { IconX } from "@tabler/icons-vue";
 import { shallowRef, watch } from "vue";
-import { SuiteReport } from "../../reporter-html/src/index.ts";
+import SuiteReport from "../../reporter-html/src/SuiteReport.vue";
 
 interface ReportViewProps {
 	summaries: BenchmarkHistory[];
