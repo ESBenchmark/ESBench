@@ -17,7 +17,6 @@ import { mean } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
 import { FlattedResult, MetricMeta, parseFormat, Summary } from "esbench";
-import { UnitConvertor } from "@kaciras/utilities/browser";
 import { TooltipItem } from "chart.js";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
 import { diagonalPattern } from "./utils.ts";
@@ -51,7 +50,7 @@ const canvasRef = shallowRef();
 
 let chart: BarWithErrorBarsChart;
 
-function getDataPoint(name: string, result?: FlattedResult): ChartDataPoint {
+function getDataPoint(name: string, result?: FlattedResult) {
 	if (!result) {
 		return { y: 0 };
 	}
@@ -90,9 +89,8 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 	return { unit: unit + suffix, format };
 }
 
-const data = computed(() => {
-	const { summary, previous, filter } = props;
-	const { matches, xAxis } = filter;
+const chartConfig = computed(() => {
+	const { summary, previous, filter: { matches, xAxis } } = props;
 
 	const labels = [...summary.vars.get(xAxis.value)!];
 	const datasets = [];
@@ -102,13 +100,12 @@ const data = computed(() => {
 	for (const [name, meta] of summary.meta) {
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
 		const yAxisID = `y-${name}`;
-		const toDataPoint = getDataPoint.bind(null, name);
 
-		const cv = matches.value.map(toDataPoint);
+		const cv = matches.value.map(v => getDataPoint(name, v));
 		let pv: typeof cv = [];
 
 		if (meta.analysis && previous.meta.get(name)) {
-			pv = matches.value.map(v => toDataPoint(previous.find(v)));
+			pv = matches.value.map(v => getDataPoint(name, previous.find(v)));
 		}
 
 		const { unit, format } = scale(meta, [...cv, ...pv]);
@@ -136,21 +133,7 @@ const data = computed(() => {
 		};
 	}
 
-	return {
-		data: { labels, datasets },
-		options: {
-			scales,
-			responsive: true,
-			plugins: {
-				legend: { position: "top" },
-				tooltip: {
-					callbacks: {
-						label: customTooltip,
-					},
-				},
-			},
-		},
-	};
+	return { data: { labels, datasets }, scales };
 });
 
 function customTooltip(item: TooltipItem<"barWithErrorBars">) {
@@ -169,13 +152,23 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	return `${base} (${yMin.toFixed(2)} ~ ${yMax.toFixed(2)})`;
 }
 
-watch(data, newData => {
-	chart.data = newData.data;
-	chart.options = newData.options;
+watch(chartConfig, ({ data, scales }) => {
+	chart.data = data as any;
+	chart.options.scales = scales;
 	chart.update("none");
 });
 
-onMounted(() => {
-	chart = new BarWithErrorBarsChart(canvasRef.value, data.value);
-});
+onMounted(() => chart = new BarWithErrorBarsChart(canvasRef.value, {
+	data: chartConfig.value.data as any,
+	options: {
+		scales: chartConfig.value.scales,
+		responsive: true,
+		plugins: {
+			legend: { position: "top" },
+			tooltip: {
+				callbacks: { label: customTooltip },
+			},
+		},
+	},
+}));
 </script>
