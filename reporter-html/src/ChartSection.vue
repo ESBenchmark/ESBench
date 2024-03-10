@@ -1,6 +1,8 @@
 <template>
 	<!-- Chart.js uses parent container to update display sizes -->
-	<section><canvas ref='canvasRef'/></section>
+	<section>
+		<canvas ref='canvasRef'/>
+	</section>
 </template>
 
 <script lang="ts">
@@ -68,33 +70,13 @@ function getDataPoint(name: string, result?: FlattedResult): ChartDataPoint {
 	};
 }
 
-function homogeneous(this: UnitConvertor, values: Iterable<number | undefined | null>, unit?: string) {
-	const { fractions, units } = this;
-	const x = this.getFraction(unit);
-	let min = Infinity;
-
-	for (let value of values) {
-		value = Math.abs(value ?? 0);
-		min = value === 0 // 0 is equal in any unit.
-			? min
-			: Math.min(min, this.suit(value * x));
-	}
-	if (min === Infinity) {
-		min = 0; // All values are 0, use the minimum unit.
-	}
-
-	const scale = x / fractions[min];
-	const newUnit = units[min];
-	return { scale, newUnit };
-}
-
 function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 	if (!meta.format) {
-		return "";
+		return { unit: "", format: String };
 	}
 	const yValues = points.map(p => p.y);
 	const { formatter, rawUnit, suffix } = parseFormat(meta.format);
-	const { scale, newUnit } = homogeneous.call(formatter, yValues, rawUnit);
+	const { scale, unit, format } = formatter.homogeneous(yValues, rawUnit);
 
 	for (const point of points) {
 		point.y *= scale;
@@ -105,8 +87,7 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 			point.yMax *= scale;
 		}
 	}
-
-	return newUnit + suffix;
+	return { unit: unit + suffix, format };
 }
 
 const data = computed(() => {
@@ -130,13 +111,13 @@ const data = computed(() => {
 			pv = matches.value.map(v => toDataPoint(previous.find(v)));
 		}
 
-		const unit = scale(meta, [...cv, ...pv]);
+		const { unit, format } = scale(meta, [...cv, ...pv]);
 
 		if (pv.length !== 0) {
 			datasets.push({
 				label: `${name}-prev`,
 				yAxisID,
-				unit,
+				format,
 				data: pv,
 				backgroundColor: diagonalPattern(color),
 			});
@@ -145,7 +126,7 @@ const data = computed(() => {
 		datasets.push({
 			label: name,
 			yAxisID,
-			unit,
+			format,
 			data: cv,
 			backgroundColor: color,
 		});
@@ -173,7 +154,7 @@ const data = computed(() => {
 });
 
 function customTooltip(item: TooltipItem<"barWithErrorBars">) {
-	const { label, unit, data } = item.dataset as any;
+	const { label, format, data } = item.dataset as any;
 	const point = data[item.dataIndex] as IErrorBarXYDataPoint;
 
 	if (!point) {
@@ -181,7 +162,7 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	}
 
 	const { y, yMin, yMax } = point;
-	const base = `${label}: ${y.toFixed(2)} ${unit}`;
+	const base = `${label}: ${format(y)}`;
 	if (typeof yMin !== "number" || typeof yMax !== "number") {
 		return base;
 	}

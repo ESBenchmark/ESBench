@@ -6,12 +6,12 @@
 		"report": "esbench report reports/result.json"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.12.3",
+		"@kaciras/utilities": "^0.12.4",
 		"chrome-remote-interface": "^0.33.0",
 		"esbench": "workspace:^",
 		"playwright-core": "^1.42.1"
 	},
 	"devDependencies": {
-		"@types/firefox-webext-browser": "^120.0.1"
+		"@types/firefox-webext-browser": "^120.0.2"
 	}
 }
