@@ -1,5 +1,4 @@
 import esbenchClient from "esbench?url";
-import srcdoc from "./sandbox.html?raw";
 
 const esbenchURL = new URL(esbenchClient, location.href).toString();
 
@@ -18,21 +17,26 @@ const doImport = file => import(file);
 connect(post, doImport, ["__FILE__"])`;
 
 function createSandbox(module: string) {
-	document.getElementById("sandbox")?.remove();
+	const importMap = JSON.stringify({
+		imports: {
+			"esbench": esbenchClient,
+		},
+	});
 
 	const sandbox = document.createElement("iframe");
 	sandbox.id = "sandbox";
 	sandbox.setAttribute("sandbox", "allow-scripts allow-same-origin");
+	sandbox.srcdoc = `\
+		<!DOCTYPE html><html lang="en">
+		<head>
+			<meta charset="UTF-8">
+			<title>Benchmark Sandbox</title>
+			<script type="importmap">${importMap}</script>
+			<script type="module" src="${module}"></script>
+		</head>
+		<body></body></html>`;
 
-	const importMap = {
-		imports: {
-			"esbench": esbenchClient,
-		},
-	};
-	sandbox.srcdoc = srcdoc
-		.replace("<!--IMPORT_MAP-->", JSON.stringify(importMap))
-		.replace("__SRC__", module);
-
+	document.getElementById("sandbox")?.remove();
 	return document.body.appendChild(sandbox);
 }
 
@@ -62,7 +66,6 @@ export async function executeIFrame(
 		URL.revokeObjectURL(loader);
 	}
 }
-
 
 export async function executeWorker(
 	suiteCode: string,
