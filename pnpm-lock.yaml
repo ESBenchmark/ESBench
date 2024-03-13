@@ -107,6 +107,12 @@ importers:
         specifier: ^3.4.21
         version: 3.4.21(typescript@5.4.2)
     devDependencies:
+      '@types/estraverse':
+        specifier: ^5.1.7
+        version: 5.1.7
+      estraverse:
+        specifier: ^5.3.0
+        version: 5.3.0
       vite:
         specifier: ^5.1.5
         version: 5.1.5(@types/node@20.11.25)
@@ -862,6 +868,12 @@ packages:
   /@tabler/icons@2.47.0:
     resolution: {integrity: sha512-4w5evLh+7FUUiA1GucvGj2ReX2TvOjEr4ejXdwL/bsjoSkof6r1gQmzqI+VHrE2CpJpB3al7bCTulOkFa/RcyA==}
     dev: false
+
+  /@types/estraverse@5.1.7:
+    resolution: {integrity: sha512-JRVtdKYZz7VkNp7hMC/WKoiZ8DS3byw20ZGoMZ1R8eBrBPIY7iBaDAS1zcrnXQCwK44G4vbXkimeU7R0VLG8UQ==}
+    dependencies:
+      '@types/estree': 1.0.5
+    dev: true
 
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}

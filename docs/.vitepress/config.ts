@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import suiteInfoLoader from "./suite-loader.js";
 
 // The site should be deployed to a platform that supports custom headers.
 // https://github.com/vuejs/vitepress/issues/2195
@@ -20,7 +21,7 @@ export default defineConfig({
 	title: "ESBench",
 	description: "Powerful JavaScript Benchmarking Tool",
 	vite: {
-		plugins: [customHeaders],
+		plugins: [customHeaders, suiteInfoLoader],
 	},
 	head: [
 		['link', { rel: 'icon', href: '/favicon.svg' }]

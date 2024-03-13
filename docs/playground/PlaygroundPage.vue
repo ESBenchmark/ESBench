@@ -83,7 +83,8 @@ import { nextTick, onMounted, onUnmounted, shallowRef } from "vue";
 import { ClientMessage, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
-import defaultCode from "./template.js?raw";
+import suiteTemplate from "./template.js?raw";
+import demos from "./demo-suites.ts";
 import { executeIFrame, executeWorker } from "./executor.ts";
 import ReportView from "./ReportView.vue";
 
@@ -104,14 +105,6 @@ export interface BenchmarkHistory {
 	time: Date;
 	result: RunSuiteResult[];
 }
-
-export interface PlaygroundProps {
-	initCode?: string;
-}
-
-const props = withDefaults(defineProps<PlaygroundProps>(), {
-	initCode: defaultCode,
-});
 
 const editorEl = shallowRef<HTMLElement>();
 const consoleEl = shallowRef<HTMLElement>();
@@ -233,16 +226,17 @@ function handleMouseMove(event: MouseEvent) {
 	}
 }
 
+onUnmounted(() => editor.dispose());
+
 onMounted(() => {
+	const demoIndex = +new URLSearchParams(location.search).get("demo")!;
+
 	editor = monaco.editor.create(editorEl.value!, {
-		value: props.initCode,
 		language: "javascript",
 		minimap: { enabled: false },
+		value: demoIndex ? demos[demoIndex].code : suiteTemplate,
 	});
-	editor.focus();
 });
-
-onUnmounted(() => editor.dispose());
 </script>
 
 <style module>
@@ -318,7 +312,7 @@ onUnmounted(() => editor.dispose());
 .link {
 	color: var(--vp-c-text-1);
 
-	&:hover,&:focus-visible {
+	&:hover, &:focus-visible {
 		color: var(--vp-c-brand-1);
 	}
 }
