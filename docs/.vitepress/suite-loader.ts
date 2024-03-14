@@ -1,16 +1,36 @@
 import { Plugin } from "vite";
 import { traverse } from "estraverse";
 
+/**
+ * Remove all imports and the defineSuite() call.
+ * Since WebWorker does not support import map, we cannot use imports in the suite.
+ *
+ * https://github.com/WICG/import-maps/issues/2
+ */
+function removeDefineSuite(code: string, body: any[], exports: any) {
+	const { end, callee } = exports.declaration;
+	code = removeRange(code, end - 1, end);
+	code = removeRange(code, callee.start, callee.end + 1);
+
+	return body.filter(n => n.type === "ImportDeclaration")
+		.toReversed()
+		.reduce((c, n) => removeRange(c, n.start, n.end), code);
+}
+
+function removeRange(str: string, start: number, end: number) {
+	return str.slice(0, start) + str.slice(end);
+}
+
 export default <Plugin>{
 	name: "esbench:suite-info",
 	transform(code, id) {
 		if (!/\/example\/.+?\/.+?\.js$/.test(id)) {
 			return;
 		}
-		const exported: any = this.parse(code).body
-			.find(node => node.type === "ExportDefaultDeclaration");
+		const body = this.parse(code).body;
+		const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
 
-		if (!exported) {
+		if (!exports) {
 			return; // Not a suite.
 		}
 		let name!: string;
@@ -22,10 +42,10 @@ export default <Plugin>{
 				return;
 			}
 			const n = node.callee.property?.name;
-			if (/^bench(?:Async)?$/.test(n)) cases++;
+			if (/^bench(Async)?$/.test(n)) cases++;
 		}
 
-		const [suite] = exported.declaration.arguments;
+		const [suite] = exports.declaration.arguments;
 		for (const { key, value } of suite.properties) {
 			if (key.name === "name") {
 				name = value.value;
@@ -38,6 +58,7 @@ export default <Plugin>{
 			}
 		}
 
+		code = removeDefineSuite(code, body, exports).trimStart();
 		const info = JSON.stringify({ name, params, cases, code });
 		return "export default " + info;
 	},
