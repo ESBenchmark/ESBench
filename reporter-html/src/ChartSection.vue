@@ -75,7 +75,7 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 	}
 	const yValues = points.map(p => p.y);
 	const { formatter, rawUnit, suffix } = parseFormat(meta.format);
-	const { scale, unit, format } = formatter.homogeneous(yValues, rawUnit);
+	const { scale, unit, sep } = formatter.homogeneous(yValues, rawUnit);
 
 	for (const point of points) {
 		point.y *= scale;
@@ -86,7 +86,7 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 			point.yMax *= scale;
 		}
 	}
-	return { unit: unit + suffix, format };
+	return { unit: unit + suffix, sep };
 }
 
 const chartConfig = computed(() => {
@@ -108,13 +108,13 @@ const chartConfig = computed(() => {
 			pv = matches.value.map(v => getDataPoint(name, previous.find(v)));
 		}
 
-		const { unit, format } = scale(meta, [...cv, ...pv]);
+		const { unit, sep } = scale(meta, [...cv, ...pv]);
 
 		if (pv.length !== 0) {
 			datasets.push({
 				label: `${name}-prev`,
 				yAxisID,
-				format,
+				suffix: sep + unit,
 				data: pv,
 				backgroundColor: diagonalPattern(color),
 			});
@@ -123,7 +123,7 @@ const chartConfig = computed(() => {
 		datasets.push({
 			label: name,
 			yAxisID,
-			format,
+			suffix: sep + unit,
 			data: cv,
 			backgroundColor: color,
 		});
@@ -137,7 +137,7 @@ const chartConfig = computed(() => {
 });
 
 function customTooltip(item: TooltipItem<"barWithErrorBars">) {
-	const { label, format, data } = item.dataset as any;
+	const { label, suffix, data } = item.dataset as any;
 	const point = data[item.dataIndex] as IErrorBarXYDataPoint;
 
 	if (!point) {
@@ -145,7 +145,7 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	}
 
 	const { y, yMin, yMax } = point;
-	const base = `${label}: ${format(y)}`;
+	const base = `${label}: ${y.toFixed(2)}${suffix}`;
 	if (typeof yMin !== "number" || typeof yMax !== "number") {
 		return base;
 	}
