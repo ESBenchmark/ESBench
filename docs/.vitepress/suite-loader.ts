@@ -24,7 +24,8 @@ function removeRange(str: string, start: number, end: number) {
 export default <Plugin>{
 	name: "esbench:suite-info",
 	transform(code, id) {
-		if (!/\/example\/.+?\/.+?\.js$/.test(id)) {
+		const match = /\/example\/(.+?)\/.+?\.js$/.exec(id);
+		if (!match) {
 			return;
 		}
 		const body = this.parse(code).body;
@@ -59,7 +60,8 @@ export default <Plugin>{
 		}
 
 		code = removeDefineSuite(code, body, exports).trimStart();
-		const info = JSON.stringify({ name, params, cases, code });
+		const category = match[1];
+		const info = JSON.stringify({ name, category, params, cases, code });
 		return "export default " + info;
 	},
 };

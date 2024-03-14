@@ -231,6 +231,11 @@ onUnmounted(() => editor.dispose());
 onMounted(() => {
 	const demoIndex = +new URLSearchParams(location.search).get("demo")!;
 
+	if (demoIndex) {
+		executor.value = demos[demoIndex].category === "web"
+			? executeIFrame : executeWorker;
+	}
+
 	editor = monaco.editor.create(editorEl.value!, {
 		language: "javascript",
 		minimap: { enabled: false },
