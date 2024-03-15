@@ -7,7 +7,7 @@ hero:
   text: Powerful JavaScript Benchmarking Tool
 
   image:
-    src: /logo-blight.svg
+    src: /logo.svg
     alt: ESBench
     
   actions:

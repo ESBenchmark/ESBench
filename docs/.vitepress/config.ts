@@ -24,11 +24,11 @@ export default defineConfig({
 		plugins: [customHeaders, suiteInfoLoader],
 	},
 	head: [
-		['link', { rel: 'icon', href: '/favicon.svg' }]
+		['link', { rel: 'icon', href: '/logo.svg' }]
 	],
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
-		logo: "/favicon.svg",
+		logo: "/logo.svg",
 		search: {
 			provider: 'local'
 		},

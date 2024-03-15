@@ -2,7 +2,7 @@
 	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
 			<h1 :class='$style.h1'>
-				<img alt='logo' src='/favicon.svg'>
+				<img alt='logo' src='/logo.svg'>
 				ESBench Playground
 			</h1>
 			|
@@ -306,7 +306,7 @@ onMounted(() => {
 
 .start {
 	composes: toolButton;
-	background: #06af08;
+	background: #07b00a;
 }
 
 .stop {
