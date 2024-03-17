@@ -5,10 +5,10 @@
 		"@kaciras/eslint-config-core": "^2.6.4",
 		"@kaciras/eslint-config-typescript": "^2.6.4",
 		"@kaciras/eslint-config-vue": "^2.6.4",
-		"@types/node": "^20.11.25",
-		"@vitest/coverage-v8": "^1.3.1",
+		"@types/node": "^20.11.28",
+		"@vitest/coverage-v8": "^1.4.0",
 		"eslint": "^8.57.0",
 		"typescript": "^5.4.2",
-		"vitest": "^1.3.1"
+		"vitest": "^1.4.0"
 	}
 }
