@@ -101,16 +101,16 @@ watch(open, isOpen => isOpen && self.value!.showModal());
 	position: absolute;
 	top: 10px;
 	right: 10px;
-	width: 40px;
-	height: 40px;
-
-	display: inline-flex;
-	justify-content: center;
-	align-items: center;
+	padding: 4px;
 
 	border-radius: 50%;
 	color: white;
 	background: #c71d1d;
+
+	& > svg {
+		width: 28px;
+		height: 28px;
+	}
 }
 
 .menu {

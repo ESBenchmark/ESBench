@@ -55,7 +55,7 @@
 				type='button'
 				@click='showChart=true'
 			>
-				<IconChartBar/>
+				<IconChartBar stroke='2'/>
 				Chart Report
 			</button>
 
@@ -139,8 +139,8 @@ const logColors: Record<string, string> = {
 	yellowBright: "#E5BF00",
 
 	// Log Levels
-	error: "#F0524F",
-	warning: "#E5BF00",
+	error: "#46aa46",
+	warning: "#328c32",
 };
 
 const logChalk = new Proxy<any>(logColors, {
@@ -203,6 +203,7 @@ async function startBenchmark() {
 		appendLog();
 		appendLog(e.message, "error");
 		appendLog(e.stack, "error");
+
 	} finally {
 		running.value = false;
 	}
@@ -301,6 +302,11 @@ onMounted(() => {
 
 	&:where(:active) {
 		filter: brightness(0.95);
+	}
+
+	& > svg {
+		width: 24px;
+		height: 24px;
 	}
 }
 

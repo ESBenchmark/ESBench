@@ -109,14 +109,20 @@ function isRelevant(note: ResolvedNote) {
 	}
 }
 
-.info {
-	color: #3498db;
+.note-icon {
 	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+}
+
+.info {
+	composes: note-icon;
+	color: #3498db;
 }
 
 .warn {
+	composes: note-icon;
 	color: #f1c40f;
-	flex-shrink: 0;
 }
 
 .vars {
