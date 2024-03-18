@@ -3,7 +3,7 @@ import { defineSuite } from "esbench";
 export default defineSuite({
 	name: "Array.includes vs Set.has",
 	params: {
-		length: [1, 100],
+		length: [0, 1, 100],
 	},
 	setup(scene) {
 		const { length } = scene.params;

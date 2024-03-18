@@ -1,5 +1,4 @@
 import { defineSuite } from "esbench";
-import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Array sort algorithms",
@@ -8,7 +7,7 @@ export default defineSuite({
 		value: "builtin",
 	},
 	setup(scene) {
-		const template = randomNumbers(1000);
+		const template = Array.from({ length: 1000 }, () => Math.random());
 		let array = [];
 
 		scene.beforeIteration(() => array = template.slice());

@@ -1,5 +1,4 @@
 import { defineSuite } from "esbench";
-import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Sum using for-loop vs Array.reduce",
@@ -8,15 +7,15 @@ export default defineSuite({
 		value: "For-index",
 	},
 	params: {
-		size: [0, 100, 1_000],
+		length: [0, 100, 1_000],
 	},
 	setup(scene) {
-		const { size } = scene.params;
-		const values = randomNumbers(size);
+		const { length } = scene.params;
+		const values = Array.from({ length }, (_, i) => i);
 
 		scene.bench("For-index", () => {
 			let sum = 0;
-			for (let i = 0; i < size; i++) sum += values[i];
+			for (let i = 0; i < length; i++) sum += values[i];
 			return sum;
 		});
 

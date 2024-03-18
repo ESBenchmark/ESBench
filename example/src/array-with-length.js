@@ -8,7 +8,7 @@ function fill(array, length) {
 }
 
 export default defineSuite({
-	name: "Array.includes vs Set.has",
+	name: "Fill array with size vs without size",
 	params: {
 		length: [100],
 	},

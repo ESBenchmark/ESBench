@@ -1,11 +1,10 @@
 import { defineSuite } from "esbench";
-import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Push values to array",
 	setup(scene) {
 		const length = 1000;
-		const data = randomNumbers(length);
+		const data = Array.from({ length }, (_, i) => i);
 
 		scene.bench("push each", () => {
 			const copy = [];

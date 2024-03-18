@@ -1,10 +1,10 @@
 import { defineSuite } from "esbench";
-import { randomNumbers } from "../utils/index.js";
 
 export default defineSuite({
 	name: "Generator function",
 	setup(scene) {
-		const template = randomNumbers(1000);
+		const length = 1000;
+		const template = Array.from({ length }, (_, i) => i);
 
 		function* g() {
 			for (const t of template) yield t + 1;
