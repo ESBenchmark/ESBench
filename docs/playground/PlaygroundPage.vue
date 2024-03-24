@@ -98,8 +98,6 @@ window.MonacoEnvironment = {
 	},
 };
 
-monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-
 export interface BenchmarkHistory {
 	name: string;
 	time: Date;
@@ -139,8 +137,8 @@ const logColors: Record<string, string> = {
 	yellowBright: "#E5BF00",
 
 	// Log Levels
-	error: "#46aa46",
-	warning: "#328c32",
+	error: "#F0524F",
+	warning: "#E5BF00",
 };
 
 const logChalk = new Proxy<any>(logColors, {
@@ -148,14 +146,6 @@ const logChalk = new Proxy<any>(logColors, {
 		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
 	},
 });
-
-let promise: Promise<RunSuiteResult[]>;
-let resolve: (value: RunSuiteResult[]) => void;
-let reject: (reason?: any) => void;
-
-function stopBenchmark() {
-	reject(new Error("Benchmark Stopped"));
-}
 
 function appendLog(message = "", level = "info") {
 	const el = consoleEl.value!;
@@ -171,6 +161,25 @@ function appendLog(message = "", level = "info") {
 	el.scrollTop = el.scrollHeight;
 }
 
+function logError(error: Error) {
+	if (!(window as any).chrome) {
+		appendLog(error.message, "error");
+	}
+	appendLog(error.stack, "error");
+	if (error.cause) {
+		appendLog("Caused by:", "error");
+		logError(error.cause as Error);
+	}
+}
+
+let promise: Promise<RunSuiteResult[]>;
+let resolve: (value: RunSuiteResult[]) => void;
+let reject: (reason?: any) => void;
+
+function stopBenchmark() {
+	reject(new Error("Benchmark Stopped"));
+}
+
 function handleMessage(data: ClientMessage) {
 	if (Array.isArray(data)) {
 		resolve(data);
@@ -184,6 +193,7 @@ function handleMessage(data: ClientMessage) {
 async function startBenchmark() {
 	consoleEl.value!.textContent = "Start Benchmark\n";
 	running.value = true;
+	const start = performance.now();
 
 	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
 		resolve = resolve1;
@@ -201,12 +211,13 @@ async function startBenchmark() {
 		appendLog("\nBenchmark Completed.");
 	} catch (e) {
 		appendLog();
-		appendLog(e.message, "error");
-		appendLog(e.stack, "error");
-
+		logError(e);
 	} finally {
 		running.value = false;
 	}
+
+	const t = (performance.now() - start) / 1000;
+	appendLog(`Global total time: ${t.toFixed(2)} seconds.`);
 }
 
 function handleDragEnd() {
