@@ -1,10 +1,11 @@
 import { Awaitable, noop } from "@kaciras/utilities/browser";
-import { ErrorObject, serializeError } from "serialize-error";
+import { deserializeError, ErrorObject, serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { BUILTIN_VARS, checkParams, toDisplayName } from "./utils.js";
 import { CaseResult, LogHandler, LogLevel, MetricMeta, Note, Profiler, ProfilingContext } from "./context.js";
+import { ToolchainResult } from "./summary.js";
 
 class DefaultEventLogger implements Profiler {
 
@@ -192,4 +193,26 @@ export async function connect(
 	} catch (e) {
 		postMessage({ e: serializeError(e) });
 	}
+}
+
+export function messageResolver(onLog: LogHandler) {
+	let resolve!: (value: ToolchainResult[]) => void;
+	let reject!: (reason?: Error) => void;
+
+	const promise = new Promise<ToolchainResult[]>((s, j) => {
+		resolve = s;
+		reject = j;
+	});
+
+	function dispatch(message: ClientMessage) {
+		if (Array.isArray(message)) {
+			resolve(message);
+		} else if ("e" in message) {
+			reject(deserializeError(message.e));
+		} else {
+			onLog(message.level, message.log);
+		}
+	}
+
+	return { promise, resolve, reject, dispatch };
 }

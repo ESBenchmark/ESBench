@@ -80,7 +80,7 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { nextTick, onMounted, onUnmounted, shallowRef } from "vue";
-import { ClientMessage, RunSuiteResult } from "esbench";
+import { messageResolver, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
@@ -162,32 +162,22 @@ function appendLog(message = "", level = "info") {
 }
 
 function logError(error: Error) {
-	if (!(window as any).chrome) {
-		appendLog(error.message, "error");
-	}
-	appendLog(error.stack, "error");
-	if (error.cause) {
+	const { name, message, cause } = error;
+	appendLog(`\n${name}: ${message}`, "error");
+
+	for (let c = cause; c; c = (c as any).cause) {
 		appendLog("Caused by:", "error");
-		logError(error.cause as Error);
+		appendLog(`${name}: ${message}`, "error");
 	}
+
+	console.error(error);
+	appendLog("\nFor stacktrace and more details, see console.", "error");
 }
 
-let promise: Promise<RunSuiteResult[]>;
-let resolve: (value: RunSuiteResult[]) => void;
-let reject: (reason?: any) => void;
+let resolver: any;
 
 function stopBenchmark() {
-	reject(new Error("Benchmark Stopped"));
-}
-
-function handleMessage(data: ClientMessage) {
-	if (Array.isArray(data)) {
-		resolve(data);
-	} else if ("e" in data) {
-		reject(data.e);
-	} else {
-		appendLog(data.log, data.level);
-	}
+	resolver.reject(new Error("Benchmark Stopped"));
 }
 
 async function startBenchmark() {
@@ -195,13 +185,10 @@ async function startBenchmark() {
 	running.value = true;
 	const start = performance.now();
 
-	promise = new Promise<RunSuiteResult[]>((resolve1, reject1) => {
-		resolve = resolve1;
-		reject = reject1;
-	});
+	const { promise, dispatch } = resolver = messageResolver(appendLog);
 
 	try {
-		await executor.value(editor.getValue(), handleMessage, promise);
+		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
 		results.value.push({
 			name: result[0].name,
@@ -210,7 +197,6 @@ async function startBenchmark() {
 		});
 		appendLog("\nBenchmark Completed.");
 	} catch (e) {
-		appendLog();
 		logError(e);
 	} finally {
 		running.value = false;

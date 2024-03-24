@@ -1,10 +1,9 @@
 import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
-import { deserializeError } from "serialize-error";
 import JobGenerator, { BuildResult, ExecuteOptions } from "./toolchain.js";
 import { ESBenchConfig, normalizeConfig } from "./config.js";
-import { ClientMessage, ESBenchResult, ToolchainResult } from "../index.js";
+import { ESBenchResult, messageResolver } from "../index.js";
 import { consoleLogHandler, resolveRE } from "../utils.js";
 
 export interface FilterOptions {
@@ -122,23 +121,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 export function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
 	const { files, root } = build;
 	const pattern = resolveRE(filter.name).source;
-	let resolve: (value: ToolchainResult[]) => void;
-	let reject!: (reason?: Error) => void;
-
-	const promise = new Promise<ToolchainResult[]>((resolve1, reject1) => {
-		resolve = resolve1;
-		reject = reject1;
-	});
-
-	function dispatch(message: ClientMessage) {
-		if (Array.isArray(message)) {
-			resolve(message);
-		} else if ("e" in message) {
-			reject(deserializeError(message.e));
-		} else {
-			consoleLogHandler(message.level, message.log);
-		}
-	}
+	const { promise, reject, dispatch } = messageResolver(consoleLogHandler);
 
 	return { tempDir, pattern, files, root, dispatch, reject, promise } as ExecuteOptions;
 }
