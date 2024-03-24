@@ -161,16 +161,15 @@ function appendLog(message = "", level = "info") {
 	el.scrollTop = el.scrollHeight;
 }
 
-function logError(error: Error) {
-	const { name, message, cause } = error;
-	appendLog(`\n${name}: ${message}`, "error");
+function logError(e: Error) {
+	appendLog(`\n${e.name}: ${e.message}`, "error");
 
-	for (let c = cause; c; c = (c as any).cause) {
+	for (let c = e.cause as Error; c; c = c.cause as Error) {
 		appendLog("Caused by:", "error");
-		appendLog(`${name}: ${message}`, "error");
+		appendLog(`${c.name}: ${c.message}`, "error");
 	}
 
-	console.error(error);
+	console.error(e);
 	appendLog("\nFor stacktrace and more details, see console.", "error");
 }
 

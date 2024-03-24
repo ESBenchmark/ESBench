@@ -179,7 +179,7 @@ export async function connect(
 	pattern?: string,
 ) {
 	const option: RunSuiteOption = {
-		log: (level, log) => postMessage({ level, log }),
+		log: (log, level) => postMessage({ level, log }),
 		pattern: pattern ? new RegExp(pattern) : undefined,
 	};
 
@@ -210,7 +210,7 @@ export function messageResolver(onLog: LogHandler) {
 		} else if ("e" in message) {
 			reject(deserializeError(message.e));
 		} else {
-			onLog(message.level, message.log);
+			onLog(message.log, message.level);
 		}
 	}
 

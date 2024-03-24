@@ -8,7 +8,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 /**
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
-export type LogHandler = (level: LogLevel, message?: string) => Awaitable<any>;
+export type LogHandler = (message: string | undefined, level: LogLevel) => Awaitable<any>;
 
 export interface CaseResult {
 	name: string;
@@ -133,7 +133,7 @@ export class ProfilingContext {
 	 * Using this method will generate warnings, which are logs with log level "warn".
 	 */
 	warn(message?: string) {
-		return this.logHandler("warn", message);
+		return this.logHandler(message, "warn");
 	}
 
 	/**
@@ -141,7 +141,7 @@ export class ProfilingContext {
 	 * that is not a warning but makes sense to display to all users on every build.
 	 */
 	info(message?: string) {
-		return this.logHandler("info", message);
+		return this.logHandler(message, "info");
 	}
 
 	/**
@@ -156,7 +156,7 @@ export class ProfilingContext {
 	 */
 	note(type: "info" | "warn", text: string, case_?: BenchCase) {
 		this.notes.push({ type, text, caseId: case_?.id });
-		return this.logHandler(type, text);
+		return this.logHandler(text, type);
 	}
 
 	/**
