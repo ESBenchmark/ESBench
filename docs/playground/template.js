@@ -1,29 +1,21 @@
 export default {
 	name: "New Benchmark Suite",
+	timing: {
+		// Show the number of calls over a period of time rather than the time of one call.
+		// throughput: "s",
+
+		// Smaller value for faster runs, default is "1s".
+		// iterations: "100ms",
+
+		// Improve running speed without measuring overhead.
+		// evaluateOverhead: false,
+	},
 	setup(scene) {
-		const size = 10_000;
-		const values = new Array(size);
-
-		for (let i = 0; i < size; i++) {
-			values.push(Math.random());
-		}
-
-		scene.bench("For-index", () => {
-			let sum = 0;
-			for (let i = 0; i < size; i++) {
-				sum += values[i];
-			}
-			return sum;
+		scene.bench("case 1", () => {
+			// Your code here...
 		});
 
-		scene.bench("For-of", () => {
-			let sum = 0;
-			for (const v of values) sum += v;
-			return sum;
-		});
-
-		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v, 0);
-		});
+		// More cases
+		// scene.benchAsync("case 2", async () => {});
 	},
 };
