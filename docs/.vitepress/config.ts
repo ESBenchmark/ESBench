@@ -1,5 +1,6 @@
 import { defineConfig } from "vitepress";
 import suiteInfoLoader from "./suite-loader.js";
+import esbenchRuntime from "./esbench-runtime.js";
 
 // The site should be deployed to a platform that supports custom headers.
 // https://github.com/vuejs/vitepress/issues/2195
@@ -21,7 +22,7 @@ export default defineConfig({
 	title: "ESBench",
 	description: "Powerful JavaScript Benchmarking Tool",
 	vite: {
-		plugins: [customHeaders, suiteInfoLoader],
+		plugins: [customHeaders, suiteInfoLoader, esbenchRuntime],
 	},
 	head: [
 		['link', { rel: 'icon', href: '/logo.svg' }]

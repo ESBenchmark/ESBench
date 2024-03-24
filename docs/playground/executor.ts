@@ -19,7 +19,7 @@ connect(post, doImport, ["__FILE__"])`;
 function createSandbox(module: string) {
 	const importMap = JSON.stringify({
 		imports: {
-			"esbench": esbenchClient,
+			"esbench": esbenchURL,
 		},
 	});
 
