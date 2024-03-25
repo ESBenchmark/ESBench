@@ -79,7 +79,7 @@ Execute in iframe allow DOM operations, but the current page may be unresponsive
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
-import { nextTick, onMounted, onUnmounted, shallowRef } from "vue";
+import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { messageResolver, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
@@ -110,8 +110,8 @@ const consoleEl = shallowRef<HTMLElement>();
 const editorWidth = useLocalStorage("EW", "50%");
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
-const results = shallowRef<BenchmarkHistory[]>([]);
 const showChart = shallowRef(false);
+const results = shallowReactive<BenchmarkHistory[]>([]);
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
@@ -189,13 +189,12 @@ async function startBenchmark() {
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
-		results.value.push({ name: result[0].name, result, time: new Date() });
+		results.push({ name: result[0].name, result, time: new Date() });
 	} catch (e) {
 		logError(e);
-	} finally {
-		running.value = false;
 	}
 
+	running.value = false;
 	const t = (performance.now() - start) / 1000;
 	appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
 }

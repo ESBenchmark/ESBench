@@ -32,7 +32,7 @@ export default <Plugin>{
 		const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
 
 		if (!exports) {
-			return; // Not a suite.
+			throw new Error("Import non-suite file from example?");
 		}
 		let name!: string;
 		let cases = 0;
@@ -61,7 +61,7 @@ export default <Plugin>{
 
 		code = removeDefineSuite(code, body, exports).trimStart();
 		const category = match[1];
-		const info = JSON.stringify({ name, category, params, cases, code });
-		return "export default " + info;
+		const info = { name, category, params, cases, code };
+		return "export default " + JSON.stringify(info);
 	},
 };

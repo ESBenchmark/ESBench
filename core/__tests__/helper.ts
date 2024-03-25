@@ -1,9 +1,11 @@
 import { mkdirSync, rmSync } from "fs";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { afterEach, beforeEach, Mock, vi } from "vitest";
-import { BenchmarkSuite, ClientMessage, Profiler, ProfilingContext, runSuite, RunSuiteOption } from "../src/index.js";
-import { Executor } from "../src/host/index.ts";
-import { newExecuteContext } from "../src/host/host.ts";
+import { BenchmarkSuite } from "../src/suite.ts";
+import { Profiler, ProfilingContext } from "../src/context.ts";
+import { ClientMessage, messageResolver, runSuite } from "../src/runner.ts";
+import { RE_ANY } from "../src/utils.ts";
+import { ExecuteOptions, Executor } from "../src/host/index.ts";
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
@@ -41,13 +43,13 @@ export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: Reg
 	return runSuite(suite as any, { log: noop, pattern });
 }
 
-export function runProfilers(profilers: Profiler[], suite?: PartialSuite, options?: RunSuiteOption) {
+export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 	const normalized: BenchmarkSuite = {
 		name: "Test Suite",
 		setup: scene => scene.bench("Test", noop),
 		...suite,
 	};
-	const runOptions = { log: noop, ...options };
+	const runOptions = { log: noop };
 	const context = new ProfilingContext(normalized, profilers, runOptions);
 	return context.run().then(() => context);
 }
@@ -55,8 +57,12 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite, option
 const BUILD_OUT_DIR = ".esbench-temp-test";
 
 export async function testExecute(executor: Executor, build: any) {
-	const context = newExecuteContext(BUILD_OUT_DIR, build, {});
-	context.dispatch = vi.fn(context.dispatch);
+	const context = messageResolver(noop) as unknown as ExecuteOptions;
+	context.tempDir = BUILD_OUT_DIR;
+	context.pattern = RE_ANY.source;
+	context.root = build.root;
+	context.files = build.files;
+	vi.spyOn(context, "dispatch");
 
 	mkdirSync(BUILD_OUT_DIR, { recursive: true });
 	await executor.start?.();
@@ -67,6 +73,7 @@ export async function testExecute(executor: Executor, build: any) {
 		await executor.close?.();
 		rmSync(BUILD_OUT_DIR, { force: true, recursive: true });
 	}
+
 	return context.dispatch as Mock<[ClientMessage, ...any[]]>;
 }
 

@@ -1,4 +1,4 @@
-import esbenchClient from "esbench?url";
+import esbenchClient from "esbench?url"; // Special handing in docs/esbench-runtime.ts
 
 const esbenchURL = new URL(esbenchClient, location.href).toString();
 

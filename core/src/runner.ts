@@ -195,6 +195,12 @@ export async function connect(
 	}
 }
 
+/**
+ * A helper to deal with runner messages, forward messages to `dispatch`
+ * and then you can wait for the promise to finish runs.
+ *
+ * @param onLog function to handle log messages.
+ */
 export function messageResolver(onLog: LogHandler) {
 	let resolve!: (value: ToolchainResult[]) => void;
 	let reject!: (reason?: Error) => void;

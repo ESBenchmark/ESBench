@@ -118,10 +118,10 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }
 
-export function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
+function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
 	const { files, root } = build;
-	const pattern = resolveRE(filter.name).source;
 	const { promise, reject, dispatch } = messageResolver(consoleLogHandler);
+	const pattern = resolveRE(filter.name).source;
 
 	return { tempDir, pattern, files, root, dispatch, reject, promise } as ExecuteOptions;
 }
