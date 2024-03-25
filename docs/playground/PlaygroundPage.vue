@@ -189,12 +189,7 @@ async function startBenchmark() {
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
-		results.value.push({
-			name: result[0].name,
-			result,
-			time: new Date(),
-		});
-		appendLog("\nBenchmark Completed.");
+		results.value.push({ name: result[0].name, result, time: new Date() });
 	} catch (e) {
 		logError(e);
 	} finally {
@@ -202,7 +197,7 @@ async function startBenchmark() {
 	}
 
 	const t = (performance.now() - start) / 1000;
-	appendLog(`Global total time: ${t.toFixed(2)} seconds.`);
+	appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
 }
 
 function handleDragEnd() {
