@@ -6,10 +6,10 @@ title: Playground
 <PlaygroundWithLoader/>
 
 <script>import {defineAsyncComponent} from "vue";
-import LoadingFrame from "./LoadingFrame.vue";
+import LoadingFrame from "./playground/LoadingFrame.vue";
 
 const asyncComponent = defineAsyncComponent({
-    loader: () => import("./PlaygroundPage.vue"),
+    loader: () => import("./playground/PlaygroundPage.vue"),
     delay: 0,
     loadingComponent: LoadingFrame,
 });

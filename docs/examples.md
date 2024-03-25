@@ -6,5 +6,5 @@ title: Suite Examples
 
 <script setup>
 // noinspection ES6UnusedImports
-import SuiteExamples from "./SuiteExamples.vue";
+import SuiteExamples from "./playground/SuiteExamples.vue";
 </script>

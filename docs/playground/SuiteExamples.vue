@@ -49,7 +49,6 @@ import suites from "./demo-suites.ts";
 .attrs {
 	display: block;
 	font-size: 0.875em;
-	float: right;
 	color: var(--vp-c-text-2);
 }
 </style>

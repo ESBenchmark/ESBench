@@ -35,7 +35,7 @@ export default defineConfig({
 		},
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
-			{ text: "Playground", link: "/playground/playground" },
+			{ text: "Playground", link: "/playground" },
 		],
 		sidebar: [
 			{

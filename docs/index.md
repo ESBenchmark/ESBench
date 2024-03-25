@@ -17,7 +17,7 @@ hero:
       
     - theme: alt
       text: Try it online
-      link: ./playground/examples
+      link: ./examples
 
 features:
   - title: Cross-runtime
