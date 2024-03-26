@@ -18,23 +18,25 @@ export default defineConfig({
 	],
 	diff: "reports/result-1.json",
 	toolchains: [{
-		include: ["./src/*.js"],
+		include: ["./es/*.js"],
 		// builders: [
 		// 	viteBuilder,
-		// new RollupBuilder(),
+		// 	new RollupBuilder(),
 		// ],
 		executors: [
-			DirectExecutor,
-
 			// new PlaywrightExecutor(firefox),
 			// new PlaywrightExecutor(chromium),
 			// new PlaywrightExecutor(webkit),
+
+			DirectExecutor,
 
 			// new NodeExecutor(),
 			// new ProcessExecutor("node"),
 			// new ProcessExecutor("bun"),
 			// new ProcessExecutor("deno run --allow-net"),
 		],
+	}, {
+		include: ["./self/*", "./node/*"],
 	}, {
 		include: ["./web/*.js"],
 		builders: [viteBuilder],

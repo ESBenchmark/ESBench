@@ -1,7 +1,7 @@
-import a from "../../example/src/array-set-includes.js";
-import b from "../../example/src/array-with-length.js";
-import c from "../../example/src/loop-reduce.js";
-import d from "../../example/src/nullish-operator.js";
+import a from "../../example/es/array-set-includes.js";
+import b from "../../example/es/array-with-length.js";
+import c from "../../example/es/loop-reduce.js";
+import d from "../../example/es/nullish-operator.js";
 import e from "../../example/web/query-selector.js";
 
 export interface SuiteInfo {
