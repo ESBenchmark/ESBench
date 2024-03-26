@@ -14,8 +14,6 @@ import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
-const { getMetrics } = Summary;
-
 type RatioStyle = "value" | "percentage" | "trend";
 
 export interface SummaryTableOptions {
@@ -91,6 +89,12 @@ type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
 type ChalkLike = Record<ANSIColor, (str: string) => string>;
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
+const kRowNumber = Symbol();
+const kProcessedMetrics = Symbol();
+
+function getMetrics(item: FlattedResult) {
+	return item[kProcessedMetrics] as Metrics;
+}
 
 function styleRatio(v: number, style: RatioStyle, meta: MetricMeta, chalk: ChalkLike) {
 	if (!Number.isFinite(v)) {
@@ -316,29 +320,80 @@ interface TableWithNotes extends Array<string[]> {
 	warnings: string[];
 }
 
-const kRowNumber = Symbol();
+function preprocess(summary: Summary, options: SummaryTableOptions) {
+	const { outliers = "upper" } = options;
 
-function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult) {
-	const metrics = getMetrics(row);
-	for (const [name, meta] of summary.meta) {
-		if (meta.analysis !== MetricAnalysis.Statistics) {
-			continue;
-		}
-		const before = metrics[name];
-		if (!Array.isArray(before)) {
-			continue;
-		}
-		const after = new TukeyOutlierDetector(before).filter(before, mode);
-		metrics[name] = after;
+	for (const item of summary.table) {
+		const rawMetrics = Summary.getMetrics(item);
+		const metrics = Object.create(rawMetrics);
+		item[kProcessedMetrics] = metrics;
 
-		if (before.length !== after.length) {
-			const removed = before.length - after.length;
-			summary.notes.push({
-				type: "info",
-				row,
-				text: `${row.Name}: ${removed} outliers were removed.`,
-			});
+		for (const meta of summary.meta.values()) {
+			const value = metrics[meta.key];
+			if (!Array.isArray(value)) {
+				continue;
+			}
+			value.sort((a, b) => a - b);
+			if (outliers && meta.analysis === 2) {
+				removeOutliers(summary, outliers, item, meta);
+			}
 		}
+	}
+}
+
+function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult, meta: MetricMeta) {
+	const before = row[kProcessedMetrics][meta.key];
+	const after = new TukeyOutlierDetector(before).filter(before, mode);
+	row[kProcessedMetrics][meta.key] = after;
+
+	const removed = before.length - after.length;
+	if (removed !== 0) {
+		summary.notes.push({
+			type: "info",
+			row,
+			text: `${row.Name}: ${removed} outliers were removed.`,
+		});
+	}
+}
+
+const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
+
+type FormatFn = (value: any) => string;
+
+const formatters: Record<string, UnitConvertor<readonly any[]>> = {
+	number: decimalPrefix,
+	duration: durationFmt,
+	dataSize: dataSizeIEC,
+};
+
+export function parseFormat(template: string) {
+	const match = formatRE.exec(template);
+	if (match) {
+		const [p, type, rawUnit] = match;
+		return {
+			formatter: formatters[type],
+			rawUnit,
+			suffix: template.slice(p.length),
+		};
+	}
+	throw new Error("Invalid metric format: " + template);
+}
+
+function formatColumn(table: any[][], column: number, template: string, flex: boolean) {
+	const values = table.map(r => r[column]).filter(v => v !== undefined);
+
+	const { formatter, rawUnit, suffix } = parseFormat(template);
+	let format: FormatFn;
+	if (flex) {
+		format = (value: number) => separateThousand(formatter.formatDiv(value, rawUnit));
+	} else {
+		const fixed = formatter.homogeneous(values, rawUnit);
+		format = (value: number) => separateThousand(fixed.format(value));
+	}
+
+	for (const row of table) {
+		const value = row[column];
+		row[column] = value === undefined ? "" : format(value) + suffix;
 	}
 }
 
@@ -346,12 +401,11 @@ export function createTable(
 	result: ToolchainResult[],
 	diff?: ToolchainResult[],
 	options: SummaryTableOptions = {},
-	chalk: ChalkLike = noColors,
+	chalk = noColors,
 ) {
 	const {
 		stdDev = false,
 		percentiles = [],
-		outliers = "upper",
 		flexUnit = false,
 		hideSingle = true,
 		ratioStyle = "percentage",
@@ -384,6 +438,7 @@ export function createTable(
 		if (baseline) {
 			columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
 		}
+		// Assume the meta has not changed.
 		if (prev.meta.has(meta.key)) {
 			columnDefs.push(new DifferenceColumn(prev, meta, ratioStyle));
 		}
@@ -400,11 +455,11 @@ export function createTable(
 		? summary.group(baseline.type).values()
 		: [summary.table];
 
+	preprocess(summary, options);
+	preprocess(prev, options);
+
 	for (const group of groups) {
-		// 3-1. Preprocess
-		if (outliers) {
-			group.forEach(removeOutliers.bind(null, summary, outliers));
-		}
+		// 3-1. Prepare
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
 		}
@@ -444,51 +499,4 @@ export function createTable(
 
 	table.pop();
 	return table as TableWithNotes;
-}
-
-const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
-
-type FormatFn = (value: any) => string;
-
-const formatters: Record<string, UnitConvertor<readonly any[]>> = {
-	number: decimalPrefix,
-	duration: durationFmt,
-	dataSize: dataSizeIEC,
-};
-
-export function parseFormat(template: string) {
-	const match = formatRE.exec(template);
-	if (match) {
-		const [p, type, rawUnit] = match;
-		return {
-			formatter: formatters[type],
-			rawUnit,
-			suffix: template.slice(p.length),
-		};
-	}
-	throw new Error("Invalid metric format: " + template);
-}
-
-function formatColumn(table: any[][], column: number, template: string, flex: boolean) {
-	const values = table.map(r => r[column]).filter(v => v !== undefined);
-	const match = formatRE.exec(template);
-	if (!match) {
-		throw new Error("Invalid metric format: " + template);
-	}
-	const [pattern, type, unit] = match;
-	const suffix = template.slice(pattern.length);
-
-	const formatter = formatters[type];
-	let format: FormatFn;
-	if (flex) {
-		format = (value: number) => separateThousand(formatter.formatDiv(value, unit));
-	} else {
-		const fixed = formatter.homogeneous(values, unit);
-		format = (value: number) => separateThousand(fixed(value));
-	}
-
-	for (const row of table) {
-		const value = row[column];
-		row[column] = value === undefined ? "" : format(value) + suffix;
-	}
 }
