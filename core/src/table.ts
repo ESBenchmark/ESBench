@@ -8,7 +8,7 @@ import {
 	separateThousand,
 	UnitConvertor,
 } from "@kaciras/utilities/browser";
-import { OutlierMode, TukeyOutlierDetector } from "./math.js";
+import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS } from "./utils.js";
@@ -66,9 +66,9 @@ export interface SummaryTableOptions {
 	/**
 	 * Specifies which outliers should be removed from the distribution.
 	 *
-	 * @default "upper"
+	 * @default "remove-all"
 	 */
-	outliers?: false | OutlierMode;
+	outliers?: false | "remove-worse" | "remove-better" | "remove-all";
 
 	/**
 	 * Using ratioStyle, we can override the style of the diff and the baseline column.
@@ -321,7 +321,7 @@ interface TableWithNotes extends Array<string[]> {
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
-	const { outliers = "upper" } = options;
+	const { outliers = "remove-all" } = options;
 
 	for (const item of summary.table) {
 		const rawMetrics = Summary.getMetrics(item);
@@ -341,8 +341,14 @@ function preprocess(summary: Summary, options: SummaryTableOptions) {
 	}
 }
 
-function removeOutliers(summary: Summary, mode: OutlierMode, row: FlattedResult, meta: MetricMeta) {
+function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, meta: MetricMeta) {
 	const before = row[kProcessedMetrics][meta.key];
+
+	const mode = outliers === "remove-all"
+		? "all"
+		: (outliers === "remove-better") === meta.lowerIsBetter
+			? "lower" : "upper";
+
 	const after = new TukeyOutlierDetector(before).filter(before, mode);
 	row[kProcessedMetrics][meta.key] = after;
 
@@ -444,27 +450,28 @@ export function createTable(
 		}
 	}
 
-	// 2. Build the header
+	// 2. Preprocess metrics
+	preprocess(summary, options);
+	preprocess(prev, options);
+
+	// 3. Build the header
 	const header = columnDefs.map(c => c.name);
 	const table = [header] as TableWithNotes;
 	table.hints = [];
 	table.warnings = [];
 
-	// 3. Fill the body
+	// 4. Fill the body
 	const groups = baseline
 		? summary.group(baseline.type).values()
 		: [summary.table];
 
-	preprocess(summary, options);
-	preprocess(prev, options);
-
 	for (const group of groups) {
-		// 3-1. Prepare
+		// 4-1. Prepare
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
 		}
 
-		// 3-2. Add values to cells
+		// 4-2. Add values to cells
 		const groupOffset = table.length;
 		for (const data of group) {
 			const cells: any[] = [];
@@ -474,7 +481,7 @@ export function createTable(
 			}
 		}
 
-		// 3-3. Postprocess
+		// 4-3. Postprocess
 		const body = table.slice(groupOffset);
 		for (let i = 0; i < columnDefs.length; i++) {
 			const def = columnDefs[i];
@@ -486,7 +493,7 @@ export function createTable(
 		table.push([]); // Add an empty row between groups.
 	}
 
-	// 4. Generate additional properties
+	// 5. Generate additional properties
 	for (const note of summary.notes) {
 		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
 		const msg = scope + note.text;

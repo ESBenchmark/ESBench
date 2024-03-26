@@ -63,6 +63,7 @@ export interface MetricMeta {
 
 	/**
 	 * Does a smaller value of the metric mean better performance?
+	 * This option must be set if `analysis` of the meta is not `None`.
 	 */
 	lowerIsBetter?: boolean;
 }
