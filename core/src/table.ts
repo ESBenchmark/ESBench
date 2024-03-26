@@ -8,6 +8,7 @@ import {
 	separateThousand,
 	UnitConvertor,
 } from "@kaciras/utilities/browser";
+import { markdownTable } from "markdown-table";
 import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
@@ -318,6 +319,8 @@ class DifferenceColumn implements ColumnFactory {
 interface TableWithNotes extends Array<string[]> {
 	hints: string[];
 	warnings: string[];
+
+	toMarkdownTable(stringLength?: (s: string) => number): string;
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
@@ -403,6 +406,10 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
+function toMarkdownTable(this: TableWithNotes, stringLength?: any) {
+	return markdownTable(this, { stringLength, align: "r" });
+}
+
 export function createTable(
 	result: ToolchainResult[],
 	diff?: ToolchainResult[],
@@ -459,6 +466,7 @@ export function createTable(
 	const table = [header] as TableWithNotes;
 	table.hints = [];
 	table.warnings = [];
+	table.toMarkdownTable = toMarkdownTable;
 
 	// 4. Fill the body
 	const groups = baseline

@@ -2,7 +2,6 @@ import { createWriteStream } from "fs";
 import { stdout } from "process";
 import { Writable } from "stream";
 import chalk, { Chalk, ChalkInstance } from "chalk";
-import { markdownTable } from "markdown-table";
 import stringLength from "string-width";
 import { ESBenchResult } from "../summary.js";
 import { Reporter } from "../host/config.js";
@@ -38,7 +37,7 @@ async function print(
 		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);
 		out.write("\n");
-		out.write(markdownTable(table, { stringLength, align: "r" }));
+		out.write(table.toMarkdownTable(stringLength));
 		out.write("\n");
 
 		if (table.hints.length > 0) {

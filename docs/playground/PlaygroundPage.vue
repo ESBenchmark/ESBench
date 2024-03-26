@@ -80,7 +80,7 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
-import { messageResolver, RunSuiteResult } from "esbench";
+import { createTable, messageResolver, RunSuiteResult, ToolchainResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
@@ -189,6 +189,7 @@ async function startBenchmark() {
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
+		printTable(result);
 		results.push({ name: result[0].name, result, time: new Date() });
 	} catch (e) {
 		logError(e);
@@ -197,6 +198,24 @@ async function startBenchmark() {
 	running.value = false;
 	const t = (performance.now() - start) / 1000;
 	appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
+}
+
+function printTable(result: ToolchainResult[]) {
+	const options = { stdDev: true };
+	const table = createTable(result, undefined, options);
+
+	appendLog();
+	appendLog(table.toMarkdownTable());
+
+	if (table.hints.length > 0) {
+		appendLog("Hints:");
+		for (const note of table.hints) appendLog(note);
+	}
+
+	if (table.warnings.length > 0) {
+		appendLog("Warnings:");
+		for (const note of table.warnings) appendLog(note);
+	}
 }
 
 function handleDragEnd() {
