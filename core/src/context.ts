@@ -10,10 +10,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  */
 export type LogHandler = (message: string | undefined, level: LogLevel) => Awaitable<any>;
 
-export interface CaseResult {
-	name: string;
-	metrics: Metrics;
-}
+export type SceneResult = Record<string, Metrics>;
 
 export type Metrics = Record<string, number | number[] | string | undefined>;
 
@@ -90,7 +87,7 @@ export class ProfilingContext {
 	/**
 	 * Result for each case in each scene.
 	 */
-	readonly scenes: CaseResult[][] = [];
+	readonly scenes: SceneResult[] = [];
 
 	/**
 	 * Notes collected from the profiling.
@@ -192,14 +189,14 @@ export class ProfilingContext {
 		try {
 			await this.runHooks("onScene", scene);
 
-			const workloads: CaseResult[] = [];
-			this.scenes.push(workloads);
+			const results: SceneResult = {};
+			this.scenes.push(results);
 
 			for (const case_ of scene.cases) {
 				case_.id = this.caseIndex++;
 				const metrics = {};
 				await this.runHooks("onCase", case_, metrics);
-				workloads.push({ name: case_.name, metrics });
+				results[case_.name] = metrics;
 			}
 		} finally {
 			await runFns(scene.cleanEach);

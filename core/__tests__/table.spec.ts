@@ -17,10 +17,10 @@ const defaultResult = {
 it("should works", () => {
 	const table = createTable([{
 		...defaultResult,
-		scenes: [[
-			{ name: "foo", metrics: { time: [0, 1, 1, 1] } },
-			{ name: "bar", metrics: { time: [1, 2, 2, 2] } },
-		]],
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: { time: [1, 2, 2, 2] },
+		}],
 	}]);
 	expect(Array.from(table)).toStrictEqual([
 		["No.", "Name", "time"],
@@ -33,10 +33,10 @@ it("should works", () => {
 it("should allow a column has different units", () => {
 	const table = createTable([{
 		...defaultResult,
-		scenes: [[
-			{ name: "foo", metrics: { time: [0, 1, 1, 1] } },
-			{ name: "bar", metrics: { time: [1, 2, 2, 2] } },
-		]],
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: { time: [1, 2, 2, 2] },
+		}],
 	}], undefined, {
 		flexUnit: true,
 	});
@@ -62,15 +62,14 @@ it("should support custom metrics", () => {
 			},
 			baz: { key: "baz" },
 		},
-		scenes: [[{
-			name: "case 1",
-			metrics: {
+		scenes: [{
+			"case 1": {
 				foo: [0, 1, 1, 1],
 				bar: 2048,
 				baz: "OOXX",
 				qux: "Hidden",
 			},
-		}]],
+		}],
 	}], undefined, {
 		percentiles: [50],
 	});
@@ -87,10 +86,10 @@ it("should allow optional metrics value", () => {
 			type: "Name",
 			value: "foo",
 		},
-		scenes: [[
-			{ name: "foo", metrics: {} },
-			{ name: "bar", metrics: { time: [1, 2, 2, 2] } },
-		]],
+		scenes: [{
+			foo: {},
+			bar: { time: [1, 2, 2, 2] },
+		}],
 	}], undefined, {
 		stdDev: true,
 		percentiles: [75],
@@ -113,11 +112,11 @@ it.each([
 			type: "Name",
 			value: "A",
 		},
-		scenes: [[
-			{ name: "A", metrics: { time: [4] } },
-			{ name: "B", metrics: { time: [8] } },
-			{ name: "C", metrics: { time: [1] } },
-		]],
+		scenes: [{
+			A: { time: [4] },
+			B: { time: [8] },
+			C: { time: [1] },
+		}],
 	}], undefined, {
 		ratioStyle: style as any,
 	});

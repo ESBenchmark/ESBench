@@ -62,7 +62,7 @@ export class ExecutionValidator implements Profiler {
 	private readonly isEqual: EqualityFn;
 	private readonly check: CheckFn<unknown>;
 
-	constructor({ equality, check }: ValidateOptions<unknown>) {
+	constructor({ equality, check }: ValidateOptions<any>) {
 		this.check = check ?? noop;
 		if (equality === true) {
 			this.isEqual = (a, b) => a === b;

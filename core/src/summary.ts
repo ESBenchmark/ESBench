@@ -1,6 +1,6 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
 import { RunSuiteResult } from "./runner.js";
-import { MetricMeta, Metrics, Note } from "./context.js";
+import { MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
@@ -106,7 +106,7 @@ export class Summary {
 
 		for (const scene of scenes) {
 			const params = iter.next().value;
-			for (const { name, metrics } of scene) {
+			for (const [name, metrics] of Object.entries(scene)) {
 				const flatted = {
 					...params,
 					Builder: builder,

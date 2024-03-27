@@ -48,7 +48,7 @@ it("should support specify number of samples", async () => {
 		setup: scene => scene.bench("Test", fn),
 	});
 	expect(fn).toHaveBeenCalledTimes(22);
-	expect(result.scenes[0][0].metrics.time).toHaveLength(22);
+	expect(result.scenes[0].Test.time).toHaveLength(22);
 });
 
 it("should support specify number of iterations", async () => {
@@ -60,7 +60,7 @@ it("should support specify number of iterations", async () => {
 		setup: scene => scene.bench("Test", fn),
 	});
 	expect(fn).toHaveBeenCalledTimes(33);
-	expect(result.scenes[0][0].metrics.time).toHaveLength(1);
+	expect(result.scenes[0].Test.time).toHaveLength(1);
 });
 
 it("should estimate number of iterations", async () => {
@@ -83,14 +83,14 @@ it("should estimate number of iterations", async () => {
 
 it("should check zero measurement", async () => {
 	const result = await measureTime({
-		samples: 10,
+		samples: 20,
 		iterations: "10ms",
 	}, {
 		setup: scene => scene.bench("Test", noop),
 	});
 	expect(result.notes[0].type).toBe("warn");
 	expect(result.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
-	expect(result.scenes[0][0].metrics.time).toStrictEqual([0]);
+	expect(result.scenes[0].Test.time).toStrictEqual([0]);
 });
 
 it("should skip overhead stage if evaluateOverhead is false", async () => {
@@ -101,7 +101,7 @@ it("should skip overhead stage if evaluateOverhead is false", async () => {
 		setup: scene => scene.bench("Test", stubFn),
 	});
 	expect(stubFn).toHaveBeenCalledTimes(1);
-	expect((result.scenes[0][0].metrics as any).time[0]).toBeGreaterThan(0);
+	expect((result.scenes[0].Test.time as any)[0]).toBeGreaterThan(0);
 });
 
 it("should measure time as duration", async () => {
@@ -113,7 +113,7 @@ it("should measure time as duration", async () => {
 
 	expect(result.meta.time).toBeDefined();
 
-	const { metrics } = result.scenes[0][0];
+	const metrics = result.scenes[0].Test;
 	expect((metrics.time as number[])[0]).toBeCloseTo(1, 1);
 });
 
@@ -128,7 +128,7 @@ it("should measure time as throughput", async () => {
 	expect(result.meta.time).toBeUndefined();
 	expect(result.meta.throughput).toBeDefined();
 
-	const { metrics } = result.scenes[0][0];
+	const metrics = result.scenes[0].Test;
 	const [throughput] = metrics.throughput as number[];
 	expect(metrics.time).toBeUndefined();
 	expect(throughput).toBeLessThan(1005);

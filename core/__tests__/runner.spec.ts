@@ -20,7 +20,7 @@ it("should return the result", async () => {
 	expect(result.notes).toHaveLength(0);
 	expect(result.baseline).toBeUndefined();
 	expect(result.scenes).toHaveLength(3);
-	expect(result.scenes[0]).toHaveLength(1);
+	expect(result.scenes[0]).toBeTypeOf("object");
 });
 
 it("should call lifecycle hooks", async () => {

@@ -4,7 +4,7 @@ import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { BUILTIN_VARS, checkParams, toDisplayName } from "./utils.js";
-import { CaseResult, LogHandler, LogLevel, MetricMeta, Note, Profiler, ProfilingContext } from "./context.js";
+import { LogHandler, LogLevel, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./context.js";
 import { ToolchainResult } from "./summary.js";
 
 class DefaultEventLogger implements Profiler {
@@ -75,7 +75,7 @@ export interface RunSuiteResult {
 	paramDef: Array<[string, string[]]>;
 	meta: Record<string, MetricMeta>;
 	notes: Note[];
-	scenes: CaseResult[][];
+	scenes: SceneResult[];
 	baseline?: BaselineOptions;
 }
 

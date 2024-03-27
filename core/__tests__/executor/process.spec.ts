@@ -45,5 +45,5 @@ it("should support add arguments", () => {
 		root: "__tests__/fixtures/error-outside",
 	});
 	return expect(promise).rejects
-		.toThrow('Execute Failed (1), Command: node --expose_gc .esbench-temp-test/main.js "foo bar"');
+		.toThrow('Execute Failed (1), Command: node --expose_gc .esbench-test-temp/main.js "foo bar"');
 });
