@@ -6,6 +6,13 @@ export default defineConfig({
 	},
 	publicDir: false,
 	test: {
+		// Some tests are depend on execution time,
+		// so we disabled threads to improve accuracy.
+		poolOptions: {
+			threads: {
+				singleThread: true,
+			},
+		},
 		coverage: {
 			reporter: ["lcov"],
 			provider: "v8",

@@ -54,7 +54,8 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 	return context.run().then(() => context);
 }
 
-const BUILD_OUT_DIR = ".esbench-temp-test";
+// Use shared folder may cause tests to fail randomly with parallel execution.
+const BUILD_OUT_DIR = ".esbench-test-temp";
 
 export async function testExecute(executor: Executor, build: any) {
 	const context = messageResolver(noop) as unknown as ExecuteOptions;
@@ -64,14 +65,14 @@ export async function testExecute(executor: Executor, build: any) {
 	context.files = build.files;
 	vi.spyOn(context, "dispatch");
 
-	mkdirSync(BUILD_OUT_DIR, { recursive: true });
+	mkdirSync(context.tempDir, { recursive: true });
 	await executor.start?.();
 	try {
 		const w = executor.execute(context);
 		await Promise.all([context.promise, w]);
 	} finally {
 		await executor.close?.();
-		rmSync(BUILD_OUT_DIR, { force: true, recursive: true });
+		rmSync(context.tempDir, { recursive: true });
 	}
 
 	return context.dispatch as Mock<[ClientMessage, ...any[]]>;
