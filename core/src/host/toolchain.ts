@@ -3,7 +3,7 @@ import { join, relative } from "path";
 import { mkdtempSync } from "fs";
 import { performance } from "perf_hooks";
 import { normalize } from "path/posix";
-import { Awaitable, durationFmt, MultiMap } from "@kaciras/utilities/node";
+import { Awaitable, durationFmt, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import chalk from "chalk";
 import picomatch from "picomatch";
@@ -108,7 +108,7 @@ export default class JobGenerator {
 	private readonly t2n = new Map<Builder | Executor, string>();
 	private readonly bInclude = new MultiMap<Builder, string>();
 	private readonly eInclude = new MultiMap<Executor, string>();
-	private readonly e2b = new MultiMap<Executor, Builder>();
+	private readonly e2b = new UniqueMultiMap<Executor, Builder>();
 	private readonly bOutput = new Map<Builder, BuildResult>();
 
 	private readonly directory: string;

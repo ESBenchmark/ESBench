@@ -154,4 +154,23 @@ describe("JobGenerator", () => {
 		expect(builds[0].name).toBe("A");
 		expect(builds[0].files).toHaveLength(1);
 	});
+
+	it("should dedupe builders with same executor", async () => {
+		const generator = new JobGenerator(tempDir, {});
+		generator.add({
+			include: ["./__tests__/fixtures/*-inside/*"],
+			builders: [noBuild],
+			executors: [direct],
+		});
+		generator.add({
+			include: ["./__tests__/fixtures/*-outside/*"],
+			builders: [noBuild],
+			executors: [direct],
+		});
+
+		await generator.build();
+		const jobs = Array.from(generator.getJobs());
+		expect(jobs).toHaveLength(1);
+		expect(jobs[0].builds).toHaveLength(1);
+	});
 });
