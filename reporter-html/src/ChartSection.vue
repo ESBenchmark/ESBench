@@ -155,12 +155,13 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 watch(chartConfig, ({ data, scales }) => {
 	chart.data = data as any;
 	chart.options.scales = scales;
-	chart.update("none");
+	chart.update();
 });
 
 onMounted(() => chart = new BarWithErrorBarsChart(canvasRef.value, {
 	data: chartConfig.value.data as any,
 	options: {
+		animation: false,
 		scales: chartConfig.value.scales,
 		responsive: true,
 		plugins: {
