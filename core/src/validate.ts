@@ -1,16 +1,16 @@
 import { alwaysTrue, noop } from "@kaciras/utilities/browser";
-import { BenchCase } from "./suite.js";
+import { BenchCase, Scene } from "./suite.js";
 import { Profiler, ProfilingContext } from "./context.js";
 
 type EqualityFn = (a: any, b: any) => boolean;
 
-type CheckFn = (value: any) => void;
+type CheckFn<T> = (value: any, params: T) => void;
 
-export interface ValidateOptions {
+export interface ValidateOptions<T> {
 	/**
-	 * Check the return value of benchmarks, throw an error if it's invalid.
+	 * Check the return value of cases, throw an error if it's invalid.
 	 */
-	check?: CheckFn;
+	check?: CheckFn<T>;
 
 	/**
 	 * Check to make sure the values returned by the function are equal.
@@ -25,26 +25,28 @@ const NONE = Symbol();
 class PreValidateProfiler implements Profiler {
 
 	private readonly isEqual: EqualityFn;
-	private readonly check: CheckFn;
+	private readonly check: CheckFn<unknown>;
 
 	private nameA!: string;
 	private valueA: any = NONE;
+	private scene!: Scene;
 
-	constructor(check: CheckFn, isEqual: EqualityFn) {
+	constructor(check: CheckFn<unknown>, isEqual: EqualityFn) {
 		this.check = check;
 		this.isEqual = isEqual;
 	}
 
-	onScene() {
+	onScene(_: ProfilingContext, scene: Scene) {
+		this.scene = scene;
 		this.valueA = NONE;
 	}
 
 	async onCase(_: ProfilingContext, case_: BenchCase) {
-		const { nameA, valueA, isEqual, check } = this;
+		const { nameA, valueA, scene, isEqual, check } = this;
 		const { name } = case_;
 
 		const returnValue = await case_.invoke();
-		check(returnValue);
+		check(returnValue, scene.params);
 
 		if (valueA === NONE) {
 			this.valueA = returnValue;
@@ -58,9 +60,9 @@ class PreValidateProfiler implements Profiler {
 export class ExecutionValidator implements Profiler {
 
 	private readonly isEqual: EqualityFn;
-	private readonly check: CheckFn;
+	private readonly check: CheckFn<unknown>;
 
-	constructor({ equality, check }: ValidateOptions) {
+	constructor({ equality, check }: ValidateOptions<unknown>) {
 		this.check = check ?? noop;
 		if (equality === true) {
 			this.isEqual = (a, b) => a === b;

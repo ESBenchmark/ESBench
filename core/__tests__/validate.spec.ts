@@ -3,7 +3,7 @@ import { Profiler } from "../src/index.js";
 import { PartialSuite, runProfilers } from "./helper.js";
 import { ExecutionValidator, ValidateOptions } from "../src/validate.js";
 
-function runWithValidator(options: ValidateOptions, suite: PartialSuite) {
+function runWithValidator(options: ValidateOptions<any>, suite: PartialSuite) {
 	return runProfilers([new ExecutionValidator(options)], suite);
 }
 
@@ -32,7 +32,7 @@ it("should validate the return value", () => {
 
 	const promise = runWithValidator({
 		check: () => { throw cause; },
-	},{
+	}, {
 		setup(scene) {
 			scene.bench("foo", () => 11);
 			scene.bench("bar", () => 22);
@@ -41,16 +41,36 @@ it("should validate the return value", () => {
 	return expect(promise).rejects.toThrow(cause);
 });
 
+it("should be able to access scene parameters in check()", async () => {
+	const checkedParams: unknown[] = [];
+
+	await runWithValidator({
+		check(value, params) {
+			expect(value).toBe(11);
+			checkedParams.push(params);
+		},
+	}, {
+		params: {
+			a: [false, true],
+		},
+		setup(scene) {
+			scene.bench("foo", () => 11);
+		},
+	});
+
+	expect(checkedParams).toStrictEqual([{ a: false }, { a: true }]);
+});
+
 it("should check return values are equal", () => {
 	const promise = runWithValidator({
 		equality: true,
-	},{
+	}, {
 		setup(scene) {
 			scene.bench("foo", () => 11);
 			scene.bench("bar", () => 22);
 		},
 	});
-	return expect(promise).rejects.toThrow('"foo" and "bar" returns different value');
+	return expect(promise).rejects.toThrow("\"foo\" and \"bar\" returns different value");
 });
 
 it("should support custom equality function", () => {

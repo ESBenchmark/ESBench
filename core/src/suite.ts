@@ -168,7 +168,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	 *
 	 * Additional checks can be configured in the options.
 	 */
-	validate?: ValidateOptions;
+	validate?: ValidateOptions<CartesianObjectCell<T>>;
 
 	/**
 	 * you can specify set of values. As a result, you will get results for each combination of params values.
