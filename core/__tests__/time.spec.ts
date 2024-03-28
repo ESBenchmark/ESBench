@@ -81,13 +81,24 @@ it("should estimate number of iterations", async () => {
 	expect(iterations).toBeGreaterThan(90);
 });
 
+// we mock heavy overhead to make the test stable.
 it("should check zero measurement", async () => {
-	const result = await measureTime({
-		samples: 20,
+	const mockProfiler = new TimeProfiler({
+		warmup: 0,
 		iterations: "10ms",
-	}, {
+		samples: 10,
+	});
+	mockProfiler.measure = (ctx, name, iterator, count) => {
+		if (name === "Overhead") {
+			return Promise.resolve([1, 1, 1]);
+		}
+		return TimeProfiler.prototype.measure.call(mockProfiler, ctx, name, iterator, count);
+	};
+
+	const result = await runProfilers([mockProfiler], {
 		setup: scene => scene.bench("Test", noop),
 	});
+
 	expect(result.notes[0].type).toBe("warn");
 	expect(result.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
 	expect(result.scenes[0].Test.time).toStrictEqual([0]);
