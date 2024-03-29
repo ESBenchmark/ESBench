@@ -218,7 +218,7 @@ export class TimeProfiler implements Profiler {
 
 		if (!throughput) {
 			metrics.time = time;
-		} else {
+		} else if (time.length > 1 || time[0] !== 0) {
 			const d = durationFmt.getFraction(throughput, "ms");
 			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
 		}

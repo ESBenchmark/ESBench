@@ -14,6 +14,15 @@ function measureTime(options: TimingOptions, suite?: PartialSuite) {
 	return runProfilers([profiler], suite);
 }
 
+function mockZeroMeasurement(profiler: TimeProfiler) {
+	profiler.measure = (ctx, name, iterator, count) => {
+		if (name === "Overhead") {
+			return Promise.resolve([1, 1, 1]);
+		}
+		return TimeProfiler.prototype.measure.call(profiler, ctx, name, iterator, count);
+	};
+}
+
 it("should reduce overhead by unrolling", async () => {
 	const iterations = 100;
 	const factor = 100;
@@ -43,11 +52,12 @@ it.each([
 it("should support specify number of samples", async () => {
 	const fn = vi.fn(spin1ms);
 	const result = await measureTime({
+		warmup: 3,
 		samples: 22,
 	}, {
 		setup: scene => scene.bench("Test", fn),
 	});
-	expect(fn).toHaveBeenCalledTimes(22);
+	expect(fn).toHaveBeenCalledTimes(25);
 	expect(result.scenes[0].Test.time).toHaveLength(22);
 });
 
@@ -88,12 +98,7 @@ it("should check zero measurement", async () => {
 		iterations: "10ms",
 		samples: 10,
 	});
-	mockProfiler.measure = (ctx, name, iterator, count) => {
-		if (name === "Overhead") {
-			return Promise.resolve([1, 1, 1]);
-		}
-		return TimeProfiler.prototype.measure.call(mockProfiler, ctx, name, iterator, count);
-	};
+	mockZeroMeasurement(mockProfiler);
 
 	const result = await runProfilers([mockProfiler], {
 		setup: scene => scene.bench("Test", noop),
@@ -102,6 +107,22 @@ it("should check zero measurement", async () => {
 	expect(result.notes[0].type).toBe("warn");
 	expect(result.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
 	expect(result.scenes[0].Test.time).toStrictEqual([0]);
+});
+
+it("should not set throughput for zero measurement", async () => {
+	const mockProfiler = new TimeProfiler({
+		warmup: 0,
+		iterations: "10ms",
+		samples: 10,
+		throughput: "s",
+	});
+	mockZeroMeasurement(mockProfiler);
+
+	const result = await runProfilers([mockProfiler], {
+		setup: scene => scene.bench("Test", noop),
+	});
+
+	expect(result.scenes[0].Test).toStrictEqual({});
 });
 
 it("should skip overhead stage if evaluateOverhead is false", async () => {
