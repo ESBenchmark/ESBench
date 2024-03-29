@@ -8,6 +8,11 @@ function expectHaveProperties(obj: any, props: any) {
 		expect(obj).toHaveProperty(k, v);
 }
 
+it("should associate notes with results", () => {
+	const summary = new Summary(data.Suite as any);
+	expect(summary.notes[0].row).toBe(summary.table[0]);
+});
+
 it("should sort results by variable keys", () => {
 	const summary = new Summary(data.Suite as any);
 	summary.sort(["size", "Name", "exists", "Builder", "Executor"]);

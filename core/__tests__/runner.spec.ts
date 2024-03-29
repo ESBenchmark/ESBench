@@ -113,7 +113,8 @@ it("should call profiler hooks in order", async () => {
 });
 
 it("should wrap exception with RunSuiteError", () => {
-	return expect(run({})).rejects.toThrow(RunSuiteError);
+	// @ts-expect-error
+	return expect(run({ setup: 1 })).rejects.toThrow(RunSuiteError);
 });
 
 it("should port params if the error threw from scene", async () => {
@@ -136,9 +137,14 @@ it.each([
 ])("should check parameter baseline %#", async (baseline) => {
 	const promise = run({
 		baseline,
-		params: {
-			bar: [22, 33],
-		},
+		params: { bar: [22, 33] },
 	});
 	await expect(promise).rejects.toThrow(RunSuiteError);
+});
+
+it("should not check baseline that uses variable outside client", () => {
+	return run({
+		params: { bar: [22, 33] },
+		baseline: { type: "Name", value: "NOT_EXISTS" },
+	});
 });

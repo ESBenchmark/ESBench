@@ -2,7 +2,13 @@
 	"Suite": [
 		{
 			"name": "Suite",
-			"notes": [],
+			"notes": [
+				{
+					"type": "warn",
+					"text": "The function duration is indistinguishable from the empty function duration.",
+					"caseId": 0
+				}
+			],
 			"meta": {
 				"throughput": {
 					"key": "throughput",
@@ -30,20 +36,7 @@
 			],
 			"scenes": [
 				{
-					"object": {
-						"throughput": [
-							237004121,
-							237284462,
-							237946418,
-							237965604,
-							237996734,
-							238026436,
-							238035053,
-							238036490,
-							238058109,
-							238058396
-						]
-					},
+					"object": {},
 					"map": {
 						"throughput": [
 							269745946,
