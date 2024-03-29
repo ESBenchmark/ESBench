@@ -13,6 +13,7 @@ export interface ToolchainResult extends RunSuiteResult {
 // -------------------------------------------------------------
 
 const kMetrics = Symbol("metrics");
+const kIndex = Symbol("index");
 
 export type FlattedResult = Record<string, string> & {
 	Name: string;
@@ -79,7 +80,7 @@ export class Summary {
 		for (const result of suiteResult) {
 			this.addResult(result);
 		}
-		this.keys = Array.from(this.vars.keys());
+		this.sort(this.keys = Array.from(this.vars.keys()));
 	}
 
 	private addResult(toolchain: ToolchainResult) {
@@ -135,8 +136,27 @@ export class Summary {
 		for (const value of values) list.add(value);
 	}
 
-	static getMetrics(result: FlattedResult) {
-		return result[kMetrics];
+	static getMetrics(item: FlattedResult) {
+		return item[kMetrics];
+	}
+
+	sort(varNames: string[]) {
+		const src: Array<[string, Set<string>]> = [];
+		for (const key of varNames) {
+			const values = this.vars.get(key);
+			if (!values) {
+				throw new Error(`${key} is not in variables`);
+			}
+			src.push([key, values]);
+		}
+		let index = 0;
+		for (const properties of cartesianObject(src)) {
+			const item = this.find(properties);
+			if (item) {
+				item[kIndex] = index++;
+			}
+		}
+		this.table.sort((a, b) => a[kIndex] - b[kIndex]);
 	}
 
 	/**
@@ -147,12 +167,16 @@ export class Summary {
 		return groupBy(this.table, item => JSON.stringify(item, keys));
 	}
 
-	find(properties: Record<string, string>) {
-		return this.hashTable.get(JSON.stringify(properties, this.keys));
+	/**
+	 * Find the result that contains exactly the variables,
+	 * Non-variable properties will be ignored.
+	 */
+	find(variables: Record<string, string>) {
+		return this.hashTable.get(JSON.stringify(variables, this.keys));
 	}
 
-	findAll(properties: Record<string, string>, axis: string) {
-		const copy = { ...properties };
+	findAll(variables: Record<string, string>, axis: string) {
+		const copy = { ...variables };
 		return [...this.vars.get(axis)!].map(v => {
 			copy[axis] = v;
 			return this.hashTable.get(JSON.stringify(copy, this.keys));
