@@ -1,4 +1,4 @@
-import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
+import { cartesianObject, MultiMap } from "@kaciras/utilities/browser";
 import { RunSuiteResult } from "./runner.js";
 import { MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
@@ -30,10 +30,6 @@ export interface ResolvedNote {
 	type: "info" | "warn";
 	text: string;
 	row?: FlattedResult;
-}
-
-function shallowHashKey(obj: any, keys: string[]) {
-	return keys.map(k => `${k}=${obj[k]}`).join(",");
 }
 
 function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => string) {
@@ -71,9 +67,10 @@ export class Summary {
 	 */
 	readonly notes: ResolvedNote[] = [];
 
-	readonly hashTable = new Map<string, FlattedResult>();
-
 	baseline?: BaselineOptions;
+
+	private readonly hashTable = new Map<string, FlattedResult>();
+	private readonly keys: string[];
 
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
@@ -82,6 +79,7 @@ export class Summary {
 		for (const result of suiteResult) {
 			this.addResult(result);
 		}
+		this.keys = Array.from(this.vars.keys());
 	}
 
 	private addResult(toolchain: ToolchainResult) {
@@ -90,11 +88,11 @@ export class Summary {
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 		this.baseline = toolchain.baseline;
 
-		if (builder) {
-			this.addToVar("Builder", builder);
-		}
 		if (executor) {
 			this.addToVar("Executor", executor);
+		}
+		if (builder) {
+			this.addToVar("Builder", builder);
 		}
 		for (const [key, values] of paramDef) {
 			this.addToVar(key, ...values);
@@ -108,10 +106,10 @@ export class Summary {
 			const params = iter.next().value;
 			for (const [name, metrics] of Object.entries(scene)) {
 				const flatted = {
-					...params,
-					Builder: builder,
-					Executor: executor,
 					Name: name,
+					Executor: executor,
+					Builder: builder,
+					...params,
 					[kMetrics]: metrics,
 				};
 				this.table.push(flatted);
@@ -141,25 +139,23 @@ export class Summary {
 		return result[kMetrics];
 	}
 
-	createVariableArray() {
-		return Array.from(this.vars.values(), firstItem) as string[];
-	}
-
 	/**
 	 * Grouping results by all variables except the ignore parameter.
 	 */
 	group(ignore: string) {
-		const keys = Array.from(this.vars.keys()).filter(k => k !== ignore);
-		return groupBy(this.table, row => shallowHashKey(row, keys));
+		const keys = this.keys.filter(k => k !== ignore);
+		return groupBy(this.table, item => JSON.stringify(item, keys));
 	}
 
-	find(properties: FlattedResult) {
-		return this.hashTable.get(JSON.stringify(properties));
+	find(properties: Record<string, string>) {
+		return this.hashTable.get(JSON.stringify(properties, this.keys));
 	}
 
-	findAll(values: string[], axis: string) {
-		const keys = [...this.vars.keys()];
-		return this.table.filter(row =>
-			keys.every((k, i) => k === axis ? true : row[k] === values[i]));
+	findAll(properties: Record<string, string>, axis: string) {
+		const copy = { ...properties };
+		return [...this.vars.get(axis)!].map(v => {
+			copy[axis] = v;
+			return this.hashTable.get(JSON.stringify(copy, this.keys));
+		});
 	}
 }

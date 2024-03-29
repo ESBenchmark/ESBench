@@ -34,9 +34,9 @@
 			<h2 :class='$style.title'>Variables</h2>
 
 			<LabeledSelect
-				v-for='([name, values], i) of summary.vars'
-				:key='i'
-				v-model='variables[i]'
+				v-for='[name, values] of summary.vars'
+				:key='name'
+				v-model='variables[name]'
 				:label='name'
 				:disabled='name === xAxis'
 				:class='[

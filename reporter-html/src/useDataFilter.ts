@@ -1,29 +1,31 @@
-import { computed, ComputedRef, ref, Ref, watch } from "vue";
+import { computed, ComputedRef, reactive, ref, Ref, watch } from "vue";
 import { FlattedResult, Summary } from "esbench";
 import { firstItem } from "@kaciras/utilities/browser";
 
 export interface UseDataFilterReturn {
-	variables: Ref<string[]>;
+	variables: Record<string, string>;
 	xAxis: Ref<string>;
 	matches: ComputedRef<FlattedResult[]>;
 }
 
-export default function (stf: Ref<Summary>) {
-	const variables = ref<string[]>([]);
+export default function (summaryRef: Ref<Summary>) {
+	const variables = reactive<Record<string, string>>({});
 	const xAxis = ref("");
 
 	const matches = computed(() => {
-		return stf.value.findAll(variables.value, xAxis.value);
+		return summaryRef.value.findAll(variables, xAxis.value);
 	});
 
 	function reset() {
-		const summary = stf.value;
-		xAxis.value = summary.baseline?.type ??
-			firstItem(summary.vars.keys())!;
-		variables.value = summary.createVariableArray();
+		const summary = summaryRef.value;
+		xAxis.value = summary.baseline?.type
+			?? firstItem(summary.vars.keys())!;
+		for (const [k, vs] of summary.vars) {
+			variables[k] = firstItem(vs)!;
+		}
 	}
 
-	watch(stf, reset, { immediate: true });
+	watch(summaryRef, reset, { immediate: true });
 
 	return { variables, matches, xAxis } as UseDataFilterReturn;
 }
