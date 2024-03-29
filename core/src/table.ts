@@ -269,7 +269,7 @@ class BaselineColumn implements ColumnFactory {
 				return this.ratio1 = this.toNumber(row);
 			}
 		}
-		throw new Error(`Baseline (${variable}=${value}) does not in the table`);
+		throw new Error(`Baseline (${variable}=${value}) does not in results`);
 	}
 
 	getValue(data: FlattedResult, chalk: ChalkLike) {

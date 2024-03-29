@@ -33,6 +33,7 @@ export function useTempDirectory(path: string) {
 
 export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: RegExp) {
 	suite.name ??= "Test Suite";
+	suite.setup ??= noop;
 	suite.timing = {
 		iterations: 1,
 		samples: 1,

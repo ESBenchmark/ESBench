@@ -8,6 +8,10 @@ it("should return the result", async () => {
 		params: {
 			n: [10, 100, 1000],
 		},
+		baseline: {
+			type: "n",
+			value: 100,
+		},
 		setup(scene) {
 			scene.bench("Test", spin1ms);
 		},
@@ -18,7 +22,7 @@ it("should return the result", async () => {
 	expect(result.meta.time).toBeTypeOf("object");
 	expect(result.name).toBe("Test Suite");
 	expect(result.notes).toHaveLength(0);
-	expect(result.baseline).toBeUndefined();
+	expect(result.baseline).toStrictEqual({ type: "n", value: "100" });
 	expect(result.scenes).toHaveLength(3);
 	expect(result.scenes[0]).toBeTypeOf("object");
 });
@@ -124,4 +128,17 @@ it("should port params if the error threw from scene", async () => {
 	});
 	await expect(promise).rejects.toThrow(RunSuiteError);
 	await expect(promise).rejects.toHaveProperty("params", { foo: 11, bar: 22 });
+});
+
+it.each([
+	[{ type: "bar", value: 11 }],
+	[{ type: "foo", value: 11 }],
+])("should check parameter baseline %#", async (baseline) => {
+	const promise = run({
+		baseline,
+		params: {
+			bar: [22, 33],
+		},
+	});
+	await expect(promise).rejects.toThrow(RunSuiteError);
 });

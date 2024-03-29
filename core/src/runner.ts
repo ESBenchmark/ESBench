@@ -1,4 +1,4 @@
-import { Awaitable, noop } from "@kaciras/utilities/browser";
+import { Awaitable, CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { deserializeError, ErrorObject, serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
@@ -92,6 +92,19 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
+function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
+	const { type, value } = baseline;
+	if (BUILTIN_VARS.includes(type)) {
+		return;
+	}
+	const values = params[type];
+	if (values && Array.prototype.includes.call(values, value)) {
+		baseline.value = toDisplayName(value);
+	} else {
+		throw new Error(`Baseline (${type}=${value}) does not in results`);
+	}
+}
+
 /**
  * Run a benchmark suite. Any exception that occur within this function is wrapped in a RunSuiteError,.
  */
@@ -100,12 +113,6 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 		name, beforeAll = noop, afterAll = noop,
 		timing, validate, params = {}, baseline,
 	} = suite;
-
-	if (baseline) {
-		if (!BUILTIN_VARS.includes(baseline.type)) {
-			baseline.value = toDisplayName(baseline.value);
-		}
-	}
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
@@ -118,6 +125,10 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 		}
 		if (timing !== false) {
 			profilers.push(new TimeProfiler(timing === true ? {} : timing));
+		}
+
+		if (baseline) {
+			checkBaseline(baseline, params);
 		}
 
 		const paramDef = checkParams(params);
