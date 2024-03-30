@@ -17,9 +17,7 @@
 	"main": "lib/index.js",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
-		"build-plugin": "vite build --mode plugin",
-		"preview": "vite preview"
+		"build": "vite build"
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^0.12.4",

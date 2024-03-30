@@ -328,7 +328,7 @@ interface TableWithNotes extends Array<string[]> {
 function preprocess(summary: Summary, options: SummaryTableOptions) {
 	const { outliers = "remove-all" } = options;
 
-	for (const item of summary.table) {
+	for (const item of summary.results) {
 		const rawMetrics = Summary.getMetrics(item);
 		const metrics = Object.create(rawMetrics);
 		item[kProcessedMetrics] = metrics;
@@ -473,7 +473,7 @@ export function createTable(
 	// 4. Fill the body
 	const groups = baseline
 		? summary.group(baseline.type).values()
-		: [summary.table];
+		: [summary.results];
 
 	for (const group of groups) {
 		// 4-1. Prepare

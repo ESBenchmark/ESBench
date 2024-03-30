@@ -149,7 +149,7 @@ export default defineSuite({
 	},
 	baseline: {
 		type: "impl",
-		value: "Summary()",
+		value: Summary,
 	},
 	setup(scene) {
 		const summary = new scene.params.impl(Object.values(data)[0]);

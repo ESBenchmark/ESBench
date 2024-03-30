@@ -14,15 +14,15 @@ const debugDataPlugin: Plugin = {
 	},
 };
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ command }) => ({
 	plugins: [
 		viteSingleFile(),
 		vue(),
-		mode === "development" && debugDataPlugin,
+		command === "serve" && debugDataPlugin,
 	],
 	build: {
 		target: "esnext",
 		emptyOutDir: false,
-		outDir: mode === "plugin" ? "../core/html" : undefined,
+		outDir: command === "build" ? "../core/html" : undefined,
 	},
 }));

@@ -101,7 +101,7 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 	if (values && Array.prototype.includes.call(values, value)) {
 		baseline.value = toDisplayName(value);
 	} else {
-		throw new Error(`Baseline (${type}=${value}) does not in results`);
+		throw new Error(`Baseline (${type}=${value}) does not in params`);
 	}
 }
 

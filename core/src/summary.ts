@@ -49,7 +49,7 @@ function indexOf<T>(iter: Iterable<T>, k: string, v: T) {
 	for (const x of iter) {
 		if (x === v)
 			return index;
-		index+=1;
+		index += 1;
 	}
 	throw new Error(`${k}=${v} is not in variables`);
 }
@@ -68,7 +68,7 @@ export class Summary {
 	 */
 	readonly meta = new Map<string, MetricMeta>();
 
-	readonly table: FlattedResult[] = [];
+	readonly results: FlattedResult[] = [];
 
 	/**
 	 * Additional noteworthy information generated during the run of the suite.
@@ -78,9 +78,12 @@ export class Summary {
 	 */
 	readonly notes: ResolvedNote[] = [];
 
+	/**
+	 * The suite's baseline option.
+	 */
 	baseline?: BaselineOptions;
 
-	private iMap!: FlattedResult[];
+	private table!: FlattedResult[];
 	private keys!: string[];
 	private factors!: number[];
 
@@ -98,7 +101,7 @@ export class Summary {
 
 	private addResult(toolchain: ToolchainResult) {
 		const { executor, builder, paramDef, scenes, notes } = toolchain;
-		const offset = this.table.length;
+		const offset = this.results.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 		this.baseline = toolchain.baseline;
 
@@ -126,7 +129,7 @@ export class Summary {
 					...params,
 					[kMetrics]: metrics,
 				};
-				this.table.push(flatted);
+				this.results.push(flatted);
 				this.addToVar("Name", name);
 			}
 		}
@@ -135,7 +138,7 @@ export class Summary {
 			const resolved: ResolvedNote = { type, text };
 			this.notes.push(resolved);
 			if (caseId !== undefined) {
-				resolved.row = this.table[offset + caseId];
+				resolved.row = this.results[offset + caseId];
 			}
 		}
 	}
@@ -152,13 +155,16 @@ export class Summary {
 		return item[kMetrics];
 	}
 
-	sort(varNames: string[]) {
-		this.keys = varNames;
-		const factors = this.factors = new Array(varNames.length);
+	sort(keys: string[]) {
+		if (new Set(keys).size !== this.vars.size) {
+			throw new Error("Keys must be all variable names");
+		}
+		const factors = this.factors = new Array(keys.length);
+		this.keys = keys;
 
 		let factor = 1;
-		for (let i = varNames.length - 1; i >= 0; i--) {
-			const k = varNames[i];
+		for (let i = keys.length - 1; i >= 0; i--) {
+			const k = keys[i];
 			const values = this.vars.get(k);
 			if (!values) {
 				throw new Error(`${k} is not in variables`);
@@ -167,21 +173,21 @@ export class Summary {
 			factor *= values.size;
 		}
 
-		this.iMap = new Array(factor);
-		for (const item of this.table) {
+		this.table = new Array(factor);
+		for (const item of this.results) {
 			const index = this.getIndex(item);
 			item[kIndex] = index;
-			this.iMap[index] = item;
+			this.table[index] = item;
 		}
-		this.table.sort((a, b) => a[kIndex] - b[kIndex]);
+		this.results.sort((a, b) => a[kIndex] - b[kIndex]);
 	}
 
-	private getIndex(properties: Record<string, string>) {
+	private getIndex(props: Record<string, string>) {
 		const { keys, factors, vars } = this;
 		let index = 0;
 		for (let i = 0; i < keys.length; i++) {
 			const k = keys[i];
-			const v = properties[k];
+			const v = props[k];
 			const s = vars.get(k);
 			if (!s) {
 				throw new Error(`${k} is not in variables`);
@@ -191,15 +197,22 @@ export class Summary {
 		return index;
 	}
 
+	private getFactor(key: string) {
+		const i = this.keys.indexOf(key);
+		if (i !== -1) {
+			return this.factors[i];
+		}
+		throw new Error(`${key} is not in variables`);
+	}
 
 	/**
 	 * Grouping results by all variables except the ignore parameter.
 	 */
 	group(ignore: string) {
-		const f = this.factors[this.keys.indexOf(ignore)];
-		return groupBy(this.table, item => {
-			return item[kIndex] - f * indexOf(this.vars.get(ignore)!, ignore, item[ignore]);
-		});
+		const values = this.vars.get(ignore)!;
+		const f = this.getFactor(ignore);
+		return groupBy(this.results, item =>
+			item[kIndex] - f * indexOf(values, ignore, item[ignore]));
 	}
 
 	/**
@@ -207,18 +220,17 @@ export class Summary {
 	 * Non-variable properties will be ignored.
 	 */
 	find(variables: Record<string, string>) {
-		return this.iMap[this.getIndex(variables)];
+		return this.table[this.getIndex(variables)];
 	}
 
 	findAll(variables: Record<string, string>, axis: string) {
 		const values = this.vars.get(axis)!;
+		const f = this.getFactor(axis);
+
 		const copy = { ...variables };
 		copy[axis] = firstItem(values)!;
-		const index = this.getIndex(copy);
-		const f = this.factors[this.keys.indexOf(axis)];
+		const base = this.getIndex(copy);
 
-		return Array.from(values, (_,i) => {
-			return this.iMap[index + f * i];
-		});
+		return Array.from(values, (_, i) => this.table[base + f * i]);
 	}
 }

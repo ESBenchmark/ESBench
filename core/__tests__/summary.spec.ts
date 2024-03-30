@@ -10,26 +10,26 @@ function expectHaveProperties(obj: any, props: any) {
 
 it("should associate notes with results", () => {
 	const summary = new Summary(data.Suite as any);
-	expect(summary.notes[0].row).toBe(summary.table[0]);
+	expect(summary.notes[0].row).toBe(summary.results[0]);
 });
 
 it("should sort results by variable keys", () => {
 	const summary = new Summary(data.Suite as any);
 	summary.sort(["size", "Name", "exists", "Builder", "Executor"]);
 
-	expectHaveProperties(summary.table[0], {
+	expectHaveProperties(summary.results[0], {
 		size: "0", Name: "object", exists: "true",
 	});
-	expectHaveProperties(summary.table[1], {
+	expectHaveProperties(summary.results[1], {
 		size: "0", Name: "object", exists: "false",
 	});
-	expectHaveProperties(summary.table[2], {
+	expectHaveProperties(summary.results[2], {
 		size: "0", Name: "map", exists: "true",
 	});
-	expectHaveProperties(summary.table[4], {
+	expectHaveProperties(summary.results[4], {
 		size: "1000", Name: "object", exists: "true",
 	});
-	expectHaveProperties(summary.table[11], {
+	expectHaveProperties(summary.results[11], {
 		size: "1000000", Name: "map", exists: "false",
 	});
 });
