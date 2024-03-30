@@ -1,4 +1,4 @@
-import { cartesianObject, MultiMap } from "@kaciras/utilities/browser";
+import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
 import { RunSuiteResult } from "./runner.js";
 import { MetricMeta, Metrics } from "./context.js";
 import { BaselineOptions } from "./suite.js";
@@ -33,7 +33,7 @@ export interface ResolvedNote {
 	row?: FlattedResult;
 }
 
-function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => string) {
+function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => any) {
 	const group = new MultiMap<string, T>();
 	for (const element of items) {
 		group.add(callbackFn(element), element);
@@ -43,6 +43,16 @@ function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => string) {
 
 // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
 const groupBy: typeof groupByPolyfill = (Map as any).groupBy ?? groupByPolyfill;
+
+function indexOf<T>(iter: Iterable<T>, k: string, v: T) {
+	let index = 0;
+	for (const x of iter) {
+		if (x === v)
+			return index;
+		index+=1;
+	}
+	throw new Error(`${k}=${v} is not in variables`);
+}
 
 export class Summary {
 
@@ -70,8 +80,9 @@ export class Summary {
 
 	baseline?: BaselineOptions;
 
-	private readonly hashTable = new Map<string, FlattedResult>();
-	private readonly keys: string[];
+	private iMap!: FlattedResult[];
+	private keys!: string[];
+	private factors!: number[];
 
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
@@ -80,7 +91,9 @@ export class Summary {
 		for (const result of suiteResult) {
 			this.addResult(result);
 		}
-		this.sort(this.keys = Array.from(this.vars.keys()));
+
+		const [name, ...rest] = Array.from(this.vars.keys());
+		this.sort([...rest, name]);
 	}
 
 	private addResult(toolchain: ToolchainResult) {
@@ -114,7 +127,6 @@ export class Summary {
 					[kMetrics]: metrics,
 				};
 				this.table.push(flatted);
-				this.hashTable.set(JSON.stringify(flatted), flatted);
 				this.addToVar("Name", name);
 			}
 		}
@@ -141,30 +153,53 @@ export class Summary {
 	}
 
 	sort(varNames: string[]) {
-		const src: Array<[string, Set<string>]> = [];
-		for (const key of varNames) {
-			const values = this.vars.get(key);
+		this.keys = varNames;
+		const factors = this.factors = new Array(varNames.length);
+
+		let factor = 1;
+		for (let i = varNames.length - 1; i >= 0; i--) {
+			const k = varNames[i];
+			const values = this.vars.get(k);
 			if (!values) {
-				throw new Error(`${key} is not in variables`);
+				throw new Error(`${k} is not in variables`);
 			}
-			src.push([key, values]);
+			factors[i] = factor;
+			factor *= values.size;
 		}
-		let index = 0;
-		for (const properties of cartesianObject(src)) {
-			const item = this.find(properties);
-			if (item) {
-				item[kIndex] = index++;
-			}
+
+		this.iMap = new Array(factor);
+		for (const item of this.table) {
+			const index = this.getIndex(item);
+			item[kIndex] = index;
+			this.iMap[index] = item;
 		}
 		this.table.sort((a, b) => a[kIndex] - b[kIndex]);
 	}
+
+	private getIndex(properties: Record<string, string>) {
+		const { keys, factors, vars } = this;
+		let index = 0;
+		for (let i = 0; i < keys.length; i++) {
+			const k = keys[i];
+			const v = properties[k];
+			const s = vars.get(k);
+			if (!s) {
+				throw new Error(`${k} is not in variables`);
+			}
+			index += factors[i] * indexOf(s, k, v);
+		}
+		return index;
+	}
+
 
 	/**
 	 * Grouping results by all variables except the ignore parameter.
 	 */
 	group(ignore: string) {
-		const keys = this.keys.filter(k => k !== ignore);
-		return groupBy(this.table, item => JSON.stringify(item, keys));
+		const f = this.factors[this.keys.indexOf(ignore)];
+		return groupBy(this.table, item => {
+			return item[kIndex] - f * indexOf(this.vars.get(ignore)!, ignore, item[ignore]);
+		});
 	}
 
 	/**
@@ -172,14 +207,18 @@ export class Summary {
 	 * Non-variable properties will be ignored.
 	 */
 	find(variables: Record<string, string>) {
-		return this.hashTable.get(JSON.stringify(variables, this.keys));
+		return this.iMap[this.getIndex(variables)];
 	}
 
 	findAll(variables: Record<string, string>, axis: string) {
+		const values = this.vars.get(axis)!;
 		const copy = { ...variables };
-		return [...this.vars.get(axis)!].map(v => {
-			copy[axis] = v;
-			return this.hashTable.get(JSON.stringify(copy, this.keys));
+		copy[axis] = firstItem(values)!;
+		const index = this.getIndex(copy);
+		const f = this.factors[this.keys.indexOf(axis)];
+
+		return Array.from(values, (_,i) => {
+			return this.iMap[index + f * i];
 		});
 	}
 }
