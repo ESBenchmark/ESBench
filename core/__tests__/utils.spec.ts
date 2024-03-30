@@ -20,7 +20,8 @@ describe("checkParams", () => {
 		[Symbol("foo"), "symbol(foo)"],
 
 		[() => {}, "Anonymous fn"],
-		[function foo() {}, "foo()"],
+		[function foo() {}, "foo"],
+		[class BarBaz {}, "BarBaz"],
 	])("should get display name of values %#", (value, expected) => {
 		expect(toDisplayName(value)).toBe(expected);
 	});

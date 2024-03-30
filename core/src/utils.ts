@@ -31,7 +31,7 @@ export function toDisplayName(v: unknown) {
 				: "symbol";
 		case "function":
 			return v.name
-				? `${ellipsis(v.name, NAME_LENGTH - 2)}()`
+				? `${ellipsis(v.name, NAME_LENGTH)}`
 				: "Anonymous fn";
 		default:
 			return ellipsis("" + v, NAME_LENGTH);
