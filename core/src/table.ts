@@ -34,6 +34,8 @@ export interface SummaryTableOptions {
 	/**
 	 * Show standard deviation (*.SD) columns in the report.
 	 *
+	 * @default true
+	 *
 	 * @example
 	 * textReporter({ stdDev: true })
 	 * | No. |         Name |          time |      time.SD |
@@ -417,7 +419,7 @@ export function createTable(
 	chalk = noColors,
 ) {
 	const {
-		stdDev = false,
+		stdDev = true,
 		percentiles = [],
 		flexUnit = false,
 		hideSingle = true,
