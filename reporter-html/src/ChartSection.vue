@@ -105,10 +105,10 @@ const chartConfig = computed(() => {
 		let pv: typeof cv = [];
 
 		if (meta.analysis && previous.meta.get(name)) {
-			pv = matches.value.map(v => getDataPoint(name, previous.find(v)));
+			pv = matches.value.map(v => getDataPoint(name, v && previous.find(v)));
 		}
 
-		const { unit, sep } = scale(meta, [...cv, ...pv]);
+		const { unit, sep } = scale(meta, [...cv, ...pv].filter(Boolean));
 
 		if (pv.length !== 0) {
 			datasets.push({
