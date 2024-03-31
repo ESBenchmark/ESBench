@@ -5,7 +5,7 @@
 		"@kaciras/eslint-config-core": "^2.6.4",
 		"@kaciras/eslint-config-typescript": "^2.6.4",
 		"@kaciras/eslint-config-vue": "^2.6.4",
-		"@types/node": "^20.11.30",
+		"@types/node": "^20.12.2",
 		"@vitest/coverage-v8": "^1.4.0",
 		"eslint": "^8.57.0",
 		"typescript": "^5.4.3",
