@@ -7,7 +7,6 @@ import { Awaitable, durationFmt, MultiMap, UniqueMultiMap } from "@kaciras/utili
 import glob from "fast-glob";
 import chalk from "chalk";
 import picomatch from "picomatch";
-import { Nameable, ToolchainOptions } from "./config.js";
 import { ClientMessage } from "../runner.js";
 import { FilterOptions } from "./host.js";
 import noBuild from "../builder/default.js";
@@ -91,6 +90,30 @@ export interface Executor {
 	execute(options: ExecuteOptions): Awaitable<unknown>;
 }
 
+/**
+ * You can assign a name for a tool (builder or executor). Each tool can only have one name.
+ *
+ * @example
+ * export default defineConfig({
+ *   toolchains: [{
+ *     builders: [
+ *       new ViteBuilder({ build: { minify: false } }),
+ *       {
+ *           name: "Vite Minified"
+ *           use: new ViteBuilder({ build: { lib: false, minify: true } }),
+ *       }
+ *     ]
+ *   }]
+ * });
+ */
+export type Nameable<T> = T | { name: string; use: T };
+
+export interface ToolChainItem {
+	include: string[];
+	builders: Array<Nameable<Builder>>;
+	executors: Array<Nameable<Executor>>;
+}
+
 export interface BuildResult {
 	name: string;
 	root: string;
@@ -119,7 +142,7 @@ export default class JobGenerator {
 		this.filter = filter;
 	}
 
-	add(toolchain: Required<ToolchainOptions>) {
+	add(toolchain: ToolChainItem) {
 		const { include, builders, executors } = toolchain;
 		const builderRE = resolveRE(this.filter.builder);
 		const executorRE = resolveRE(this.filter.executor);

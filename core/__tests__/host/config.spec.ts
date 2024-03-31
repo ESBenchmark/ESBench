@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { ESBenchConfig, normalizeConfig } from "../../src/host/index.js";
+import { ESBenchConfig, noBuild, normalizeConfig } from "../../src/host/index.js";
+import direct from "../../src/executor/direct.ts";
 
 it.each<ESBenchConfig>([
 	{ toolchains: [{ executors: [] }] },
@@ -44,4 +45,18 @@ it("should fallback to singleton builder & executor", () => {
 	const [t0, t1] = config.toolchains;
 	expect(t0.builders[0]).toBe(t1.builders[0]);
 	expect(t0.executors[0]).toBe(t1.executors[0]);
+});
+
+it("should ignore falsy values in toolchains", () => {
+	const config = normalizeConfig({
+		toolchains: [{
+			builders: [false, null, noBuild],
+			executors: [direct, undefined],
+		}],
+	});
+	expect(config.toolchains[0]).toStrictEqual({
+		builders: [noBuild],
+		executors: [direct],
+		include: ["./benchmark/**/*.[jt]s?(x)"],
+	});
 });

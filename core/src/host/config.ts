@@ -1,27 +1,11 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "../summary.js";
-import { Builder, Executor } from "./toolchain.js";
+import { Builder, Executor, Nameable, ToolChainItem } from "./toolchain.js";
 import noBuild from "../builder/default.js";
 import direct from "../executor/direct.js";
 import textReporter from "../reporter/text.js";
 
-/**
- * You can assign a name for a tool (builder or executor). Each tool can only have one name.
- *
- * @example
- * export default defineConfig({
- *   toolchains: [{
- *     builders: [
- *       new ViteBuilder({ build: { minify: false } }),
- *       {
- *           name: "Vite Minified"
- *           use: new ViteBuilder({ build: { lib: false, minify: true } }),
- *       }
- *     ]
- *   }]
- * });
- */
-export type Nameable<T> = T | { name: string; use: T };
+type ToolConfig<T> = Nameable<T> | undefined | null | false;
 
 export interface ToolchainOptions {
 	/**
@@ -32,19 +16,20 @@ export interface ToolchainOptions {
 	include?: string[];
 
 	/**
-	 * Specific a list of builder to transform source files before execution.
-	 * Each build results as a new set of benchmarks.
+	 * Specific a list of builder to transform source files before execution,
+	 * falsy values are ignored. Each build results as a new set of benchmarks.
 	 *
 	 * By default, it will perform no transform at all.
 	 */
-	builders?: Array<Nameable<Builder>>;
+	builders?: Array<ToolConfig<Builder>>;
 
 	/**
-	 * With executors, you specify JS runtimes that ESBench execute your suites.
+	 * With executors, you specify JS runtimes that ESBench execute your suites,
+	 * falsy values are ignored.
 	 *
-	 * By default, ESBench run your suites in the current process.
+	 * By default, ESBench run your suites in the current context.
 	 */
-	executors?: Array<Nameable<Executor>>;
+	executors?: Array<ToolConfig<Executor>>;
 }
 
 /**
@@ -95,7 +80,7 @@ export interface ESBenchConfig {
 export const defineConfig = identity<ESBenchConfig>;
 
 export type NormalizedConfig = Required<ESBenchConfig> & {
-	toolchains: Array<Required<ToolchainOptions>>;
+	toolchains: ToolChainItem[];
 }
 
 export function normalizeConfig(input: ESBenchConfig) {
@@ -119,6 +104,9 @@ export function normalizeConfig(input: ESBenchConfig) {
 			...toolchain,
 		};
 		config.toolchains!.push(toolchain);
+
+		toolchain.builders = toolchain.builders!.filter(Boolean);
+		toolchain.executors = toolchain.executors!.filter(Boolean);
 
 		if (toolchain.builders?.length === 0) {
 			throw new Error("No builders.");
