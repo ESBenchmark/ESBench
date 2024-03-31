@@ -8,6 +8,35 @@ function expectHaveProperties(obj: any, props: any) {
 		expect(obj).toHaveProperty(k, v);
 }
 
+it("should throw error if sort with invalid keys", () => {
+	const summary = new Summary(data.Suite as any);
+	expect(() => summary.sort(["FOO", "Name", "exists", "Builder", "Executor"]))
+		.toThrow("FOO is not in variables");
+});
+
+it("should throw error if sort keys is not all of variables", () => {
+	const summary = new Summary(data.Suite as any);
+	expect(() => summary.sort(["size", "exists"]))
+		.toThrow("Keys must be all variable names");
+});
+
+it("should throw error if group with invalid key", () => {
+	const summary = new Summary(data.Suite as any);
+	expect(() => summary.group("FOO")).toThrow("FOO is not in variables");
+});
+
+it("should throw error if find with invalid property value", () => {
+	const summary = new Summary(data.Suite as any);
+	const props = {
+		Executor: "__INVALID__",
+		Name: "map",
+		size: "1000",
+		Builder: "None",
+		exists: "false",
+	};
+	expect(() => summary.find(props)).toThrow('"Executor"="__INVALID__" is not in variables');
+});
+
 it("should associate notes with results", () => {
 	const summary = new Summary(data.Suite as any);
 	expect(summary.notes[0].row).toBe(summary.results[0]);

@@ -9,6 +9,16 @@
 import { BarController, BarElement, CategoryScale, Chart, Legend, LinearScale, Tooltip } from "chart.js";
 import { BarWithErrorBarsController } from "chartjs-chart-error-bars";
 
+const CHART_COLORS = [
+	"rgba(54, 162, 235, .5)",
+	"rgba(255, 99, 132, .5)",
+	"rgba(255, 159, 64, .5)",
+	"rgba(255, 205, 86, .5)",
+	"rgba(75, 192, 192, .5)",
+	"rgba(153, 102, 255, .5)",
+	"rgba(201, 203, 207, .5)",
+];
+
 Chart.register(BarWithErrorBarsController, BarController, Tooltip, CategoryScale, LinearScale, BarElement, Legend);
 </script>
 
@@ -34,17 +44,6 @@ interface ChartSectionProps {
 }
 
 const props = defineProps<ChartSectionProps>();
-const { getMetrics } = Summary;
-
-const CHART_COLORS = [
-	"rgba(54, 162, 235, .5)",
-	"rgba(255, 99, 132, .5)",
-	"rgba(255, 159, 64, .5)",
-	"rgba(255, 205, 86, .5)",
-	"rgba(75, 192, 192, .5)",
-	"rgba(153, 102, 255, .5)",
-	"rgba(201, 203, 207, .5)",
-];
 
 const canvasRef = shallowRef();
 
@@ -54,7 +53,7 @@ function getDataPoint(name: string, result?: FlattedResult) {
 	if (!result) {
 		return { y: 0 };
 	}
-	const value = getMetrics(result)[name];
+	const value = Summary.getMetrics(result)[name];
 	switch (typeof value) {
 		case "undefined":
 		case "string":

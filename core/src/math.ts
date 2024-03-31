@@ -83,17 +83,17 @@ function studentOneTail(t: number, df: number) {
 
 // https://www.math.ucla.edu/~tom/distributions/tDist.html
 function studentTwoTail(t: number, df: number) {
-	const A = df / 2;
-	const S = A + 0.5;
-	const Z = df / (df + t * t);
-	const BT = Math.exp(
-		logGamma(S) - logGamma(0.5) - logGamma(A)
-		+ A * Math.log(Z) + 0.5 * Math.log(1 - Z),
+	const a = df / 2;
+	const s = a + 0.5;
+	const z = df / (df + t * t);
+	const bt = Math.exp(
+		logGamma(s) - logGamma(0.5) - logGamma(a)
+		+ a * Math.log(z) + 0.5 * Math.log(1 - z),
 	);
-	if (Z < (A + 1) / (S + 2)) {
-		return BT * betinc(Z, A, 0.5);
+	if (z < (a + 1) / (s + 2)) {
+		return bt * betinc(z, a, 0.5);
 	} else {
-		return 1 - BT * betinc(1 - Z, 0.5, A);
+		return 1 - bt * betinc(1 - z, 0.5, a);
 	}
 }
 

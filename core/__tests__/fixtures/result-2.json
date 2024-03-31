@@ -27,22 +27,18 @@
 				]
 			],
 			"scenes": [
-				[
-					{
-						"name": "For-index",
-						"metrics": {
-							"time": [1,1,2,2]
-						}
-					},
-					{
-						"name": "Foo-Bar",
-						"metrics": {
-							"time": [0]
-						}
+				{
+					"For-index": {
+						"time": [1, 1, 2, 2]
 					}
-				],
-				[],
-				[]
+				},
+				{
+					"Foo-Bar": {
+						"time": [0]
+					}
+				},
+				{},
+				{}
 			]
 		}
 	]

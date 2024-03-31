@@ -23,8 +23,11 @@ export type FlattedResult = Record<string, string> & {
 	// Retrieved by `Summary.getMetrics`
 	[kMetrics]: Metrics;
 
+	// Internal use, the index in cartesian product of all variables.
+	[kIndex]: number;
+
 	// You can add custom properties with symbol keys.
-	[kCustom: symbol]: any;
+	[customKeys: symbol]: any;
 }
 
 export interface ResolvedNote {
@@ -51,7 +54,7 @@ function indexOf<T>(iter: Iterable<T>, k: string, v: T) {
 			return index;
 		index += 1;
 	}
-	throw new Error(`${k}=${v} is not in variables`);
+	throw new Error(`"${k}"="${v}" is not in variables`);
 }
 
 export class Summary {
@@ -81,11 +84,11 @@ export class Summary {
 	/**
 	 * The suite's baseline option.
 	 */
-	baseline?: BaselineOptions;
+	readonly baseline?: BaselineOptions;
 
-	private table!: FlattedResult[];
+	private table!: Array<FlattedResult | undefined>;
 	private keys!: string[];
-	private factors!: number[];
+	private factors: number[] = [];
 
 	constructor(suiteResult: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
@@ -93,6 +96,7 @@ export class Summary {
 
 		for (const result of suiteResult) {
 			this.addResult(result);
+			this.baseline = result.baseline;
 		}
 
 		const [name, ...rest] = Array.from(this.vars.keys());
@@ -103,7 +107,6 @@ export class Summary {
 		const { executor, builder, paramDef, scenes, notes } = toolchain;
 		const offset = this.results.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
-		this.baseline = toolchain.baseline;
 
 		if (executor) {
 			this.addToVar("Executor", executor);
@@ -156,16 +159,17 @@ export class Summary {
 	}
 
 	sort(keys: string[]) {
-		if (new Set(keys).size !== this.vars.size) {
+		const { results, vars, factors } = this;
+
+		if (new Set(keys).size !== vars.size) {
 			throw new Error("Keys must be all variable names");
 		}
-		const factors = this.factors = new Array(keys.length);
-		this.keys = keys;
 
+		factors.length = keys.length;
 		let factor = 1;
 		for (let i = keys.length - 1; i >= 0; i--) {
 			const k = keys[i];
-			const values = this.vars.get(k);
+			const values = vars.get(k);
 			if (!values) {
 				throw new Error(`${k} is not in variables`);
 			}
@@ -174,12 +178,18 @@ export class Summary {
 		}
 
 		this.table = new Array(factor);
-		for (const item of this.results) {
+		this.keys = keys;
+		for (const item of results) {
 			const index = this.getIndex(item);
 			item[kIndex] = index;
 			this.table[index] = item;
 		}
-		this.results.sort((a, b) => a[kIndex] - b[kIndex]);
+
+		let index = 0;
+		for (const maybeItem of this.table) {
+			if (maybeItem)
+				results[index++] = maybeItem;
+		}
 	}
 
 	private getIndex(props: Record<string, string>) {
@@ -188,10 +198,9 @@ export class Summary {
 		for (let i = 0; i < keys.length; i++) {
 			const k = keys[i];
 			const v = props[k];
-			const s = vars.get(k);
-			if (!s) {
-				throw new Error(`${k} is not in variables`);
-			}
+
+			// key existence has checked in sort()
+			const s = vars.get(k)!;
 			index += factors[i] * indexOf(s, k, v);
 		}
 		return index;
@@ -211,8 +220,7 @@ export class Summary {
 	group(ignore: string) {
 		const values = this.vars.get(ignore)!;
 		const f = this.getFactor(ignore);
-		return groupBy(this.results, item =>
-			item[kIndex] - f * indexOf(values, ignore, item[ignore]));
+		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, ignore, item[ignore]));
 	}
 
 	/**

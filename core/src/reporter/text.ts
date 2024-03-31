@@ -15,6 +15,7 @@ export interface TextReporterOptions extends SummaryTableOptions {
 
 	/**
 	 * Set to false to disable print the report to console.
+	 *
 	 * @default true
 	 */
 	console?: boolean;

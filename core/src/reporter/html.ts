@@ -21,16 +21,15 @@ export interface HtmlReporterOptions {
 }
 
 // This file is generated from packages/reporter-html.
-const dist = join(fileURLToPath(import.meta.url), "../../html/index.html");
+const dist = join(fileURLToPath(import.meta.url), "../index.html");
 
 export default function (options: HtmlReporterOptions = {}) {
 	const { file = "reports/benchmark.html", open } = options;
 	const template = readFileSync(dist, "utf8");
 
 	function interpolate(html: string, p: string, r: ESBenchResult) {
-		p = `<!--ESBench-${p}-->"`;
 		const code = JSON.stringify(r);
-		return html.replace(p, `<script>window.${p}=${code}</script>`);
+		return html.replace(`<!--ESBench-${p}-->`, `<script>window.${p}=${code}</script>`);
 	}
 
 	return async (result: ESBenchResult, prev: ESBenchResult) => {

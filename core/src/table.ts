@@ -503,6 +503,8 @@ export function createTable(
 		table.push([]); // Add an empty row between groups.
 	}
 
+	table.pop();
+
 	// 5. Generate additional properties
 	for (const note of summary.notes) {
 		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
@@ -514,6 +516,5 @@ export function createTable(
 		}
 	}
 
-	table.pop();
-	return table as TableWithNotes;
+	return table;
 }

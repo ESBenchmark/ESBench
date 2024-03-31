@@ -239,7 +239,7 @@ export default class JobGenerator {
 
 		for (const [t, n] of this.t2n) {
 			if (!(keyMethod in t)) {
-				continue; // Allow builder and executor to have the same name.
+				continue; // Allow builder to have the same name with executor.
 			}
 			if (t !== tool && n === name) {
 				throw new Error("Each tool must have a unique name: " + name);

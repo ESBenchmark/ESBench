@@ -105,8 +105,8 @@ export class Scene<P = any> {
 	 * For example:
 	 * scene.bench("name", () => asyncFn(args));
 	 *
-	 * You can fix this by adding `await` to the arrow function, but it impacts performance.
-	 * Related benchmark: example/src/async-return-promise.js
+	 * It can be fixed by adding `await` to the function, but it impacts performance.
+	 * Related benchmark: example/es/async-return-promise.js
 	 */
 	private add(name: string, fn: Workload, isAsync: boolean) {
 		if (/^\s*$/.test(name)) {

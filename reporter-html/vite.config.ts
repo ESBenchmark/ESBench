@@ -23,6 +23,6 @@ export default defineConfig(({ command }) => ({
 	build: {
 		target: "esnext",
 		emptyOutDir: false,
-		outDir: command === "build" ? "../core/html" : undefined,
+		outDir: command === "build" ? "../core/lib/reporter" : undefined,
 	},
 }));
