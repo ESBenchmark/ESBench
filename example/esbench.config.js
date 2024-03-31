@@ -1,46 +1,52 @@
 import {
 	defineConfig,
-	DirectExecutor,
+	directExecutor,
+	htmlReporter,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
 	ViteBuilder,
 	WebextExecutor,
 } from "esbench/host";
-import { chromium } from "playwright-core";
+import { chromium, firefox } from "playwright";
 
 const viteBuilder = new ViteBuilder();
+
+const browserExecutors = [
+	new PlaywrightExecutor(firefox),
+	// new PlaywrightExecutor(webkit),
+	// new PlaywrightExecutor(chromium),
+];
 
 export default defineConfig({
 	reporters: [
 		rawReporter("reports/result.json"),
-		textReporter({ stdDev: true }),
+		textReporter(),
+		htmlReporter(),
 	],
 	diff: "reports/result-1.json",
 	toolchains: [{
+		include: ["./self/*.js", "./node/*.js"],
+	}, {
 		include: ["./es/*.js"],
-		// builders: [
-		// 	viteBuilder,
-		// 	new RollupBuilder(),
-		// ],
+
+		// Build is required for browserExecutors.
+		// builders: [viteBuilder],
+
 		executors: [
-			// new PlaywrightExecutor(firefox),
-			// new PlaywrightExecutor(chromium),
-			// new PlaywrightExecutor(webkit),
+			// Measure performance of suites on browsers.
+			// ...browserExecutors,
 
-			DirectExecutor,
+			directExecutor,
 
-			// new NodeExecutor(),
-			// new ProcessExecutor("node"),
+			// More JS runtimes, you need install them manually.
 			// new ProcessExecutor("bun"),
 			// new ProcessExecutor("deno run --allow-net"),
 		],
 	}, {
-		include: ["./self/*", "./node/*"],
-	}, {
 		include: ["./web/*.js"],
 		builders: [viteBuilder],
-		executors: [new PlaywrightExecutor(chromium)],
+		executors: browserExecutors,
 	}, {
 		include: ["./webext/*.js"],
 		builders: [viteBuilder],

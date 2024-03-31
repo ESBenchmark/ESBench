@@ -1,5 +1,5 @@
 import { setPriority } from "os";
-import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
+import { defineConfig, ProcessExecutor } from "esbench/host";
 
 /*
  *
@@ -18,8 +18,8 @@ class LowPriorityExecutor extends ProcessExecutor {
 		return super.name + " (Low)";
 	}
 
-	postprocess(entry, options) {
-		super.postprocess(entry, options);
+	postprocess(options) {
+		super.postprocess(options);
 		this.process.removeAllListeners("spawn");
 		this.process.on("spawn", () => {
 			setPriority(this.process.pid, 19);
@@ -28,9 +28,8 @@ class LowPriorityExecutor extends ProcessExecutor {
 }
 
 export default defineConfig({
-	reporters: [textReporter({ stdDev: true })],
 	toolchains: [{
-		include: ["./src/*.js"],
+		include: ["./es/*.js"],
 		executors: [
 			new ProcessExecutor("node"),
 			new LowPriorityExecutor("node"),

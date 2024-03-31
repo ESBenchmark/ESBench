@@ -1,5 +1,5 @@
 import * as readline from "readline";
-import { defineConfig, ProcessExecutor, textReporter } from "esbench/host";
+import { defineConfig, ProcessExecutor } from "esbench/host";
 import CDP from "chrome-remote-interface";
 
 /*
@@ -18,14 +18,14 @@ class NodeDebugExecutor extends ProcessExecutor {
 	}
 
 	get name() {
-		return this.connect ? "node-debug-connect" : "node-debug";
+		return this.connect ? "debug-connect" : "debug";
 	}
 
-	async postprocess(entry, fail) {
+	async postprocess(options) {
 		if (this.connect) {
 			this.attachDebugger();
 		}
-		return super.postprocess(entry, fail);
+		return super.postprocess(options);
 	}
 
 	attachDebugger() {
@@ -46,9 +46,8 @@ class NodeDebugExecutor extends ProcessExecutor {
 }
 
 export default defineConfig({
-	reporters: [textReporter({ stdDev: true })],
 	toolchains: [{
-		include: ["./src/*.js"],
+		include: ["./es/*.js"],
 		executors: [
 			new ProcessExecutor("node"),
 			new NodeDebugExecutor(true),
