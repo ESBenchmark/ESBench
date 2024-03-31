@@ -76,9 +76,10 @@ Execute in iframe allow DOM operations, but the current page may be unresponsive
 </template>
 
 <script setup lang="ts">
+import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
-import * as monaco from "monaco-editor";
+import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { createTable, messageResolver, RunSuiteResult, ToolchainResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
@@ -239,17 +240,20 @@ function handleMouseMove(event: MouseEvent) {
 onUnmounted(() => editor.dispose());
 
 onMounted(() => {
-	const demoIndex = +new URLSearchParams(location.search).get("demo")!;
+	const demo = new URLSearchParams(location.search).get("demo");
+	let value = suiteTemplate;
 
-	if (demoIndex) {
-		executor.value = demos[demoIndex].category === "web"
+	if (demo) {
+		const { code, category } = demos[parseInt(demo)];
+		value = code;
+		executor.value = category === "web"
 			? executeIFrame : executeWorker;
 	}
 
 	editor = monaco.editor.create(editorEl.value!, {
+		value,
 		language: "javascript",
 		minimap: { enabled: false },
-		value: demoIndex ? demos[demoIndex].code : suiteTemplate,
 	});
 });
 </script>
