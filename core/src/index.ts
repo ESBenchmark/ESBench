@@ -1,4 +1,4 @@
-export * from "./context.js";
+export * from "./profiling.js";
 export * from "./summary.js";
 export * from "./suite.js";
 export * from "./table.js";

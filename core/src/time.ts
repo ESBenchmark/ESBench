@@ -3,7 +3,7 @@ import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns } from "./utils.js";
-import { MetricAnalysis, Metrics, Profiler, ProfilingContext } from "./context.js";
+import { MetricAnalysis, Metrics, Profiler, ProfilingContext } from "./profiling.js";
 
 interface Iterator {
 	calls: number;

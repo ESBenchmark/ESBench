@@ -1,6 +1,6 @@
 import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/browser";
 import { runFns } from "./utils.js";
-import { Profiler } from "./context.js";
+import { Profiler } from "./profiling.js";
 import { TimingOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
 

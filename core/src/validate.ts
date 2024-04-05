@@ -1,6 +1,6 @@
 import { alwaysTrue, noop } from "@kaciras/utilities/browser";
 import { BenchCase, Scene } from "./suite.js";
-import { Profiler, ProfilingContext } from "./context.js";
+import { Profiler, ProfilingContext } from "./profiling.js";
 
 type EqualityFn = (a: any, b: any) => boolean;
 

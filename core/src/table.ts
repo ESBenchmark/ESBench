@@ -10,7 +10,7 @@ import {
 } from "@kaciras/utilities/browser";
 import { markdownTable } from "markdown-table";
 import { TukeyOutlierDetector } from "./math.js";
-import { MetricAnalysis, MetricMeta, Metrics } from "./context.js";
+import { MetricAnalysis, MetricMeta, Metrics } from "./profiling.js";
 import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS } from "./utils.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";

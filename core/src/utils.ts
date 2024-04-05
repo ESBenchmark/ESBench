@@ -1,6 +1,6 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
-import { LogHandler } from "./context.js";
+import { LogHandler } from "./profiling.js";
 
 export const consoleLogHandler: LogHandler = (message = "", level) => console[level](message);
 
