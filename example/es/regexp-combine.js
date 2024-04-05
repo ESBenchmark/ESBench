@@ -1,7 +1,7 @@
 import { defineSuite } from "esbench";
 
 const patterns = [
-	"foo", "bar", "baz",
+	"foo", "bar", "baz", "esbench",
 	/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/.source,
 ];
 
@@ -11,7 +11,7 @@ const merged = new RegExp("(?:" + patterns.join("|") + ")");
 const text = "Search numbers from the text and insert thousands 1234.5678 separators to them.";
 
 export default defineSuite({
-	name: "Combine regexp vs Test each",
+	name: "Combined regexp vs Test each",
 	validate: {
 		check: value => value === true,
 	},
