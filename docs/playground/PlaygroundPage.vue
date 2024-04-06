@@ -49,9 +49,9 @@
 				Run
 			</button>
 
+			<TableDropdown :class='$style.right' v-model='tableOptions'/>
 			<button
 				:class='$style.toolButton'
-				data-right
 				type='button'
 				@click='showChart=true'
 			>
@@ -81,13 +81,14 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
-import { createTable, messageResolver, RunSuiteResult, ToolchainResult } from "esbench";
+import { createTable, messageResolver, RunSuiteResult, SummaryTableOptions, ToolchainResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
 import demos from "./demo-suites.ts";
 import { executeIFrame, executeWorker } from "./executor.ts";
 import ReportView from "./ReportView.vue";
+import TableDropdown from "./TableDropdown.vue";
 
 window.MonacoEnvironment = {
 	getWorker(_: any, label: string) {
@@ -109,6 +110,13 @@ const editorEl = shallowRef<HTMLElement>();
 const consoleEl = shallowRef<HTMLElement>();
 
 const editorWidth = useLocalStorage("EW", "50%");
+const tableOptions = useLocalStorage<SummaryTableOptions>("TableOptions", {
+	flexUnit: false,
+	stdDev: true,
+	outliers: "all",
+	percentiles: [],
+	ratioStyle: "percentage",
+});
 const executor = shallowRef(executeWorker);
 const running = shallowRef(false);
 const showChart = shallowRef(false);
@@ -202,8 +210,7 @@ async function startBenchmark() {
 }
 
 function printTable(result: ToolchainResult[]) {
-	const options = { stdDev: true };
-	const table = createTable(result, undefined, options);
+	const table = createTable(result, undefined, tableOptions.value);
 
 	appendLog();
 	appendLog(table.toMarkdownTable());
@@ -293,6 +300,10 @@ onMounted(() => {
 	box-shadow: 0 0 4px #aaa;
 }
 
+.right {
+	margin-left: auto;
+}
+
 .toolButton {
 	display: inline-flex;
 	gap: 5px;
@@ -304,10 +315,6 @@ onMounted(() => {
 	color: white;
 	background: #0f4a85;
 	transition: .15s;
-
-	&[data-right] {
-		margin-left: auto;
-	}
 
 	&:where(:hover, :focus-visible) {
 		filter: brightness(1.1);
