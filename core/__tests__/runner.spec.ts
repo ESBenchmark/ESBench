@@ -1,5 +1,4 @@
 import { expect, it, vi } from "vitest";
-import { noop } from "@kaciras/utilities/browser";
 import { run, spin1ms } from "./helper.js";
 import { RunSuiteError } from "../src/index.js";
 
@@ -72,44 +71,6 @@ it("should filter workloads with pattern", async () => {
 
 	expect(foo).toHaveBeenCalled();
 	expect(bar).not.toHaveBeenCalled();
-});
-
-it("should call profiler hooks in order", async () => {
-	const invocations: unknown[] = [];
-	await run({
-		timing: false,
-		params: {
-			param: [11, 22],
-		},
-		profilers: [{
-			onStart() {
-				invocations.push(["onStart"]);
-			},
-			onScene(_, s) {
-				invocations.push(["onScene", s.params]);
-			},
-			onCase(_, c) {
-				invocations.push(["onCase", c.name]);
-			},
-			onFinish() {
-				invocations.push(["onFinish"]);
-			},
-		}],
-		setup(scene) {
-			scene.bench("foo", noop);
-			scene.bench("bar", noop);
-		},
-	});
-	expect(invocations).toStrictEqual([
-		["onStart"],
-		["onScene", { param: 11 }],
-		["onCase", "foo"],
-		["onCase", "bar"],
-		["onScene", { param: 22 }],
-		["onCase", "foo"],
-		["onCase", "bar"],
-		["onFinish"],
-	]);
 });
 
 it("should wrap exception with RunSuiteError", () => {

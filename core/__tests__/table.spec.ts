@@ -21,7 +21,9 @@ it("should works", () => {
 			foo: { time: [0, 1, 1, 1] },
 			bar: { time: [1, 2, 2, 2] },
 		}],
-	}]);
+	}], undefined, {
+		stdDev: false,
+	});
 	expect(Array.from(table)).toStrictEqual([
 		["No.", "Name", "time"],
 		["0", "foo", "750.00 us"],
@@ -38,6 +40,7 @@ it("should allow a column has different units", () => {
 			bar: { time: [1, 2, 2, 2] },
 		}],
 	}], undefined, {
+		stdDev: false,
 		flexUnit: true,
 	});
 	expect(Array.from(table)).toStrictEqual([
@@ -71,6 +74,7 @@ it("should support custom metrics", () => {
 			},
 		}],
 	}], undefined, {
+		stdDev: false,
 		percentiles: [50],
 	});
 	expect(Array.from(table)).toStrictEqual([
@@ -91,7 +95,6 @@ it("should allow optional metrics value", () => {
 			bar: { time: [1, 2, 2, 2] },
 		}],
 	}], undefined, {
-		stdDev: true,
 		percentiles: [75],
 	});
 	expect(Array.from(table)).toStrictEqual([
@@ -118,6 +121,7 @@ it.each([
 			C: { time: [1] },
 		}],
 	}], undefined, {
+		stdDev: false,
 		ratioStyle: style as any,
 	});
 	expect(table[1][3]).toBe(values[0]);
