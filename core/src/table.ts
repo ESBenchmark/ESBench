@@ -69,9 +69,9 @@ export interface SummaryTableOptions {
 	/**
 	 * Specifies which outliers should be removed from the distribution.
 	 *
-	 * @default "remove-all"
+	 * @default "all"
 	 */
-	outliers?: false | "remove-worse" | "remove-better" | "remove-all";
+	outliers?: false | "worse" | "better" | "all";
 
 	/**
 	 * Using ratioStyle, we can override the style of the diff and the baseline column.
@@ -326,7 +326,7 @@ interface TableWithNotes extends Array<string[]> {
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
-	const { outliers = "remove-all" } = options;
+	const { outliers = "all" } = options;
 
 	for (const item of summary.results) {
 		const rawMetrics = Summary.getMetrics(item);
@@ -349,9 +349,9 @@ function preprocess(summary: Summary, options: SummaryTableOptions) {
 function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, meta: MetricMeta) {
 	const before = row[kProcessedMetrics][meta.key];
 
-	const mode = outliers === "remove-all"
+	const mode = outliers === "all"
 		? "all"
-		: (outliers === "remove-better") === meta.lowerIsBetter
+		: (outliers === "better") === meta.lowerIsBetter
 			? "lower" : "upper";
 
 	const after = new TukeyOutlierDetector(before).filter(before, mode);
