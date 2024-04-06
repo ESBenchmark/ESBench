@@ -1,10 +1,4 @@
-import type { EnhanceAppContext } from "vitepress/client";
-import Layout from "./Layout.vue";
+import DefaultTheme from "vitepress/theme";
 import "./styles.css";
 
-export default {
-	Layout,
-	enhanceApp({ app, router, siteData }: EnhanceAppContext) {
-		// ...
-	}
-}
+export default DefaultTheme;
