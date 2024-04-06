@@ -75,20 +75,9 @@ Execute in iframe allow DOM operations, but the current page may be unresponsive
 	</main>
 </template>
 
-<script setup lang="ts">
-import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
+<script lang="ts">
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
-import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
-import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
-import { createTable, messageResolver, RunSuiteResult, SummaryTableOptions, ToolchainResult } from "esbench";
-import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
-import { useLocalStorage } from "@vueuse/core";
-import suiteTemplate from "./template.js?raw";
-import demos from "./demo-suites.ts";
-import { executeIFrame, executeWorker } from "./executor.ts";
-import ReportView from "./ReportView.vue";
-import TableDropdown from "./TableDropdown.vue";
 
 window.MonacoEnvironment = {
 	getWorker(_: any, label: string) {
@@ -99,30 +88,6 @@ window.MonacoEnvironment = {
 		return new editorWorker();
 	},
 };
-
-export interface BenchmarkHistory {
-	name: string;
-	time: Date;
-	result: RunSuiteResult[];
-}
-
-const editorEl = shallowRef<HTMLElement>();
-const consoleEl = shallowRef<HTMLElement>();
-
-const editorWidth = useLocalStorage("EW", "50%");
-const tableOptions = useLocalStorage<SummaryTableOptions>("TableOptions", {
-	flexUnit: false,
-	stdDev: true,
-	outliers: "all",
-	percentiles: [],
-	ratioStyle: "percentage",
-});
-const executor = shallowRef(executeWorker);
-const running = shallowRef(false);
-const showChart = shallowRef(false);
-const results = shallowReactive<BenchmarkHistory[]>([]);
-
-let editor: monaco.editor.IStandaloneCodeEditor;
 
 // IDEA Darcula theme
 const logColors: Record<string, string> = {
@@ -155,6 +120,44 @@ const logChalk = new Proxy<any>(logColors, {
 		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
 	},
 });
+</script>
+
+<script setup lang="ts">
+import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
+import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
+import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
+import { createTable, messageResolver, RunSuiteResult, SummaryTableOptions, ToolchainResult } from "esbench";
+import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
+import { useLocalStorage } from "@vueuse/core";
+import suiteTemplate from "./template.js?raw";
+import demos from "./demo-suites.ts";
+import ReportView from "./ReportView.vue";
+import TableDropdown from "./TableDropdown.vue";
+import { executeIFrame, executeWorker } from "./executor.ts";
+
+export interface BenchmarkHistory {
+	name: string;
+	time: Date;
+	result: RunSuiteResult[];
+}
+
+const editorEl = shallowRef<HTMLElement>();
+const consoleEl = shallowRef<HTMLElement>();
+
+const editorWidth = useLocalStorage("EW", "50%");
+const tableOptions = useLocalStorage<SummaryTableOptions>("TableOptions", {
+	flexUnit: false,
+	stdDev: true,
+	outliers: "all",
+	percentiles: [],
+	ratioStyle: "percentage",
+});
+const executor = shallowRef(executeWorker);
+const running = shallowRef(false);
+const showChart = shallowRef(false);
+const results = shallowReactive<BenchmarkHistory[]>([]);
+
+let editor: monaco.editor.IStandaloneCodeEditor;
 
 function appendLog(message = "", level = "info") {
 	const el = consoleEl.value!;
