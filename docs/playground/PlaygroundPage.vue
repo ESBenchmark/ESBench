@@ -126,6 +126,7 @@ const logChalk = new Proxy<any>(logColors, {
 import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
+import { useData } from "vitepress";
 import { createTable, messageResolver, RunSuiteResult, SummaryTableOptions, ToolchainResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
@@ -143,6 +144,7 @@ export interface BenchmarkHistory {
 
 const editorEl = shallowRef<HTMLElement>();
 const consoleEl = shallowRef<HTMLElement>();
+const vpData = useData();
 
 const editorWidth = useLocalStorage("EW", "50%");
 const tableOptions = useLocalStorage<SummaryTableOptions>("TableOptions", {
@@ -263,7 +265,9 @@ onMounted(() => {
 	editor = monaco.editor.create(editorEl.value!, {
 		value,
 		language: "javascript",
+		scrollbar: { useShadows: false },
 		minimap: { enabled: false },
+		theme: vpData.isDark.value ? "vs-dark" : "vs",
 	});
 });
 </script>
@@ -300,7 +304,7 @@ onMounted(() => {
 	padding: 0 10px;
 
 	z-index: 9;
-	box-shadow: 0 0 4px #aaa;
+	border-bottom: solid 1px var(--vp-c-gutter);
 }
 
 .right {

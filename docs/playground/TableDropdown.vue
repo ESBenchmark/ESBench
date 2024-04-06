@@ -91,7 +91,8 @@ function togglePercentile(event: InputEvent) {
 	border-radius: 4px;
 
 	z-index: 1;
-	background: white;
+	color: var(--vp-c-text-1);
+	background: var(--vp-c-bg-elv);;
 	border: 1px solid var(--vp-c-divider);
 	box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
 }
