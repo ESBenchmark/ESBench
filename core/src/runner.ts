@@ -183,7 +183,7 @@ export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 
-export async function connect(
+export async function runAndSend(
 	postMessage: Channel,
 	importer: Importer,
 	files: string[],

@@ -15,7 +15,7 @@ it("should transfer log messages", async () => {
 	expect(calls[1][0]).toStrictEqual(executorFixtures.empty);
 });
 
-it("should forward errors from connect()", async () => {
+it("should forward errors from runAndSend()", async () => {
 	const executor = new ProcessExecutor("node");
 	const promise = testExecute(executor, {
 		files: ["./foo.js"],
@@ -24,7 +24,7 @@ it("should forward errors from connect()", async () => {
 	await expect(promise).rejects.toThrow(executorFixtures.error);
 });
 
-it("should throw error if exception occurred outside connect()", () => {
+it("should throw error if exception occurred outside runAndSend()", () => {
 	const executor = new ProcessExecutor("node");
 	const promise = testExecute(executor, {
 		files: ["./foo.js"],

@@ -4,11 +4,11 @@ import { Profiler } from "./profiling.js";
 import { TimingOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
 
-type Empty = Record<string, never>;
-
 export type HookFn = () => Awaitable<unknown>;
 
-export type Workload = () => unknown;
+type Empty = Record<string, never>;
+
+type Workload = () => unknown;
 
 export class BenchCase {
 

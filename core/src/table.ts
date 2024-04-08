@@ -71,7 +71,7 @@ export interface SummaryTableOptions {
 	 *
 	 * @default "all"
 	 */
-	outliers?: false | "worse" | "better" | "all";
+	outliers?: false | "worst" | "best" | "all";
 
 	/**
 	 * Using ratioStyle, we can override the style of the diff and the baseline column.
@@ -318,11 +318,16 @@ class DifferenceColumn implements ColumnFactory {
 	}
 }
 
-interface TableWithNotes extends Array<string[]> {
+export interface SummaryTable extends Array<string[]> {
 	hints: string[];
 	warnings: string[];
 
-	toMarkdownTable(stringLength?: (s: string) => number): string;
+	/**
+	 * Render this table to the source code of a Markdown table.
+	 *
+	 * @param stringLength Function to detect the length of cell content.
+	 */
+	toMarkdown(stringLength?: (s: string) => number): string;
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
@@ -351,7 +356,7 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 
 	const mode = outliers === "all"
 		? "all"
-		: (outliers === "better") === meta.lowerIsBetter
+		: (outliers === "best") === meta.lowerIsBetter
 			? "lower" : "upper";
 
 	const after = new TukeyOutlierDetector(before).filter(before, mode);
@@ -408,7 +413,7 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
-function toMarkdownTable(this: TableWithNotes, stringLength?: any) {
+function toMarkdown(this: SummaryTable, stringLength?: any) {
 	return markdownTable(this, { stringLength, align: "r" });
 }
 
@@ -465,10 +470,10 @@ export function createTable(
 
 	// 3. Build the header
 	const header = columnDefs.map(c => c.name);
-	const table = [header] as TableWithNotes;
+	const table = [header] as SummaryTable;
 	table.hints = [];
 	table.warnings = [];
-	table.toMarkdownTable = toMarkdownTable;
+	table.toMarkdown = toMarkdown;
 
 	// 4. Fill the body
 	const groups = baseline

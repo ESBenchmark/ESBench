@@ -3,12 +3,12 @@ import { join, relative } from "path";
 import { Builder } from "../host/toolchain.js";
 
 const template = `\
-import { connect } from "esbench";
+import { runAndSend } from "esbench";
 
 const doImport = file => import("__ROOT__" + file.slice(1));
 
 export default function (channel, files, name) {
-	return connect(channel, doImport, files, name);
+	return runAndSend(channel, doImport, files, name);
 }`;
 
 export default <Builder>{

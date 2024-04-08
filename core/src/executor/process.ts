@@ -13,7 +13,7 @@ import { ExecuteOptions, Executor } from "../host/toolchain.js";
 type GetCommand = (file: string) => string;
 
 const template = `\
-import connect from "./__ENTRY__";
+import runAndSend from "./__ENTRY__";
 
 function postMessage(message) {
     return fetch(__ADDRESS__, {
@@ -22,7 +22,7 @@ function postMessage(message) {
     });
 }
 
-connect(postMessage, __FILES__, __PATTERN__);`;
+runAndSend(postMessage, __FILES__, __PATTERN__);`;
 
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.

@@ -38,7 +38,7 @@ async function print(
 		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);
 		out.write("\n");
-		out.write(table.toMarkdownTable(stringLength));
+		out.write(table.toMarkdown(stringLength));
 		out.write("\n");
 
 		if (table.hints.length > 0) {

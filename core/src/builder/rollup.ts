@@ -5,7 +5,7 @@ import { Builder } from "../host/toolchain.js";
 const entryId = "./index.js";
 
 const template = `\
-import { connect } from "esbench";
+import { runAndSend } from "esbench";
 
 const suites = {__IMPORTS__\n};
 
@@ -14,7 +14,7 @@ function doImport(file) {
 }
 
 export default function (channel, files, name) {
-	return connect(channel, doImport, files, name);
+	return runAndSend(channel, doImport, files, name);
 }`;
 
 function createEntry(files: string[]) {
