@@ -3,7 +3,7 @@ import esbenchClient from "esbench?url"; // Special handing in docs/esbench-runt
 const esbenchURL = new URL(esbenchClient, location.href).toString();
 
 const template = `\
-import { connect } from "esbench";
+import { runAndSend } from "esbench";
 
 const host = globalThis.parent ?? self;
 
@@ -14,7 +14,7 @@ const post = message => {
 
 const doImport = file => import(file);
 
-connect(post, doImport, ["__FILE__"])`;
+runAndSend(post, doImport, ["__FILE__"])`;
 
 function createSandbox(module: string) {
 	const importMap = JSON.stringify({

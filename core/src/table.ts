@@ -417,7 +417,7 @@ function toMarkdown(this: SummaryTable, stringLength?: any) {
 	return markdownTable(this, { stringLength, align: "r" });
 }
 
-export function createTable(
+export function buildSummaryTable(
 	result: ToolchainResult[],
 	diff?: ToolchainResult[],
 	options: SummaryTableOptions = {},
@@ -468,9 +468,8 @@ export function createTable(
 	preprocess(summary, options);
 	preprocess(prev, options);
 
-	// 3. Build the header
-	const header = columnDefs.map(c => c.name);
-	const table = [header] as SummaryTable;
+	// 3. Create the table
+	const table = [columnDefs.map(c => c.name)] as SummaryTable;
 	table.hints = [];
 	table.warnings = [];
 	table.toMarkdown = toMarkdown;

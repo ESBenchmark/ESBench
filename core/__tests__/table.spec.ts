@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createTable, MetricAnalysis, MetricMeta } from "../src/index.js";
+import { buildSummaryTable, MetricAnalysis, MetricMeta } from "../src/index.js";
 
 const time: MetricMeta = {
 	key: "time",
@@ -15,7 +15,7 @@ const defaultResult = {
 };
 
 it("should works", () => {
-	const table = createTable([{
+	const table = buildSummaryTable([{
 		...defaultResult,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
@@ -33,7 +33,7 @@ it("should works", () => {
 });
 
 it("should allow a column has different units", () => {
-	const table = createTable([{
+	const table = buildSummaryTable([{
 		...defaultResult,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
@@ -51,7 +51,7 @@ it("should allow a column has different units", () => {
 });
 
 it("should support custom metrics", () => {
-	const table = createTable([{
+	const table = buildSummaryTable([{
 		...defaultResult,
 		meta: {
 			foo: {
@@ -84,7 +84,7 @@ it("should support custom metrics", () => {
 });
 
 it("should allow optional metrics value", () => {
-	const table = createTable([{
+	const table = buildSummaryTable([{
 		...defaultResult,
 		baseline: {
 			type: "Name",
@@ -109,7 +109,7 @@ it.each([
 	["value", ["1.00x", "2.00x", "0.25x"]],
 	["trend", ["100.00%", "200.00%", "25.00%"]],
 ])("should apply ratio style: %s", (style, values) => {
-	const table = createTable([{
+	const table = buildSummaryTable([{
 		...defaultResult,
 		baseline: {
 			type: "Name",
