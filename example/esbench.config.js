@@ -8,14 +8,14 @@ import {
 	ViteBuilder,
 	WebextExecutor,
 } from "esbench/host";
-import { chromium, firefox } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 
 const viteBuilder = new ViteBuilder();
 
 const browserExecutors = [
 	new PlaywrightExecutor(firefox),
-	// new PlaywrightExecutor(webkit),
-	// new PlaywrightExecutor(chromium),
+	new PlaywrightExecutor(webkit),
+	new PlaywrightExecutor(chromium),
 ];
 
 export default defineConfig({
@@ -24,7 +24,7 @@ export default defineConfig({
 		textReporter(),
 		htmlReporter(),
 	],
-	diff: "reports/result-1.json",
+	diff: "reports/result.json",
 	toolchains: [{
 		include: ["./self/*.js", "./node/*.js"],
 	}, {
