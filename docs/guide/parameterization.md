@@ -2,7 +2,7 @@
 
 Understanding how code performs under different inputs is a common requirement. ESBench has built-in support for this.
 
-You can provide 
+Through the `params` property, you can specify parameters with their set of values. As a result, you will get results for each combination of params values. 
 
 ```javascript
 export default defineSuite({
@@ -29,8 +29,10 @@ export default defineSuite({
 });
 ```
 
+Output:
+
 ```text
-| No. |   Name |    size | exists |      time |  stdDev |
+| No. |   Name |    size | exists |      time | time.SD |
 | --: | -----: | ------: | -----: | --------: | ------: |
 |   0 | object |       0 |   true |  78.42 ns | 0.28 ns |
 |   1 |    map |       0 |   true |  62.14 ns | 2.39 ns |
@@ -52,11 +54,10 @@ export default defineSuite({
 
 # Avoiding Conflicts
 
-For better representation, ESBench stores your parameter as a short string in the result and checks for duplicates. If two values in a parameter have same 
-
-
+For better reading, ESBench stores your parameter as a short string in the result and checks for duplicates. ESBench does not allow two values in a parameter to have same short representation.
 
 ```javascript
+// Run this suite will throw an error.
 export default defineSuite({
 	params: {
 		// Both represent as "[object Object]"
