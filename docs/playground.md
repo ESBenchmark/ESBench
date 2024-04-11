@@ -3,9 +3,12 @@ layout: false
 title: Playground
 ---
 
-<PlaygroundWithLoader/>
+<ClientOnly>
+    <PlaygroundWithLoader/>
+</ClientOnly>
 
-<script>import {defineAsyncComponent} from "vue";
+<script>
+import { defineAsyncComponent } from "vue";
 import LoadingFrame from "./playground/LoadingFrame.vue";
 
 const asyncComponent = defineAsyncComponent({
