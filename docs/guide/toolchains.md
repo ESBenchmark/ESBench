@@ -2,7 +2,7 @@
 
 ESBench is a cross runtime benchmark tool, which means you can run your suite on different runtime.
 
----
+## Run In Browsers
 
 Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
 
@@ -77,7 +77,7 @@ The results reveal the performance differences between browsers:
 |   8 | Array.reduce | chromium |   351.31 ns |  0.85 ns |
 ```
 
-# Builtin Tools
+## Builtin Tools
 
 ESBench provide some builders and executors out of box.
 
@@ -95,6 +95,6 @@ Executor:
 * `PlaywrightExecutor` Run suites in the browser.
 * `WebextExecutor` Run suites in the browser with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access. Currently only support Chromium.
 
-# Tool Names
+## Tool Names
 
 Each tool must have a unique name (a builder and an executor can have the same name).

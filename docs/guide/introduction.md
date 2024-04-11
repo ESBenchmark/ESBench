@@ -1,12 +1,24 @@
 # Introduction
 
-# Installation
+## Installation
 
-```shell
+::: code-group
+```bash [npm]
+npm install -D esbench
+```
+```bash [yarn]
+yarn add -D esbench
+```
+```bash [pnpm]
 pnpm add -D esbench
 ```
+:::
 
-# Writing Benchmarks
+:::tip
+ESBench requires Node >=v18.0.0
+:::
+
+## Writing Benchmarks
 
 As an example, we will write a simple benchmark suite that compare sum of numbers using for-loop and `Array.reduce`.
 

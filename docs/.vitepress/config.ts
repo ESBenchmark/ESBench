@@ -45,11 +45,17 @@ export default defineConfig({
 					{ text: "Parameterization", link: "/guide/parameterization" },
 					{ text: "Setup And Cleanup", link: "/guide/setup-cleanup" },
 					{ text: "CLI", link: "/guide/cli" },
-					{ text: "Toolchain", link: "/guide/toolchain" },
+					{ text: "Toolchains", link: "/guide/toolchains" },
 					{ text: "Baselines", link: "/guide/baselines" },
 					{ text: "Reporters", link: "/guide/reporters" },
 					{ text: "Validation", link: "/guide/validation" },
 					{ text: "IDE Integration", link: "/guide/ide-integration" },
+				],
+			},
+			{
+				text: "API",
+				items: [
+					{ text: "Runner", link: "/guide/runner-api" },
 				],
 			},
 		],

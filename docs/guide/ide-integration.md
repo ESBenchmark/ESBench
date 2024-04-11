@@ -1,3 +1,5 @@
-# WebStorm
+# IDE Integration
 
-# VSCode
+## WebStorm
+
+## VSCode

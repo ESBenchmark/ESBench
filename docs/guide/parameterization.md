@@ -48,11 +48,11 @@ Output:
 |  11 |    map | 1000000 |  false | 184.70 ns | 4.93 ns |
 ```
 
-# Builtin Parameters
+## Variables
 
 
 
-# Avoiding Conflicts
+## Avoiding Conflicts
 
 For better reading, ESBench stores your parameter as a short string in the result and checks for duplicates. ESBench does not allow two values in a parameter to have same short representation.
 
