@@ -47,14 +47,14 @@ function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => any) {
 // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
 const groupBy: typeof groupByPolyfill = (Map as any).groupBy ?? groupByPolyfill;
 
-function indexOf<T>(iter: Iterable<T>, k: string, v: T) {
-	let index = 0;
+function indexOf<T>(iter: Iterable<T>, v: T) {
+	let i = 0;
 	for (const x of iter) {
 		if (x === v)
-			return index;
-		index += 1;
+			return i;
+		i += 1;
 	}
-	throw new Error(`"${k}"="${v}" is not in variables`);
+	return -1;
 }
 
 export class Summary {
@@ -194,16 +194,20 @@ export class Summary {
 
 	private getIndex(props: Record<string, string>) {
 		const { keys, factors, vars } = this;
-		let index = 0;
+		let cpIndex = 0;
+
 		for (let i = 0; i < keys.length; i++) {
 			const k = keys[i];
 			const v = props[k];
 
-			// key existence has checked in sort()
-			const s = vars.get(k)!;
-			index += factors[i] * indexOf(s, k, v);
+			const s = vars.get(k) ?? [];
+			const varIndex = indexOf(s, v);
+			if (varIndex === -1) {
+				return NaN;
+			}
+			cpIndex += factors[i] * varIndex;
 		}
-		return index;
+		return cpIndex;
 	}
 
 	private getFactor(key: string) {
@@ -220,23 +224,27 @@ export class Summary {
 	group(ignore: string) {
 		const values = this.vars.get(ignore)!;
 		const f = this.getFactor(ignore);
-		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, ignore, item[ignore]));
+		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, item[ignore]));
 	}
 
 	/**
-	 * Find the result that contains exactly the variables,
-	 * Non-variable properties will be ignored.
+	 * Find the result that contains exactly the variables, non-variable properties are ignored.
+	 *
+	 * @return Corresponding result, or `undefined` if it does not exist.
 	 */
 	find(variables: Record<string, string>) {
 		return this.table[this.getIndex(variables)];
 	}
 
-	findAll(variables: Record<string, string>, axis: string) {
-		const values = this.vars.get(axis)!;
-		const f = this.getFactor(axis);
+	findAll(constant: Record<string, string>, variable: string) {
+		const values = this.vars.get(variable);
+		if (!values) {
+			throw new Error(`${variable} is not in variables`);
+		}
+		const f = this.getFactor(variable);
 
-		const copy = { ...variables };
-		copy[axis] = firstItem(values)!;
+		const copy = { ...constant };
+		copy[variable] = firstItem(values)!;
 		const base = this.getIndex(copy);
 
 		return Array.from(values, (_, i) => this.table[base + f * i]);
