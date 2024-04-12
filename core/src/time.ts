@@ -15,7 +15,10 @@ const asyncNoop = async () => {};
 const MIN_ITERATIONS = 4;
 
 export function unroll(factor: number, isAsync: boolean) {
-	const call = isAsync ? "await f()" : "f()";
+	const [call, FunctionType] = isAsync
+		? ["await f()", AsyncFunction]
+		: ["f()", Function];
+
 	const body = `\
 		const start = performance.now();
 		while (count--) {
@@ -23,7 +26,7 @@ export function unroll(factor: number, isAsync: boolean) {
 		}
 		return performance.now() - start;
 	`;
-	return new AsyncFunction("f", "count", body);
+	return new FunctionType("f", "count", body);
 }
 
 /*
