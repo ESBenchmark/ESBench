@@ -68,7 +68,7 @@
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
 
 		<pre ref='consoleEl' :class='$style.console'>
-Execute in iframe allow DOM operations, but the current page may be unresponsive until it finishes.
+Execute in iframe allow DOM operations, but the page may be unresponsive until it finishes.
 		</pre>
 
 		<ReportView v-model='showChart' :summaries='results'/>
@@ -127,7 +127,7 @@ import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { useData } from "vitepress";
-import { createTable, messageResolver, RunSuiteResult, SummaryTableOptions, ToolchainResult } from "esbench";
+import { buildSummaryTable, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
@@ -214,11 +214,11 @@ async function startBenchmark() {
 	appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
 }
 
-function printTable(result: ToolchainResult[]) {
-	const table = createTable(result, undefined, tableOptions.value);
+function printTable(result: RunSuiteResult[]) {
+	const table = buildSummaryTable(result, undefined, tableOptions.value);
 
 	appendLog();
-	appendLog(table.toMarkdownTable());
+	appendLog(table.toMarkdown());
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");

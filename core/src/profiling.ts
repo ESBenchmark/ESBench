@@ -120,7 +120,7 @@ export class ProfilingContext {
 
 	get sceneCount() {
 		const lists: unknown[][] = Object.values(this.suite.params ?? {});
-		return lists.length === 0 ? 1 : lists.reduce((s, v) => s + v.length, 0);
+		return lists.length === 0 ? 1 : lists.reduce((s, v) => s * v.length, 1);
 	}
 
 	defineMetric(description: MetricMeta) {

@@ -55,7 +55,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const jobs = Array.from(generator.getJobs());
 
 	if (jobs.length === 0) {
-		return console.warn("\nNo suite to run, check your CLI parameters.");
+		return console.warn("\nNo files match the includes, please check your configuration.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	console.log(`\n${count} jobs for ${jobs.length} executors.`);
