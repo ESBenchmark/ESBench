@@ -219,12 +219,12 @@ export class Summary {
 	}
 
 	/**
-	 * Grouping results by all variables except the ignore parameter.
+	 * Grouping results by all variables except the key parameter.
 	 */
-	group(ignore: string) {
-		const values = this.vars.get(ignore)!;
-		const f = this.getFactor(ignore);
-		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, item[ignore]));
+	split(key: string) {
+		const values = this.vars.get(key)!;
+		const f = this.getFactor(key);
+		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, item[key]));
 	}
 
 	/**

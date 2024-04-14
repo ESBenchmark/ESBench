@@ -124,7 +124,7 @@ class V1_JSON_Hash {
 		this.table.sort((a, b) => a[kIndex] - b[kIndex]);
 	}
 
-	group(ignore) {
+	split(ignore) {
 		const keys = this.keys.filter(k => k !== ignore);
 		return groupBy(this.table, item => JSON.stringify(item, keys));
 	}
@@ -161,7 +161,7 @@ export default defineSuite({
 		}
 
 		scene.bench("sort", () => summary.sort(reverse));
-		scene.bench("group", () => summary.group("n"));
+		scene.bench("split", () => summary.split("n"));
 		scene.bench("find", () => summary.find(variables));
 		scene.bench("findAll", () => summary.findAll(variables, "n"));
 	},

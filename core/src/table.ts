@@ -476,7 +476,7 @@ export function buildSummaryTable(
 
 	// 4. Fill the body
 	const groups = baseline
-		? summary.group(baseline.type).values()
+		? summary.split(baseline.type).values()
 		: [summary.results];
 
 	for (const group of groups) {
