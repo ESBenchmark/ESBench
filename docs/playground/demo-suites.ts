@@ -1,6 +1,6 @@
 import a from "../../example/es/array-set-includes.js";
 import b from "../../example/es/array-fill-with-length.js";
-import c from "../../example/es/loop-reduce.js";
+import c from "../../example/es/array-sum.js";
 import db64 from "../../example/es/decode-base64.js";
 import as from "../../example/es/array-sort.js";
 import dc from "../../example/es/deep-clone.js";

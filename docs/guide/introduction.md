@@ -20,10 +20,10 @@ ESBench requires Node >=v18.0.0
 
 ## Writing Benchmarks
 
-As an example, we will write a simple benchmark suite that compare sum of numbers using for-loop and `Array.reduce`.
+For example, we will write a simple benchmark suite that compares the time it takes to calculate the sum of numbers using for-loop and `Array.reduce`.
 
 ```javascript
-// benchmark/example.js
+// benchmark/array-sum.js
 import { defineSuite } from "esbench";
 
 export default defineSuite({
@@ -51,7 +51,7 @@ export default defineSuite({
 });
 ```
 
-By default, ESBench treat JS and TS files in the `<cwd>/benchmark` folder as benchmark suites, this behavior can be changed by the config file.
+By default, files match the [micromatch](https://github.com/micromatch/micromatch) pattern `benchmark/**/*.[jt]s?(x)` in CWD are treated as benchmark suites, this behavior can be changed by the [config file](./config).
 
 Next, in order to execute the benchmark, add the following section to your `package.json`:
 
@@ -63,13 +63,18 @@ Next, in order to execute the benchmark, add the following section to your `pack
 }
 ```
 
-Finally, run `pnpm run benchmark`, and ESBench will print this message:
+Finally, run `pnpm run benchmark` to execute the suite.
+
+The run will take a while for accurate measurements, during which a lot of logs will be printed. After finishing it will output:
 
 ```text
 Suite: Sum using for-loop vs Array.reduce
 | No. |         Name |      time | time.SD |
 | --: | -----------: | --------: | ------: |
-|   0 |    For-index | 747.78 ns | 0.12 ns |
-|   1 |       For-of | 749.24 ns | 0.13 ns |
-|   2 | Array.reduce | 500.02 ns | 0.02 ns |
+|   0 |    For-index | 502.34 ns | 0.88 ns |
+|   1 |       For-of | 751.25 ns | 0.84 ns |
+|   2 | Array.reduce | 500.36 ns | 0.34 ns |
 ```
+
+> [!TIP]
+> `time.SD` is Standard Deviation of the time.

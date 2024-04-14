@@ -2,25 +2,23 @@
 
 ESBench can validate your benchmarks before they are executed and produce validation errors. If any of the validation errors is critical, then none of the benchmarks will get executed.
 
-
-
 ```javascript
 export default defineSuite({
 	name: "Array sort algorithms",
 	params: {
 		length: [100, 100_000],
 	},
-	validate: {
-		// Validate the retured array is sorted.
-		check(v, p) {
-			if (v.length !== p.length)
-				throw new Error("Array length changed");
-			for (let i = 1; i < v.length; i++) {
-				if (v[i - 1] > v[i])
-					throw new Error("Not sorted");
-			}
-		},
-	},
+	validate: {// [!code ++]
+		// Validate the retured array is sorted.// [!code ++]
+		check(v, p) {// [!code ++]
+			if (v.length !== p.length)// [!code ++]
+				throw new Error("Array length changed");// [!code ++]
+			for (let i = 1; i < v.length; i++) {// [!code ++]
+				if (v[i - 1] > v[i])// [!code ++]
+					throw new Error("Not sorted");// [!code ++]
+			}// [!code ++]
+		},// [!code ++]
+	},// [!code ++]
 	setup(scene) {
 		const { length } = scene.params;
 		const template = Array.from({ length }, () => Math.random());
@@ -36,14 +34,14 @@ export default defineSuite({
 ```javascript
 export default defineSuite({
 	name: "Decode base64 string into ArrayBuffer",
-	validate: {
-		// Validate the returned buffers are equal.
-		equality(a, b) {
-			const v1 = new Uint8Array(a);
-			const v2 = new Uint8Array(b);
-			return v1.every((b, i) => b === v2[i]);
-		},
-	},
+	validate: {// [!code ++]
+		// Validate the returned buffers are equal.// [!code ++]
+		equality(a, b) {// [!code ++]
+			const v1 = new Uint8Array(a);// [!code ++]
+			const v2 = new Uint8Array(b);// [!code ++]
+			return v1.every((b, i) => b === v2[i]);// [!code ++]
+		},// [!code ++]
+	},// [!code ++]
 	setup(scene) {
 		const base64 = "nMrzJq4gg8PTkWQN";
 

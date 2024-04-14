@@ -12,8 +12,8 @@ First you need to install playwright and a builder. The builder is needed becaus
 pnpm add -D playwright vite
 ```
 
-```javascript
-// esbench.config.js
+::: code-group
+```javascript [esbench.config.js]
 import { defineConfig, PlaywrightExecutor, ViteBuilder } from "esbench/host";
 import { chromium, firefox, webkit } from "playwright";
 
@@ -28,10 +28,7 @@ export default defineConfig({
 	}],
 });
 ```
-
-And our suite file `benchmark/loop-reduce.js` contains the code:
-
-```javascript
+```javascript [benchmark/array-sum.js]
 import { defineSuite } from "esbench";
 
 export default defineSuite({
@@ -58,6 +55,7 @@ export default defineSuite({
 	},
 });
 ```
+:::
 
 Run `esbench` pop up the browser window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config then browsers will run in background.
 
@@ -66,15 +64,15 @@ The results reveal the performance differences between browsers:
 ```text
 | No. |         Name | Executor |        time |  time.SD |
 | --: | -----------: | -------: | ----------: | -------: |
-|   0 |    For-index |  firefox |   521.91 ns |  0.73 ns |
-|   1 |       For-of |  firefox | 5,494.97 ns |  2.02 ns |
-|   2 | Array.reduce |  firefox | 3,882.88 ns | 15.65 ns |
-|   3 |    For-index |   webkit | 1,015.20 ns |  1.39 ns |
-|   4 |       For-of |   webkit | 2,580.47 ns | 32.06 ns |
-|   5 | Array.reduce |   webkit | 2,497.12 ns |  8.69 ns |
-|   6 |    For-index | chromium |   764.32 ns |  0.85 ns |
-|   7 |       For-of | chromium |   516.50 ns |  3.74 ns |
-|   8 | Array.reduce | chromium |   351.31 ns |  0.85 ns |
+|   0 |    For-index |  firefox |   571.34 ns |  9.94 ns |
+|   1 |       For-of |  firefox | 5,594.56 ns | 16.03 ns |
+|   2 | Array.reduce |  firefox | 4,176.23 ns | 66.07 ns |
+|   3 |    For-index |   webkit | 1,085.04 ns |  7.32 ns |
+|   4 |       For-of |   webkit | 2,744.84 ns | 30.12 ns |
+|   5 | Array.reduce |   webkit | 2,565.46 ns | 30.58 ns |
+|   6 |    For-index | chromium |   533.09 ns |  2.71 ns |
+|   7 |       For-of | chromium |   542.60 ns |  6.00 ns |
+|   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
 ```
 
 ## Builtin Tools

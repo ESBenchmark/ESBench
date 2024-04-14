@@ -25,13 +25,13 @@ export default defineConfig({
 		plugins: [customHeaders, suiteInfoLoader, esbenchRuntime],
 	},
 	head: [
-		['link', { rel: 'icon', href: '/logo.svg' }]
+		["link", { rel: "icon", href: "/logo.svg" }],
 	],
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
 		logo: "/logo.svg",
 		search: {
-			provider: 'local'
+			provider: "local",
 		},
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
@@ -44,10 +44,12 @@ export default defineConfig({
 					{ text: "Introduction", link: "/guide/introduction" },
 					{ text: "Parameterization", link: "/guide/parameterization" },
 					{ text: "Setup And Cleanup", link: "/guide/setup-cleanup" },
+					{ text: "Config", link: "/guide/config" },
 					{ text: "CLI", link: "/guide/cli" },
 					{ text: "Toolchains", link: "/guide/toolchains" },
 					{ text: "Baselines", link: "/guide/baselines" },
 					{ text: "Reporters", link: "/guide/reporters" },
+					{ text: "Time Profiler", link: "/guide/time-profiler" },
 					{ text: "Validation", link: "/guide/validation" },
 					{ text: "IDE Integration", link: "/guide/ide-integration" },
 				],
@@ -55,7 +57,7 @@ export default defineConfig({
 			{
 				text: "API",
 				items: [
-					{ text: "Runner", link: "/guide/runner-api" },
+					{ text: "Runner", link: "/api/runner" },
 				],
 			},
 		],
@@ -63,8 +65,8 @@ export default defineConfig({
 			{ icon: "github", link: "https://github.com/Kaciras/esbench" },
 		],
 		footer: {
-			message: 'Released under the MIT License.',
-			copyright: 'Copyright © 2024 ESBench contributors',
+			message: "Released under the MIT License.",
+			copyright: "Copyright © 2024 ESBench contributors",
 		},
 	},
 });

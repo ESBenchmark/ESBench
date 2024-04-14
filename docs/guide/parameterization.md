@@ -50,7 +50,25 @@ Output:
 
 ## Variables
 
+ESBench identifies each benchmark case using a set of properties called variables, which contain:
 
+* `Name`: the names of benchmark cases.
+* `Builder` & `Executor`: the names of tools used to build and execute the suite, see [Toolchains](./toolchains) for more details.
+* Properties defined in suite's `params` option.
+
+
+
+In the above example, the variables is:
+
+```json
+{
+	"Name": ["object", "map"],
+    "Builder": ["None"],
+    "Executor": ["node"],
+    "size": [0, 1000, 1000000],
+    "exists": [true, false]
+}
+```
 
 ## Avoiding Conflicts
 
@@ -91,6 +109,8 @@ export default defineSuite({
 		const text = scene.params.text === "Text A" 
             ? "looooooooooooo_A_oooooooooooong" 
             : "looooooooooooo_B_oooooooooooong";
+		
+		// Define cases...
     }
 });
 ```
