@@ -11,7 +11,9 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 export type LogHandler = (message: string | undefined, level: LogLevel) => Awaitable<any>;
 
 /**
- * Metrics of the benchmark case measured by profilers.
+ * Metrics of a benchmark case measured by profilers.
+ *
+ * The value of any metric can be absent, reporters should be able to handle this.
  */
 export type Metrics = Record<string, number | number[] | string | undefined>;
 
@@ -33,7 +35,7 @@ export enum MetricAnalysis {
 	 * Reporters should display statistical indicators (stdDev, percentiles...) for the metric.
 	 * The metric value must be an array of number with at least 1 element.
 	 *
-	 * Setting this value will also apply MetricAnalysis.Compare
+	 * Setting this value will also apply `MetricAnalysis.Compare`.
 	 */
 	Statistics,
 }
@@ -76,12 +78,25 @@ export interface Note {
 
 export interface Profiler {
 
+	/**
+	 * Called on each `ProfilingContext.run` (`runSuite` invokes it once).
+	 * This is the recommended hook to add descriptions of metrics.
+	 */
 	onStart?: (ctx: ProfilingContext) => Awaitable<void>;
 
+	/**
+	 * Called on each scene and before `setup` of the suite.
+	 */
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
+	/**
+	 * Called for each case. In there you can add metrics as properties to `metrics`.
+	 */
 	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
 
+	/**
+	 * Called at the end of `ProfilingContext.run`.
+	 */
 	onFinish?: (ctx: ProfilingContext) => Awaitable<void>;
 }
 
@@ -98,10 +113,9 @@ export class ProfilingContext {
 	readonly notes: Note[] = [];
 
 	/**
-	 * Descriptions of metrics. Profiler should add the metric descriptions they need to report on.
+	 * Descriptions of metrics.
 	 *
-	 * Values in the case metric without corresponding description will not be shown in the report,
-	 * but they will still be serialized.
+	 * @see ProfilingContext.defineMetric
 	 */
 	readonly meta: Record<string, MetricMeta> = {};
 
@@ -122,10 +136,17 @@ export class ProfilingContext {
 	}
 
 	get sceneCount() {
-		const lists: unknown[][] = Object.values(this.suite.params ?? {});
-		return lists.length === 0 ? 1 : lists.reduce((s, v) => s * v.length, 1);
+		return Object.values<unknown[][]>(this.suite.params ?? {}).reduce((s, v) => s * v.length, 1);
 	}
 
+	/**
+	 * Profiler should add description for each metric that need to be reported.
+	 *
+	 * Values in the case metrics without descriptions will not be shown in the report,
+	 * but they will still be serialized.
+	 *
+	 * @param description The description of the metric.
+	 */
 	defineMetric(description: MetricMeta) {
 		this.meta[description.key] = description;
 	}
@@ -139,7 +160,7 @@ export class ProfilingContext {
 
 	/**
 	 * Generate an "info" log. As these logs are displayed by default, use them for information
-	 * that is not a warning but makes sense to display to all users on every build.
+	 * that is not a warning but makes sense to display to all users.
 	 */
 	info(message?: string) {
 		return this.logHandler(message, "info");
@@ -162,6 +183,8 @@ export class ProfilingContext {
 
 	/**
 	 * Create a new ProfilingContext for the same suite.
+	 *
+	 * Profilers & options are not inherited.
 	 */
 	newWorkflow(profilers: Profiler[], options: RunSuiteOption = {}) {
 		return new ProfilingContext(this.suite, profilers, options);
@@ -169,6 +192,8 @@ export class ProfilingContext {
 
 	/**
 	 * Run the profiling, the result is saved at `scenes` & `notes` properties.
+	 *
+	 * Each ProfilingContext can only be run once.
 	 */
 	async run() {
 		const { hasRun, suite: { params = {} } } = this;

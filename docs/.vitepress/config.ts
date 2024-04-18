@@ -39,7 +39,6 @@ export default defineConfig({
 		],
 		sidebar: [
 			{
-				text: "Getting started",
 				items: [
 					{ text: "Introduction", link: "/guide/introduction" },
 					{ text: "Parameterization", link: "/guide/parameterization" },
@@ -55,9 +54,10 @@ export default defineConfig({
 				],
 			},
 			{
-				text: "API",
+				text: "APIs",
 				items: [
-					{ text: "Runner", link: "/api/runner" },
+					{ text: "Runner API", link: "/api/runner" },
+					{ text: "Custom Profilers", link: "/api/profiler" },
 				],
 			},
 		],

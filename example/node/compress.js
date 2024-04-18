@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { brotliCompressSync, deflateSync, gzipSync } from "zlib";
-import { defineSuite } from "esbench";
+import { defineSuite, MetricAnalysis } from "esbench";
 
 const data = readFileSync("../pnpm-lock.yaml");
 
@@ -9,7 +9,7 @@ const dataSizeProfiler = {
 		ctx.defineMetric({
 			key: "size",
 			format: "{dataSize}",
-			analysis: 1,
+			analysis: MetricAnalysis.Compare,
 			lowerIsBetter: true,
 		});
 	},
