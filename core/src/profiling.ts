@@ -10,9 +10,12 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
  */
 export type LogHandler = (message: string | undefined, level: LogLevel) => Awaitable<any>;
 
-export type SceneResult = Record<string, Metrics>;
-
+/**
+ * Metrics of the benchmark case measured by profilers.
+ */
 export type Metrics = Record<string, number | number[] | string | undefined>;
+
+export type SceneResult = Record<string, Metrics>;
 
 export enum MetricAnalysis {
 	/**
@@ -37,7 +40,7 @@ export enum MetricAnalysis {
 
 export interface MetricMeta {
 	/**
-	 * Property name of the metric in case metrics.
+	 * Property name of the metric in Metrics.
 	 */
 	key: string;
 
@@ -60,7 +63,7 @@ export interface MetricMeta {
 
 	/**
 	 * Does a smaller value of the metric mean better performance?
-	 * This option must be set if `analysis` of the meta is not `None`.
+	 * This option must be set if `analysis` is not `None`.
 	 */
 	lowerIsBetter?: boolean;
 }

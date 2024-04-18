@@ -21,7 +21,7 @@ export interface TextReporterOptions extends SummaryTableOptions {
 	console?: boolean;
 }
 
-async function print(
+function print(
 	result: ESBenchResult,
 	previous: ESBenchResult | undefined,
 	options: TextReporterOptions,
@@ -61,15 +61,18 @@ async function print(
 	}
 }
 
+/**
+ * Format the results into text and output to various streams.
+ */
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
 	return async (result, prev) => {
 		if (console) {
-			await print(result, prev, options, stdout, chalk);
+			print(result, prev, options, stdout, chalk);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
-			await print(result, prev, options, stream, new Chalk({ level: 0 }));
+			print(result, prev, options, stream, new Chalk({ level: 0 }));
 		}
 	};
 }

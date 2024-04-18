@@ -16,14 +16,12 @@ const kMetrics = Symbol("metrics");
 const kIndex = Symbol("index");
 
 export type FlattedResult = Record<string, string> & {
-	Name: string;
-	Builder?: string;
-	Executor?: string;
 
-	// Retrieved by `Summary.getMetrics`
+	// Retrieved by `Summary.getMetrics`.
 	[kMetrics]: Metrics;
 
-	// Internal use, the index in cartesian product of all variables.
+	// Internal use, updated on `Summary.sort`.
+	// The index in cartesian product of all variables.
 	[kIndex]: number;
 
 	// You can add custom properties with symbol keys.
@@ -60,7 +58,7 @@ function indexOf<T>(iter: Iterable<T>, v: T) {
 export class Summary {
 
 	/**
-	 * All variables and each of their possible values.
+	 * All variable names and each of their possible values.
 	 */
 	readonly vars = new Map<string, Set<string>>();
 
@@ -71,6 +69,9 @@ export class Summary {
 	 */
 	readonly meta = new Map<string, MetricMeta>();
 
+	/**
+	 * Array of the variables of benchmark cases.
+	 */
 	readonly results: FlattedResult[] = [];
 
 	/**
@@ -88,13 +89,20 @@ export class Summary {
 
 	private table!: Array<FlattedResult | undefined>;
 	private keys!: string[];
-	private factors: number[] = [];
+	private weights: number[] = [];
 
-	constructor(suiteResult: ToolchainResult[]) {
+	/**
+	 * Parsing the results of the benchmark suite runs to create Summary.
+	 *
+	 * The parameter is usually the results of a suite under its toolchains,
+	 * but there is also support for passing results of different suites to merge them,
+	 * in this case you need to avoid conflicts in analyzers and baselines.
+	 */
+	constructor(suiteResults: ToolchainResult[]) {
 		// Ensure the Name is the first entry.
 		this.vars.set("Name", new Set());
 
-		for (const result of suiteResult) {
+		for (const result of suiteResults) {
 			this.addResult(result);
 			this.baseline = result.baseline;
 		}
@@ -158,26 +166,33 @@ export class Summary {
 		return item[kMetrics];
 	}
 
+	/**
+	 * Sort results by variables, use multiple keys sort algorithm.
+	 * The more precedent key in `keys` have higher weight,
+	 * for each key, the priority is index of the value in `this.vars.get(key)`.
+	 *
+	 * @param keys Sort keys, must be all of `this.vars.keys()`.
+	 */
 	sort(keys: string[]) {
-		const { results, vars, factors } = this;
+		const { results, vars, weights } = this;
 
 		if (new Set(keys).size !== vars.size) {
 			throw new Error("Keys must be all variable names");
 		}
 
-		factors.length = keys.length;
-		let factor = 1;
+		weights.length = keys.length;
+		let weight = 1;
 		for (let i = keys.length - 1; i >= 0; i--) {
 			const k = keys[i];
 			const values = vars.get(k);
 			if (!values) {
 				throw new Error(`${k} is not in variables`);
 			}
-			factors[i] = factor;
-			factor *= values.size;
+			weights[i] = weight;
+			weight *= values.size;
 		}
 
-		this.table = new Array(factor);
+		this.table = new Array(weight);
 		this.keys = keys;
 		for (const item of results) {
 			const index = this.getIndex(item);
@@ -193,7 +208,7 @@ export class Summary {
 	}
 
 	private getIndex(props: Record<string, string>) {
-		const { keys, factors, vars } = this;
+		const { keys, weights, vars } = this;
 		let cpIndex = 0;
 
 		for (let i = 0; i < keys.length; i++) {
@@ -205,15 +220,15 @@ export class Summary {
 			if (varIndex === -1) {
 				return NaN;
 			}
-			cpIndex += factors[i] * varIndex;
+			cpIndex += weights[i] * varIndex;
 		}
 		return cpIndex;
 	}
 
-	private getFactor(key: string) {
+	private getWeight(key: string) {
 		const i = this.keys.indexOf(key);
 		if (i !== -1) {
-			return this.factors[i];
+			return this.weights[i];
 		}
 		throw new Error(`${key} is not in variables`);
 	}
@@ -223,8 +238,8 @@ export class Summary {
 	 */
 	split(key: string) {
 		const values = this.vars.get(key)!;
-		const f = this.getFactor(key);
-		return groupBy(this.results, item => item[kIndex] - f * indexOf(values, item[key]));
+		const w = this.getWeight(key);
+		return groupBy(this.results, item => item[kIndex] - w * indexOf(values, item[key]));
 	}
 
 	/**
@@ -241,12 +256,12 @@ export class Summary {
 		if (!values) {
 			throw new Error(`${variable} is not in variables`);
 		}
-		const f = this.getFactor(variable);
+		const w = this.getWeight(variable);
 
 		const copy = { ...constant };
 		copy[variable] = firstItem(values)!;
 		const base = this.getIndex(copy);
 
-		return Array.from(values, (_, i) => this.table[base + f * i]);
+		return Array.from(values, (_, i) => this.table[base + w * i]);
 	}
 }

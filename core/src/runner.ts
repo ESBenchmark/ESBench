@@ -106,7 +106,7 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 }
 
 /**
- * Run a benchmark suite. Any exception that occur within this function is wrapped in a RunSuiteError,.
+ * Run a benchmark suite. Any exception that occur within this function is wrapped with RunSuiteError.
  */
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
 	const {
@@ -183,6 +183,14 @@ export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 
+/**
+ * Import and run suites, then send the results over the channel.
+ *
+ * @param postMessage Function used to transfer the results to the host.
+ * @param importer Function to import a suite, normally provided by builder.
+ * @param files Paths of suite files.
+ * @param pattern A Regexp string for filter benchmark cases by name.
+ */
 export async function runAndSend(
 	postMessage: Channel,
 	importer: Importer,

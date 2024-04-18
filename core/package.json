@@ -3,11 +3,11 @@
 	"version": "0.1.0",
 	"description": "JavaScript benchmark library",
 	"license": "MIT",
-	"author": "Kaciras <Kaciras@protonmail.com>",
+	"author": "Kaciras <Kaciras@outlook.com>",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Kaciras/esbench",
-		"directory": "packages/core"
+		"directory": "core"
 	},
 	"keywords": [
 		"benchmark"
@@ -43,10 +43,10 @@
 	"devDependencies": {
 		"@types/mime": "^4.0.0",
 		"@types/picomatch": "^2.3.3",
-		"@types/yargs": "^17.0.32"
+		"@types/yargs": "^17.0.32",
+		"playwright-core": "^1.43.1"
 	},
 	"optionalDependencies": {
-		"playwright-core": "^1.43.1",
 		"rollup": "^4.14.2",
 		"vite": "^5.2.8"
 	}
