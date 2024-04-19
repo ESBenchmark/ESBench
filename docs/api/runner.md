@@ -2,7 +2,7 @@
 
 The `esbench` package exports 2 entry points:
 
-* `esbench` Contains functions to run suites, and tools to deal with the results. It uses ES6 and a few Web APIs, can be used in browsers and most server-side runtimes.
+* `esbench` Contains functions to run suites, and tools to deal with the results. It uses ES6 and a few Web APIs, compatibility with browsers and most server-side runtimes.
   
 * `esbench/host` Has CLI, executors, builders, and reporters. It is only usable from Node.js or other runtimes that compatible with Node API.
 
@@ -39,4 +39,36 @@ if (summaryTable.warnings.length > 0) {
 }
 ```
 
-## Summary
+## Parse Results
+
+The return value of runSuite is in cascade format, which usually can't be used directly and needs to be flattened first.
+
+```javascript
+import { Summary, runSuite } from "esbench";
+
+const result = runSuite(/* ... */);
+
+// ESBench provide a helper class Summary to parse results of runSuite.
+const summary = new Summary([result]);
+
+console.log("Variables:", summary.vars);
+console.log("Metric Descriptions:", summary.meta);
+
+console.log("Case Results:");
+for (let i = 0; i < summary.results.length; i++) {
+	const result = summary.results[i];
+	const metrics = Summary.getMetrics(result);
+
+	console.log(`${i}.`.padEnd(3), JSON.stringify(result));
+	console.log("   ", JSON.stringify(metrics));
+}
+
+// Get the metrics of specific case.
+Summary.getMetrics(summary.find({
+	Name: "object",
+	exists: "true",
+	size: "1000",
+	Builder: "None",
+	Executor: "node",
+}));
+```
