@@ -27,11 +27,11 @@
 		"chartjs-chart-error-bars": "^4.4.0",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.21"
+		"vue": "^3.4.23"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^5.0.4",
-		"vite": "^5.2.8",
+		"vite": "^5.2.10",
 		"vite-plugin-singlefile": "^2.0.1"
 	}
 }
