@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { run, spin1ms } from "./helper.js";
-import { RunSuiteError } from "../src/index.js";
+import { BenchmarkSuite, runAndSend, RunSuiteError } from "../src/index.js";
 
 it("should return the result", async () => {
 	const result = await run({
@@ -108,4 +108,24 @@ it("should not check baseline that uses variable outside client", () => {
 		params: { bar: [22, 33] },
 		baseline: { type: "Name", value: "NOT_EXISTS" },
 	});
+});
+
+it("should wait for send the result in runAndSend", async () => {
+	const sending = Promise.resolve();
+	const mock = vi.spyOn(sending, "then");
+	const suite: BenchmarkSuite = {
+		timing: {
+			warmup: 0,
+			iterations: 1,
+		},
+		setup(scene) {
+			scene.bench("Test", spin1ms);
+		},
+	};
+	await runAndSend(
+		() => sending,
+		() => ({ default: suite }),
+		["Test Suite"],
+	);
+	expect(mock).toHaveBeenCalledOnce();
 });

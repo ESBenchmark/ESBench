@@ -205,9 +205,9 @@ export async function runAndSend(
 			const suite = await importer(file);
 			results.push(await runSuite(suite.default, option));
 		}
-		postMessage(results);
+		return postMessage(results);
 	} catch (e) {
-		postMessage({ e: serializeError(e) });
+		return postMessage({ e: serializeError(e) });
 	}
 }
 
