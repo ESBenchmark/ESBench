@@ -1,4 +1,4 @@
-import { Awaitable, CPSrcObject, noop } from "@kaciras/utilities/browser";
+import { Awaitable, CPSrcObject } from "@kaciras/utilities/browser";
 import { deserializeError, ErrorObject, serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
@@ -109,10 +109,7 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
  * Run a benchmark suite. Any exception that occur within this function is wrapped with RunSuiteError.
  */
 export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
-	const {
-		name, beforeAll = noop, afterAll = noop,
-		timing, validate, params = {}, baseline,
-	} = suite;
+	const { name, beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
@@ -134,7 +131,7 @@ export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = 
 		const paramDef = checkParams(params);
 		context = new ProfilingContext(suite, profilers, options);
 
-		await beforeAll();
+		await beforeAll?.();
 		await context.run().finally(afterAll);
 
 		const { scenes, notes, meta } = context;
