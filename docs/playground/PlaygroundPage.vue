@@ -204,7 +204,7 @@ async function startBenchmark() {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
 		printTable(result);
-		results.push({ name: result[0].name, result, time: new Date() });
+		results.push({ name: result[0].name!, result, time: new Date() });
 	} catch (e) {
 		logError(e);
 	}

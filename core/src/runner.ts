@@ -13,7 +13,9 @@ class DefaultEventLogger implements Profiler {
 	private caseOfScene = 0;
 
 	onStart(ctx: ProfilingContext) {
-		return ctx.info(`\nSuite: ${ctx.suite.name}, ${ctx.sceneCount} scenes.`);
+		const { name = "<anonymous>", params = {} } = ctx.suite;
+		const c = Object.keys(params).length;
+		return ctx.info(`\nSuite: ${name}, ${ctx.sceneCount} scenes for ${c} parameters.`);
 	}
 
 	onScene(ctx: ProfilingContext, scene: Scene) {
@@ -71,11 +73,11 @@ export class RunSuiteError extends Error {
 RunSuiteError.prototype.name = "RunSuiteError";
 
 export interface RunSuiteResult {
-	name: string;
-	paramDef: Array<[string, string[]]>;
-	meta: Record<string, MetricMeta>;
-	notes: Note[];
 	scenes: SceneResult[];
+	notes: Note[];
+	meta: Record<string, MetricMeta>;
+	paramDef: Array<[string, string[]]>;
+	name?: string;
 	baseline?: BaselineOptions;
 }
 
@@ -202,8 +204,9 @@ export async function runAndSend(
 	const results: RunSuiteResult[] = [];
 	try {
 		for (const file of files) {
-			const suite = await importer(file);
-			results.push(await runSuite(suite.default, option));
+			const { default: suite } = await importer(file);
+			suite.name ??= file;
+			results.push(await runSuite(suite, option));
 		}
 		return postMessage(results);
 	} catch (e) {

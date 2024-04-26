@@ -12,9 +12,9 @@ const post = message => {
 	return new Promise(r => setTimeout(r));
 };
 
-const doImport = file => import(file);
+const doImport = () => import("__FILE__");
 
-runAndSend(post, doImport, ["__FILE__"])`;
+runAndSend(post, doImport, ["Playground Suite"])`;
 
 function createSandbox(module: string) {
 	const importMap = JSON.stringify({

@@ -136,8 +136,15 @@ export type BaselineOptions = {
 }
 
 export interface BenchmarkSuite<T extends CPSrcObject = any> {
-	name: string;
+	/**
+	 * Setup each scene, add your benchmark cases.
+	 */
 	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
+
+	/**
+	 * Provide the name of the suite, or use the filename if not set.
+	 */
+	name?: string;
 
 	/**
 	 * Runs a function before running the suite.
