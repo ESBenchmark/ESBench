@@ -1,6 +1,6 @@
 import { Awaitable, CPSrcObject } from "@kaciras/utilities/browser";
 import { deserializeError, ErrorObject, serializeError } from "serialize-error";
-import { BaselineOptions, BenchCase, BenchmarkSuite, Scene } from "./suite.js";
+import { BaselineOptions, BenchCase, BenchmarkSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { BUILTIN_VARS, checkParams, toDisplayName } from "./utils.js";
@@ -94,6 +94,10 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
+function toSuiteOptions(input: UserSuite<any>) {
+	return typeof input === "function" ? { setup: input } : input;
+}
+
 function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 	const { type, value } = baseline;
 	if (BUILTIN_VARS.includes(type)) {
@@ -110,7 +114,8 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 /**
  * Run a benchmark suite. Any exception that occur within this function is wrapped with RunSuiteError.
  */
-export async function runSuite(suite: BenchmarkSuite, options: RunSuiteOption = {}) {
+export async function runSuite(suite: UserSuite<any>, options: RunSuiteOption = {}) {
+	suite = toSuiteOptions(suite);
 	const { name, beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
@@ -204,7 +209,8 @@ export async function runAndSend(
 	const results: RunSuiteResult[] = [];
 	try {
 		for (const file of files) {
-			const { default: suite } = await importer(file);
+			let { default: suite } = await importer(file);
+			suite = toSuiteOptions(suite);
 			suite.name ??= file;
 			results.push(await runSuite(suite, option));
 		}

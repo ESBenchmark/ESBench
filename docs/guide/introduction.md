@@ -1,5 +1,7 @@
 # Introduction
 
+ESBench is a full-featured JavaScript benchmarking tool.
+
 ## Installation
 
 ::: code-group
@@ -26,28 +28,25 @@ For example, we will write a simple benchmark suite that compares the time it ta
 // benchmark/array-sum.js
 import { defineSuite } from "esbench";
 
-export default defineSuite({
-	name: "Sum using for-loop vs Array.reduce",
-	setup(scene) {
-		const length = 1000;
-		const values = Array.from({ length }, (_, i) => i);
+export default defineSuite(scene => {
+	const length = 1000;
+	const values = Array.from({ length }, (_, i) => i);
 
-		scene.bench("For-index", () => {
-			let sum = 0;
-			for (let i = 0; i < length; i++) sum += values[i];
-			return sum;
-		});
+	scene.bench("For-index", () => {
+		let sum = 0;
+		for (let i = 0; i < length; i++) sum += values[i];
+		return sum;
+	});
 
-		scene.bench("For-of", () => {
-			let sum = 0;
-			for (const v of values) sum += v;
-			return sum;
-		});
+	scene.bench("For-of", () => {
+		let sum = 0;
+		for (const v of values) sum += v;
+		return sum;
+	});
 
-		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v, 0);
-		});
-	},
+	scene.bench("Array.reduce", () => {
+		return values.reduce((v, s) => s + v, 0);
+	});
 });
 ```
 
@@ -63,6 +62,11 @@ Next, in order to execute the benchmark, add the following section to your `pack
 }
 ```
 
+> [!TIP]
+> Because of the requirement to support execution of the suite in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
+>
+> For integration with ESBench, we also provide [JavaScript API](../api/runner).
+
 Finally, run `pnpm run benchmark` to execute the suite.
 
 The run will take a while for accurate measurements, during which a lot of logs will be printed. After finishing it will output:
@@ -76,5 +80,5 @@ Suite: Sum using for-loop vs Array.reduce
 |   2 | Array.reduce | 500.36 ns | 0.34 ns |
 ```
 
-> [!TIP]
+> [!NOTE]
 > `time.SD` is Standard Deviation of the time.

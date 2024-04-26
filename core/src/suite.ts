@@ -16,6 +16,10 @@ export class BenchCase {
 	readonly cleanHooks: HookFn[];
 
 	readonly name: string;
+
+	/**
+	 * The workload function, should be called with iteration hooks.
+	 */
 	readonly fn: Workload;
 
 	/**
@@ -37,7 +41,7 @@ export class BenchCase {
 	}
 
 	/**
-	 * Call the fn and each iteration hooks once.
+	 * Call the workload and each iteration hook once.
 	 */
 	async invoke() {
 		await runFns(this.setupHooks);
@@ -74,7 +78,7 @@ export class Scene<P = any> {
 	}
 
 	/**
-	 * Register a callback to be called  exactly once after each invocation.
+	 * Register a callback to be called exactly once after each invocation.
 	 * It's not recommended to use this in microbenchmarks because it can spoil the results.
 	 */
 	afterIteration(fn: HookFn) {
@@ -171,7 +175,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 
 	/**
 	 * Checks if it is possible to run your benchmarks.
-	 * If set, all scenes and their benchmarks will be run once to ensure no exceptions.
+	 * If set, all scenes and their cases will be run once to ensure no exceptions.
 	 *
 	 * Additional checks can be configured in the options.
 	 */
@@ -198,9 +202,11 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	baseline?: BaselineOptions;
 }
 
+export type UserSuite<T extends CPSrcObject> = BenchmarkSuite<T> | BenchmarkSuite["setup"];
+
 /**
  * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.
  */
-export function defineSuite<const T extends CPSrcObject = Empty>(suite: BenchmarkSuite<T>) {
+export function defineSuite<const T extends CPSrcObject = Empty>(suite: UserSuite<T>) {
 	return suite;
 }
