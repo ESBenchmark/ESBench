@@ -136,7 +136,7 @@ export type BaselineOptions = {
 	/**
 	 * Case with variable value equals to this is the baseline.
 	 */
-	value: any;
+	value: unknown;
 }
 
 export interface BenchmarkSuite<T extends CPSrcObject = any> {

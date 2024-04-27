@@ -43,7 +43,9 @@ export function unroll(factor: number, isAsync: boolean) {
  * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
 
-function createIterator(factor: number, case_: BenchCase): Iterator {
+type IterOptions = Pick<BenchCase, "beforeHooks" | "afterHooks" | "fn" | "isAsync">;
+
+function createIterator(factor: number, case_: IterOptions): Iterator {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 
 	async function syncWithHooks(count: number) {
@@ -230,7 +232,7 @@ export class TimeProfiler implements Profiler {
 	async subtractOverhead(ctx: ProfilingContext, case_: BenchCase, iterations: number, time: number[]) {
 		const { unrollFactor } = this;
 
-		const iterate = createIterator(unrollFactor, <any>{
+		const iterate = createIterator(unrollFactor, {
 			beforeHooks: [],
 			afterHooks: [],
 			isAsync: case_.isAsync,

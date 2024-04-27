@@ -1,7 +1,6 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
-import { RunSuiteResult } from "./runner.js";
+import { ResultBaseline, RunSuiteResult } from "./runner.js";
 import { MetricMeta, Metrics } from "./profiling.js";
-import { BaselineOptions } from "./suite.js";
 
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
@@ -85,7 +84,7 @@ export class Summary {
 	/**
 	 * The suite's baseline option.
 	 */
-	readonly baseline?: BaselineOptions;
+	readonly baseline?: ResultBaseline;
 
 	private table!: Array<FlattedResult | undefined>;
 	private keys!: string[];

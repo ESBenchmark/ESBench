@@ -41,7 +41,7 @@ export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: Reg
 		unrollFactor: 1,
 		...(suite.timing as any),
 	};
-	return runSuite(suite as any, { log: noop, pattern });
+	return runSuite(suite as BenchmarkSuite<T>, { log: noop, pattern });
 }
 
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
@@ -76,7 +76,7 @@ export async function testExecute(executor: Executor, build: any) {
 		rmSync(context.tempDir, { recursive: true });
 	}
 
-	return context.dispatch as Mock<[ClientMessage, ...any[]]>;
+	return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
 }
 
 export const executorFixtures = {

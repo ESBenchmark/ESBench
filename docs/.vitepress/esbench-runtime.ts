@@ -1,4 +1,4 @@
-import { build, Plugin } from "vite";
+import { build, Plugin, Rollup } from "vite";
 
 /**
  * Build esbench to a separated chunk that can be imported from workers and iframes.
@@ -32,7 +32,7 @@ export default <Plugin>{
 				},
 			},
 		});
-		const [chunk] = (bundle as any).output;
+		const [chunk] = (bundle as Rollup.RollupOutput).output;
 		const ref = this.emitFile({
 			type: "asset",
 			name: "esbench.js",

@@ -133,7 +133,7 @@ it("should skip overhead stage if evaluateOverhead is false", async () => {
 		setup: scene => scene.bench("Test", stubFn),
 	});
 	expect(stubFn).toHaveBeenCalledTimes(1);
-	expect((result.scenes[0].Test.time as any)[0]).toBeGreaterThan(0);
+	expect((result.scenes[0].Test.time as number[])[0]).toBeGreaterThan(0);
 });
 
 it("should measure time as duration", async () => {

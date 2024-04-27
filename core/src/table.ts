@@ -11,8 +11,8 @@ import {
 import { markdownTable } from "markdown-table";
 import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./profiling.js";
-import { BaselineOptions } from "./suite.js";
 import { BUILTIN_VARS } from "./utils.js";
+import { ResultBaseline } from "./runner.js";
 import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
 
 type RatioStyle = "value" | "percentage" | "trend";
@@ -245,7 +245,7 @@ class BaselineColumn implements ColumnFactory {
 
 	private ratio1 = 0;
 
-	constructor(meta: MetricMeta, baseline: BaselineOptions, style: RatioStyle) {
+	constructor(meta: MetricMeta, baseline: ResultBaseline, style: RatioStyle) {
 		this.meta = meta;
 		this.variable = baseline.type;
 		this.value = baseline.value;

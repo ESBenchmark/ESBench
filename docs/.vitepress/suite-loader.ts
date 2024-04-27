@@ -13,7 +13,7 @@ function removeDefineSuite(code: string, body: any[], exports: any) {
 	code = removeRange(code, callee.start, callee.end + 1);
 
 	return body.filter(n => n.type === "ImportDeclaration")
-		.toReversed()
+		.reverse()
 		.reduce((c, n) => removeRange(c, n.start, n.end), code);
 }
 
@@ -32,7 +32,7 @@ export default <Plugin>{
 		const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
 
 		if (!exports) {
-			throw new Error("Import non-suite file from example?");
+			throw new Error("Import a non-suite file from examples?");
 		}
 		let name!: string;
 		let cases = 0;

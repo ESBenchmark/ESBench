@@ -7,7 +7,7 @@ import mime from "mime";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 import { ClientMessage } from "../runner.js";
 
-declare function _ESBenchChannel(message: any): void;
+declare function _ESBenchChannel(message: ClientMessage): void;
 
 // Playwright doesn't work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -49,10 +49,10 @@ const manifest = {
 	],
 };
 
-async function client({ files, pattern }: any) {
-	// @ts-ignore This module resolved by the custom router.
+async function client(args: Pick<ExecuteOptions, "files" | "pattern">) {
+	// @ts-ignore Resolved by the custom router.
 	const loader = await import("./index.js");
-	return loader.default(_ESBenchChannel, files, pattern);
+	return loader.default(_ESBenchChannel, args.files, args.pattern);
 }
 
 /**

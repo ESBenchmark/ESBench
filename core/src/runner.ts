@@ -72,13 +72,18 @@ export class RunSuiteError extends Error {
 
 RunSuiteError.prototype.name = "RunSuiteError";
 
+export interface ResultBaseline {
+	type: string;
+	value: string;
+}
+
 export interface RunSuiteResult {
 	scenes: SceneResult[];
 	notes: Note[];
 	meta: Record<string, MetricMeta>;
 	paramDef: Array<[string, string[]]>;
 	name?: string;
-	baseline?: BaselineOptions;
+	baseline?: ResultBaseline;
 }
 
 export interface RunSuiteOption {

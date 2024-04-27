@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { firstItem } from "@kaciras/utilities/browser";
+import { Summary, ToolchainResult } from "../src/index.ts";
 import data from "./fixtures/result-0.json" with { type: "json" };
-import { Summary } from "../src/index.ts";
+
+const result = data.Suite as unknown as ToolchainResult[];
 
 function expectHaveProperties(obj: any, props: any) {
 	for (const [k, v] of Object.entries(props))
@@ -10,25 +12,25 @@ function expectHaveProperties(obj: any, props: any) {
 
 describe("constructor", () => {
 	it("should associate notes with results", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		expect(summary.notes[0].row).toBe(summary.results[0]);
 	});
 });
 
 describe("sort", () => {
 	it("should throw error with invalid keys", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		expect(() => summary.sort(["FOO", "Name", "exists", "Builder", "Executor"]))
 			.toThrow("FOO is not in variables");
 	});
 
 	it("should throw error keys is not all of variables", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		expect(() => summary.sort(["size", "exists"])).toThrow("Keys must be all variable names");
 	});
 
 	it("should sort results by variable keys", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		summary.sort(["size", "Name", "exists", "Builder", "Executor"]);
 
 		expectHaveProperties(summary.results[0], {
@@ -51,12 +53,12 @@ describe("sort", () => {
 
 describe("group", () => {
 	it("should throw error with invalid key", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		expect(() => summary.split("FOO")).toThrow("FOO is not in variables");
 	});
 
 	it("should split results into groups", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const groups = summary.split("size");
 
 		const g1 = firstItem(groups.values());
@@ -70,7 +72,7 @@ describe("group", () => {
 
 describe("find", () => {
 	it("should return undefined with invalid variable", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const props = {
 			Executor: "__INVALID__",
 			Name: "map",
@@ -82,7 +84,7 @@ describe("find", () => {
 	});
 
 	it("should return undefined with different variables", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const props = {
 			Executor: "node",
 			exists: "false",
@@ -91,7 +93,7 @@ describe("find", () => {
 	});
 
 	it("should find result by variables", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const found = summary.find({
 			Executor: "node",
 			Name: "map",
@@ -106,7 +108,7 @@ describe("find", () => {
 
 describe("findAll", () => {
 	it("should throw error if the variable does not exist", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const constants = {
 			Executor: "node",
 			Name: "map",
@@ -118,7 +120,7 @@ describe("findAll", () => {
 	});
 
 	it("should find all results with only the variable different", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const constants = {
 			Executor: "node",
 			Name: "map",
@@ -138,7 +140,7 @@ describe("findAll", () => {
 	});
 
 	it("should return array of undefined with invalid constants", () => {
-		const summary = new Summary(data.Suite as any);
+		const summary = new Summary(result);
 		const list = summary.findAll({}, "exists");
 		expect(list).toStrictEqual([undefined, undefined]);
 	});
