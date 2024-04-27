@@ -52,12 +52,12 @@ describe("sort", () => {
 describe("group", () => {
 	it("should throw error with invalid key", () => {
 		const summary = new Summary(data.Suite as any);
-		expect(() => summary.group("FOO")).toThrow("FOO is not in variables");
+		expect(() => summary.split("FOO")).toThrow("FOO is not in variables");
 	});
 
 	it("should split results into groups", () => {
 		const summary = new Summary(data.Suite as any);
-		const groups = summary.group("size");
+		const groups = summary.split("size");
 
 		const g1 = firstItem(groups.values());
 		expect(groups.size).toBe(4);

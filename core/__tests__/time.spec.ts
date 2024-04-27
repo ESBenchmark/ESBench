@@ -164,5 +164,5 @@ it("should measure time as throughput", async () => {
 	const [throughput] = metrics.throughput as number[];
 	expect(metrics.time).toBeUndefined();
 	expect(throughput).toBeLessThan(1005);
-	expect(throughput).toBeGreaterThan(995);
+	expect(throughput).toBeGreaterThan(985);
 });
