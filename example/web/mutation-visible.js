@@ -9,7 +9,7 @@ export default defineSuite({
 		style.innerText = "p { background: blue; height: 10px }";
 		document.head.append(style);
 
-		scene.afterEach(() => style.remove());
+		scene.teardown(() => style.remove());
 
 		scene.bench("Visible", () => {
 			document.body.style.removeProperty("display");

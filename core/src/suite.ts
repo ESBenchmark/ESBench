@@ -12,8 +12,8 @@ type Workload = () => unknown;
 
 export class BenchCase {
 
-	readonly setupHooks: HookFn[];
-	readonly cleanHooks: HookFn[];
+	readonly beforeHooks: HookFn[];
+	readonly afterHooks: HookFn[];
 
 	readonly name: string;
 
@@ -35,29 +35,29 @@ export class BenchCase {
 	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
 		this.name = name;
 		this.fn = fn;
-		this.setupHooks = scene.setupIteration;
-		this.cleanHooks = scene.cleanIteration;
 		this.isAsync = isAsync;
+		this.beforeHooks = scene.beforeIterHooks;
+		this.afterHooks = scene.afterIterHooks;
 	}
 
 	/**
 	 * Call the workload and each iteration hook once.
 	 */
 	async invoke() {
-		await runFns(this.setupHooks);
+		await runFns(this.beforeHooks);
 		try {
 			return this.fn();
 		} finally {
-			await runFns(this.cleanHooks);
+			await runFns(this.afterHooks);
 		}
 	}
 }
 
 export class Scene<P = any> {
 
-	readonly setupIteration: HookFn[] = [];
-	readonly cleanIteration: HookFn[] = [];
-	readonly cleanEach: HookFn[] = [];
+	readonly teardownHooks: HookFn[] = [];
+	readonly beforeIterHooks: HookFn[] = [];
+	readonly afterIterHooks: HookFn[] = [];
 	readonly cases: BenchCase[] = [];
 
 	readonly params: P;
@@ -74,7 +74,7 @@ export class Scene<P = any> {
 	 * It's not recommended to use this in microbenchmarks because it can spoil the results.
 	 */
 	beforeIteration(fn: HookFn) {
-		this.setupIteration.push(fn);
+		this.beforeIterHooks.push(fn);
 	}
 
 	/**
@@ -82,7 +82,7 @@ export class Scene<P = any> {
 	 * It's not recommended to use this in microbenchmarks because it can spoil the results.
 	 */
 	afterIteration(fn: HookFn) {
-		this.cleanIteration.push(fn);
+		this.afterIterHooks.push(fn);
 	}
 
 	/**
@@ -90,8 +90,8 @@ export class Scene<P = any> {
 	 *
 	 * There is no beforeEach(), just put the setup code to suite.setup().
 	 */
-	afterEach(fn: HookFn) {
-		this.cleanEach.push(fn);
+	teardown(fn: HookFn) {
+		this.teardownHooks.push(fn);
 	}
 
 	bench(name: string, fn: Workload) {

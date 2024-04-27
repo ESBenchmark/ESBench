@@ -53,7 +53,7 @@ export default defineSuite({
 			// Run after each benchmark invocation...
 		});
 
-		scene.afterEach(() => {
+		scene.teardown(() => {
 			// Cleanup on all cases of the scene executed...
 		});
 	},

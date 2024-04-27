@@ -44,18 +44,18 @@ export function unroll(factor: number, isAsync: boolean) {
  */
 
 function createIterator(factor: number, case_: BenchCase): Iterator {
-	const { fn, isAsync, setupHooks, cleanHooks } = case_;
+	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 
 	async function syncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
-			await runFns(setupHooks);
+			await runFns(beforeHooks);
 
 			timeUsage -= performance.now();
 			fn();
 			timeUsage += performance.now();
 
-			await runFns(cleanHooks);
+			await runFns(afterHooks);
 		}
 		return timeUsage;
 	}
@@ -63,18 +63,18 @@ function createIterator(factor: number, case_: BenchCase): Iterator {
 	async function asyncWithHooks(count: number) {
 		let timeUsage = 0;
 		while (count-- > 0) {
-			await runFns(setupHooks);
+			await runFns(beforeHooks);
 
 			timeUsage -= performance.now();
 			await fn();
 			timeUsage += performance.now();
 
-			await runFns(cleanHooks);
+			await runFns(afterHooks);
 		}
 		return timeUsage;
 	}
 
-	if (setupHooks.length | cleanHooks.length) {
+	if (beforeHooks.length | afterHooks.length) {
 		return {
 			calls: 1,
 			iterate: isAsync ? asyncWithHooks : syncWithHooks,
@@ -231,8 +231,8 @@ export class TimeProfiler implements Profiler {
 		const { unrollFactor } = this;
 
 		const iterate = createIterator(unrollFactor, <any>{
-			setupHooks: [],
-			cleanHooks: [],
+			beforeHooks: [],
+			afterHooks: [],
 			isAsync: case_.isAsync,
 			fn: case_.fn.constructor === Function ? noop : asyncNoop,
 		});

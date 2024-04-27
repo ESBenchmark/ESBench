@@ -227,7 +227,7 @@ export class ProfilingContext {
 				results[case_.name] = metrics;
 			}
 		} finally {
-			await runFns(scene.cleanEach);
+			await runFns(scene.teardownHooks);
 		}
 	}
 

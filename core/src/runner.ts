@@ -31,8 +31,8 @@ class DefaultEventLogger implements Profiler {
 	}
 
 	onCase(ctx: ProfilingContext, case_: BenchCase) {
-		const { name, isAsync, setupHooks, cleanHooks } = case_;
-		const hooks = setupHooks.length + cleanHooks.length > 0;
+		const { name, isAsync, beforeHooks, afterHooks } = case_;
+		const hooks = beforeHooks.length + afterHooks.length > 0;
 		const i = ++this.caseOfScene;
 		return ctx.info(`\nCase #${i}: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
 	}
