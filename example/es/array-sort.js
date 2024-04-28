@@ -99,6 +99,10 @@ export default defineSuite({
 		let array = [];
 		scene.beforeIteration(() => array = template.slice());
 
+		if (array.toSorted) {
+			scene.bench("toSorted", () => array.toSorted(numberCompare));
+		}
+
 		scene.bench("builtin", () => array.sort(numberCompare));
 		scene.bench("shell", () => shellSort(array));
 		scene.bench("quick", () => quickSort(array, 0, array.length));
