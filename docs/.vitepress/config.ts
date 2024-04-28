@@ -41,12 +41,13 @@ export default defineConfig({
 			{
 				items: [
 					{ text: "Introduction", link: "/guide/introduction" },
+					{ text: "Suites", link: "/guide/suites" },
 					{ text: "Parameterization", link: "/guide/parameterization" },
-					{ text: "Setup And Cleanup", link: "/guide/setup-cleanup" },
+					{ text: "Baselines", link: "/guide/baselines" },
 					{ text: "Config", link: "/guide/config" },
 					{ text: "CLI", link: "/guide/cli" },
 					{ text: "Toolchains", link: "/guide/toolchains" },
-					{ text: "Baselines", link: "/guide/baselines" },
+					{ text: "TypeScript", link: "/guide/typescript" },
 					{ text: "Reporters", link: "/guide/reporters" },
 					{ text: "Time Profiler", link: "/guide/time-profiler" },
 					{ text: "Validation", link: "/guide/validation" },
