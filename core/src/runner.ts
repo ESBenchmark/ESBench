@@ -99,7 +99,7 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-function toSuiteOptions(input: UserSuite<any>) {
+function toSuiteOptions(input: UserSuite): BenchmarkSuite {
 	return typeof input === "function" ? { setup: input } : input;
 }
 
@@ -119,7 +119,7 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 /**
  * Run a benchmark suite. Any exception that occur within this function is wrapped with RunSuiteError.
  */
-export async function runSuite(suite: UserSuite<any>, options: RunSuiteOption = {}) {
+export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 	suite = toSuiteOptions(suite);
 	const { name, beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
 

@@ -6,8 +6,6 @@ import { ValidateOptions } from "./validate.js";
 
 export type HookFn = () => Awaitable<unknown>;
 
-type Empty = Record<string, never>;
-
 type Workload = () => unknown;
 
 export class BenchCase {
@@ -87,8 +85,6 @@ export class Scene<P = any> {
 
 	/**
 	 * Teardown function to run after all case in the scene are executed.
-	 *
-	 * There is no beforeEach(), just put the setup code to suite.setup().
 	 */
 	teardown(fn: HookFn) {
 		this.teardownHooks.push(fn);
@@ -139,7 +135,10 @@ export type BaselineOptions = {
 	value: unknown;
 }
 
-export interface BenchmarkSuite<T extends CPSrcObject = any> {
+type Empty = Record<string, undefined[]>;
+type ParamsAny = Record<string, any[]>;
+
+export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	/**
 	 * Setup each scene, add your benchmark cases.
 	 */
@@ -202,7 +201,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = any> {
 	baseline?: BaselineOptions;
 }
 
-export type UserSuite<T extends CPSrcObject> = BenchmarkSuite<T> | BenchmarkSuite["setup"];
+export type UserSuite<T extends CPSrcObject = ParamsAny> = BenchmarkSuite<T> | BenchmarkSuite<Empty>["setup"];
 
 /**
  * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.

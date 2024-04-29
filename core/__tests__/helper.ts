@@ -41,7 +41,7 @@ export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: Reg
 		unrollFactor: 1,
 		...(suite.timing as any),
 	};
-	return runSuite(suite as BenchmarkSuite<T>, { log: noop, pattern });
+	return runSuite(suite as any, { log: noop, pattern });
 }
 
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {

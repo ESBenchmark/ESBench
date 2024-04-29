@@ -211,7 +211,7 @@ export class ProfilingContext {
 		return this.runHooks("onFinish");
 	}
 
-	private async runScene(params: any) {
+	private async runScene(params: object) {
 		const scene = new Scene(params, this.pattern);
 		await this.suite.setup(scene);
 		try {
