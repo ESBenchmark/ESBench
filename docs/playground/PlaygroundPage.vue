@@ -115,9 +115,28 @@ const logColors: Record<string, string> = {
 	warning: "#E5BF00",
 };
 
-const logChalk = new Proxy<any>(logColors, {
+const ctx = document.createElement("canvas").getContext("2d")!;
+const colorTextMap = new Map<string, string>();
+let dashWidth: number;
+
+function resetColorMap(el: HTMLElement) {
+	ctx.font = getComputedStyle(el).font;
+	colorTextMap.clear();
+	dashWidth = ctx.measureText("-").width;
+}
+
+function stringLength(s: string) {
+	s = colorTextMap.get(s) ?? s;
+	return Math.round(ctx.measureText(s).width / dashWidth);
+}
+
+const webChalk = new Proxy<any>(logColors, {
 	get(colors: typeof logColors, p: string) {
-		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
+		return (s: string) => {
+			const c = `<span style="color: ${colors[p]}">${s}</span>`;
+			colorTextMap.set(c, s);
+			return c;
+		};
 	},
 });
 </script>
@@ -165,10 +184,10 @@ function appendLog(message = "", level = "info") {
 	const el = consoleEl.value!;
 	switch (level) {
 		case "error":
-			message = logChalk.red(message);
+			message = webChalk.red(message);
 			break;
 		case "warn":
-			message = logChalk.yellowBright(message);
+			message = webChalk.yellowBright(message);
 			break;
 	}
 	el.insertAdjacentHTML("beforeend", message + "\n");
@@ -215,10 +234,11 @@ async function startBenchmark() {
 }
 
 function printTable(result: RunSuiteResult[]) {
-	const table = buildSummaryTable(result, undefined, tableOptions.value);
+	resetColorMap(consoleEl.value!);
+	const table = buildSummaryTable(result, undefined, tableOptions.value, webChalk);
 
 	appendLog();
-	appendLog(table.toMarkdown());
+	appendLog(table.toMarkdown(stringLength));
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");
