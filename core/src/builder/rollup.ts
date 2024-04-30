@@ -1,3 +1,4 @@
+import { isBuiltin } from "module";
 import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { Builder } from "../host/toolchain.js";
@@ -16,6 +17,11 @@ function doImport(file) {
 export default function (channel, files, name) {
 	return runAndSend(channel, doImport, files, name);
 }`;
+
+// https://github.com/vitejs/vite/blob/bb79c9b653eeab366dccc855713369aea9f90d8f/packages/vite/src/node/utils.ts#L99
+function external(id: string) {
+	return /^(?:npm|bun):/.test(id) || isBuiltin(id);
+}
 
 function createEntry(files: string[]) {
 	let imports = "";
@@ -46,6 +52,7 @@ const defaults: InlineConfig = {
 	build: {
 		rollupOptions: {
 			preserveEntrySignatures: "allow-extension",
+			external,
 		},
 		minify: false,
 		target: "esnext",
@@ -79,8 +86,8 @@ export class RollupBuilder implements Builder {
 			plugins = [plugins];
 		}
 		const bundle = await rollup({
+			...defaults.build!.rollupOptions,
 			...this.config,
-			preserveEntrySignatures: "allow-extension",
 			input: entryId,
 			plugins: [...plugins, entryPlugin(files)],
 		});
