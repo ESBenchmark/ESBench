@@ -161,7 +161,11 @@ export class PlaywrightExecutor implements Executor {
 			lines[i] = `    at ${fn} (${pos})`;
 		}
 
-		error.stack = `${name}: ${message}\n` + lines.join("\n");
+		error.stack = `${name}: ${message}\n${lines.join("\n")}`;
+
+		if (error.cause) {
+			this.fixStacktrace(error.cause, origin, root);
+		}
 	}
 }
 
