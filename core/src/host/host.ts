@@ -76,8 +76,11 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				]);
 
 				for (let i = 0; i < tcs.length; i++) {
-					const filename = build.files[i];
-					(result[filename] ??= []).push({
+					let name = build.files[i];
+					if (name.startsWith("./")) {
+						name = name.slice(2);
+					}
+					(result[name] ??= []).push({
 						...tcs[i],
 						builder,
 						executor: executorName,
