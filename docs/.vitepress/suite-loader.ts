@@ -1,8 +1,9 @@
-import { Plugin } from "vite";
+import { readFileSync } from "fs";
+import { Plugin, Rollup } from "vite";
 import { traverse } from "estraverse";
 
 /**
- * Remove all imports and the defineSuite() call.
+ * Remove all static imports and the defineSuite() call.
  * Since WebWorker does not support import map, we cannot use imports in the suite.
  *
  * https://github.com/WICG/import-maps/issues/2
@@ -21,36 +22,28 @@ function removeRange(str: string, start: number, end: number) {
 	return str.slice(0, start) + str.slice(end);
 }
 
-export default <Plugin>{
-	name: "esbench:suite-info",
-	transform(code, id) {
-		const match = /\/example\/(.+?)\/.+?\.js$/.exec(id);
-		if (!match) {
+function getInfo(this: Rollup.PluginContext, code: string) {
+	const body = this.parse(code).body;
+	const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
+
+	if (!exports) {
+		throw new Error("Import a non-suite file from examples?");
+	}
+	let cases = 0;
+	let params = 0;
+
+	function visitCase(node: any) {
+		if (node.type !== "CallExpression") {
 			return;
 		}
-		const body = this.parse(code).body;
-		const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
+		const n = node.callee.property?.name;
+		if (/^bench(Async)?$/.test(n)) cases++;
+	}
 
-		if (!exports) {
-			throw new Error("Import a non-suite file from examples?");
-		}
-		let name!: string;
-		let cases = 0;
-		let params = 0;
-
-		function visitCase(node: any) {
-			if (node.type !== "CallExpression") {
-				return;
-			}
-			const n = node.callee.property?.name;
-			if (/^bench(Async)?$/.test(n)) cases++;
-		}
-
-		const [suite] = exports.declaration.arguments;
+	const [suite] = exports.declaration.arguments;
+	if (suite.type === "ObjectExpression") {
 		for (const { key, value } of suite.properties) {
-			if (key.name === "name") {
-				name = value.value;
-			} else if (key.name === "params") {
+			if (key.name === "params") {
 				for (const prop of value.properties) {
 					params += prop.value.elements.length;
 				}
@@ -58,10 +51,42 @@ export default <Plugin>{
 				traverse(value, { enter: visitCase });
 			}
 		}
+	} else {
+		traverse(suite.body, { enter: visitCase });
+	}
 
-		code = removeDefineSuite(code, body, exports).trimStart();
-		const category = match[1];
-		const info = { name, category, params, cases, code };
-		return "export default " + JSON.stringify(info);
+	return {
+		params,
+		cases,
+		code: removeDefineSuite(code, body, exports).trimStart(),
+	};
+}
+
+const categoryRE  = /\/example\/(.+?)\/.+?\.js$/;
+
+export default <Plugin>{
+	name: "esbench:suite-info",
+	async transform(code, id) {
+		if (!id.endsWith("/demo-suites.ts")) {
+			return;
+		}
+		const imports = this.parse(code).body.slice(1);
+		const exports = [];
+		for (const { expression } of imports as any) {
+			const file = expression.source.value;
+			const name = expression.options
+				.properties[0].value
+				.properties[0].value.value;
+
+			const r = await this.resolve(file, id);
+			const suite = readFileSync(r.id, "utf8");
+			this.addWatchFile(r.id);
+
+			const info = getInfo.call(this, suite);
+			exports.push(info);
+			info.name = name;
+			info.category = categoryRE.exec(file)[1];
+		}
+		return "export default " + JSON.stringify(exports);
 	},
 };
