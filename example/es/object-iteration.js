@@ -29,34 +29,31 @@ const object = {
 	chroma_quality: 75,
 };
 
-export default defineSuite({
-	name: "Iterate object for keys and values",
-	setup(scene) {
-		scene.bench("for-in", () => {
-			let returnValue;
-			// eslint-disable-next-line no-restricted-syntax
-			for (const k in object) {
-				if (Object.hasOwn(object, k)) {
-					returnValue = object[k];
-				}
-			}
-			return returnValue;
-		});
-
-		scene.bench("keys", () => {
-			let returnValue;
-			for (const k of Object.keys(object)) {
+export default defineSuite(scene => {
+	scene.bench("for-in", () => {
+		let returnValue;
+		// eslint-disable-next-line no-restricted-syntax
+		for (const k in object) {
+			if (Object.hasOwn(object, k)) {
 				returnValue = object[k];
 			}
-			return returnValue;
-		});
+		}
+		return returnValue;
+	});
 
-		scene.bench("entries", () => {
-			let returnValue;
-			for (const [_, v] of Object.entries(object)) {
-				returnValue = v;
-			}
-			return returnValue;
-		});
-	},
+	scene.bench("keys", () => {
+		let returnValue;
+		for (const k of Object.keys(object)) {
+			returnValue = object[k];
+		}
+		return returnValue;
+	});
+
+	scene.bench("entries", () => {
+		let returnValue;
+		for (const [_, v] of Object.entries(object)) {
+			returnValue = v;
+		}
+		return returnValue;
+	});
 });

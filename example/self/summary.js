@@ -143,7 +143,6 @@ class V1_JSON_Hash {
 }
 
 export default defineSuite({
-	name: "Summary",
 	params: {
 		impl: [Summary, V1_JSON_Hash],
 	},

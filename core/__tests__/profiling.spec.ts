@@ -4,7 +4,7 @@ import { ProfilingContext } from "../src/index.ts";
 import { run } from "./helper.ts";
 
 it("should not allow run twice",async () => {
-	const context = new ProfilingContext({ name: "Test", setup() {} }, [], {});
+	const context = new ProfilingContext({ setup() {} }, [], {});
 	await context.run();
 	await expect(context.run()).rejects.toThrow("A ProfilingContext can only be run once");
 });

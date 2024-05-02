@@ -62,11 +62,7 @@ function shellSort(array) {
 }
 
 export default defineSuite({
-	name: "Array sort algorithms",
-	baseline: {
-		type: "Name",
-		value: "builtin",
-	},
+	baseline: { type: "Name", value: "builtin" },
 	params: {
 		length: [100, 100_000],
 

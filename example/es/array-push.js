@@ -1,7 +1,6 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "Push values to array",
 	setup(scene) {
 		const length = 1000;
 		const data = Array.from({ length }, (_, i) => i);

@@ -19,7 +19,7 @@ export default defineSuite({
 		});
 
 		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v, 0);
+			return values.reduce((v, s) => s + v);
 		});
 	},
 });

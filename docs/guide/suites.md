@@ -42,14 +42,36 @@ export default defineSuite({
 
 Options:
 
-* `name`: Provide the name of the suite, if not set ESBench CLI will use the filename.
 * `params`: Benchmark cases under different inputs, see [Parameterization](./parameterization).
-* `baseline`: Scale your results, see [Baseline Options](./baselines).
+* `baseline`: Scale your results, see [Baselines](./baselines).
 * `profilers`: Add more profilers for the suite. see [Custom Profilers](../api/profiler).
 * `timing`: Configure execution time mensuration, see [Time Profiler](./time-profiler).
 * `validate`: Perform checks for cases before they are executed, see [Validation](./validation)
-* `beforeAll`: Runs a function before running the suite, see [the next section](./suites#lifecycle-hooks).
-* `afterAll`: Runs a function after the suite has finished running, see [the next section](./suites#lifecycle-hooks).
+* `beforeAll`: Runs a function before running the suite, see [Lifecycle Hooks](./suites#lifecycle-hooks).
+* `afterAll`: Runs a function after the suite has finished running, see [Lifecycle Hooks](./suites#lifecycle-hooks).
+
+## Conditional
+
+The `setup` function can be asynchronous, in addition `scene.bench` can be called within a conditional block, so you can add benchmark cases based on the context.
+
+```javascript
+// Deep clone an object with serialization and deserialization.
+export default defineSuite(async scene => {
+	const data = {/* ... */};
+	scene.bench("JSON", () => JSON.parse(JSON.stringify(data)));
+	
+	if (globalThis.structuredClone) {
+		scene.bench("structuredClone", () => structuredClone(data));
+    }
+
+	try {
+		const { serialize, deserialize } = await import("v8");
+		scene.bench("v8 serialize", () => deserialize(serialize(data)));
+	} catch {
+		// Does not executed in Node, skip this case.
+	}
+});
+```
 
 ## Lifecycle Hooks
 
@@ -74,7 +96,7 @@ export default defineSuite({
 > [!WARNING]
 > It's not recommended to use `beforeIteration` & `afterIteration` in microbenchmarks because it can spoil the results.
 
-ESBench provides a set of lifecycle hooks for suites:
+ESBench provides a set of lifecycle hooks for suites. If a hook function returns a promise, ESBench waits until the promise resolve before running the benchmark case.
 
 ```javascript
 import { defineSuite } from "esbench";

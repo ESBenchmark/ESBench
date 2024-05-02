@@ -12,12 +12,6 @@ class DefaultEventLogger implements Profiler {
 	private sceneIndex = 0;
 	private caseOfScene = 0;
 
-	onStart(ctx: ProfilingContext) {
-		const { name = "<anonymous>", params = {} } = ctx.suite;
-		const c = Object.keys(params).length;
-		return ctx.info(`\nSuite: ${name}, ${ctx.sceneCount} scenes for ${c} parameters.`);
-	}
-
 	onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
 		const { sceneCount } = ctx;
@@ -121,7 +115,7 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
  */
 export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 	suite = toSuiteOptions(suite);
-	const { name, beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
+	const { beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
@@ -147,7 +141,7 @@ export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 		await context.run().finally(afterAll);
 
 		const { scenes, notes, meta } = context;
-		return { name, notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
+		return { notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
 	} catch (e) {
 		const wp = (context as any)?.workingParams;
 		if (wp) {
@@ -214,10 +208,9 @@ export async function runAndSend(
 	const results: RunSuiteResult[] = [];
 	try {
 		for (const file of files) {
-			let { default: suite } = await importer(file);
-			suite = toSuiteOptions(suite);
-			suite.name ??= file;
-			results.push(await runSuite(suite, option));
+			postMessage({ level: "info", log: `\nSuite: ${file}` });
+			const mod = await importer(file);
+			results.push(await runSuite(mod.default, option));
 		}
 		return postMessage(results);
 	} catch (e) {

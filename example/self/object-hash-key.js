@@ -50,7 +50,6 @@ function shallowHashKey2(obj, keys) {
 }
 
 export default defineSuite({
-	name: "Generate hashKey for object using shallow properties",
 	params: {
 		data: ["small", "big"],
 	},

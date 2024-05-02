@@ -21,7 +21,6 @@ class ChildClass extends BaseClass {
 }
 
 export default defineSuite({
-	name: "Inherit vs Combine",
 	validate: {
 		check: value => value === true,
 	},

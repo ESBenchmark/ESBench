@@ -75,9 +75,10 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 					executor.execute(context),
 				]);
 
-				for (const tc of tcs as any) {
-					(result[tc.name] ??= []).push({
-						...tc,
+				for (let i = 0; i < tcs.length; i++) {
+					const filename = build.files[i];
+					(result[filename] ??= []).push({
+						...tcs[i],
 						builder,
 						executor: executorName,
 					});

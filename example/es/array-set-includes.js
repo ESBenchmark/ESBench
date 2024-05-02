@@ -1,7 +1,6 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "Array.includes vs Set.has",
 	params: {
 		length: [10, 10_000],
 	},

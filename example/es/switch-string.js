@@ -1,7 +1,6 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "switch string literals",
 	validate: {
 		equality: true,
 	},

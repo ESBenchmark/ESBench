@@ -8,7 +8,6 @@ function fill(array, length) {
 }
 
 export default defineSuite({
-	name: "Fill array with size vs without size",
 	params: {
 		length: [100],
 	},

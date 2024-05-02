@@ -1,12 +1,12 @@
 # Toolchains
 
-ESBench is a cross runtime benchmark tool, which means you can run your suite on different runtime.
+ESBench is a cross runtime benchmark tool, which means you can run your suite on different runtimes.
 
 ## Run In Browsers
 
 Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
 
-First you need to install playwright and a builder. The builder is needed because browser and Node have a different import resolving algorithm, and ESBench does not handle that, so suites need to be built to transform imports.
+First install playwright and a builder (Vite). The builder is needed because browser and Node have a different import resolving algorithm, and ESBench does not handle that, so suites need to be built to transform imports.
 
 ```shell
 pnpm add -D playwright vite
@@ -31,33 +31,30 @@ export default defineConfig({
 ```javascript [benchmark/array-sum.js]
 import { defineSuite } from "esbench";
 
-export default defineSuite({
-	name: "For-loop vs Array.reduce",
-	setup(scene) {
-		const length = 1000;
-		const values = Array.from({ length }, (_, i) => i);
+export default defineSuite(scene => {
+	const length = 1000;
+	const values = Array.from({ length }, (_, i) => i);
 
-		scene.bench("For-index", () => {
-			let sum = 0;
-			for (let i = 0; i < length; i++) sum += values[i];
-			return sum;
-		});
+	scene.bench("For-index", () => {
+		let sum = 0;
+		for (let i = 0; i < length; i++) sum += values[i];
+		return sum;
+	});
 
-		scene.bench("For-of", () => {
-			let sum = 0;
-			for (const v of values) sum += v;
-			return sum;
-		});
+	scene.bench("For-of", () => {
+		let sum = 0;
+		for (const v of values) sum += v;
+		return sum;
+	});
 
-		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v, 0);
-		});
-	},
+	scene.bench("Array.reduce", () => {
+		return values.reduce((v, s) => s + v, 0);
+	});
 });
 ```
 :::
 
-Run `esbench` pop up the browser window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config then browsers will run in background.
+Run `esbench` pop up the browser window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config makes browsers run in background.
 
 The results reveal the performance differences between browsers:
 
@@ -96,3 +93,42 @@ Executor:
 ## Tool Names
 
 Each tool must have a unique name (a builder and an executor can have the same name).
+
+```javascript
+import { defineConfig, ViteBuilder } from "esbench/host";
+
+export default defineConfig({
+	toolchains: [{
+        // Error: Each tool must have a unique name: Vite
+		builders: [
+			new ViteBuilder({ output: { format: "es" } }),
+			new ViteBuilder({ output: { format: "cjs" } }),
+		],
+	}],
+});
+```
+
+To fix this, you can give builders names:
+
+```javascript
+import { defineConfig, ViteBuilder } from "esbench/host";
+
+export default defineConfig({
+	toolchains: [{
+		builders: [{
+			name: "ESM",
+            use: new ViteBuilder({ output: { format: "es" } }),
+        },{
+			name: "CJS",
+            use: new ViteBuilder({ output: { format: "cjs" } }),
+        }],
+	}],
+});
+```
+
+## Config Structure
+
+
+```javascript
+
+```

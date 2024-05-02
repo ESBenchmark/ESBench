@@ -6,7 +6,6 @@ In order to scale your results, you can mark a [variable](./parameterization#var
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "Sum using for-loop vs Array.reduce",
 	params: {
 		length: [0, 10, 1000],
 	},

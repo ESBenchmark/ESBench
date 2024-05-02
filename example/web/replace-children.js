@@ -1,28 +1,20 @@
 import { defineSuite } from "esbench";
 
-export default defineSuite({
-	name: "replaceChildren vs append",
-	async setup(scene) {
-		const length = 1000;
+export default defineSuite(async scene => {
+	const length = 1000;
+	const elements = Array.from({ length }, () => document.createElement("p"));
 
-		scene.bench("replaceChildren", () => {
-			const elements = Array.from({ length }, () => document.createElement("p"));
+	scene.bench("replaceChildren", () => {
+		document.body.replaceChildren(...elements);
+	});
 
-			document.body.replaceChildren(...elements);
-		});
+	scene.bench("spared append", () => {
+		document.body.innerHTML = "";
+		document.body.append(...elements);
+	});
 
-		scene.bench("spared append", () => {
-			const elements = Array.from({ length }, () => document.createElement("p"));
-
-			document.body.innerHTML = "";
-			document.body.append(...elements);
-		});
-
-		scene.bench("loop append", () => {
-			const elements = Array.from({ length }, () => document.createElement("p"));
-
-			document.body.innerHTML = "";
-			for (const el of elements) document.body.append(el);
-		});
-	},
+	scene.bench("loop append", () => {
+		document.body.innerHTML = "";
+		for (const el of elements) document.body.append(el);
+	});
 });

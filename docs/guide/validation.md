@@ -2,9 +2,19 @@
 
 ESBench can validate your benchmarks before they are executed and produce validation errors. If any of the validation errors is critical, then none of the benchmarks will get executed.
 
+If `validate` property exists in the suite, all scenes and their cases will be run once to ensure no exceptions.
+
 ```javascript
 export default defineSuite({
-	name: "Array sort algorithms",
+	validate: {}, // Ensure workloads don't throw errors.
+    setup(scene) {/* ... */},
+});
+```
+
+There are also `check` and `equality` options to perform additional checks.
+
+```javascript
+export default defineSuite({
 	params: {
 		length: [100, 100_000],
 	},
@@ -33,7 +43,6 @@ export default defineSuite({
 
 ```javascript
 export default defineSuite({
-	name: "Decode base64 string into ArrayBuffer",
 	validate: {// [!code ++]
 		// Validate the returned buffers are equal.// [!code ++]
 		equality(a, b) {// [!code ++]

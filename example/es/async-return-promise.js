@@ -1,7 +1,6 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "Async vs Sync function returns Promise",
 	params: {
 		returns: ["Promise", "Non-Promise"],
 	},

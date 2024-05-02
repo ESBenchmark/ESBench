@@ -11,7 +11,6 @@ const merged = new RegExp("(?:" + patterns.join("|") + ")");
 const text = "Search numbers from the text and insert thousands 1234.5678 separators to them.";
 
 export default defineSuite({
-	name: "Combined regexp vs Test each",
 	validate: {
 		check: value => value === true,
 	},

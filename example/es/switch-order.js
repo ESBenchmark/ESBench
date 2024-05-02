@@ -242,7 +242,6 @@ function stringLast() {
 }
 
 export default defineSuite({
-	name: "case order in switch statement",
 	params: {
 		type: ["number", "string"],
 	},

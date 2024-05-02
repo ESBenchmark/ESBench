@@ -35,7 +35,6 @@ const dataSizeProfiler = {
 };
 
 export default defineSuite({
-	name: "zlib compress algorithms",
     // Add the profiler to the suite.
 	profilers: [dataSizeProfiler],
 	baseline: {

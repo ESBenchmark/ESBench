@@ -5,7 +5,6 @@ const text = "D:\\files\\movies\\[210902] How much $ for a 🦄? (English).mkv";
 const reSymbols = "\\.?*+^$[](){}|";
 
 export default defineSuite({
-	name: "Escape regexp",
 	validate: {
 		equality: true,
 	},

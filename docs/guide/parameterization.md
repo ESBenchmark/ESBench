@@ -1,16 +1,26 @@
 # Parameterization
 
-Understanding how code performs under different inputs is a common requirement. ESBench has built-in support for this.
+Understanding how code performs under different inputs is a common requirement. ESBench has built-in support for that.
 
 Through the `params` property, you can specify parameters with their set of values. As a result, you will get results for each combination of params values. 
 
+The parameters of the combination can be retrieved via `scene.params`.
+
 ```javascript
 export default defineSuite({
-	name: "Map vs Object - Get",
 	params: {
 		size: [0, 1000, 1000_000],
 		exists: [true, false],
 	},
+    /*
+     * Will be called 6 times with `scene.params` be each of the:
+     * { size: 0, exists: true }
+     * { size: 0, exists: false }
+     * { size: 1000, exists: true }
+     * { size: 1000, exists: false }
+     * { size: 1000_000, exists: true }
+     * { size: 1000_000, exists: false }
+     */
 	setup(scene) {
 		const { size, exists } = scene.params;
 
@@ -89,6 +99,7 @@ export default defineSuite({
 			"looooooooooooo_B_oooooooooooong",
 		],
 	},
+    setup(scene) { /* ... */ },
 });
 ```
 
@@ -106,11 +117,10 @@ export default defineSuite({
     setup(scene) {
 		const config = scene.params.config === "CJS" 
             ? config2 : config1;
+		
 		const text = scene.params.text === "Text A" 
             ? "looooooooooooo_A_oooooooooooong" 
             : "looooooooooooo_B_oooooooooooong";
-		
-		// Define cases...
-    }
+    },
 });
 ```

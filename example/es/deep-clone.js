@@ -21,11 +21,15 @@ function clone(obj) {
 	}
 }
 
-export default defineSuite({
-	name: "Deep clone without circular references",
-	setup(scene) {
-		scene.bench("recursion", () => clone(data));
-		scene.bench("JSON", () => JSON.parse(JSON.stringify(data)));
-		scene.bench("structuredClone", () => structuredClone(data));
-	},
+export default defineSuite(async scene => {
+	scene.bench("JSON", () => JSON.parse(JSON.stringify(data)));
+	scene.bench("structuredClone", () => structuredClone(data));
+	scene.bench("recursion", () => clone(data));
+
+	try {
+		const { serialize, deserialize } = await import("v8");
+		scene.bench("v8 serialize", () => deserialize(serialize(data)));
+	} catch {
+		// Module v8 is not available, skip this benchmark case.
+	}
 });

@@ -19,7 +19,6 @@ it("should return the result", async () => {
 		["n", ["10", "100", "1000"]],
 	]);
 	expect(result.meta.time).toBeTypeOf("object");
-	expect(result.name).toBe("Test Suite");
 	expect(result.notes).toHaveLength(0);
 	expect(result.baseline).toStrictEqual({ type: "n", value: "100" });
 	expect(result.scenes).toHaveLength(3);

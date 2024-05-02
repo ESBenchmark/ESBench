@@ -8,6 +8,7 @@ import glob from "fast-glob";
 import chalk from "chalk";
 import picomatch from "picomatch";
 import { ClientMessage } from "../runner.js";
+import { ToolchainResult } from "../summary.js";
 import { FilterOptions } from "./host.js";
 import noBuild from "../builder/default.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";
@@ -63,7 +64,7 @@ export interface ExecuteOptions {
 	 * Used to wait runner finish, it will resolve when receive result message,
 	 * and reject when receive error message or `reject` is called.
 	 */
-	promise: Promise<unknown>;
+	promise: Promise<ToolchainResult[]>;
 
 	/**
 	 * Make execution fail, useful for executions that can't wait to finish.

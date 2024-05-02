@@ -6,7 +6,7 @@ import { ValidateOptions } from "./validate.js";
 
 export type HookFn = () => Awaitable<unknown>;
 
-type Workload = () => unknown;
+type Workload = () => Awaitable<unknown>;
 
 export class BenchCase {
 
@@ -143,11 +143,6 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	 * Setup each scene, add your benchmark cases.
 	 */
 	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
-
-	/**
-	 * Provide the name of the suite, or use the filename if not set.
-	 */
-	name?: string;
 
 	/**
 	 * Runs a function before running the suite.

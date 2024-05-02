@@ -32,7 +32,6 @@ export function useTempDirectory(path: string) {
 }
 
 export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: RegExp) {
-	suite.name ??= "Test Suite";
 	suite.setup ??= noop;
 	suite.timing = {
 		iterations: 1,
@@ -46,7 +45,6 @@ export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: Reg
 
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 	const normalized: BenchmarkSuite = {
-		name: "Test Suite",
 		setup: scene => scene.bench("Test", noop),
 		...suite,
 	};
@@ -81,7 +79,7 @@ export async function testExecute(executor: Executor, build: any) {
 
 export const executorFixtures = {
 
-	empty: [{ name: "Test", paramDef: [], meta: {}, notes: [], scenes: [] }],
+	empty: [{ paramDef: [], meta: {}, notes: [], scenes: [] }],
 
 	log: { level: "info", log: "log message" },
 
