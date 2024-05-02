@@ -55,33 +55,34 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const jobs = Array.from(generator.getJobs());
 
 	if (jobs.length === 0) {
-		return console.warn("\nNo files match the includes, please check your configuration.");
+		return console.warn("\nNo files match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	console.log(`\n${count} jobs for ${jobs.length} executors.`);
 
 	for (const { executorName, executor, builds } of jobs) {
 		let builder = "";
-		console.log(`Running suites with: ${executorName}.`);
+		console.log(`Running suites with executor "${executorName}"`);
 
 		await executor.start?.();
 		try {
 			for (const build of builds) {
 				builder = build.name;
+				console.log(`${build.files.length} suites from builder "${builder}"`);
 
 				const context = newExecuteContext(tempDir, build, filter);
-				const [tcs] = await Promise.all([
+				const [records] = await Promise.all([
 					context.promise,
 					executor.execute(context),
 				]);
 
-				for (let i = 0; i < tcs.length; i++) {
+				for (let i = 0; i < records.length; i++) {
 					let name = build.files[i];
 					if (name.startsWith("./")) {
 						name = name.slice(2);
 					}
 					(result[name] ??= []).push({
-						...tcs[i],
+						...records[i],
 						builder,
 						executor: executorName,
 					});

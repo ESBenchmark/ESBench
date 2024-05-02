@@ -295,7 +295,7 @@ export class TimeProfiler implements Profiler {
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
-			await ctx.info(`${name} Warmup: ${timeDetail(time, n)}`);
+			await ctx.info(`${name} Warmup ${i}: ${timeDetail(time, n)}`);
 		}
 
 		await ctx.info();
@@ -303,7 +303,7 @@ export class TimeProfiler implements Profiler {
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			timeUsageList.push(time / n);
-			await ctx.info(`${name}: ${timeDetail(time, n)}`);
+			await ctx.info(`${name} ${i}: ${timeDetail(time, n)}`);
 		}
 
 		return timeUsageList.sort((a, b) => a - b);
