@@ -1,15 +1,8 @@
 import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
-import { ResultBaseline, RunSuiteResult } from "./runner.js";
+import { ResultBaseline } from "./runner.js";
 import { MetricMeta, Metrics } from "./profiling.js";
+import { ToolchainResult } from "./connect.js";
 
-export type ESBenchResult = Record<string, ToolchainResult[]>;
-
-export interface ToolchainResult extends RunSuiteResult {
-	builder?: string;
-	executor?: string;
-}
-
-// -------------------------------------------------------------
 
 const kMetrics = Symbol("metrics");
 const kIndex = Symbol("index");

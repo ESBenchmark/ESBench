@@ -12,8 +12,9 @@ import { markdownTable } from "markdown-table";
 import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./profiling.js";
 import { BUILTIN_VARS } from "./utils.js";
+import { ToolchainResult } from "./connect.js";
 import { ResultBaseline } from "./runner.js";
-import { FlattedResult, Summary, ToolchainResult } from "./summary.js";
+import { FlattedResult, Summary } from "./summary.js";
 
 type RatioStyle = "value" | "percentage" | "trend";
 

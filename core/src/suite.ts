@@ -99,7 +99,7 @@ export class Scene<P = any> {
 	}
 
 	/*
-	 * Don't use `isAsync = fn.constructor === AsyncFunction` because the fn can be
+	 * Don't use `isAsync = fn.constructor !== Function` because the fn can be
 	 * non-async and return a Promise.
 	 *
 	 * For example:

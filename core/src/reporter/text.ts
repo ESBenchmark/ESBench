@@ -3,7 +3,7 @@ import { stdout } from "process";
 import { Writable } from "stream";
 import chalk, { Chalk, ChalkInstance } from "chalk";
 import stringLength from "string-width";
-import { ESBenchResult } from "../summary.js";
+import { ESBenchResult } from "../connect.js";
 import { Reporter } from "../host/config.js";
 import { buildSummaryTable, SummaryTableOptions } from "../table.js";
 
