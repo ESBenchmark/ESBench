@@ -16,8 +16,9 @@ describe("checkParams", () => {
 		[null, "null"],
 		[true, "true"],
 
-		[Symbol(), "symbol"],
-		[Symbol("foo"), "symbol(foo)"],
+		[Symbol(), "Symbol()"],
+		[Symbol("foo"), "Symbol(foo)"],
+		[Symbol("looooooooooooooooooooong"), "Symbol(looo…ong)"],
 
 		[() => {}, "Anonymous fn"],
 		[function foo() {}, "foo"],

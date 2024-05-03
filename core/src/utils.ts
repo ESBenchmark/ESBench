@@ -6,9 +6,9 @@ export const consoleLogHandler: LogHandler = (message = "", level) => console[le
 
 export const RE_ANY = new RegExp("");
 
-const NAME_LENGTH = 16;
-
 export const BUILTIN_VARS = ["Name", "Builder", "Executor"];
+
+const NAME_LENGTH = 16;
 
 /**
  * Convert the value to a short (length <= 16) display string.
@@ -27,8 +27,8 @@ export function toDisplayName(v: unknown) {
 				: "[object null]";
 		case "symbol":
 			return v.description
-				? `symbol(${ellipsis(v.description, NAME_LENGTH - 8)})`
-				: "symbol";
+				? `Symbol(${ellipsis(v.description, NAME_LENGTH - 8)})`
+				: "Symbol()";
 		case "function":
 			return v.name
 				? `${ellipsis(v.name, NAME_LENGTH)}`
