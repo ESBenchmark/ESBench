@@ -155,9 +155,9 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	afterAll?: HookFn;
 
 	/**
-	 * Add more profilers for the suite.
+	 * Add more profilers for the suite, falsy values are ignored.
 	 */
-	profilers?: Profiler[];
+	profilers?: Array<Profiler | false | undefined>;
 
 	/**
 	 * Measure the running time of the benchmark function.

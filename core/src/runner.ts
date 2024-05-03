@@ -96,6 +96,23 @@ function toSuiteOptions(input: UserSuite): BenchmarkSuite {
 	return typeof input === "function" ? { setup: input } : input;
 }
 
+function resolveProfilers(suite: BenchmarkSuite) {
+	const { timing, validate } = suite;
+
+	const resolved: any = [new DefaultEventLogger()];
+	if (suite.profilers) {
+		resolved.push(...suite.profilers);
+	}
+	if (validate) {
+		resolved.push(new ExecutionValidator(validate));
+	}
+	if (timing !== false) {
+		resolved.push(new TimeProfiler(timing === true ? {} : timing));
+	}
+
+	return resolved.filter(Boolean) as Profiler[];
+}
+
 function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
 	const { type, value } = baseline;
 	if (BUILTIN_VARS.includes(type)) {
@@ -114,28 +131,17 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
  */
 export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 	suite = toSuiteOptions(suite);
-	const { beforeAll, afterAll, timing, validate, params = {}, baseline } = suite;
+	const { beforeAll, afterAll, params = {}, baseline } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
-		const profilers: Profiler[] = [new DefaultEventLogger()];
-		if (suite.profilers) {
-			profilers.push(...suite.profilers);
-		}
-		if (validate) {
-			profilers.push(new ExecutionValidator(validate));
-		}
-		if (timing !== false) {
-			profilers.push(new TimeProfiler(timing === true ? {} : timing));
-		}
-
+		const profilers = resolveProfilers(suite);
 		if (baseline) {
 			checkBaseline(baseline, params);
 		}
-
 		const paramDef = checkParams(params);
-		context = new ProfilingContext(suite, profilers, options);
 
+		context = new ProfilingContext(suite, profilers, options);
 		await beforeAll?.();
 		await context.run().finally(afterAll);
 
