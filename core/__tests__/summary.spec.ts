@@ -13,7 +13,7 @@ function expectHaveProperties(obj: any, props: any) {
 describe("constructor", () => {
 	it("should associate notes with results", () => {
 		const summary = new Summary(result);
-		expect(summary.notes[0].row).toBe(summary.results[0]);
+		expect(summary.notes[0].case).toBe(summary.results[0]);
 	});
 });
 

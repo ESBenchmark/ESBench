@@ -3,13 +3,12 @@ import { ResultBaseline } from "./runner.js";
 import { MetricMeta, Metrics } from "./profiling.js";
 import { ToolchainResult } from "./connect.js";
 
-
 const kMetrics = Symbol("metrics");
 const kIndex = Symbol("index");
 
 export type FlattedResult = Record<string, string> & {
 
-	// Retrieved by `Summary.getMetrics`.
+	// Retrieved by `Summary.getMetrics()`.
 	[kMetrics]: Metrics;
 
 	// Internal use, updated on `Summary.sort`.
@@ -23,7 +22,7 @@ export type FlattedResult = Record<string, string> & {
 export interface ResolvedNote {
 	type: "info" | "warn";
 	text: string;
-	row?: FlattedResult;
+	case?: FlattedResult;
 }
 
 function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => any) {
@@ -141,7 +140,7 @@ export class Summary {
 			const resolved: ResolvedNote = { type, text };
 			this.notes.push(resolved);
 			if (caseId !== undefined) {
-				resolved.row = this.results[offset + caseId];
+				resolved.case = this.results[offset + caseId];
 			}
 		}
 	}
@@ -243,14 +242,14 @@ export class Summary {
 		return this.table[this.getIndex(variables)];
 	}
 
-	findAll(constant: Record<string, string>, variable: string) {
+	findAll(constants: Record<string, string>, variable: string) {
 		const values = this.vars.get(variable);
 		if (!values) {
 			throw new Error(`${variable} is not in variables`);
 		}
 		const w = this.getWeight(variable);
 
-		const copy = { ...constant };
+		const copy = { ...constants };
 		copy[variable] = firstItem(values)!;
 		const base = this.getIndex(copy);
 

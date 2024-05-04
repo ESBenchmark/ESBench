@@ -5,7 +5,7 @@ import { pathToFileURL } from "url";
 import { tmpdir } from "os";
 import mime from "mime";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
-import { ClientMessage } from "../runner.js";
+import { ClientMessage } from "../connect.js";
 
 declare function _ESBenchChannel(message: ClientMessage): void;
 

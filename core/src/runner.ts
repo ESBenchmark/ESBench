@@ -54,6 +54,7 @@ export class RunSuiteError extends Error {
 		this.cause = cause; // For compatibility.
 	}
 
+	// noinspection JSUnusedGlobalSymbols; Used by serializeError()
 	toJSON() {
 		const { name, stack, message, paramStr } = this;
 		return {
@@ -61,10 +62,23 @@ export class RunSuiteError extends Error {
 			cause: serializeError(this.cause),
 		};
 	}
+
+	static fromScene(params: object, cause: Error) {
+		const p: Record<string, string> = {};
+		for (const [k, v] of Object.entries(params)) {
+			p[k] = toDisplayName(v);
+		}
+		const s = JSON.stringify(p);
+		const message = "Error occurred in scene " + s;
+		return new RunSuiteError(message, cause, params, s);
+	}
 }
 
 RunSuiteError.prototype.name = "RunSuiteError";
 
+/**
+ * `baseline` option of the suite, with `value` transformed to short string.
+ */
 export interface ResultBaseline {
 	type: string;
 	value: string;
@@ -75,7 +89,6 @@ export interface RunSuiteResult {
 	notes: Note[];
 	meta: Record<string, MetricMeta>;
 	paramDef: Array<[string, string[]]>;
-	name?: string;
 	baseline?: ResultBaseline;
 }
 
@@ -150,13 +163,7 @@ export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 	} catch (e) {
 		const wp = (context as any)?.workingParams;
 		if (wp) {
-			const p: Record<string, string> = {};
-			for (const [k, v] of Object.entries(wp)) {
-				p[k] = toDisplayName(v);
-			}
-			const s = JSON.stringify(p);
-			const message = "Error occurred in scene " + s;
-			throw new RunSuiteError(message, e, wp, s);
+			throw RunSuiteError.fromScene(wp, e);
 		}
 		throw new RunSuiteError("Error occurred when running suite.", e);
 	}

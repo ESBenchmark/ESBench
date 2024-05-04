@@ -1,6 +1,6 @@
 <template>
 	<nav :class='$style.nav'>
-		<h1>Suite</h1>
+		<h1>Suites</h1>
 		<a
 			v-for='name of names'
 			:key='name'

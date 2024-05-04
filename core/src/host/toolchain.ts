@@ -7,8 +7,7 @@ import { Awaitable, durationFmt, MultiMap, UniqueMultiMap } from "@kaciras/utili
 import glob from "fast-glob";
 import chalk from "chalk";
 import picomatch from "picomatch";
-import { ClientMessage } from "../runner.js";
-import { ToolchainResult } from "../summary.js";
+import { ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./host.js";
 import noBuild from "../builder/default.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";

@@ -9,6 +9,9 @@ export interface ToolchainResult extends RunSuiteResult {
 	executor?: string;
 }
 
+/**
+ * Key is path of the suite file, value is results of the suite in all toolchains.
+ */
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 
 type ErrorMessage = { e: ErrorObject; params?: string };

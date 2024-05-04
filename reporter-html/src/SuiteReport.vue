@@ -23,8 +23,8 @@
 					:class='$style.info'
 				/>
 
-				<template v-if='note.row'>
-					{{ note.row[xAxis] }}:
+				<template v-if='note.case'>
+					{{ note.case[xAxis] }}:
 				</template>
 				{{ note.text }}
 			</p>
@@ -76,7 +76,7 @@ const filter = useDataFilter(summary);
 const { variables, matches, xAxis } = filter;
 
 function isRelevant(note: ResolvedNote) {
-	return !note.row || matches.value.includes(note.row);
+	return !note.case || matches.value.includes(note.case);
 }
 </script>
 
