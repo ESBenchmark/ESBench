@@ -1,4 +1,4 @@
-// This file is processed by .vitepress/suite-loader.ts
+// This file will be transformed with .vitepress/suite-loader.ts
 export interface SuiteInfo {
 	name: string;
 	category: string;
@@ -9,6 +9,7 @@ export interface SuiteInfo {
 
 export default [] as SuiteInfo[];
 
+// Import syntax is used to leverage IDE's intellisense.
 import("../../example/es/array-set-includes.js", {
 	with: { name: "Array.includes vs Set.has" },
 });
@@ -29,6 +30,9 @@ import("../../example/es/string-join.js", {
 });
 import("../../example/es/nullish-operator.js", {
 	with: { name: "?? vs ||" },
+});
+import("../../example/es/setTimeout-throttling.js", {
+	with: { name: "setTimeout Throttling" },
 });
 import("../../example/es/deep-clone.js", {
 	with: { name: "Deep clone serializable object" },
