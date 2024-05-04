@@ -78,17 +78,57 @@ ESBench provide some builders and executors out of box.
 
 Builder:
 
-* `noBuild` Does not perform any transformation, this is the default builder.
+* `noBuild` (default) Does not perform any transformation, executors will import source files.
 * `ViteBuilder` Build suites with [Vite](https://vitejs.dev), requires Vite installed.
 * `RollupBuilder` Build suites with [Rollup](https://rollupjs.org/), requires Rollup installed.
 
 Executor:
 
-* `directExecutor` Run suites directly in the current context, this is the default executor.
+* `directExecutor` (default) Run suites directly in the current context.
 * `ProcessExecutor` Call an external JS runtime to run suites, the runtime must support the fetch API.
 * `NodeExecutor` Spawn a new Node process to run suites, can be used with legacy Node that does not have `fetch`.
 * `PlaywrightExecutor` Run suites in the browser.
 * `WebextExecutor` Run suites in the browser with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access. Currently only support Chromium.
+
+## Multiple Toolchains
+
+When part of the suite needs to run in a different environment, you can add multiple toolchains.
+
+A complex example:
+
+```javascript
+import { defineConfig, PlaywrightExecutor, ProcessExecutor, ViteBuilder, WebextExecutor } from "esbench/host";
+import { chromium } from "playwright";
+
+const viteBuilder = new ViteBuilder();
+
+export default defineConfig({
+	toolchains: [
+		{
+			include: ["./es/*.js", "./node/*.js"],
+		},
+		{
+			include: ["./es/*.js", "./web/*.js"],
+			builders: [viteBuilder],
+			executors: [new PlaywrightExecutor(chromium)],
+		},
+		{
+			include: ["./webext/*.js"],
+			builders: [viteBuilder],
+			executors: [new WebextExecutor(chromium)],
+		},
+		{
+			include: ["./node/*.js"],
+			executors: [
+				new ProcessExecutor("bun"),
+				new ProcessExecutor("deno run --allow-net"),
+			],
+		},
+	],
+});
+```
+
+![Job Graph](./Toolchains.svg)
 
 ## Tool Names
 
@@ -124,11 +164,4 @@ export default defineConfig({
         }],
 	}],
 });
-```
-
-## Config Structure
-
-
-```javascript
-
 ```
