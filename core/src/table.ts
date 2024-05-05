@@ -54,6 +54,13 @@ export interface SummaryTableOptions {
 	hideSingle?: boolean;
 
 	/**
+	 * Set to false to skip the format phase.
+	 *
+	 * @default true
+	 */
+	format?: boolean;
+
+	/**
 	 * Show percentiles columns in the report.
 	 *
 	 * To make this value more accurate, you can increase `samples` and decrease `iterations` in suite config.
@@ -319,7 +326,7 @@ class DifferenceColumn implements ColumnFactory {
 	}
 }
 
-export interface SummaryTable extends Array<string[]> {
+export interface SummaryTable extends Array<Array<string | number>> {
 	hints: string[];
 	warnings: string[];
 
@@ -367,7 +374,7 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 	if (removed !== 0) {
 		summary.notes.push({
 			type: "info",
-			row,
+			case: row,
 			text: `${row.Name}: ${removed} outliers were removed.`,
 		});
 	}
@@ -377,7 +384,7 @@ const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
 type FormatFn = (value: any) => string;
 
-const formatters: Record<string, UnitConvertor<readonly any[]>> = {
+const formatters: Record<string, UnitConvertor> = {
 	number: decimalPrefix,
 	duration: durationFmt,
 	dataSize: dataSizeIEC,
@@ -429,6 +436,7 @@ export function buildSummaryTable(
 		percentiles = [],
 		flexUnit = false,
 		hideSingle = true,
+		format = true,
 		ratioStyle = "percentage",
 	} = options;
 
@@ -500,7 +508,7 @@ export function buildSummaryTable(
 		const body = table.slice(groupOffset);
 		for (let i = 0; i < columnDefs.length; i++) {
 			const def = columnDefs[i];
-			if (def.format) {
+			if (format && def.format) {
 				formatColumn(body, i, def.format, flexUnit);
 			}
 		}
@@ -512,7 +520,7 @@ export function buildSummaryTable(
 
 	// 5. Generate additional properties
 	for (const note of summary.notes) {
-		const scope = note.row ? `[No.${note.row[kRowNumber]}] ` : "";
+		const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
 		if (note.type === "info") {
 			table.hints.push(chalk.cyan(msg));

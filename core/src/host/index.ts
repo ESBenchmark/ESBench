@@ -2,6 +2,7 @@ export * from "./config.js";
 export { Builder, Executor, ExecuteOptions } from "./toolchain.js";
 export { start, report } from "./host.js";
 
+export { default as csvReporter } from "../reporter/csv.js";
 export { default as textReporter } from "../reporter/text.js";
 export { default as rawReporter } from "../reporter/raw.js";
 export { default as htmlReporter } from "../reporter/html.js";
