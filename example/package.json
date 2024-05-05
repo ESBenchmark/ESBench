@@ -6,7 +6,7 @@
 		"report": "esbench report reports/result.json"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.12.4",
+		"@kaciras/utilities": "^0.13.0",
 		"chrome-remote-interface": "^0.33.0",
 		"esbench": "workspace:^",
 		"playwright": "^1.43.1"
