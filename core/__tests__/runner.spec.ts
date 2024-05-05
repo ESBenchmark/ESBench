@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { run, spin1ms } from "./helper.js";
+import { run, spin } from "./helper.js";
 import { RunSuiteError } from "../src/index.js";
 
 it("should return the result", async () => {
@@ -12,7 +12,7 @@ it("should return the result", async () => {
 			value: 100,
 		},
 		setup(scene) {
-			scene.bench("Test", spin1ms);
+			scene.bench("Test", spin);
 		},
 	});
 	expect(result.paramDef).toStrictEqual([

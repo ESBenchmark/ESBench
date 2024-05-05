@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { BenchmarkSuite, runAndSend } from "../src/index.ts";
-import { spin1ms } from "./helper.ts";
+import { spin } from "./helper.ts";
 
 it("should wait for send the result in runAndSend", async () => {
 	const sending = Promise.resolve();
@@ -11,7 +11,7 @@ it("should wait for send the result in runAndSend", async () => {
 			iterations: 1,
 		},
 		setup(scene) {
-			scene.bench("Test", spin1ms);
+			scene.bench("Test", spin);
 		},
 	};
 	await runAndSend(

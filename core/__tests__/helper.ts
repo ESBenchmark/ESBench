@@ -3,7 +3,8 @@ import { CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { afterEach, beforeEach, Mock, vi } from "vitest";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { Profiler, ProfilingContext } from "../src/profiling.ts";
-import { ClientMessage, messageResolver, runSuite } from "../src/runner.ts";
+import { ClientMessage, messageResolver } from "../src/connect.ts";
+import { runSuite } from "../src/runner.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
 
@@ -11,10 +12,12 @@ export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T
 
 /**
  * setTimeout() has a large error, so we use a synchronized loop for delay.
+ *
+ * @param ms Delay time, in milliseconds.
  */
-export function spin1ms() {
+export function spin(ms = 1) {
 	// noinspection StatementWithEmptyBodyJS
-	for (let s = performance.now(), e = s; e - s < 1; e = performance.now());
+	for (let s = performance.now(), e = s; e - s < ms; e = performance.now());
 }
 
 /**

@@ -1,7 +1,6 @@
-import * as tp from "timers/promises";
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { PartialSuite, runProfilers, spin1ms } from "./helper.js";
+import { PartialSuite, runProfilers, spin } from "./helper.js";
 import { TimeProfiler, TimingOptions, unroll } from "../src/time.js";
 
 function measureTime(options: TimingOptions, suite?: PartialSuite) {
@@ -50,7 +49,7 @@ it.each([
 });
 
 it("should support specify number of samples", async () => {
-	const fn = vi.fn(spin1ms);
+	const fn = vi.fn(spin);
 	const result = await measureTime({
 		warmup: 3,
 		samples: 22,
@@ -62,7 +61,7 @@ it("should support specify number of samples", async () => {
 });
 
 it("should support specify number of iterations", async () => {
-	const fn = vi.fn(spin1ms);
+	const fn = vi.fn(spin);
 	const result = await measureTime({
 		iterations: 33,
 		unrollFactor: 1,
@@ -78,7 +77,7 @@ it("should estimate number of iterations", async () => {
 		calls: 1,
 		async iterate(count: number) {
 			const start = performance.now();
-			await tp.setTimeout(count);
+			spin(count);
 			return performance.now() - start;
 		},
 	};
@@ -87,8 +86,8 @@ it("should estimate number of iterations", async () => {
 
 	const iterations = await profiler.estimate(ctx, iterator, "100ms");
 
-	expect(iterations).toBeLessThan(110);
-	expect(iterations).toBeGreaterThan(90);
+	expect(iterations).toBeLessThan(105);
+	expect(iterations).toBeGreaterThan(95);
 });
 
 // we mock heavy overhead to make the test stable.
@@ -140,7 +139,7 @@ it("should measure time as duration", async () => {
 	const result = await measureTime({
 		iterations: 32,
 	}, {
-		setup: scene => scene.bench("Test", spin1ms),
+		setup: scene => scene.bench("Test", spin),
 	});
 
 	expect(result.meta.time).toBeDefined();
@@ -154,7 +153,7 @@ it("should measure time as throughput", async () => {
 		throughput: "s",
 		iterations: 32,
 	}, {
-		setup: scene => scene.bench("Test", spin1ms),
+		setup: scene => scene.bench("Test", spin),
 	});
 
 	expect(result.meta.time).toBeUndefined();
