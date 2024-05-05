@@ -1,31 +1,19 @@
-import { argv, cwd } from "process";
-import { resolve } from "path";
-import { pathToFileURL } from "url";
+import { argv } from "process";
+import { importCWD } from "@kaciras/utilities/node";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { report, start } from "./host.js";
-import { ESBenchConfig } from "./config.js";
+
+const DEFAULT_CONFIG_FILE = "esbench.config.js";
 
 process.title = "node (esbench)";
-
-async function loadConfig(path?: string) {
-	let url = resolve(cwd(), path ?? "esbench.config.js");
-	url = pathToFileURL(url).toString();
-	try {
-		return (await import(url)).default;
-	} catch (e) {
-		if (path || e.code !== "ERR_MODULE_NOT_FOUND") {
-			throw e;
-		}
-		return {} as ESBenchConfig;
-	}
-}
 
 const program = yargs(hideBin(argv))
 	.command("report <files...>", "Generate report from result files", {
 		config: {
 			type: "string",
 			description: "Use specified config file",
+			default: DEFAULT_CONFIG_FILE,
 		},
 		files: {
 			type: "string",
@@ -35,13 +23,14 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, files } = args;
-		return report(await loadConfig(config), files);
+		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
+		return report(cfgObj ?? {}, files);
 	})
 	.command("*", "Run benchmark", {
 		config: {
 			type: "string",
 			description: "Use specified config file",
-			default: "esbench.config.js",
+			default: DEFAULT_CONFIG_FILE,
 		},
 		file: {
 			type: "string",
@@ -65,7 +54,8 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, ...filter } = args;
-		return start(await loadConfig(config), filter);
+		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
+		return start(cfgObj ?? {}, filter);
 	});
 
 program.version(false).strict().showHelpOnFail(false).parseAsync();
