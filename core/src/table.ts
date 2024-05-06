@@ -20,19 +20,6 @@ type RatioStyle = "value" | "percentage" | "trend";
 
 export interface SummaryTableOptions {
 	/**
-	 * Allow values in the column have different unit.
-	 *
-	 * @default false
-	 * @example
-	 *    (flexUnit = false)       (flexUnit = true)
-	 * |   name |      time |   |   name |       time |
-	 * | -----: | --------: |   | -----: | ---------: |
-	 * | object | 938.45 ms |   | object |  938.45 ms |
-	 * |    map |    1.03 s |   |    map | 1031.22 ms |
-	 */
-	flexUnit?: boolean;
-
-	/**
 	 * Show standard deviation (*.SD) columns in the report.
 	 *
 	 * @default true
@@ -52,13 +39,6 @@ export interface SummaryTableOptions {
 	 * @default true
 	 */
 	hideSingle?: boolean;
-
-	/**
-	 * Set to false to skip the format phase.
-	 *
-	 * @default true
-	 */
-	format?: boolean;
 
 	/**
 	 * Show percentiles columns in the report.
@@ -326,16 +306,14 @@ class DifferenceColumn implements ColumnFactory {
 	}
 }
 
-export interface SummaryTable extends Array<Array<string | number>> {
+export interface SummaryTable {
+	header: string[];
+	groups: Array<Array<Array<string | number>>>;
+	formats: Array<string | undefined>;
 	hints: string[];
 	warnings: string[];
 
-	/**
-	 * Render this table to the source code of a Markdown table.
-	 *
-	 * @param stringLength Function to detect the length of cell content.
-	 */
-	toMarkdown(stringLength?: (s: string) => number): string;
+	format(options?: FormatOptions): FormattedTable;
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
@@ -380,6 +358,30 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 	}
 }
 
+export interface FormatOptions {
+	/**
+	 * Allow values in the column have different unit.
+	 *
+	 * @default false
+	 * @example
+	 *    (flexUnit = false)       (flexUnit = true)
+	 * |   name |      time |   |   name |       time |
+	 * | -----: | --------: |   | -----: | ---------: |
+	 * | object | 938.45 ms |   | object |  938.45 ms |
+	 * |    map |    1.03 s |   |    map | 1031.22 ms |
+	 */
+	flexUnit?: boolean;
+}
+
+export interface FormattedTable extends Array<string[]> {
+	/**
+	 * Render this table to the source code of a Markdown table.
+	 *
+	 * @param stringLength Function to detect the length of cell content.
+	 */
+	toMarkdown(stringLength?: (s: string) => number): string;
+}
+
 const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
 type FormatFn = (value: any) => string;
@@ -421,7 +423,7 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
-function toMarkdown(this: SummaryTable, stringLength?: any) {
+function toMarkdown(this: FormattedTable, stringLength?: any) {
 	return markdownTable(this, { stringLength, align: "r" });
 }
 
@@ -432,11 +434,9 @@ export function buildSummaryTable(
 	chalk = noColors,
 ) {
 	const {
+		hideSingle = true,
 		stdDev = true,
 		percentiles = [],
-		flexUnit = false,
-		hideSingle = true,
-		format = true,
 		ratioStyle = "percentage",
 	} = options;
 
@@ -478,56 +478,64 @@ export function buildSummaryTable(
 	preprocess(prev, options);
 
 	// 3. Create the table
-	const table = [columnDefs.map(c => c.name)] as SummaryTable;
-	table.hints = [];
-	table.warnings = [];
-	table.toMarkdown = toMarkdown;
+	const header = columnDefs.map(c => c.name);
+	const formats = columnDefs.map(c => c.format);
+	const hints = [];
+	const warnings = [];
+	const groups = [];
 
 	// 4. Fill the body
-	const groups = baseline
+	const rawGroups = baseline
 		? summary.split(baseline.type).values()
 		: [summary.results];
 
-	for (const group of groups) {
+	for (const group of rawGroups) {
 		// 4-1. Prepare
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
 		}
 
 		// 4-2. Add values to cells
-		const groupOffset = table.length;
-		for (const data of group) {
+		groups.push(group.map(result => {
 			const cells: any[] = [];
-			table.push(cells);
 			for (const column of columnDefs) {
-				cells.push(column.getValue(data, chalk));
+				cells.push(column.getValue(result, chalk));
 			}
-		}
-
-		// 4-3. Postprocess
-		const body = table.slice(groupOffset);
-		for (let i = 0; i < columnDefs.length; i++) {
-			const def = columnDefs[i];
-			if (format && def.format) {
-				formatColumn(body, i, def.format, flexUnit);
-			}
-		}
-
-		table.push([]); // Add an empty row between groups.
+			return cells;
+		}));
 	}
 
-	table.pop();
+	function format(this: SummaryTable, options: FormatOptions = {}) {
+		const { flexUnit = true } = options;
+		const table = [this.header] as FormattedTable;
+
+		for (const group of this.groups) {
+			const offset = table.length;
+			for (const row of group) {
+				table.push([...row] as string[]);
+			}
+			const copy = table.slice(offset);
+			for (let i = 0; i < this.header.length; i++) {
+				if (formats[i])
+					formatColumn(copy, i, formats[i]!, flexUnit);
+			}
+			table.push([]);
+		}
+		table.pop();
+		table.toMarkdown = toMarkdown;
+		return table;
+	}
 
 	// 5. Generate additional properties
 	for (const note of summary.notes) {
 		const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
 		if (note.type === "info") {
-			table.hints.push(chalk.cyan(msg));
+			hints.push(chalk.cyan(msg));
 		} else {
-			table.warnings.push(chalk.yellowBright(msg));
+			warnings.push(chalk.yellowBright(msg));
 		}
 	}
 
-	return table;
+	return { header, groups, formats, hints, warnings, format } as SummaryTable;
 }

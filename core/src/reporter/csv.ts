@@ -1,7 +1,7 @@
 import { createWriteStream, mkdirSync, WriteStream } from "fs";
 import { dirname } from "path";
 import { Reporter } from "../host/config.js";
-import { buildSummaryTable, SummaryTable, SummaryTableOptions } from "../table.js";
+import { buildSummaryTable, SummaryTableOptions } from "../table.js";
 
 export interface CSVReporterOptions extends SummaryTableOptions {
 	/**
@@ -10,20 +10,17 @@ export interface CSVReporterOptions extends SummaryTableOptions {
 	directory?: string;
 }
 
-function writeCSVToStream(table: SummaryTable, out: WriteStream) {
-	for (const row of table) {
-		if (row.length === 0) {
+function writeCSVRow(row: any[], out: WriteStream) {
+	for (const cell of row) {
+		if (!row) {
 			continue;
 		}
-		for (const cell of row) {
-			let v = cell.toString();
-			if (/[\r\n",]/.test(v)) {
-				v = '"' + v.replaceAll('"', '""') + '"';
-			}
-			out.write(v);
-			out.write(",");
+		let v = cell.toString();
+		if (/[\r\n",]/.test(v)) {
+			v = '"' + v.replaceAll('"', '""') + '"';
 		}
-		out.write("\r\n");
+		out.write(v);
+		out.write(",");
 	}
 }
 
@@ -32,7 +29,6 @@ function writeCSVToStream(table: SummaryTable, out: WriteStream) {
  */
 export default function (options: CSVReporterOptions = {}): Reporter {
 	const { directory = "reports" } = options;
-	options.format ??= false;
 
 	function openWrite(name: string) {
 		const filename = `${directory}/${name}.csv`;
@@ -47,8 +43,11 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 			const table = buildSummaryTable(results, diff, options);
 
 			const fp = openWrite(name);
-			writeCSVToStream(table, fp);
-			fp.end().close();
+			writeCSVRow(table.header, fp);
+			for (const row of table.groups.flat()) {
+				writeCSVRow(row, fp);
+			}
+			fp.end("\r\n").close();
 		}
 		console.log(`${entries.length} CSV files saved at ${directory}/`);
 	};

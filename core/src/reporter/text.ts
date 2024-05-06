@@ -5,9 +5,9 @@ import chalk, { Chalk, ChalkInstance } from "chalk";
 import stringLength from "string-width";
 import { ESBenchResult } from "../connect.js";
 import { Reporter } from "../host/config.js";
-import { buildSummaryTable, SummaryTableOptions } from "../table.js";
+import { buildSummaryTable, FormatOptions, SummaryTableOptions } from "../table.js";
 
-export interface TextReporterOptions extends SummaryTableOptions {
+export interface TextReporterOptions extends SummaryTableOptions, FormatOptions {
 	/**
 	 * Write the report to a text file.
 	 */
@@ -38,7 +38,7 @@ function print(
 		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);
 		out.write("\n");
-		out.write(table.toMarkdown(stringLength));
+		out.write(table.format(options).toMarkdown(stringLength));
 		out.write("\n");
 
 		if (table.hints.length > 0) {

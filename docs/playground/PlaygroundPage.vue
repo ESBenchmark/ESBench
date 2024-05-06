@@ -91,14 +91,13 @@ window.MonacoEnvironment = {
 
 // IDEA Darcula theme
 const logColors: Record<string, string> = {
+	// no alias (gray & grey)
 	black: "#000",
 	blackBright: "#595959",
 	blue: "#3993D4",
 	blueBright: "#1FB0FF",
 	cyan: "#00A3A3",
 	cyanBright: "#00E5E5",
-	gray: "#595959",
-	grey: "#595959",
 	green: "#5C962C",
 	greenBright: "#4FC414",
 	magenta: "#A771BF",
@@ -110,7 +109,7 @@ const logColors: Record<string, string> = {
 	yellow: "#A68A0D",
 	yellowBright: "#E5BF00",
 
-	// Log Levels
+	// Log level colors
 	error: "#F0524F",
 	warning: "#E5BF00",
 };
@@ -146,7 +145,7 @@ import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { useData } from "vitepress";
-import { buildSummaryTable, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
+import { buildSummaryTable,FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
@@ -166,7 +165,7 @@ const consoleEl = shallowRef<HTMLElement>();
 const vpData = useData();
 
 const editorWidth = useLocalStorage("EW", "50%");
-const tableOptions = useLocalStorage<SummaryTableOptions>("TableOptions", {
+const tableOptions = useLocalStorage<SummaryTableOptions & FormatOptions>("TableOptions", {
 	flexUnit: false,
 	stdDev: true,
 	outliers: "all",
@@ -223,7 +222,7 @@ async function startBenchmark() {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
 		printTable(result);
-		results.push({ name: result[0].name!, result, time: new Date() });
+		results.push({ name: "playground-suite", result, time: new Date() });
 	} catch (e) {
 		logError(e);
 	}
@@ -238,7 +237,7 @@ function printTable(result: RunSuiteResult[]) {
 	const table = buildSummaryTable(result, undefined, tableOptions.value, webChalk);
 
 	appendLog();
-	appendLog(table.toMarkdown(stringLength));
+	appendLog(table.format(tableOptions.value).toMarkdown(stringLength));
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");
