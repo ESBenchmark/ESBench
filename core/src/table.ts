@@ -306,10 +306,13 @@ class DifferenceColumn implements ColumnFactory {
 	}
 }
 
+type CellValue = string | number | undefined;
+
 export interface SummaryTable {
-	header: string[];
-	groups: Array<Array<Array<string | number>>>;
+	groupOffsets: number[];
 	formats: Array<string | undefined>;
+	header: string[];
+	body: CellValue[][];
 	hints: string[];
 	warnings: string[];
 
@@ -482,7 +485,8 @@ export function buildSummaryTable(
 	const formats = columnDefs.map(c => c.format);
 	const hints = [];
 	const warnings = [];
-	const groups = [];
+	const body = [];
+	const groupOffsets = [];
 
 	// 4. Fill the body
 	const rawGroups = baseline
@@ -494,32 +498,31 @@ export function buildSummaryTable(
 		for (const metricColumn of columnDefs) {
 			metricColumn.prepare?.(group);
 		}
-
 		// 4-2. Add values to cells
-		groups.push(group.map(result => {
+		for (const result of group) {
 			const cells: any[] = [];
+			body.push(cells);
 			for (const column of columnDefs) {
 				cells.push(column.getValue(result, chalk));
 			}
-			return cells;
-		}));
+		}
+		groupOffsets.push(body.length);
 	}
 
 	function format(this: SummaryTable, options: FormatOptions = {}) {
 		const { flexUnit = true } = options;
 		const table = [this.header] as FormattedTable;
 
-		for (const group of this.groups) {
-			const offset = table.length;
-			for (const row of group) {
-				table.push([...row] as string[]);
-			}
-			const copy = table.slice(offset);
+		let offset = 0;
+		for (const e of this.groupOffsets) {
+			const group = this.body.slice(offset, e);
+			offset = e;
+
 			for (let i = 0; i < this.header.length; i++) {
 				if (formats[i])
-					formatColumn(copy, i, formats[i]!, flexUnit);
+					formatColumn(group, i, formats[i]!, flexUnit);
 			}
-			table.push([]);
+			table.push(...group as string[][], []);
 		}
 		table.pop();
 		table.toMarkdown = toMarkdown;
@@ -537,5 +540,5 @@ export function buildSummaryTable(
 		}
 	}
 
-	return { header, groups, formats, hints, warnings, format } as SummaryTable;
+	return { header, groupOffsets, body, formats, hints, warnings, format } as SummaryTable;
 }

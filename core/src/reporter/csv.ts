@@ -44,7 +44,7 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 
 			const fp = openWrite(name);
 			writeCSVRow(table.header, fp);
-			for (const row of table.groups.flat()) {
+			for (const row of table.body) {
 				writeCSVRow(row, fp);
 			}
 			fp.end("\r\n").close();
