@@ -4,6 +4,8 @@ import { LogHandler } from "./profiling.js";
 
 export const consoleLogHandler: LogHandler = (message = "", level) => console[level](message);
 
+export const kWorkingParams = Symbol();
+
 export const RE_ANY = new RegExp("");
 
 export const BUILTIN_VARS = ["Name", "Builder", "Executor"];

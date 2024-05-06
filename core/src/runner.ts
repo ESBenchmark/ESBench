@@ -3,7 +3,7 @@ import { serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, BenchmarkSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { BUILTIN_VARS, checkParams, toDisplayName } from "./utils.js";
+import { BUILTIN_VARS, checkParams, kWorkingParams, toDisplayName } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 
 class DefaultEventLogger implements Profiler {
@@ -161,7 +161,7 @@ export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
 		const { scenes, notes, meta } = context;
 		return { notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
 	} catch (e) {
-		const wp = (context as any)?.workingParams;
+		const wp = context?.[kWorkingParams];
 		if (wp) {
 			throw RunSuiteError.fromScene(wp, e);
 		}
