@@ -22,6 +22,14 @@ function removeRange(str: string, start: number, end: number) {
 	return str.slice(0, start) + str.slice(end);
 }
 
+function countParams(count: number, property: any) {
+	const { type, elements } = property.value;
+	if (type === "ArrayExpression") {
+		return count + elements.length;
+	}
+	throw new TypeError("params of demo suite must be an array literal");
+}
+
 function getInfo(this: Rollup.PluginContext, code: string) {
 	const body = this.parse(code).body;
 	const exports: any = body.find(n => n.type === "ExportDefaultDeclaration");
@@ -44,9 +52,7 @@ function getInfo(this: Rollup.PluginContext, code: string) {
 	if (suite.type === "ObjectExpression") {
 		for (const { key, value } of suite.properties) {
 			if (key.name === "params") {
-				for (const prop of value.properties) {
-					params += prop.value.elements.length;
-				}
+				params = value.properties.reduce(countParams, 0);
 			} else if (key.name === "setup") {
 				traverse(value, { enter: visitCase });
 			}
@@ -62,7 +68,7 @@ function getInfo(this: Rollup.PluginContext, code: string) {
 	};
 }
 
-const categoryRE  = /\/example\/(.+?)\/.+?\.js$/;
+const categoryRE = /\/example\/(.+?)\/.+?\.js$/;
 
 export default <Plugin>{
 	name: "esbench:suite-info",

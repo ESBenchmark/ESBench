@@ -4,7 +4,7 @@ const sleep = delay => new Promise(resolve => setTimeout(resolve, delay));
 
 export default defineSuite({
 	params: {
-		delay: Array.from({ length: 15 }).map((_, i) => i * 2),
+		delay: [0, 4, 8, 12, 16, 20, 24, 28, 32],
 	},
 	timing: {
 		warmup: 0,
