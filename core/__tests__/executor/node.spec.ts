@@ -2,6 +2,10 @@ import { expect, it } from "vitest";
 import NodeExecutor from "../../src/executor/node.js";
 import { executorFixtures, testExecute } from "../helper.ts";
 
+it("should have a name", () => {
+	expect(new NodeExecutor()).toHaveProperty("name", "node");
+});
+
 it("should transfer log messages", async () => {
 	const executor = new NodeExecutor();
 	const dispatch = await testExecute(executor, {

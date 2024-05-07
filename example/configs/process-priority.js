@@ -2,6 +2,7 @@ import { setPriority } from "os";
 import { defineConfig, ProcessExecutor } from "esbench/host";
 
 /*
+ * Measuring the Impact of Process Priority on Performance。
  *
  * Suite: Escape regexp
  * | No. |      Name |   Executor |      time | time.SD | time.ratio |

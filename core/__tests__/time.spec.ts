@@ -48,6 +48,20 @@ it.each([
 	return expect(async () => measureTime(options)).rejects.toThrow(msg);
 });
 
+it("should run iteration hooks", async () => {
+	const invocations: unknown[] = [];
+	await measureTime({
+		iterations: 2,
+	}, {
+		setup(scene) {
+			scene.beforeIteration(() => invocations.push("before"));
+			scene.afterIteration(() => invocations.push("after"));
+			scene.benchAsync("Test", () => invocations.push("bench"));
+		},
+	});
+	expect(invocations).toStrictEqual(["before", "bench", "after", "before", "bench", "after"]);
+});
+
 it("should support specify number of samples", async () => {
 	const fn = vi.fn(spin);
 	const result = await measureTime({

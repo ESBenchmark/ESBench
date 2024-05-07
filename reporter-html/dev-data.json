@@ -1,7 +1,6 @@
 {
-	"Push values to array": [
+	"es/array-push.js": [
 		{
-			"name": "Push values to array",
 			"notes": [],
 			"meta": {
 				"time": {
@@ -48,7 +47,6 @@
 			"executor": "node"
 		},
 		{
-			"name": "Push values to array",
 			"notes": [],
 			"meta": {
 				"time": {
@@ -123,9 +121,8 @@
 			"executor": "node"
 		}
 	],
-	"Array.includes vs Set.has": [
+	"es/array-set-includes.js": [
 		{
-			"name": "Array.includes vs Set.has",
 			"notes": [
 				{
 					"type": "warn",
@@ -238,9 +235,8 @@
 			"executor": "node"
 		}
 	],
-	"Array sort algorithms": [
+	"es/array-sort.js": [
 		{
-			"name": "Array sort algorithms",
 			"notes": [],
 			"meta": {
 				"time": {
@@ -385,9 +381,8 @@
 			"executor": "node"
 		}
 	],
-	"Fill array with size vs without size": [
+	"es/array-fill-with-length.js": [
 		{
-			"name": "Fill array with size vs without size",
 			"notes": [],
 			"meta": {
 				"time": {

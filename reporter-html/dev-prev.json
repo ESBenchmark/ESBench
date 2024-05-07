@@ -1,7 +1,6 @@
 {
-	"Array sort algorithms": [
+	"es/array-sort.js": [
 		{
-			"name": "Array sort algorithms",
 			"notes": [],
 			"meta": {
 				"time": {

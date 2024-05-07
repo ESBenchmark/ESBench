@@ -9,7 +9,7 @@ function fill(array, length) {
 
 export default defineSuite({
 	params: {
-		length: [100],
+		length: [1, 1009],
 	},
 	baseline: {
 		type: "Name",

@@ -22,7 +22,5 @@ export default defineSuite(scene => {
 		return array;
 	});
 
-	scene.bench("Generator", () => {
-		return Array.from(g());
-	});
+	scene.bench("Generator", () => Array.from(g()));
 });

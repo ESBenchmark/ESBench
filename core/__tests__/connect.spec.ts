@@ -1,23 +1,37 @@
-import { expect, it, vi } from "vitest";
-import { BenchmarkSuite, runAndSend } from "../src/index.ts";
-import { spin } from "./helper.ts";
+import { expect, it, MockedFunction, vi } from "vitest";
+import { noop } from "@kaciras/utilities/browser";
+import { runSuite, RunSuiteError } from "../src/runner.ts";
+import { runAndSend } from "../src/index.ts";
+
+vi.mock("./../src/runner.ts", async importOriginal => {
+	return {
+		...await importOriginal<any>(),
+		runSuite: vi.fn(() => []),
+	};
+});
+
+const mockedRunSuite = runSuite as MockedFunction<typeof runSuite>;
+const mockImporter = () => ({ default: noop });
 
 it("should wait for send the result in runAndSend", async () => {
 	const sending = Promise.resolve();
 	const mock = vi.spyOn(sending, "then");
-	const suite: BenchmarkSuite = {
-		timing: {
-			warmup: 0,
-			iterations: 1,
-		},
-		setup(scene) {
-			scene.bench("Test", spin);
-		},
-	};
-	await runAndSend(
-		() => sending,
-		() => ({ default: suite }),
-		["Test Suite"],
-	);
+
+	await runAndSend(() => sending, mockImporter, ["./test"]);
 	expect(mock).toHaveBeenCalledOnce();
+});
+
+it("should serialize errors", async () => {
+	const postMessage = vi.fn();
+	const error = new RunSuiteError("Stub", new Error("Cause"));
+	mockedRunSuite.mockRejectedValue(error);
+
+	await runAndSend(postMessage, mockImporter, ["./test"]);
+
+	expect(postMessage).toBeCalledTimes(2);
+	const [{ e }] = postMessage.mock.calls[1];
+	expect(e.name).toBe(error.name);
+	expect(e.message).toBe(error.message);
+	expect(e.cause.message).toBe("Cause");
+	expect(Object.getPrototypeOf(e)).toBe(Object.prototype);
 });

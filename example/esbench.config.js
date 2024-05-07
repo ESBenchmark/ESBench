@@ -1,7 +1,6 @@
 import {
 	defineConfig,
 	directExecutor,
-	htmlReporter,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -18,11 +17,13 @@ const browserExecutors = [
 	new PlaywrightExecutor(chromium),
 ];
 
+/*
+ * For more configuration examples, see ./configs
+ */
 export default defineConfig({
 	reporters: [
 		rawReporter("reports/result.json"),
 		textReporter(),
-		htmlReporter(),
 	],
 	diff: "reports/result.json",
 	toolchains: [{

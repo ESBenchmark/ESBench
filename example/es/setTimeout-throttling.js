@@ -8,6 +8,7 @@ export default defineSuite({
 	},
 	timing: {
 		warmup: 0,
+		evaluateOverhead: false,
 	},
 	setup(scene) {
 		scene.benchAsync("sleep", () => sleep(scene.params.delay));

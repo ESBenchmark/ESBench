@@ -177,8 +177,9 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 
 	/**
 	 * you can specify set of values. As a result, you will get results for each combination of params values.
-	 *
 	 * If not specified, or it is an empty object, the suite will have one scene with empty params.
+	 *
+	 * The keys for the suite parameters must be the same under all toolchains.
 	 */
 	params?: T;
 

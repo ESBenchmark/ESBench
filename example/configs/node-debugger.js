@@ -3,26 +3,28 @@ import { defineConfig, ProcessExecutor } from "esbench/host";
 import CDP from "chrome-remote-interface";
 
 /*
+ * Does the Node debugger have any notable performance impact?
+ *
  * Suite: Sum using for-loop vs Array.reduce
- * | No. |         Name |           Executor |     time |     time.SD | time.ratio |
- * | --: | -----------: | -----------------: | -------: | ----------: | ---------: |
- * |   0 |    For-index | node-debug-connect | 11.80 us |     6.00 ns |     -0.34% |
- * |   1 |    For-index |               node | 11.84 us |     7.07 ns |      0.00% |
- * |   2 |    For-index |         node-debug | 11.79 us |     6.72 ns |     -0.37% |
+ * | No. |      Name |     Executor |      time | time.SD |
+ * | --: | --------: | -----------: | --------: | ------: |
+ * |   0 | For-index |         node | 748.07 ns | 0.28 ns |
+ * |   1 | For-index | debug-attach | 748.44 ns | 0.42 ns |
+ * |   2 | For-index |        debug | 748.56 ns | 0.81 ns |
  */
 class NodeDebugExecutor extends ProcessExecutor {
 
-	constructor(connect) {
-		super(connect ? "node --inspect-brk=33333" : "node --inspect");
-		this.connect = connect;
+	constructor(attach) {
+		super(attach ? "node --inspect-brk=33333" : "node --inspect");
+		this.attach = attach;
 	}
 
 	get name() {
-		return this.connect ? "debug-connect" : "debug";
+		return this.attach ? "debug-attach" : "debug";
 	}
 
 	async postprocess(options) {
-		if (this.connect) {
+		if (this.attach) {
 			this.attachDebugger();
 		}
 		return super.postprocess(options);

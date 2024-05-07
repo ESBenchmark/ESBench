@@ -25,6 +25,7 @@ function createSandbox(module: string) {
 
 	const sandbox = document.createElement("iframe");
 	sandbox.id = "sandbox";
+	sandbox.style.display = "none";
 	sandbox.setAttribute("sandbox", "allow-scripts allow-same-origin");
 	sandbox.srcdoc = `\
 		<!DOCTYPE html><html lang="en">

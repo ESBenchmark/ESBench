@@ -1,9 +1,11 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-	name: "Sum using for-loop vs Array.reduce",
+	params: {
+		length: [1, 1009],
+	},
 	setup(scene) {
-		const length = 1000;
+		const { length } = scene.params;
 		const values = Array.from({ length }, (_, i) => i);
 
 		scene.bench("For-index", () => {

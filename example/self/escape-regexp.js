@@ -8,10 +8,6 @@ export default defineSuite({
 	validate: {
 		equality: true,
 	},
-	baseline: {
-		type: "Executor",
-		value: "node",
-	},
 	setup(scene) {
 		scene.bench("use loop", () => {
 			const characters = [];

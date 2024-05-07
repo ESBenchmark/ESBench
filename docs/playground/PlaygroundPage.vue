@@ -69,6 +69,8 @@
 
 		<pre ref='consoleEl' :class='$style.console'>
 Execute in iframe allow DOM operations, but the page may be unresponsive until it finishes.
+
+Since WebWorker does not support import maps, you cannot import esbench in the suite.
 		</pre>
 
 		<ReportView v-model='showChart' :summaries='results'/>
@@ -398,9 +400,5 @@ onMounted(() => {
 	color: whitesmoke;
 	background: #2b2b2b;
 	white-space: pre-wrap;
-}
-
-:global(#sandbox) {
-	display: none;
 }
 </style>

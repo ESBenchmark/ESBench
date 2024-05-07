@@ -1,8 +1,11 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
+	params: {
+		length: [10, 10_000],
+	},
 	setup(scene) {
-		const length = 1000;
+		const { length } = scene.params;
 		const data = Array.from({ length }, (_, i) => i);
 
 		scene.bench("push each", () => {

@@ -1,7 +1,7 @@
 import { Awaitable } from "@kaciras/utilities/browser";
 import { deserializeError, ErrorObject, serializeError } from "serialize-error";
 import { LogHandler, LogLevel } from "./profiling.js";
-import { BenchmarkSuite } from "./suite.js";
+import { UserSuite } from "./suite.js";
 import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
 
 export interface ToolchainResult extends RunSuiteResult {
@@ -31,7 +31,7 @@ export type ClientMessage = RunSuiteResult[] | ErrorMessage | LogMessage;
 /**
  * A function that load benchmark suites. Provided by builders.
  */
-export type Importer = (path: string) => Awaitable<{ default: BenchmarkSuite }>;
+export type Importer = (path: string) => Awaitable<{ default: UserSuite }>;
 
 /**
  * A function that post messages to the host. Provided by executors.
