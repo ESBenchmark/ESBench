@@ -36,7 +36,7 @@ export default defineConfig({
 
 ### textReporter
 
-Format the results into text and output to various streams.
+Format the results into Markdown tables with additional hints and output them to various streams.
 
 ### rawReporter
 

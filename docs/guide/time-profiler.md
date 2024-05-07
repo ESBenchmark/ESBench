@@ -1,6 +1,6 @@
 # Time Profiler
 
-By default, ESBench only measure execution time of the benchmark cases, This is done by a module called TimeProfiler, it can be configured by `timing` property of the suite:
+By default, ESBench only measure execution time of the benchmark cases, This is done by a module `TimeProfiler`, it can be configured by `timing` property of the suite:
 
 ```javascript
 export default defineSuite({
@@ -8,6 +8,8 @@ export default defineSuite({
 	timing: { /* options */ },
 });
 ```
+
+The default value is `true`, which equals to `{}`, setting `timing: false` disables TimeProfiler.
 
 Type of the options:
 
@@ -69,5 +71,3 @@ export interface TimingOptions {
 The `iterations` can be a string in format `number`+`unit`, available units are `ns`, `us`, `ms`, `s`, `m`, `h`, `d`.
 
 To speed up the measurement, you can turn down the values of `warmup`, `samples`, `iterations`, and set `evaluateOverhead` to false, but be aware that this may reduce the accuracy of the results.
-
-Also, setting `timing: false` disables TimeProfiler.

@@ -11,15 +11,12 @@ The `esbench` package exports 2 entry points:
 ```javascript
 import { buildSummaryTable, defineSuite, runSuite } from "esbench";
 
-const suite = defineSuite({
-	name: "Array.sort",
-	setup(scene) {
-		const template = Array.from({ length: 1000 }, () => Math.random());
-		let array = [];
+const suite = defineSuite(scene => {
+	const template = Array.from({ length: 1000 }, () => Math.random());
+	let array = [];
 
-		scene.beforeIteration(() => array = template.slice());
-		scene.bench("builtin", () => array.sort((a, b) => a - b));
-	},
+	scene.beforeIteration(() => array = template.slice());
+	scene.bench("builtin", () => array.sort((a, b) => a - b));
 });
 
 const result = await runSuite(suite);
@@ -28,7 +25,7 @@ const result = await runSuite(suite);
 const summaryTable = buildSummaryTable([result]);
 
 // Print the table
-console.log("\n" + summaryTable.toMarkdown());
+console.log("\n" + summaryTable.format().toMarkdown());
 if (summaryTable.hints.length > 0) {
 	console.log("Hints:");
 	summaryTable.hints.forEach(n => console.log(n));
@@ -41,15 +38,15 @@ if (summaryTable.warnings.length > 0) {
 
 ## Parse Results
 
-The return value of runSuite is in cascade format, which usually can't be used directly and needs to be flattened first.
+The return value of `runSuite` is intended to be a serialized structure, and it is recommended to use `Summary` to parse it instead of using it directly.
 
 ```javascript
 import { Summary, runSuite } from "esbench";
 
-const result = runSuite(/* ... */);
+const results = runSuite(/* ... */);
 
-// ESBench provide a helper class Summary to parse results of runSuite.
-const summary = new Summary([result]);
+// ESBench provide a helper `Summary` to parse results of runSuite.
+const summary = new Summary([results]);
 
 console.log("Variables:", summary.vars);
 console.log("Metric Descriptions:", summary.meta);

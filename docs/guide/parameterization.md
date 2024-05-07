@@ -66,9 +66,7 @@ ESBench identifies each benchmark case using a set of properties called variable
 * `Builder` & `Executor`: the names of tools used to build and execute the suite, see [Toolchains](./toolchains) for more details.
 * Properties defined in suite's `params` option.
 
-
-
-In the above example, the variables is:
+In the above example, the variables with their possible values is:
 
 ```json
 {
@@ -79,6 +77,8 @@ In the above example, the variables is:
     "exists": [true, false]
 }
 ```
+
+By default, variables have only 1 value are not shown in text report.
 
 ## Avoiding Conflicts
 

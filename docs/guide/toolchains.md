@@ -94,6 +94,9 @@ Executor:
 
 When part of the suite needs to run in a different environment, you can add multiple toolchains.
 
+* A builder will build all files match the `include` in toolchain item that contains it.
+* An executor will execute matched files of each build which the builder in the same toolchain item.
+
 A complex example:
 
 ```javascript

@@ -63,7 +63,7 @@ Next, in order to execute the benchmark, add the following section to your `pack
 ```
 
 > [!TIP]
-> Because of the requirement to support execution of the suite in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
+> To support execution of the suite in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
 >
 > For integration with ESBench, we also provide [JavaScript API](../api/runner).
 
@@ -72,7 +72,6 @@ Finally, run `pnpm run benchmark` to execute the suite.
 The run will take a while for accurate measurements, during which a lot of logs will be printed. After finishing it will output:
 
 ```text
-Suite: Sum using for-loop vs Array.reduce
 | No. |         Name |      time | time.SD |
 | --: | -----------: | --------: | ------: |
 |   0 |    For-index | 502.34 ns | 0.88 ns |

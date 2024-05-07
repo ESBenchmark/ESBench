@@ -47,7 +47,7 @@ export default defineConfig({
 					{ text: "Config", link: "/guide/config" },
 					{ text: "CLI", link: "/guide/cli" },
 					{ text: "Toolchains", link: "/guide/toolchains" },
-					{ text: "TypeScript", link: "/guide/typescript" },
+					// { text: "TypeScript", link: "/guide/typescript" },
 					{ text: "Reporters", link: "/guide/reporters" },
 					{ text: "Time Profiler", link: "/guide/time-profiler" },
 					{ text: "Validation", link: "/guide/validation" },
