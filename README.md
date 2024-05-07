@@ -8,7 +8,7 @@ Full-featured JavaScript benchmarking tool.
 * Comparable: support baseline and diff with previous runs.
 * IDE Integration: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
 
-For more details and getting started, visit [DOC](TODO)
+**For more details and getting started, visit [Document](https://esbench-docs-mirror.vercel.app)**
 
 # Simple Example
 
@@ -17,24 +17,20 @@ For more details and getting started, visit [DOC](TODO)
 import { defineSuite } from "esbench";
 
 export default defineSuite({
-    name: "Sum using for-loop vs Array.reduce",
     baseline: {
         type: "Name",
         value: "For-index",
     },
     params: {
-        size: [10, 1000],
+		length: [10, 1000],
     },
     setup(scene) {
-        const { size } = scene.params;
-        const values = [];
-        for (let i = 0; i < size; i++) {
-            values.push(Math.random());
-        }
+        const { length } = scene.params;
+		const values = Array.from({ length }, (_, i) => i);
 
         scene.bench("For-index", () => {
             let sum = 0;
-            for (let i = 0; i < size; i++) sum += values[i];
+            for (let i = 0; i < length; i++) sum += values[i];
             return sum;
         });
 
@@ -62,13 +58,13 @@ And see the report:
 
 ```text
 Suite: Sum using for-loop vs Array.reduce
-| No. |         Name | size |      time | time.ratio |
-| --: | -----------: | ---: | --------: | ---------: |
-|   0 |    For-index |   10 | 118.13 ns |      0.00% |
-|   1 |       For-of |   10 | 500.15 ns |   +323.40% |
-|   2 | Array.reduce |   10 |  63.95 ns |    -45.86% |
-|     |              |      |           |            |
-|   3 |    For-index | 1000 |  11.81 us |      0.00% |
-|   4 |       For-of | 1000 |  46.85 us |   +296.85% |
-|   5 | Array.reduce | 1000 |  11.58 us |     -1.90% |
+| No. |         Name | length |      time | time.SD | time.ratio |
+| --: | -----------: | -----: | --------: | ------: | ---------: |
+|   0 |    For-index |     10 |   6.84 ns | 0.02 ns |      0.00% |
+|   1 |       For-of |     10 |   8.73 ns | 0.30 ns |    +27.72% |
+|   2 | Array.reduce |     10 |   4.34 ns | 0.02 ns |    -36.54% |
+|     |              |        |           |         |            |
+|   3 |    For-index |   1000 | 505.92 ns | 1.67 ns |      0.00% |
+|   4 |       For-of |   1000 | 751.97 ns | 0.98 ns |    +48.63% |
+|   5 | Array.reduce |   1000 | 500.30 ns | 0.16 ns |     -1.11% |
 ```
