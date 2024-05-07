@@ -24,30 +24,15 @@ it("should works", () => {
 	}], undefined, {
 		stdDev: false,
 	});
-	expect(Array.from(table)).toStrictEqual([
+	expect(table.header).toStrictEqual(
 		["No.", "Name", "time"],
-		["0", "foo", "750.00 us"],
-		["1", "bar", "1,750.00 us"],
+	);
+	expect(table.body).toStrictEqual([
+		["0", "foo", 0.75],
+		["1", "bar", 1.75],
 	]);
 	expect(table.hints).toHaveLength(0);
-});
-
-it("should allow a column has different units", () => {
-	const table = buildSummaryTable([{
-		...defaultResult,
-		scenes: [{
-			foo: { time: [0, 1, 1, 1] },
-			bar: { time: [1, 2, 2, 2] },
-		}],
-	}], undefined, {
-		stdDev: false,
-		flexUnit: true,
-	});
-	expect(Array.from(table)).toStrictEqual([
-		["No.", "Name", "time"],
-		["0", "foo", "750 us"],
-		["1", "bar", "1.75 ms"],
-	]);
+	expect(table.warnings).toHaveLength(0);
 });
 
 it("should support custom metrics", () => {
@@ -77,9 +62,11 @@ it("should support custom metrics", () => {
 		stdDev: false,
 		percentiles: [50],
 	});
-	expect(Array.from(table)).toStrictEqual([
+	expect(table.header).toStrictEqual(
 		["No.", "Name", "foo", "foo.p50", "bar", "baz"],
-		["0", "case 1", "0.75", "1.00", "2.00 MiB", "OOXX"],
+	);
+	expect(table.body).toStrictEqual([
+		["0", "case 1", 0.75, 1, 2048, "OOXX"],
 	]);
 });
 
@@ -95,12 +82,14 @@ it("should allow optional metrics value", () => {
 			bar: { time: [1, 2, 2, 2] },
 		}],
 	}], undefined, {
-		percentiles: [75],
+		outliers: false,
 	});
-	expect(Array.from(table)).toStrictEqual([
-		["No.", "Name", "time", "time.SD", "time.p75", "time.ratio"],
-		["0", "foo", "", "", "", "N/A"],
-		["1", "bar", "1.75 ms", "433.01 us", "2.00 ms", "N/A"],
+	expect(table.header).toStrictEqual(
+		["No.", "Name", "time", "time.SD", "time.ratio"],
+	);
+	expect(table.body).toStrictEqual([
+		["0", "foo", undefined, undefined, "N/A"],
+		["1", "bar", 1.75, 0.4330127018922193, "N/A"],
 	]);
 });
 
@@ -124,7 +113,25 @@ it.each([
 		stdDev: false,
 		ratioStyle: style as any,
 	});
-	expect(table[1][3]).toBe(values[0]);
-	expect(table[2][3]).toBe(values[1]);
-	expect(table[3][3]).toBe(values[2]);
+	expect(table.body[0][3]).toBe(values[0]);
+	expect(table.body[1][3]).toBe(values[1]);
+	expect(table.body[2][3]).toBe(values[2]);
+});
+
+it("should allow a column has different units", () => {
+	const table = buildSummaryTable([{
+		...defaultResult,
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: { time: [1, 2, 2, 2] },
+		}],
+	}], undefined, {
+		stdDev: false,
+	});
+	const formatted = table.format({ flexUnit: true });
+	expect(Array.from(formatted)).toStrictEqual([
+		["No.", "Name", "time"],
+		["0", "foo", "750 us"],
+		["1", "bar", "1.75 ms"],
+	]);
 });
