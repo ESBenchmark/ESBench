@@ -34,11 +34,10 @@ export interface SummaryTableOptions {
 	stdDev?: boolean;
 
 	/**
-	 * If true, variables (expect Name) with only one value are not shown.
-	 *
-	 * @default true
+	 * By default, variables (expect Name) with only one value are not shown.
+	 * Set to true to show all variables.
 	 */
-	hideSingle?: boolean;
+	showSingle?: boolean;
 
 	/**
 	 * Show percentiles columns in the report.
@@ -309,7 +308,7 @@ class DifferenceColumn implements ColumnFactory {
 type CellValue = string | number | undefined;
 
 export interface SummaryTable {
-	groupOffsets: number[];
+	groupEnds: number[];
 	formats: Array<string | undefined>;
 	header: string[];
 	body: CellValue[][];
@@ -437,7 +436,7 @@ export function buildSummaryTable(
 	chalk = noColors,
 ) {
 	const {
-		hideSingle = true,
+		showSingle,
 		stdDev = true,
 		percentiles = [],
 		ratioStyle = "percentage",
@@ -450,7 +449,7 @@ export function buildSummaryTable(
 	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
 	for (const [p, v] of summary.vars.entries()) {
-		if (!hideSingle || v.size > 1 || p === "Name") {
+		if (showSingle || v.size > 1 || p === "Name") {
 			columnDefs.push(new VariableColumn(p, chalk));
 		}
 	}
@@ -486,7 +485,7 @@ export function buildSummaryTable(
 	const hints = [];
 	const warnings = [];
 	const body = [];
-	const groupOffsets = [];
+	const groupEnds = [];
 
 	// 4. Fill the body
 	const rawGroups = baseline
@@ -506,7 +505,7 @@ export function buildSummaryTable(
 				cells.push(column.getValue(result, chalk));
 			}
 		}
-		groupOffsets.push(body.length);
+		groupEnds.push(body.length);
 	}
 
 	function format(this: SummaryTable, options: FormatOptions = {}) {
@@ -514,7 +513,7 @@ export function buildSummaryTable(
 		const table = [this.header] as FormattedTable;
 
 		let offset = 0;
-		for (const e of this.groupOffsets) {
+		for (const e of this.groupEnds) {
 			const group = this.body.slice(offset, e);
 			offset = e;
 
@@ -540,5 +539,5 @@ export function buildSummaryTable(
 		}
 	}
 
-	return { header, groupOffsets, body, formats, hints, warnings, format } as SummaryTable;
+	return { header, groupEnds, body, formats, hints, warnings, format } as SummaryTable;
 }
