@@ -6,7 +6,7 @@
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Kaciras/esbench",
+		"url": "https://github.com/ESBenchmark/ESBench",
 		"directory": "core"
 	},
 	"keywords": [
