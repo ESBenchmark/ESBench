@@ -46,8 +46,16 @@
 		"@types/yargs": "^17.0.32",
 		"playwright-core": "^1.43.1"
 	},
-	"optionalDependencies": {
+	"peerDependencies": {
 		"rollup": "^4.17.2",
 		"vite": "^5.2.11"
+	},
+	"peerDependenciesMeta": {
+		"rollup": {
+			"optional": true
+		},
+		"vite": {
+			"optional": true
+		}
 	}
 }
