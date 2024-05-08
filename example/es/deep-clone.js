@@ -23,13 +23,16 @@ function clone(obj) {
 
 export default defineSuite(async scene => {
 	scene.bench("JSON", () => JSON.parse(JSON.stringify(data)));
-	scene.bench("structuredClone", () => structuredClone(data));
 	scene.bench("recursion", () => clone(data));
+
+	if (globalThis.structuredClone) {
+		scene.bench("structuredClone", () => structuredClone(data));
+	}
 
 	try {
 		const { serialize, deserialize } = await import("v8");
 		scene.bench("v8 serialize", () => deserialize(serialize(data)));
 	} catch {
-		// Module v8 is not available, skip this benchmark case.
+		// Not executed in Node, skip this case.
 	}
 });
