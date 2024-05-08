@@ -38,8 +38,8 @@ export default defineSuite({
 
 If the baseline option is set, rows in the text report will be grouped and a new `*.ratio` column will be added to show the difference between the other use cases and the baseline case:
 
-![Text Report 1](./baseline1.png)
+![Text Report 1](./baseline1.webp)
 
 Change the baseline to `{ type: "length", value: 10 }` and the report will be:
 
-![Text Report 2](./baseline2.png)
+![Text Report 2](./baseline2.webp)
