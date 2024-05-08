@@ -56,6 +56,9 @@ importers:
       picomatch:
         specifier: ^4.0.2
         version: 4.0.2
+      rollup:
+        specifier: ^4.17.2
+        version: 4.17.2
       serialize-error:
         specifier: ^11.0.3
         version: 11.0.3
@@ -65,20 +68,13 @@ importers:
       string-width:
         specifier: ^7.1.0
         version: 7.1.0
-      yargs:
-        specifier: ^17.7.2
-        version: 17.7.2
-    optionalDependencies:
-      rollup:
-        specifier: ^4.17.2
-        version: 4.17.2
       vite:
         specifier: ^5.2.11
         version: 5.2.11(@types/node@20.12.8)
+      yargs:
+        specifier: ^17.7.2
+        version: 17.7.2
     devDependencies:
-      '@types/mime':
-        specifier: ^4.0.0
-        version: 4.0.0
       '@types/picomatch':
         specifier: ^2.3.3
         version: 2.3.3
@@ -657,10 +653,6 @@ packages:
 
   '@types/mdurl@1.0.5':
     resolution: {integrity: sha512-6L6VymKTzYSrEf4Nev4Xa1LCHKrlTlYCBMTlQKFuddo1CvQcE52I0mwfOJayueUC7MJuXOeHTcIU683lzd0cUA==}
-
-  '@types/mime@4.0.0':
-    resolution: {integrity: sha512-5eEkJZ/BLvTE3vXGKkWlyTSUVZuzj23Wj8PoyOq2lt5I3CYbiLBOPb3XmCW6QcuOibIUE6emHXHt9E/F/rCa6w==}
-    deprecated: This is a stub types definition. mime provides its own type definitions, so you do not need this installed.
 
   '@types/node@20.12.8':
     resolution: {integrity: sha512-NU0rJLJnshZWdE/097cdCBbyW1h4hEg0xpovcoAQYHl8dnEyp/NAOiE45pvc+Bd1Dt+2r94v2eGFpQJ4R7g+2w==}
@@ -2299,10 +2291,6 @@ snapshots:
       '@types/mdurl': 1.0.5
 
   '@types/mdurl@1.0.5': {}
-
-  '@types/mime@4.0.0':
-    dependencies:
-      mime: 4.0.3
 
   '@types/node@20.12.8':
     dependencies:

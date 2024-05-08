@@ -41,7 +41,6 @@
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {
-		"@types/mime": "^4.0.0",
 		"@types/picomatch": "^2.3.3",
 		"@types/yargs": "^17.0.32",
 		"playwright-core": "^1.43.1"
