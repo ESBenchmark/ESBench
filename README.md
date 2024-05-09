@@ -1,5 +1,8 @@
 # ESBench
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ESBenchmark/ESBench/test.yml?style=flat-square)
+![NPM Version](https://img.shields.io/npm/v/esbench?style=flat-square)
+
 Full-featured JavaScript benchmarking tool.
 
 * Cross-runtime: run your benchmark on Node, Bun, browsers, and more...
@@ -57,7 +60,7 @@ pnpm exec esbench
 And see the report:
 
 ```text
-Suite: Sum using for-loop vs Array.reduce
+Suite: example.js
 | No. |         Name | length |      time | time.SD | time.ratio |
 | --: | -----------: | -----: | --------: | ------: | ---------: |
 |   0 |    For-index |     10 |   6.84 ns | 0.02 ns |      0.00% |
