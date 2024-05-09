@@ -22,11 +22,11 @@ export default defineSuite({
         value: "For-index",
     },
     params: {
-		length: [10, 1000],
+        length: [10, 1000],
     },
     setup(scene) {
         const { length } = scene.params;
-		const values = Array.from({ length }, (_, i) => i);
+        const values = Array.from({ length }, (_, i) => i);
 
         scene.bench("For-index", () => {
             let sum = 0;
@@ -50,7 +50,7 @@ export default defineSuite({
 Run the suite:
 
 ```shell
-pnpm install esbench
+pnpm add -D esbench
 pnpm exec esbench
 ```
 

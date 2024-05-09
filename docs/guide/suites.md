@@ -68,7 +68,7 @@ export default defineSuite(async scene => {
 		const { serialize, deserialize } = await import("v8");
 		scene.bench("v8 serialize", () => deserialize(serialize(data)));
 	} catch {
-		// Does not executed in Node, skip this case.
+		// Not executed in Node, skip this case.
 	}
 });
 ```
