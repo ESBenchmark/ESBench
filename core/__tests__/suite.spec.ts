@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { BenchCase, Scene } from "../src/index.js";
 
 describe("Scene", () => {
-	it("should avoid blank workload name", () => {
+	it("should reject blank case name", () => {
 		const scene = new Scene(null);
 		expect(() => scene.bench("\t \n", vi.fn())).toThrow();
 	});
 
-	it("should avoid duplicate workload name", () => {
+	it("should reject duplicated case name", () => {
 		const scene = new Scene(null);
 		scene.bench("Foo", vi.fn());
 		expect(() => scene.bench("Foo", vi.fn())).toThrow();
@@ -21,7 +21,7 @@ describe("BenchCase", () => {
 	scene.beforeIteration(before);
 	scene.afterIteration(after);
 
-	it("should call hooks in invoke", async () => {
+	it("should call hooks on invoke", async () => {
 		const case_ = new BenchCase(
 			scene,
 			"Test",

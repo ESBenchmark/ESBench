@@ -1,8 +1,8 @@
 import { pid, release } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { setPriority } from "os";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { highestPriority } from "./process.js";
 
 /**
  * Run suites directly in the current context.
@@ -12,11 +12,7 @@ export default <Executor>{
 	name: release.name,
 
 	start() {
-		try {
-			setPriority(pid, -20);
-		} catch (e) {
-			// Access may be denied.
-		}
+		highestPriority(pid);
 	},
 
 	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {

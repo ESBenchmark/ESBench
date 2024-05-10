@@ -2,8 +2,8 @@ import { env } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
 import { ChildProcess, fork } from "child_process";
-import { setPriority } from "os";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { highestPriority } from "./process.js";
 
 // Must resolve the filename to generated JS for test.
 let __filename = fileURLToPath(import.meta.url);
@@ -50,13 +50,7 @@ export default class NodeExecutor implements Executor {
 				ES_BENCH_WORKER: "true",
 			},
 		});
-		this.process.on("spawn", () => {
-			try {
-				setPriority(this.process!.pid!, -20);
-			} catch (e) {
-				// Access may be denied.
-			}
-		});
+		this.process.on("spawn", () => highestPriority(this.process!.pid!));
 		this.process.on("message", dispatch);
 		this.process.send({ root, pattern, files });
 		this.process.on("exit", code => {

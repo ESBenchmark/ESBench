@@ -24,6 +24,14 @@ function postMessage(message) {
 
 runAndSend(postMessage, __FILES__, __PATTERN__);`;
 
+export function highestPriority(pid: number) {
+	try {
+		setPriority(pid, -20);
+	} catch (e) {
+		// Access may be denied on some systems.
+	}
+}
+
 /**
  * Call an external JS runtime to run suites, the runtime must support the fetch API.
  */
@@ -108,13 +116,7 @@ export default class ProcessExecutor implements Executor {
 
 	protected postprocess(options: ExecuteOptions) {
 		const { reject } = options;
-		this.process.on("spawn", () => {
-			try {
-				setPriority(this.process.pid!, -20);
-			} catch (e) {
-				// Access may be denied.
-			}
-		});
+		this.process.on("spawn", () => highestPriority(this.process.pid!));
 		this.process.on("exit", code => {
 			if (code !== 0) {
 				const cmd = buildCLI(...this.process.spawnargs);

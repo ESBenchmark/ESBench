@@ -135,3 +135,23 @@ it("should allow a column has different units", () => {
 		["1", "bar", "1.75 ms"],
 	]);
 });
+
+it("should calculate ratio with previous", () => {
+	const table = buildSummaryTable([{
+		...defaultResult,
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+		}],
+	}], [{
+		...defaultResult,
+		scenes: [{
+			foo: { time: [4, 3, 9, 6] },
+		}],
+	}]);
+	expect(table.header).toStrictEqual(
+		["No.", "Name", "time", "time.SD", "time.diff"],
+	);
+	expect(table.body).toStrictEqual([
+		["0", "foo", 0.75, 0.4330127018922193, "-86.36%"],
+	]);
+});

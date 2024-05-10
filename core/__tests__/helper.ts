@@ -4,7 +4,6 @@ import { afterEach, beforeEach, Mock, vi } from "vitest";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { Profiler, ProfilingContext } from "../src/profiling.ts";
 import { ClientMessage, messageResolver } from "../src/connect.ts";
-import { runSuite } from "../src/runner.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
 
@@ -32,18 +31,6 @@ export function useTempDirectory(path: string) {
 	afterEach(() => {
 		rmSync(path, { force: true, recursive: true });
 	});
-}
-
-export function run<T extends CPSrcObject>(suite: PartialSuite<T>, pattern?: RegExp) {
-	suite.setup ??= noop;
-	suite.timing = {
-		iterations: 1,
-		samples: 1,
-		warmup: 0,
-		unrollFactor: 1,
-		...(suite.timing as any),
-	};
-	return runSuite(suite as any, { log: noop, pattern });
 }
 
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
