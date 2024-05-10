@@ -1,9 +1,28 @@
-import { expect, it, vi } from "vitest";
-import { run, spin } from "./helper.js";
-import { RunSuiteError } from "../src/index.js";
+import { expect, it, Mock, vi } from "vitest";
+import { runSuite, RunSuiteError } from "../src/runner.ts";
+import { defineSuite } from "../src/suite.ts";
+import { ProfilingContext } from "../src/profiling.ts";
+import { ExecutionValidator } from "../src/validate.ts";
+
+vi.mock("./../src/profiling.ts", async importOriginal => {
+	const module = await importOriginal<any>();
+	return {
+		...module,
+		ProfilingContext: vi.fn((...args) => new module.ProfilingContext(...args)),
+	};
+});
+
+const contextFactory = ProfilingContext as Mock;
+const emptySuite = defineSuite({ setup() {} });
 
 it("should return the result", async () => {
-	const result = await run({
+	contextFactory.mockReturnValue({
+		run: async () => {},
+		notes: [],
+		meta: { time: {} },
+		scenes: [{}, {}],
+	});
+	const result = await runSuite({
 		params: {
 			n: [10, 100, 1000],
 		},
@@ -11,9 +30,7 @@ it("should return the result", async () => {
 			type: "n",
 			value: 100,
 		},
-		setup(scene) {
-			scene.bench("Test", spin);
-		},
+		setup() {},
 	});
 	expect(result.paramDef).toStrictEqual([
 		["n", ["10", "100", "1000"]],
@@ -21,64 +38,53 @@ it("should return the result", async () => {
 	expect(result.meta.time).toBeTypeOf("object");
 	expect(result.notes).toHaveLength(0);
 	expect(result.baseline).toStrictEqual({ type: "n", value: "100" });
-	expect(result.scenes).toHaveLength(3);
+	expect(result.scenes).toHaveLength(2);
 	expect(result.scenes[0]).toBeTypeOf("object");
+});
+
+it("should create a ProfilingContext", async () => {
+	contextFactory.mockReturnValue({ run: async () => {} });
+	const options = { log: vi.fn(), pattern: /foo/ };
+
+	await runSuite(emptySuite, options);
+
+	const [suite, profilers, opts] = contextFactory.mock.calls[0];
+	expect(suite).toBe(emptySuite);
+	expect(opts).toBe(options);
+	expect(profilers).toHaveLength(2);
+	expect(contextFactory).toHaveBeenCalledOnce();
 });
 
 it("should call lifecycle hooks", async () => {
 	const invocations: any[] = [];
 
 	const beforeAll = () => invocations.push(beforeAll);
-	const beforeEach = () => invocations.push(beforeEach);
-	const beforeIter = () => invocations.push(beforeIter);
-	const workload = () => invocations.push(workload);
-	const afterIter = () => invocations.push(afterIter);
-	const teardown = () => invocations.push(teardown);
 	const afterAll = () => invocations.push(afterAll);
+	const run = async () => {
+		invocations.push(run);
+		throw new Error("Stub Error");
+	};
+	contextFactory.mockReturnValue({ run });
 
-	await run({
-		timing: { iterations: 1, samples: 1 },
-		params: { n: [10, 100] },
-		beforeAll,
-		afterAll,
-		setup(scene) {
-			beforeEach();
-			scene.teardown(teardown);
-			scene.beforeIteration(beforeIter);
-			scene.afterIteration(afterIter);
-			scene.bench("Foo", workload);
-		},
-	});
+	const running = runSuite({ beforeAll, afterAll, setup() {} });
 
-	expect(invocations).toStrictEqual([
-		beforeAll, beforeEach, beforeIter, workload, afterIter, teardown,
-		beforeEach, beforeIter, workload, afterIter, teardown, afterAll,
-	]);
-});
-
-it("should filter workloads with pattern", async () => {
-	const foo = vi.fn();
-	const bar = vi.fn();
-
-	await run({
-		params: { n: [10, 100] },
-		setup(scene) {
-			scene.bench("test foo", foo);
-			scene.bench("bar test", bar);
-		},
-	}, /^test/);
-
-	expect(foo).toHaveBeenCalled();
-	expect(bar).not.toHaveBeenCalled();
+	await expect(running).rejects.toThrow();
+	expect(invocations).toStrictEqual([beforeAll, run, afterAll]);
 });
 
 it("should wrap exception with RunSuiteError", () => {
-	// @ts-expect-error
-	return expect(run({ setup: 1 })).rejects.toThrow(RunSuiteError);
+	const cause = new Error("Stub Error");
+	const expected = new RunSuiteError("Error occurred when running suite.", cause);
+
+	contextFactory.mockReturnValue({
+		run: async () => { throw cause; },
+	});
+
+	return expect(runSuite(emptySuite)).rejects.toThrow(expected);
 });
 
 it("should port params if the error threw from scene", async () => {
-	const promise = run({
+	const promise = runSuite({
 		params: {
 			foo: [11],
 			bar: [22, 33],
@@ -95,16 +101,37 @@ it.each([
 	[{ type: "bar", value: 11 }],
 	[{ type: "foo", value: 11 }],
 ])("should check parameter baseline %#", async (baseline) => {
-	const promise = run({
+	const promise = runSuite({
+		setup() {},
 		baseline,
 		params: { bar: [22, 33] },
 	});
 	await expect(promise).rejects.toThrow(RunSuiteError);
 });
 
-it("should not check baseline that uses variable outside client", () => {
-	return run({
-		params: { bar: [22, 33] },
+it("should not check baseline that uses variable outside client", async () => {
+	const result = await runSuite({
 		baseline: { type: "Name", value: "NOT_EXISTS" },
+		setup() {},
+		params: { bar: [22, 33] },
 	});
+	expect(result.baseline).toStrictEqual({ type: "Name", value: "NOT_EXISTS" });
+});
+
+it("should resolve built-in profilers", async () => {
+	contextFactory.mockReturnValue({ run: async () => {} });
+	const profiler1 = {};
+
+	await runSuite({
+		setup() {},
+		timing: false,
+		validate: {},
+		profilers: [profiler1],
+	});
+
+	const [, profilers] = contextFactory.mock.calls[0];
+	const class0 = Object.getPrototypeOf(profilers[0]).constructor;
+	expect(class0.name).toBe("DefaultEventLogger");
+	expect(profilers[1]).toBe(profiler1);
+	expect(profilers[2]).toBeInstanceOf(ExecutionValidator);
 });

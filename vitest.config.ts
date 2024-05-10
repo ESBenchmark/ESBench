@@ -17,7 +17,7 @@ export default defineConfig({
 			reporter: ["lcov"],
 			provider: "v8",
 		},
-		mockReset: true,
+		restoreMocks: true,
 		include: ["**/__tests__/**/*.spec.ts"],
 	},
 });
