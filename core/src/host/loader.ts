@@ -1,6 +1,6 @@
 import type { TransformOptions } from "esbuild";
 import { fileURLToPath } from "url";
-import { InitializeHook, LoadHook } from "module";
+import { LoadHook } from "module";
 import { parse, TSConfckCache } from "tsconfck";
 
 type CompileFn = (code: string, filename: string) => string | Promise<string>;
@@ -40,13 +40,13 @@ async function swcCompiler(): Promise<CompileFn> {
 	};
 }
 
-async function viteESBuildCompiler(): Promise<CompileFn> {
+async function viteEsbuildCompiler(): Promise<CompileFn> {
 	const { transformWithEsbuild } = await import("vite");
 	return async (code, filename) =>
 		transformWithEsbuild(code, filename, { sourcemap: "inline" }).then(r => r.code);
 }
 
-async function esBuildCompiler(): Promise<CompileFn> {
+async function esbuildCompiler(): Promise<CompileFn> {
 	const { transform } = await import("esbuild");
 	const cache = new TSConfckCache<any>();
 
@@ -76,26 +76,22 @@ async function tsCompiler(): Promise<CompileFn> {
 	};
 }
 
-const compilers = [esBuildCompiler, swcCompiler, viteESBuildCompiler, tsCompiler];
+const compilers = [swcCompiler, viteEsbuildCompiler, esbuildCompiler, tsCompiler];
 
 let compile: CompileFn;
 
-// noinspection JSUnusedGlobalSymbols
-export const initialize: InitializeHook = async () => {
+async function detectTypeScriptCompiler() {
 	for (const create of compilers) {
 		try {
-			compile = await create();
-			return;
+			return await create();
 		} catch (e) {
 			// Why are there 2 error codes for module not found?
 			if (e.code !== "ERR_MODULE_NOT_FOUND"
 				&& e.code !== "MODULE_NOT_FOUND") throw e;
 		}
 	}
-	compile = () => {
-		throw new Error("No TypeScript transformer found");
-	};
-};
+	throw new Error("No TypeScript transformer found");
+}
 
 // noinspection JSUnusedGlobalSymbols
 export const load: LoadHook = async (url, context, nextLoad) => {
@@ -108,6 +104,10 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		...context,
 		format: "ts" as any,
 	});
+
+	if (!compile) {
+		compile = await detectTypeScriptCompiler();
+	}
 
 	const code = raw.source!.toString();
 	const filename = fileURLToPath(url);
