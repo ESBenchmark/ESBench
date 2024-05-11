@@ -1,4 +1,4 @@
-import { pid, release } from "process";
+import { pid } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
@@ -9,7 +9,7 @@ import { highestPriority } from "./process.js";
  */
 export default <Executor>{
 
-	name: release.name,
+	name: "in-process",
 
 	start() {
 		highestPriority(pid);

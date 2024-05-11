@@ -2,7 +2,7 @@ import { join } from "path";
 import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { describe, expect, it, vi } from "vitest";
-import direct from "../../src/executor/direct.ts";
+import inProcess from "../../src/executor/in-process.ts";
 import { ViteBuilder } from "../../src/builder/rollup.ts";
 import { noBuild } from "../../src/host/index.ts";
 import JobGenerator from "../../src/host/toolchain.ts";
@@ -15,7 +15,7 @@ describe("JobGenerator", () => {
 	it("should throw error if a tool have more than 1 names", () => {
 		const generator = new JobGenerator(tempDir, {});
 		expect(() => generator.add({
-			executors: [direct],
+			executors: [inProcess],
 			include: ["test"],
 			builders: [
 				{ name: "foo", use: noBuild },
@@ -27,7 +27,7 @@ describe("JobGenerator", () => {
 	it("should throw error if a name used for more than 1 tools", () => {
 		const generator = new JobGenerator(tempDir, {});
 		expect(() => generator.add({
-			executors: [direct],
+			executors: [inProcess],
 			include: ["test"],
 			builders: [
 				{ name: "foo", use: new ViteBuilder() },
@@ -39,7 +39,7 @@ describe("JobGenerator", () => {
 	it("should throw error if a tool has invalid name", () => {
 		const generator = new JobGenerator(tempDir, {});
 		expect(() => generator.add({
-			executors: [direct],
+			executors: [inProcess],
 			include: ["a"],
 			builders: [{
 				name: "",
@@ -52,8 +52,8 @@ describe("JobGenerator", () => {
 		const generator = new JobGenerator(tempDir, {});
 		const builder = noBuild;
 
-		generator.add({ executors: [direct], include: ["a"], builders: [builder] });
-		generator.add({ executors: [direct], include: ["b"], builders: [builder] });
+		generator.add({ executors: [inProcess], include: ["a"], builders: [builder] });
+		generator.add({ executors: [inProcess], include: ["b"], builders: [builder] });
 	});
 
 	it("should skip build if no file matching", async () => {
@@ -62,7 +62,7 @@ describe("JobGenerator", () => {
 
 		generator.add({
 			include: ["./__tests__/fixtures/**/*"],
-			executors: [direct],
+			executors: [inProcess],
 			builders: [{ name: "test", build }],
 		});
 
@@ -78,7 +78,7 @@ describe("JobGenerator", () => {
 
 		generator.add({
 			include: ["./__tests__/fixtures/**/*"],
-			executors: [direct],
+			executors: [inProcess],
 			builders: [{ name: "test", build }],
 		});
 		await generator.build();
@@ -95,7 +95,7 @@ describe("JobGenerator", () => {
 		generator.add({
 			include: ["./__tests__/fixtures/**/*"],
 			builders: [noBuild],
-			executors: [direct],
+			executors: [inProcess],
 		});
 
 		await generator.build();
@@ -109,7 +109,7 @@ describe("JobGenerator", () => {
 		generator.add({
 			include: ["./__tests__/fixtures/*-inside/*"],
 			builders: [noBuild],
-			executors: [direct],
+			executors: [inProcess],
 		});
 		generator.add({
 			include: [
@@ -139,12 +139,12 @@ describe("JobGenerator", () => {
 		generator.add({
 			include: ["./__tests__/fixtures/*-inside/*"],
 			builders: [builderA],
-			executors: [direct],
+			executors: [inProcess],
 		});
 		generator.add({
 			include: ["./__tests__/fixtures/*-outside/*"],
 			builders: [builderB],
-			executors: [direct],
+			executors: [inProcess],
 		});
 		await generator.build();
 
@@ -160,12 +160,12 @@ describe("JobGenerator", () => {
 		generator.add({
 			include: ["./__tests__/fixtures/*-inside/*"],
 			builders: [noBuild],
-			executors: [direct],
+			executors: [inProcess],
 		});
 		generator.add({
 			include: ["./__tests__/fixtures/*-outside/*"],
 			builders: [noBuild],
-			executors: [direct],
+			executors: [inProcess],
 		});
 
 		await generator.build();

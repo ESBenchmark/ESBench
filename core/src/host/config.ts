@@ -2,7 +2,7 @@ import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "../connect.js";
 import { Builder, Executor, Nameable, ToolChainItem } from "./toolchain.js";
 import noBuild from "../builder/default.js";
-import direct from "../executor/direct.js";
+import inProcess from "../executor/in-process.js";
 import textReporter from "../reporter/text.js";
 
 type ToolConfig<T> = Nameable<T> | undefined | null | false;
@@ -100,7 +100,7 @@ export function normalizeConfig(input: ESBenchConfig) {
 		toolchain = {
 			include: ["./benchmark/**/*.[jt]s?(x)"],
 			builders: [noBuild],
-			executors: [direct],
+			executors: [inProcess],
 			...toolchain,
 		};
 		config.toolchains!.push(toolchain);

@@ -84,7 +84,7 @@ Builder:
 
 Executor:
 
-* `directExecutor` (default) Run suites directly in the current context.
+* `inProcessExecutor` (default) Run suites directly in the current context.
 * `ProcessExecutor` Call an external JS runtime to run suites, the runtime must support the fetch API.
 * `NodeExecutor` Spawn a new Node process to run suites, can be used with legacy Node that does not have `fetch`.
 * `PlaywrightExecutor` Run suites in the browser.

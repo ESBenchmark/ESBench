@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
 import { executorFixtures, testExecute } from "../helper.ts";
-import direct from "../../src/executor/direct.ts";
+import inProcess from "../../src/executor/in-process.ts";
 
 it("should transfer log messages", async () => {
-	const dispatch = await testExecute(direct, {
+	const dispatch = await testExecute(inProcess, {
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/success-suite",
 	});
@@ -15,7 +15,7 @@ it("should transfer log messages", async () => {
 });
 
 it("should forward errors from runAndSend()", async () => {
-	const promise = testExecute(direct, {
+	const promise = testExecute(inProcess, {
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-inside",
 	});
@@ -23,7 +23,7 @@ it("should forward errors from runAndSend()", async () => {
 });
 
 it("should throw error if exception occurred outside runAndSend()", () => {
-	const promise = testExecute(direct, {
+	const promise = testExecute(inProcess, {
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-outside",
 	});

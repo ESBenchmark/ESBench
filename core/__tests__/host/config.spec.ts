@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { ESBenchConfig, noBuild, normalizeConfig } from "../../src/host/index.js";
-import direct from "../../src/executor/direct.ts";
+import inProcess from "../../src/executor/in-process.ts";
 
 it.each<ESBenchConfig>([
 	{ toolchains: [{ executors: [] }] },
@@ -51,12 +51,12 @@ it("should ignore falsy values in toolchains", () => {
 	const config = normalizeConfig({
 		toolchains: [{
 			builders: [false, null, noBuild],
-			executors: [direct, undefined],
+			executors: [inProcess, undefined],
 		}],
 	});
 	expect(config.toolchains[0]).toStrictEqual({
 		builders: [noBuild],
-		executors: [direct],
+		executors: [inProcess],
 		include: ["./benchmark/**/*.[jt]s?(x)"],
 	});
 });

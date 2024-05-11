@@ -1,6 +1,6 @@
 import {
 	defineConfig,
-	directExecutor,
+	inProcessExecutor,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -38,7 +38,7 @@ export default defineConfig({
 			// Measure performance of suites on browsers.
 			// ...browserExecutors,
 
-			directExecutor,
+			inProcessExecutor,
 
 			// More JS runtimes, you need install them manually.
 			// new ProcessExecutor("bun"),
