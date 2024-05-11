@@ -9,14 +9,17 @@ const DEFAULT_CONFIG_FILE = "esbench.config.js";
 
 process.title = "node (esbench)";
 
-nodeModule.register?.("./loader.js", import.meta.url);
-
 const program = yargs(hideBin(argv))
 	.command("report <files...>", "Generate report from result files", {
 		config: {
 			type: "string",
 			description: "Use specified config file",
 			default: DEFAULT_CONFIG_FILE,
+		},
+		noLoader: {
+			type: "boolean",
+			description: "Disable builtin TypeScript loader",
+			default: false,
 		},
 		files: {
 			type: "string",
@@ -26,6 +29,9 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, files } = args;
+		if (!args.noLoader) {
+			nodeModule.register?.("./loader.js", import.meta.url);
+		}
 		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
 		return report(cfgObj ?? {}, files);
 	})
@@ -34,6 +40,11 @@ const program = yargs(hideBin(argv))
 			type: "string",
 			description: "Use specified config file",
 			default: DEFAULT_CONFIG_FILE,
+		},
+		noLoader: {
+			type: "boolean",
+			description: "Disable builtin TypeScript loader",
+			default: false,
 		},
 		file: {
 			type: "string",
@@ -57,8 +68,12 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, ...filter } = args;
+		if (!args.noLoader) {
+			nodeModule.register?.("./loader.js", import.meta.url);
+		}
 		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
 		return start(cfgObj ?? {}, filter);
 	});
+
 
 program.version(false).strict().showHelpOnFail(false).parseAsync();
