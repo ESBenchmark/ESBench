@@ -1,6 +1,6 @@
 {
 	"name": "esbench",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "JavaScript benchmark library",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
