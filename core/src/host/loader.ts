@@ -1,6 +1,6 @@
 import type { TransformOptions } from "esbuild";
 import { fileURLToPath } from "url";
-import { LoadHook } from "module";
+import { LoadHook, ResolveHook } from "module";
 import { parse, TSConfckCache } from "tsconfck";
 
 type CompileFn = (code: string, filename: string) => string | Promise<string>;
@@ -85,18 +85,33 @@ async function detectTypeScriptCompiler() {
 		try {
 			return await create();
 		} catch (e) {
-			// Why are there 2 error codes for module not found?
-			if (e.code !== "ERR_MODULE_NOT_FOUND"
-				&& e.code !== "MODULE_NOT_FOUND") throw e;
+			if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
 		}
 	}
 	throw new Error("No TypeScript transformer found");
 }
 
+/**
+ * For JS files, if they don't exist, then look for the corresponding TS source.
+ */
+export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
+	try {
+		return await nextResolve(specifier, context);
+	} catch (e) {
+		const match = /\.[cm]?jsx?$/i.exec(specifier);
+		if (!match || e.code !== "ERR_MODULE_NOT_FOUND") {
+			throw e;
+		}
+		const [ext] = match;
+		const base = specifier.slice(0, -ext.length);
+		return nextResolve(base + ext.replace("j", "t"), context);
+	}
+};
+
 // noinspection JSUnusedGlobalSymbols
 export const load: LoadHook = async (url, context, nextLoad) => {
-	const tsExtension = /\.[cm]?tsx?$/.exec(url);
-	if (!tsExtension) {
+	const match = /\.[cm]?tsx?$/i.exec(url);
+	if (!match) {
 		return nextLoad(url, context);
 	}
 
