@@ -1,69 +1,100 @@
+import type { TransformOptions } from "esbuild";
 import { fileURLToPath } from "url";
 import { InitializeHook, LoadHook } from "module";
+import { parse, TSConfckCache } from "tsconfck";
 
-let compile: (code: string, filename: string) => string | Promise<string>;
+type CompileFn = (code: string, filename: string) => string | Promise<string>;
 
-async function tryImport(module: string) {
-	try {
-		return await import(module);
-	} catch (e) {
-		// Why there are 2 different error codes?
-		if (e.code !== "ERR_MODULE_NOT_FOUND"
-			&& e.code !== "MODULE_NOT_FOUND") throw e;
-	}
-}
+async function swcCompiler(): Promise<CompileFn> {
+	const swc = await import("@swc/core");
+	const cache = new TSConfckCache<any>();
 
-function swcTransform(code: string, filename: string) {
-	return this.transformSync(code, {
-		filename,
-		"jsc": {
-			"parser": {
-				"syntax": "typescript",
+	return async (code, filename) => {
+		const { tsconfig: { compilerOptions } } = await parse(filename, { cache });
+		const { target = "es2022", module = "esnext" } = compilerOptions;
+
+		const options: any = {
+			filename,
+			swcrc: false,
+			sourceMaps: "inline",
+			jsc: {
+				target: target.toLowerCase(),
+				parser: {
+					syntax: "typescript",
+					tsx: filename.endsWith("x"),
+				},
 			},
-			"target": "esnext",
-		},
-	});
-}
+		};
 
-async function esbuildTransform(code: string, filename: string) {
-	const build = this.transformWithEsbuild;
-	const output = await build(code, filename, { sourcemap: "inline" });
-	return output.code;
-}
+		switch (options.jsc.target) {
+			case "esnext":
+			case "latest":
+				options.jsc.target = "es2022";
+		}
 
-function tsTransform(code: string, fileName: string) {
-	const ts = this.default;
-	const options = {
-		fileName,
-		compilerOptions: {
-			target: ts.ScriptTarget.ESNext,
-			module: ts.ModuleKind.ESNext,
-			sourceMap: true,
-			inlineSourceMap: true,
-		},
+		options.module = {
+			type: module.toLowerCase() === "commonjs" ? "commonjs" : "es6",
+		};
+
+		return swc.transformSync(code, options).code;
 	};
-	return ts.transpileModule(code, options).outputText;
 }
+
+async function viteESBuildCompiler(): Promise<CompileFn> {
+	const { transformWithEsbuild } = await import("vite");
+	return async (code, filename) =>
+		transformWithEsbuild(code, filename, { sourcemap: "inline" }).then(r => r.code);
+}
+
+async function esBuildCompiler(): Promise<CompileFn> {
+	const { transform } = await import("esbuild");
+	const cache = new TSConfckCache<any>();
+
+	return async (code, sourcefile) => {
+		const { tsconfig } = await parse(sourcefile, { cache });
+		const options: TransformOptions = {
+			sourcefile,
+			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
+			sourcemap: "inline",
+			tsconfigRaw: tsconfig,
+		};
+		return transform(code, options).then(r => r.code);
+	};
+}
+
+async function tsCompiler(): Promise<CompileFn> {
+	const { default: ts } = await import("typescript");
+	const cache = new TSConfckCache<any>();
+
+	return async (code, fileName) => {
+		const { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
+		compilerOptions.sourceMap = true;
+		compilerOptions.inlineSourceMap = true;
+
+		const options = { fileName, compilerOptions };
+		return ts.transpileModule(code, options).outputText;
+	};
+}
+
+const compilers = [esBuildCompiler, swcCompiler, viteESBuildCompiler, tsCompiler];
+
+let compile: CompileFn;
 
 // noinspection JSUnusedGlobalSymbols
 export const initialize: InitializeHook = async () => {
-	const swc = await tryImport("@swc/core");
-	if (swc) {
-		return compile = swcTransform.bind(swc);
+	for (const create of compilers) {
+		try {
+			compile = await create();
+			return;
+		} catch (e) {
+			// Why are there 2 error codes for module not found?
+			if (e.code !== "ERR_MODULE_NOT_FOUND"
+				&& e.code !== "MODULE_NOT_FOUND") throw e;
+		}
 	}
-	const vite = await tryImport("vite");
-	if (vite) {
-		return compile = esbuildTransform.bind(vite);
-	}
-	const esbuild = await tryImport("esbuild");
-	if (esbuild) {
-		return compile = esbuildTransform.bind(esbuild);
-	}
-	const ts = await tryImport("typescript");
-	if (ts) {
-		return compile = tsTransform.bind(ts);
-	}
-	throw new Error("Cannot find TypeScript transformer");
+	compile = () => {
+		throw new Error("No TypeScript transformer found");
+	};
 };
 
 // noinspection JSUnusedGlobalSymbols
@@ -73,9 +104,14 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		return nextLoad(url, context);
 	}
 
-	const x = await nextLoad(url, { ...context, format: "ts" as any });
+	const raw = await nextLoad(url, {
+		...context,
+		format: "ts" as any,
+	});
 
+	const code = raw.source!.toString();
 	const filename = fileURLToPath(url);
-	const source = await compile(x.source!.toString(), filename);
+	const source = await compile(code, filename);
+
 	return { source, format: "module", shortCircuit: true };
 };
