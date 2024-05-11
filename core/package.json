@@ -15,7 +15,8 @@
 	"type": "module",
 	"exports": {
 		".": "./lib/index.js",
-		"./host": "./lib/host/index.js"
+		"./host": "./lib/host/index.js",
+		"./loader": "./lib/host/loader.js"
 	},
 	"files": [
 		"lib/**/*.{js,d.ts}"
