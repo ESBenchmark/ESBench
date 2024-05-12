@@ -27,7 +27,7 @@ export default defineConfig({
 	],
 	diff: "reports/result.json",
 	toolchains: [{
-		include: ["./self/*.js", "./node/*.js"],
+		include: ["./self/*.[jt]s", "./node/*.js"],
 	}, {
 		include: ["./es/*.js"],
 
