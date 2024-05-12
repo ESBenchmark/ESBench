@@ -11,7 +11,7 @@
 		"@vueuse/core": "^10.9.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.48.0",
-		"vue": "^3.4.26"
+		"vue": "^3.4.27"
 	},
 	"devDependencies": {
 		"@types/estraverse": "^5.1.7",

@@ -18,7 +18,7 @@
 		"chartjs-chart-error-bars": "^4.4.0",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.26"
+		"vue": "^3.4.27"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^5.0.4",
