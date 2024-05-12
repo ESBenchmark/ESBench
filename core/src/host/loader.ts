@@ -127,8 +127,13 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	}
 };
 
-// noinspection JSUnusedGlobalSymbols
 export const load: LoadHook = async (url, context, nextLoad) => {
+	// Lost import attributes when importing json.
+	if (context.format === "json") {
+		context.importAttributes.type = "json";
+		return nextLoad(url, context);
+	}
+
 	const match = /\.[cm]?tsx?$/i.exec(url);
 	if (!match || !url.startsWith("file:")) {
 		return nextLoad(url, context);
@@ -167,12 +172,14 @@ const node_modules = sep + "node_modules";
 // make `load` 15.47% faster
 export const typeCache = new Map<string, ModuleFormat>();
 
-const cacheAndReturn = (dir: string, type: ModuleFormat) => {
+function cacheAndReturn(dir: string, type: ModuleFormat) {
 	typeCache.set(dir, type);
 	return type;
-};
+}
 
 /**
+ *
+ *
  * https://nodejs.org/docs/latest/api/packages.html#type
  */
 function getPackageType(filename: string): ModuleFormat {

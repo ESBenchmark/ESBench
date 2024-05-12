@@ -13,6 +13,7 @@ function runFixture(name: string) {
 }
 
 it.each([
+	"attribute.ts",
 	"data-url.ts",
 	"ts-file.ts",
 	"ts-file.js",
