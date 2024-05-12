@@ -1,7 +1,7 @@
 import { AsyncFunction, noop } from "@kaciras/utilities/browser";
 import { defineSuite } from "esbench";
 
-export function unroll(factor, isAsync) {
+export function unroll(factor: number, isAsync: boolean) {
 	const [call, FunctionType] = isAsync
 		? ["await f()", AsyncFunction]
 		: ["f()", Function];
@@ -16,11 +16,11 @@ export function unroll(factor, isAsync) {
 	return new FunctionType("f", "count", body);
 }
 
-function gcd(a, b) {
+function gcd(a: number, b: number): number {
 	return a % b === 0 ? b : gcd(b, a % b);
 }
 
-function lcm(a, b) {
+function lcm(a: number, b: number) {
 	return a * b / gcd(a, b);
 }
 
