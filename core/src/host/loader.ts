@@ -38,7 +38,7 @@ async function swcCompiler(): Promise<CompileFn> {
 			type: module.toLowerCase() === "commonjs" ? "commonjs" : "es6",
 		};
 
-		return swc.transformSync(code, options).code;
+		return (await swc.transform(code, options)).code;
 	};
 }
 
