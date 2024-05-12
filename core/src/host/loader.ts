@@ -92,17 +92,27 @@ async function detectTypeScriptCompiler() {
 }
 
 /**
+ * 1. Is a local file (starts with file protocol or relative path).
+ * 2. Ends with a JS extension.
+ * 3. Protocol and extension are case-insensitive.
+ */
+const jsFileRE = /^(?:file:|\.{1,2}\/).+\.([cm]?jsx?)$/i;
+
+/**
  * For JS files, if they don't exist, then look for the corresponding TS source.
+ *
+ * When both `.ts` and `.js` files exist for a name, it's safe to assume
+ * that the `.js` is compiled from the `.ts`, I haven't seen an exception yet.
  */
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
-		const match = /\.[cm]?jsx?$/i.exec(specifier);
+		const match = jsFileRE.exec(specifier);
 		if (!match || e.code !== "ERR_MODULE_NOT_FOUND") {
 			throw e;
 		}
-		const [ext] = match;
+		const [, ext] = match;
 		const base = specifier.slice(0, -ext.length);
 		return nextResolve(base + ext.replace("j", "t"), context);
 	}
@@ -111,7 +121,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 // noinspection JSUnusedGlobalSymbols
 export const load: LoadHook = async (url, context, nextLoad) => {
 	const match = /\.[cm]?tsx?$/i.exec(url);
-	if (!match) {
+	if (!match || !url.startsWith("file:")) {
 		return nextLoad(url, context);
 	}
 
