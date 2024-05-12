@@ -68,15 +68,22 @@ async function tsCompiler(): Promise<CompileFn> {
 
 	return async (code, fileName) => {
 		const { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
+
 		compilerOptions.sourceMap = true;
 		compilerOptions.inlineSourceMap = true;
+		delete compilerOptions.outDir;
 
-		const options = { fileName, compilerOptions };
-		return ts.transpileModule(code, options).outputText;
+		/*
+		 * "NodeNext" does not work with transpileModule().
+		 * https://github.com/microsoft/TypeScript/issues/53022
+		 */
+		compilerOptions.module = "ESNext";
+
+		return ts.transpileModule(code, { fileName, compilerOptions }).outputText;
 	};
 }
 
-const compilers = [swcCompiler, viteEsbuildCompiler, esbuildCompiler, tsCompiler];
+export const compilers = [swcCompiler, viteEsbuildCompiler, esbuildCompiler, tsCompiler];
 
 let compile: CompileFn;
 
