@@ -1,6 +1,8 @@
 import type { TransformOptions } from "esbuild";
 import { fileURLToPath } from "url";
-import { LoadHook, ResolveHook } from "module";
+import { LoadHook, ModuleFormat, ResolveHook } from "module";
+import { basename, dirname, join } from "path";
+import { readFile } from "node:fs/promises";
 import { parse, TSConfckCache } from "tsconfck";
 
 type CompileFn = (code: string, filename: string) => string | Promise<string>;
@@ -137,13 +139,43 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		format: "ts" as any,
 	});
 
+	const code = raw.source!.toString();
+	const filename = fileURLToPath(url);
+
+	let format: ModuleFormat;
+	switch (match[0].charCodeAt(1)) {
+		case 99:
+			format = "commonjs";
+			break;
+		case 109:
+			format = "module";
+			break;
+		default:
+			format = await getPackageType(filename);
+	}
+
 	if (!compile) {
 		compile = await detectTypeScriptCompiler();
 	}
-
-	const code = raw.source!.toString();
-	const filename = fileURLToPath(url);
 	const source = await compile(code, filename);
 
-	return { source, format: "module", shortCircuit: true };
+	return { source, format, shortCircuit: true };
 };
+
+/**
+ * https://nodejs.org/docs/latest/api/packages.html#type
+ */
+async function getPackageType(filename: string): Promise<ModuleFormat> {
+	const dir = dirname(filename);
+
+	const packageJSON = await readFile(join(dir, "package.json"), "utf8")
+		.then(json => JSON.parse(json))
+		.catch(e => { if (e.code !== "ENOENT") throw e; });
+
+	if (packageJSON) {
+		return packageJSON.type ?? "commonjs";
+	}
+
+	const name = basename(dir);
+	return dir && name !== "node_modules" ? getPackageType(dir) : "commonjs";
+}
