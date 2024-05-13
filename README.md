@@ -3,13 +3,14 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ESBenchmark/ESBench/test.yml?style=flat-square)
 ![NPM Version](https://img.shields.io/npm/v/esbench?style=flat-square)
 
-Full-featured JavaScript benchmarking tool.
+A modern JavaScript benchmarking tool.
 
-* Cross-runtime: run your benchmark on Node, Bun, browsers, and more...
-* Parameterization: provide a series of parameters and see the performance of each combination.
-* HTML Reporter: plot the results in an interactive chart.
-* Comparable: support baseline and diff with previous runs.
-* IDE Integration: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
+- **Cross-runtime**: run your benchmark on Node, Bun, browsers, and more...
+- **Parameterization**: provide a series of parameters and see the performance of each combination.
+- **Comparable**: support baselines and diff with previous runs.
+- **TypeScript Out-of-box**: load your `.ts` files with zero config.
+- **HTML Reporter**: plot the results into an interactive chart.
+- **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
 
 **For more details and getting started, visit [Document](https://esbench-docs-mirror.vercel.app)**
 

@@ -16,7 +16,7 @@
 	"exports": {
 		".": "./lib/index.js",
 		"./host": "./lib/host/index.js",
-		"./loader": "./lib/host/loader.js"
+		"./loader": "./lib/host/register.js"
 	},
 	"files": [
 		"lib/**/*.{js,d.ts}"
