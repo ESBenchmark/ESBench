@@ -89,7 +89,7 @@ describe("JobGenerator", () => {
 		expect(files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
 	});
 
-	it("should skip execution if no file matching", async () => {
+	it("should skip builder that has no file matched", async () => {
 		const generator = new JobGenerator(tempDir, { file: "src" });
 
 		generator.add({
@@ -100,6 +100,28 @@ describe("JobGenerator", () => {
 
 		await generator.build();
 		expect(generator.getJobs().next().done).toBe(true);
+	});
+
+	it("should skip executor that has no file matched", async () => {
+		const generator = new JobGenerator(tempDir, {});
+		const executorStub = { name: "test", execute: vi.fn() };
+
+		generator.add({
+			include: ["./__tests__/fixtures/**/*"],
+			builders: [noBuild],
+			executors: [inProcess],
+		});
+		generator.add({
+			include: ["./NOT_EXISTS/**"],
+			builders: [noBuild],
+			executors: [executorStub],
+		});
+
+		await generator.build();
+		const jobs = Array.from(generator.getJobs());
+
+		expect(jobs).toHaveLength(1);
+		expect(jobs[0].executor).toBe(inProcess);
 	});
 
 	it("should generate jobs with files needed", async () => {

@@ -211,20 +211,23 @@ export default class JobGenerator {
 			const isMatch = picomatch(this.eInclude.get(executor)!);
 			const builds = [];
 
+			// Only add builds that have files match the executor's glob pattern.
 			for (const name of builders) {
 				const output = this.bOutput.get(name)!;
 				if (!output) {
 					continue;
 				}
 				const files = output.files.filter(p => isMatch(normalize(p)));
-				builds.push({ ...output, files });
+				if (files.length) {
+					builds.push({ ...output, files });
+				}
 			}
 
-			if (builds.length === 0) {
-				continue;
+			// Executors without files to execute will be skipped.
+			if (builds.length) {
+				const executorName = this.t2n.get(executor)!;
+				yield { executorName, executor, builds } as Job;
 			}
-			const executorName = this.t2n.get(executor)!;
-			yield { executorName, executor, builds } as Job;
 		}
 	}
 
