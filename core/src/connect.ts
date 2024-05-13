@@ -4,13 +4,17 @@ import { LogHandler, LogLevel } from "./profiling.js";
 import { UserSuite } from "./suite.js";
 import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
 
+/**
+ * The host side will add some attributes to the result.
+ */
 export interface ToolchainResult extends RunSuiteResult {
 	builder?: string;
 	executor?: string;
 }
 
 /**
- * Key is path of the suite file, value is results of the suite in all toolchains.
+ * Key is name of the suite file, must be valid for path.
+ * Value is results of the suite in all toolchains.
  */
 export type ESBenchResult = Record<string, ToolchainResult[]>;
 

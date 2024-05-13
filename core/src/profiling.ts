@@ -108,6 +108,8 @@ export class ProfilingContext {
 
 	/**
 	 * Notes collected from the profiling.
+	 *
+	 * @see ProfilingContext.note
 	 */
 	readonly notes: Note[] = [];
 
@@ -187,7 +189,7 @@ export class ProfilingContext {
 	}
 
 	/**
-	 * Run the profiling, the result is saved at `scenes` & `notes` properties.
+	 * Run the profiling, the result is saved at `scenes`, `notes` and `meta` properties.
 	 *
 	 * A ProfilingContext instance can only be run once.
 	 */

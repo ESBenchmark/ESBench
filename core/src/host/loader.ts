@@ -3,9 +3,10 @@ import { LoadHook, ModuleFormat, ResolveHook } from "module";
 import { fileURLToPath } from "url";
 import { dirname, join, sep } from "path";
 import { readFileSync } from "fs";
+import { Awaitable } from "@kaciras/utilities/node";
 import { parse, TSConfckCache } from "tsconfck";
 
-type CompileFn = (code: string, filename: string) => string | Promise<string>;
+type CompileFn = (code: string, filename: string) => Awaitable<string>;
 
 async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
@@ -44,8 +45,10 @@ async function swcCompiler(): Promise<CompileFn> {
 
 async function viteEsbuildCompiler(): Promise<CompileFn> {
 	const { transformWithEsbuild } = await import("vite");
+	const options: TransformOptions = { sourcemap: "inline" };
+
 	return (code, filename) =>
-		transformWithEsbuild(code, filename, { sourcemap: "inline" }).then(r => r.code);
+		transformWithEsbuild(code, filename, options).then(r => r.code);
 }
 
 async function esbuildCompiler(): Promise<CompileFn> {
@@ -101,13 +104,6 @@ async function detectTypeScriptCompiler() {
 }
 
 /**
- * 1. Is a local file (starts with file protocol or relative path).
- * 2. Ends with a JS extension.
- * 3. Protocol and extension are case-insensitive.
- */
-const jsFileRE = /^(?:file:|\.{1,2}\/).+\.([cm]?jsx?)$/i;
-
-/**
  * For JS files, if they don't exist, then look for the corresponding TS source.
  *
  * When both `.ts` and `.js` files exist for a name, it's safe to assume
@@ -117,13 +113,17 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
-		const match = jsFileRE.exec(specifier);
-		if (!match || e.code !== "ERR_MODULE_NOT_FOUND") {
+		const isFile = specifier.startsWith("file:") || /^\.{1,2}\//.test(specifier);
+		const isJSFile = isFile && /\.[cm]?jsx?$/i.test(specifier);
+
+		if (!isJSFile || e.code !== "ERR_MODULE_NOT_FOUND") {
 			throw e;
 		}
-		const [, ext] = match;
-		const base = specifier.slice(0, -ext.length);
-		return nextResolve(base + ext.replace("j", "t"), context);
+		if (specifier.at(-1) !== "x") {
+			return nextResolve(specifier.slice(0, -2) + "ts", context);
+		} else {
+			return nextResolve(specifier.slice(0, -3) + "tsx", context);
+		}
 	}
 };
 
@@ -139,12 +139,9 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		return nextLoad(url, context);
 	}
 
-	const raw = await nextLoad(url, {
-		...context,
-		format: "ts" as any,
-	});
-
-	const code = raw.source!.toString();
+	context.format = "ts" as any;
+	const ts = await nextLoad(url, context);
+	const code = ts.source!.toString();
 	const filename = fileURLToPath(url);
 
 	let format: ModuleFormat;
@@ -178,7 +175,10 @@ function cacheAndReturn(dir: string, type: ModuleFormat) {
 }
 
 /**
+ * Find nearest package.json and detect the file is ESM or CJS.
  *
+ * typescript has `getImpliedNodeFormatForFile`, but we do not require user install it.
+ * Node also has such a function, but does not export it.
  *
  * https://nodejs.org/docs/latest/api/packages.html#type
  */

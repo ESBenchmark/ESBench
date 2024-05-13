@@ -6,11 +6,16 @@ ESBench is a cross runtime benchmark tool, which means you can run your suite on
 
 Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
 
-First install playwright and a builder (Vite). The builder is needed because browser and Node have a different import resolving algorithm, and ESBench does not handle that, so suites need to be built to transform imports.
+First install playwright and a builder (Vite). 
 
 ```shell
 pnpm add -D playwright vite
 ```
+
+> [!INFO]
+> The builder is needed because browser and Node have a different import resolving algorithm, and ESBench does not handle that, so suites need to be built to transform imports.
+
+Then add builder & executors to config:
 
 ::: code-group
 ```javascript [esbench.config.js]
@@ -88,7 +93,7 @@ Executor:
 * `ProcessExecutor` Call an external JS runtime to run suites, the runtime must support the fetch API.
 * `NodeExecutor` Spawn a new Node process to run suites, can be used with legacy Node that does not have `fetch`.
 * `PlaywrightExecutor` Run suites in the browser.
-* `WebextExecutor` Run suites in the browser with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access. Currently only support Chromium.
+* `WebextExecutor` Run suites in the browser with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access, only support Chromium.
 
 ## Multiple Toolchains
 

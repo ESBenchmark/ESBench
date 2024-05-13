@@ -10,7 +10,7 @@ export interface CSVReporterOptions extends SummaryTableOptions {
 	directory?: string;
 }
 
-function writeCSVRow(row: any[], out: WriteStream) {
+function writeRow(row: any[], out: WriteStream) {
 	for (const cell of row) {
 		if (!row) {
 			continue;
@@ -43,9 +43,9 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 			const table = buildSummaryTable(results, diff, options);
 
 			const fp = openWrite(name);
-			writeCSVRow(table.header, fp);
+			writeRow(table.header, fp);
 			for (const row of table.body) {
-				writeCSVRow(row, fp);
+				writeRow(row, fp);
 			}
 			fp.end("\r\n").close();
 		}

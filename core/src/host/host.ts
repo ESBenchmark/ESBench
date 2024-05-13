@@ -108,14 +108,14 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	}
 
 	/*
-	 * We did not put the cleanup code to finally block,
+	 * We did not put the cleanup code into finally block,
 	 * so that you can check the build output when error occurred.
 	 */
 	if (cleanTempDir) {
 		try {
 			rmSync(tempDir, { recursive: true });
 		} catch (e) {
-			console.error(e); // It's ok to keep running.
+			console.error(e);
 		}
 	}
 

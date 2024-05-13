@@ -14,7 +14,7 @@ export default defineConfig({
 			},
 		},
 		coverage: {
-			reporter: ["lcov"],
+			reporter: ["lcovonly"],
 			provider: "v8",
 		},
 		restoreMocks: true,

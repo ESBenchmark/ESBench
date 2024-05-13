@@ -1,11 +1,6 @@
 {
-	"name": "@esbench/reporter-html",
-	"version": "0.1.0",
 	"private": true,
-	"description": "HTML reporter for ESBench",
 	"type": "module",
-	"types": "lib/index.d.ts",
-	"main": "lib/index.js",
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build"

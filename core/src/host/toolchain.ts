@@ -22,7 +22,6 @@ import { resolveRE, SharedModeFilter } from "../utils.js";
  */
 
 export interface Builder {
-
 	/**
 	 * Suggest a name for the builder, it will be used if no name specified from config.
 	 */
@@ -77,16 +76,25 @@ export interface ExecuteOptions {
 }
 
 export interface Executor {
-
 	/**
 	 * Suggest a name for the executor, it will be used if no name specified from config.
 	 */
 	name: string;
 
+	/**
+	 * Called once before the executor starts executing suites.
+	 */
 	start?(): Awaitable<unknown>;
 
+	/**
+	 * Called only once after all suites execution finished,
+	 * or an error occurred during the execution.
+	 */
 	close?(): Awaitable<unknown>;
 
+	/**
+	 * This method is called for every build output.
+	 */
 	execute(options: ExecuteOptions): Awaitable<unknown>;
 }
 

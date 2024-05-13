@@ -2,9 +2,9 @@
 
 The `esbench` package exports 2 entry points:
 
-* `esbench` Contains functions to run suites, and tools to deal with the results. It uses ES6 and a few Web APIs, compatibility with browsers and most server-side runtimes.
+* `esbench` contains functions to run suites, and tools to deal with the results. It uses ES6 and a few Web APIs, compatibility with browsers and most server-side runtimes.
   
-* `esbench/host` Has CLI, executors, builders, and reporters. It is only usable from Node.js or other runtimes that compatible with Node API.
+* `esbench/host` has CLI, executors, builders, and reporters. It is only usable from Node.js and other runtimes that compatible with Node API.
 
 ## Run Suites
 
@@ -45,7 +45,7 @@ import { Summary, runSuite } from "esbench";
 
 const results = runSuite(/* ... */);
 
-// ESBench provide a helper `Summary` to parse results of runSuite.
+// ESBench provide a helper `Summary` to parse the results of runSuite.
 const summary = new Summary([results]);
 
 console.log("Variables:", summary.vars);

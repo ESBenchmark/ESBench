@@ -1,7 +1,7 @@
 {
 	"name": "esbench",
 	"version": "0.1.1",
-	"description": "JavaScript benchmark library",
+	"description": "A modern JavaScript benchmarking tool",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"repository": {
@@ -10,7 +10,9 @@
 		"directory": "core"
 	},
 	"keywords": [
-		"benchmark"
+		"benchmark",
+		"bench",
+		"performance"
 	],
 	"type": "module",
 	"exports": {

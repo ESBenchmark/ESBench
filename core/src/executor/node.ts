@@ -10,7 +10,9 @@ let __filename = fileURLToPath(import.meta.url);
 __filename = join(__filename, "../../../lib/executor/node.js");
 
 /**
- * This class is used to support legacy Node without the fetch API.
+ * Run suites in a new Node process, communicate with the host through IPC channel.
+ *
+ * This class aims to support legacy Node without the fetch API.
  */
 export default class NodeExecutor implements Executor {
 

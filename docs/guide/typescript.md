@@ -98,5 +98,5 @@ Unfortunately, in order to transform configuration files, the loader has to be r
 If you prefer other TypeScript loaders (e.g. [ts-node](https://github.com/TypeStrong/ts-node) or [tsx](https://github.com/privatenumber/tsx)), you can disable ESBench's loader with `--no-loader` CLI argument:
 
 ```shell
-cross-env NODE_OPTIONS="--loader ts-node/esm" esbench --no-loader
+cross-env NODE_OPTIONS="--import ts-node/esm" esbench --no-loader
 ```
