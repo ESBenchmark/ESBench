@@ -77,7 +77,6 @@ export interface Note {
 }
 
 export interface Profiler {
-
 	/**
 	 * Called on each `ProfilingContext.run` (`runSuite` invokes it once).
 	 * This is the recommended hook to add descriptions of metrics.
@@ -136,10 +135,6 @@ export class ProfilingContext {
 		this.logHandler = options.log ?? consoleLogHandler;
 	}
 
-	get sceneCount() {
-		return Object.values<unknown[][]>(this.suite.params ?? {}).reduce((s, v) => s * v.length, 1);
-	}
-
 	/**
 	 * Profiler should add description for each metric that need to be reported.
 	 *
@@ -194,7 +189,7 @@ export class ProfilingContext {
 	/**
 	 * Run the profiling, the result is saved at `scenes` & `notes` properties.
 	 *
-	 * Each ProfilingContext can only be run once.
+	 * A ProfilingContext instance can only be run once.
 	 */
 	async run() {
 		const { hasRun, suite: { params = {} } } = this;

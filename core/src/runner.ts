@@ -13,7 +13,8 @@ class DefaultEventLogger implements Profiler {
 
 	onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
-		const { sceneCount } = ctx;
+		const sceneCount = Object.values<unknown[][]>(ctx.suite.params ?? {})
+			.reduce((s, v) => s * v.length, 1);
 
 		this.caseOfScene = 0;
 		const i = ++this.sceneIndex;

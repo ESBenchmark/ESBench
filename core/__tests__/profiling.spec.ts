@@ -21,7 +21,6 @@ it("should initialize properties", () => {
 	};
 	const context = new ProfilingContext(suite, [], {});
 
-	expect(context.sceneCount).toBe(6);
 	expect(context.suite).toBe(suite);
 	expect(context.profilers).toHaveLength(0);
 	expect(context.pattern.source).toBe("(?:)");
@@ -77,7 +76,7 @@ it("should filter workloads with pattern", async () => {
 	const bar = vi.fn();
 
 	const profiler: Profiler = {
-		onCase: (_, c) => c.invoke(),
+		onCase: (_, c) => {c.invoke();},
 	};
 	const suite: BenchmarkSuite = {
 		params: { param: [11, 22] },
