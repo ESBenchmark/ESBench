@@ -1,6 +1,6 @@
 export * from "./config.js";
 export { Builder, Executor, ExecuteOptions } from "./toolchain.js";
-export { start, report } from "./host.js";
+export { start, report } from "./commands.js";
 
 export { default as csvReporter } from "../reporter/csv.js";
 export { default as textReporter } from "../reporter/text.js";

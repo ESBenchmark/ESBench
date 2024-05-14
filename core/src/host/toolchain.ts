@@ -8,7 +8,7 @@ import glob from "fast-glob";
 import chalk from "chalk";
 import picomatch from "picomatch";
 import { ClientMessage, ToolchainResult } from "../connect.js";
-import { FilterOptions } from "./host.js";
+import { FilterOptions } from "./commands.js";
 import noBuild from "../builder/default.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";
 

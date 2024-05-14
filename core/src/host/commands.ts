@@ -77,11 +77,11 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				]);
 
 				for (let i = 0; i < records.length; i++) {
-					let name = build.files[i];
-					if (name.startsWith("./")) {
-						name = name.slice(2);
+					let file = build.files[i];
+					if (file.startsWith("./")) {
+						file = file.slice(2);
 					}
-					(result[name] ??= []).push({
+					(result[file] ??= []).push({
 						...records[i],
 						builder,
 						executor: executorName,

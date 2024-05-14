@@ -3,7 +3,7 @@ import { argv } from "process";
 import { importCWD } from "@kaciras/utilities/node";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { report, start } from "./host.js";
+import { report, start } from "./commands.js";
 
 const DEFAULT_CONFIG_FILE = "esbench.config.js";
 

@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { report } from "../../src/host/host.js";
+import { report } from "../../src/host/commands.ts";
 import result1And2 from "../fixtures/result-1+2.json" assert { type: " json" };
 
 it("should merge results", async () => {
