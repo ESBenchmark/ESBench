@@ -113,7 +113,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
-		const isFile = specifier.startsWith("file:") || /^\.{1,2}\//.test(specifier);
+		const isFile = /^(?:file:|\.{1,2}\/)/i.test(specifier);
 		const isJSFile = isFile && /\.[cm]?jsx?$/i.test(specifier);
 
 		if (!isJSFile || e.code !== "ERR_MODULE_NOT_FOUND") {
