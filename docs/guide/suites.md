@@ -43,7 +43,7 @@ export default defineSuite({
 Options:
 
 * `params`: Benchmark cases under different inputs, see [Parameterization](./parameterization).
-* `baseline`: Scale your results, see [Baselines](./baselines).
+* `baseline`: Scale your results, see [Baselines](./comparison).
 * `profilers`: Add more profilers for the suite. see [Custom Profilers](../api/profiler).
 * `timing`: Configure execution time mensuration, see [Time Profiler](./time-profiler).
 * `validate`: Perform checks for cases before they are executed, see [Validation](./validation)

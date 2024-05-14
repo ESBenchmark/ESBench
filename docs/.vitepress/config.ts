@@ -43,7 +43,7 @@ export default defineConfig({
 					{ text: "Introduction", link: "/guide/introduction" },
 					{ text: "Suites", link: "/guide/suites" },
 					{ text: "Parameterization", link: "/guide/parameterization" },
-					{ text: "Baselines", link: "/guide/baselines" },
+					{ text: "Comparison", link: "/guide/comparison" },
 					{ text: "TypeScript", link: "/guide/typescript" },
 					{ text: "Config", link: "/guide/config" },
 					{ text: "Toolchains", link: "/guide/toolchains" },
