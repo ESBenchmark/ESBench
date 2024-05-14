@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { Reporter } from "../host/config.js";
 
-export const DEFAULT_NAME = "reports/benchmark_[date]_[time].json";
+export const DEFAULT_NAME = "reports/benchmark.json";
 
 /**
  * Save the result object as a JSON file.
@@ -12,10 +12,10 @@ export const DEFAULT_NAME = "reports/benchmark_[date]_[time].json";
  * [time]: report time, e.g. "20-13-51"
  *
  * @example
- * // The file name is like: result_2023-11-01_20-13-51.json
+ * // The file name is like: results_2023-11-01_20-13-51.json
  * export default defineConfig({
  *     reporters: [
- *         rawReporter("result_[date]_[time].json"),
+ *         rawReporter("benchmark_[date]_[time].json"),
  *     ],
  * });
  *

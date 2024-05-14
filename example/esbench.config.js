@@ -1,6 +1,7 @@
 import {
 	defineConfig,
 	inProcessExecutor,
+	ProcessExecutor,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -21,11 +22,11 @@ const browserExecutors = [
  * For more configuration examples, see ./configs
  */
 export default defineConfig({
+	diff: "reports/benchmark.json",
 	reporters: [
-		rawReporter("reports/result.json"),
+		rawReporter(),
 		textReporter(),
 	],
-	diff: "reports/result.json",
 	toolchains: [{
 		include: ["./self/*.[jt]s", "./node/*.js"],
 	}, {
