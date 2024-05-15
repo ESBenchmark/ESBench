@@ -10,6 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - run: gh repo sync Kaciras/ESBench-docs-mirror -b master
+      - run: gh repo sync Kaciras/ESBench-docs-mirror --force
         env:
           GH_TOKEN: ${{ secrets.MIRROR_PAT }}
