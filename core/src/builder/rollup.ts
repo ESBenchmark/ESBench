@@ -3,7 +3,7 @@ import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { Builder } from "../host/toolchain.js";
 
-const entryId = "./index.js";
+const entryId = "./ESBench-index.js";
 
 const template = `\
 import { runAndSend } from "esbench";
@@ -23,14 +23,6 @@ function external(id: string) {
 	return /^(?:npm|bun):/.test(id) || isBuiltin(id);
 }
 
-function createEntry(files: string[]) {
-	let imports = "";
-	for (const file of files) {
-		imports += `\n\t"${file}": () => import("${file}"),`;
-	}
-	return template.replace("__IMPORTS__", imports);
-}
-
 function entryPlugin(files: string[]): Plugin {
 	return {
 		name: "ESBench-entry",
@@ -40,9 +32,14 @@ function entryPlugin(files: string[]): Plugin {
 			}
 		},
 		load(id) {
-			if (id === entryId) {
-				return createEntry(files);
+			if (id !== entryId) {
+				return;
 			}
+			let imports = "";
+			for (const file of files) {
+				imports += `\n\t"${file}": () => import("${file}"),`;
+			}
+			return template.replace("__IMPORTS__", imports);
 		},
 	};
 }
@@ -85,13 +82,19 @@ export class RollupBuilder implements Builder {
 		if (!Array.isArray(plugins)) {
 			plugins = [plugins];
 		}
+
 		const bundle = await rollup({
 			...defaults.build!.rollupOptions,
 			...this.config,
 			input: entryId,
 			plugins: [...plugins, entryPlugin(files)],
 		});
-		await bundle.write({ ...this.config.output, dir });
+
+		await bundle.write({
+			...this.config.output,
+			dir,
+			entryFileNames: "index.js",
+		});
 		await bundle.close();
 	}
 }
@@ -112,18 +115,19 @@ export class ViteBuilder implements Builder {
 	}
 
 	async build(outDir: string, files: string[]) {
-		await build(mergeConfig(this.config, {
+		const overrides: InlineConfig = {
 			build: {
 				outDir,
 				// Override lib.entry which resolves our virtual module to absolute path.
 				rollupOptions: {
 					input: entryId,
 					output: {
-						entryFileNames: "[name].js",
+						entryFileNames: "index.js",
 					},
 				},
 			},
 			plugins: [entryPlugin(files)],
-		}));
+		};
+		await build(mergeConfig(this.config, overrides));
 	}
 }
