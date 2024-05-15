@@ -1,13 +1,11 @@
 import type { BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import { tmpdir } from "os";
-import mime from "mime";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
 import { ClientMessage } from "../connect.js";
-
-declare function _ESBenchChannel(message: ClientMessage): void;
+import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { AsyncFunction } from "@kaciras/utilities/browser";
 
 // Playwright doesn't work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -51,9 +49,11 @@ const manifest = {
 
 async function client(args: Pick<ExecuteOptions, "files" | "pattern">) {
 	// @ts-ignore Resolved by the custom router.
+// Define the function with strings to bypass Vitest transformation.
+const client: any = new AsyncFunction("args", `\
 	const loader = await import("./index.js");
 	return loader.default(_ESBenchChannel, args.files, args.pattern);
-}
+`);
 
 /**
  * Run suites on browsers with Playwright driver.
