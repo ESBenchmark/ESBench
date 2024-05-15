@@ -1,0 +1,17 @@
+name: Sync Mirror
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: gh auth login
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_PAT }}
+
+      - run: gh repo sync Kaciras/ESBench-docs-mirror -b master
