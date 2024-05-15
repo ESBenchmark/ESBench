@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import { tmpdir } from "os";
-import { AsyncFunction } from "@kaciras/utilities/browser";
+import { AsyncFunction } from "@kaciras/utilities/node";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -177,14 +177,14 @@ export class WebextExecutor extends PlaywrightExecutor {
 	private dataDir?: string;
 
 	/**
-	 * @param type Currently only support chromium.
+	 * @param type Only support chromium.
 	 * @param dataDir Path to a User Data Directory, which stores browser session data like cookies and local storage.
 	 *                If omitted the data will be saved in a temporary directory.
 	 */
 	constructor(type: BrowserType, dataDir?: string) {
 		super(type);
 		if (type.name() !== "chromium") {
-			throw new Error("Playwright is only support running extensions chromium");
+			throw new Error("Playwright only supports install extension for chromium");
 		}
 		this.dataDir = dataDir;
 		this.cleanDataDir = dataDir === undefined;
@@ -229,9 +229,6 @@ export class WebextExecutor extends PlaywrightExecutor {
 
 	// https://webdriver.io/docs/extension-testing/web-extensions/#test-popup-modal-in-chrome
 	async findChromiumExtensionId(name: string) {
-		if (this.type.name() !== "chromium") {
-			throw new Error("Playwright only supports install extension for chromium");
-		}
 		const page = await this.context.newPage();
 		try {
 			await page.goto("chrome://extensions");
