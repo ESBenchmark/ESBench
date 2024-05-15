@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - run: gh auth login
+      - run: gh auth login -h github.com
         env:
           GH_TOKEN: ${{ secrets.MIRROR_PAT }}
 
