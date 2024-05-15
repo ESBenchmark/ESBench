@@ -35,7 +35,6 @@
 		"chalk": "^5.3.0",
 		"fast-glob": "^3.3.2",
 		"markdown-table": "^3.0.3",
-		"mime": "^4.0.3",
 		"open": "^10.1.0",
 		"picomatch": "^4.0.2",
 		"serialize-error": "^11.0.3",

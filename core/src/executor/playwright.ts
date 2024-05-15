@@ -3,9 +3,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import { tmpdir } from "os";
+import { AsyncFunction } from "@kaciras/utilities/browser";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
-import { AsyncFunction } from "@kaciras/utilities/browser";
 
 // Playwright doesn't work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -47,8 +47,6 @@ const manifest = {
 	],
 };
 
-async function client(args: Pick<ExecuteOptions, "files" | "pattern">) {
-	// @ts-ignore Resolved by the custom router.
 // Define the function with strings to bypass Vitest transformation.
 const client: any = new AsyncFunction("args", `\
 	const loader = await import("./index.js");
@@ -56,7 +54,7 @@ const client: any = new AsyncFunction("args", `\
 `);
 
 /**
- * Run suites on browsers with Playwright driver.
+ * Run suites on browser with Playwright driver.
  * Requires "playwright-core" or "playwright" installed.
  *
  * ESBench does not download browsers by default, you may need to specific
@@ -114,8 +112,8 @@ export class PlaywrightExecutor implements Executor {
 			if (path === "/") {
 				return route.fulfill(pageHTML);
 			}
-			const body = readFileSync(join(root, path));
-			return route.fulfill({ body, contentType: mime.getType(path)! });
+			return route.fulfill({ path: join(root, path) })
+				.catch(() => route.fulfill({ status: 404 }));
 		});
 
 		await page.goto(url);

@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { firefox } from "playwright-core";
 import { executorFixtures, testExecute } from "../helper.ts";
 import { PlaywrightExecutor } from "../../src/executor/playwright.ts";
+import { RunSuiteResult } from "../../src/index.ts";
 
 const executor = new PlaywrightExecutor(firefox);
 
@@ -31,4 +32,13 @@ it("should throw error if exception occurred outside runAndSend()", () => {
 		root: "__tests__/fixtures/error-outside",
 	});
 	return expect(promise).rejects.toThrow("Stub Error");
+});
+
+it("should respond 404 when resource not exists", async () => {
+	const dispatch = await testExecute(executor, {
+		files: ["./foo.js"],
+		root: "__tests__/fixtures/fetch-404",
+	});
+	const [result] = dispatch.mock.calls[0][0] as RunSuiteResult[];
+	expect(result.notes[0].text) .toBe("Status: 404");
 });
