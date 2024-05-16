@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync } from "fs";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { afterEach, beforeEach, Mock, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, Mock, vi } from "vitest";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { Profiler, ProfilingContext } from "../src/profiling.ts";
 import { ClientMessage, messageResolver } from "../src/connect.ts";
@@ -16,7 +16,7 @@ export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T
  */
 export function spin(ms = 1) {
 	// noinspection StatementWithEmptyBodyJS
-	for (let s = performance.now(), e = s; e - s < ms; e = performance.now());
+	for (let s = performance.now(), e = s; e - s < ms; e = performance.now()) ;
 }
 
 /**
@@ -46,25 +46,24 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 // Use shared folder may cause tests to fail randomly with parallel execution.
 const BUILD_OUT_DIR = ".esbench-test-temp";
 
-export async function testExecute(executor: Executor, build: any) {
-	const context = messageResolver(noop) as unknown as ExecuteOptions;
-	context.tempDir = BUILD_OUT_DIR;
-	context.pattern = RE_ANY.source;
-	context.root = build.root;
-	context.files = build.files;
-	vi.spyOn(context, "dispatch");
+export function executorTester(executor: Executor) {
+	useTempDirectory(BUILD_OUT_DIR);
+	beforeAll(() => executor.start?.() as any);
+	afterAll(() => executor.close?.() as any);
 
-	mkdirSync(context.tempDir, { recursive: true });
-	await executor.start?.();
-	try {
+	return async (build: any) => {
+		const context = messageResolver(noop) as unknown as ExecuteOptions;
+		context.tempDir = BUILD_OUT_DIR;
+		context.pattern = RE_ANY.source;
+		context.root = build.root;
+		context.files = build.files;
+		vi.spyOn(context, "dispatch");
+
 		const w = executor.execute(context);
 		await Promise.all([context.promise, w]);
-	} finally {
-		await executor.close?.();
-		rmSync(context.tempDir, { recursive: true });
-	}
 
-	return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
+		return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
+	};
 }
 
 export const executorFixtures = {

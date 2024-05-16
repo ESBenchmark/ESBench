@@ -1,14 +1,15 @@
 import { expect, it } from "vitest";
 import NodeExecutor from "../../src/executor/node.js";
-import { executorFixtures, testExecute } from "../helper.ts";
+import { executorFixtures, executorTester } from "../helper.ts";
+
+const execute = executorTester(new NodeExecutor());
 
 it("should have a name", () => {
 	expect(new NodeExecutor()).toHaveProperty("name", "node");
 });
 
 it("should transfer log messages", async () => {
-	const executor = new NodeExecutor();
-	const dispatch = await testExecute(executor, {
+	const dispatch = await execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/success-suite",
 	});
@@ -20,8 +21,7 @@ it("should transfer log messages", async () => {
 });
 
 it("should forward errors from runAndSend()", async () => {
-	const executor = new NodeExecutor();
-	const promise = testExecute(executor, {
+	const promise = execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-inside",
 	});
@@ -29,8 +29,7 @@ it("should forward errors from runAndSend()", async () => {
 });
 
 it("should throw error if exception occurred outside runAndSend()", () => {
-	const executor = new NodeExecutor();
-	const promise = testExecute(executor, {
+	const promise = execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-outside",
 	});

@@ -1,13 +1,13 @@
 import { expect, it } from "vitest";
 import { firefox } from "playwright-core";
-import { executorFixtures, testExecute } from "../helper.ts";
+import { executorFixtures, executorTester } from "../helper.ts";
 import { PlaywrightExecutor } from "../../src/executor/playwright.ts";
 import { RunSuiteResult } from "../../src/index.ts";
 
-const executor = new PlaywrightExecutor(firefox);
+const execute = executorTester(new PlaywrightExecutor(firefox));
 
 it("should work", async () => {
-	const dispatch = await testExecute(executor, {
+	const dispatch = await execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/success-suite",
 	});
@@ -19,7 +19,7 @@ it("should work", async () => {
 });
 
 it("should forward errors from runAndSend()", async () => {
-	const promise = testExecute(executor, {
+	const promise = execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-inside",
 	});
@@ -27,7 +27,7 @@ it("should forward errors from runAndSend()", async () => {
 });
 
 it("should throw error if exception occurred outside runAndSend()", () => {
-	const promise = testExecute(executor, {
+	const promise = execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/error-outside",
 	});
@@ -35,10 +35,10 @@ it("should throw error if exception occurred outside runAndSend()", () => {
 });
 
 it("should respond 404 when resource not exists", async () => {
-	const dispatch = await testExecute(executor, {
+	const dispatch = await execute({
 		files: ["./foo.js"],
 		root: "__tests__/fixtures/fetch-404",
 	});
 	const [result] = dispatch.mock.calls[0][0] as RunSuiteResult[];
-	expect(result.notes[0].text) .toBe("Status: 404");
+	expect(result.notes[0].text).toBe("Status: 404");
 });
