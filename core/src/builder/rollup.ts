@@ -44,16 +44,21 @@ function entryPlugin(files: string[]): Plugin {
 	};
 }
 
-const defaults: InlineConfig = {
+const defaultConfig: InlineConfig = {
+	logLevel: "error",
+	configFile: false,
+};
+
+const libraryPreset: InlineConfig = {
 	logLevel: "error",
 	configFile: false,
 	build: {
 		rollupOptions: {
-			preserveEntrySignatures: "allow-extension",
 			external,
 		},
 		minify: false,
 		target: "esnext",
+		copyPublicDir: false,
 		lib: {
 			entry: entryId,
 			formats: ["es"],
@@ -85,9 +90,10 @@ export class RollupBuilder implements Builder {
 		}
 
 		const bundle = await rollup({
-			...defaults.build!.rollupOptions,
+			external,
 			...this.config,
 			input: entryId,
+			preserveEntrySignatures: "allow-extension",
 			plugins: [...plugins, entryPlugin(files)],
 		});
 
@@ -107,8 +113,10 @@ export class ViteBuilder implements Builder {
 
 	private readonly config: InlineConfig;
 
-	constructor(config: InlineConfig = {}) {
-		this.config = mergeConfig(defaults, config);
+	constructor(config?: InlineConfig) {
+		this.config = config
+			? mergeConfig(defaultConfig, config)
+			: libraryPreset;
 	}
 
 	get name() {
@@ -119,8 +127,9 @@ export class ViteBuilder implements Builder {
 		const overrides: InlineConfig = {
 			build: {
 				outDir,
-				// Override lib.entry which resolves our virtual module to absolute path.
+				// Override `lib.entry` which resolves our virtual module to absolute path.
 				rollupOptions: {
+					preserveEntrySignatures: "allow-extension",
 					input: entryId,
 					output: {
 						entryFileNames: "index.js",
