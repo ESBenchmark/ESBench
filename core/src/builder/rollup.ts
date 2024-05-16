@@ -1,4 +1,5 @@
 import { isBuiltin } from "module";
+import { resolve } from "path";
 import { rollup, RollupOptions } from "rollup";
 import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { Builder } from "../host/toolchain.js";
@@ -126,7 +127,9 @@ export class ViteBuilder implements Builder {
 	async build(outDir: string, files: string[]) {
 		const overrides: InlineConfig = {
 			build: {
-				outDir,
+				// Vite's root may different with CWD.
+				outDir: resolve(outDir),
+
 				// Override `lib.entry` which resolves our virtual module to absolute path.
 				rollupOptions: {
 					preserveEntrySignatures: "allow-extension",
