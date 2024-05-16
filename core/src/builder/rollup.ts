@@ -46,6 +46,7 @@ function entryPlugin(files: string[]): Plugin {
 
 const defaults: InlineConfig = {
 	logLevel: "error",
+	configFile: false,
 	build: {
 		rollupOptions: {
 			preserveEntrySignatures: "allow-extension",
