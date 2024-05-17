@@ -63,7 +63,7 @@ export default defineConfig({
 			},
 		],
 		socialLinks: [
-			{ icon: "github", link: "https://github.com/Kaciras/esbench" },
+			{ icon: "github", link: "https://github.com/ESBenchmark/ESBench" },
 		],
 		footer: {
 			message: "Released under the MIT License.",

@@ -12,7 +12,7 @@ A modern JavaScript benchmarking tool.
 - **HTML Reporter**: plot the results into an interactive chart.
 - **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
 
-**For more details and getting started, visit [Document](https://esbench-docs-mirror.vercel.app)**
+**For more details and getting started, visit [Document](https://esbench.vercel.app)**
 
 # Simple Example
 
