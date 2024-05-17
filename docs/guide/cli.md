@@ -9,6 +9,7 @@ Options:
 | Options              |                                                                                                 |
 |----------------------|-------------------------------------------------------------------------------------------------|
 | `--config <file>`    | Use specified config file (string)                                                              |
+| `--logLevel <level>` | info \| warn \| error \| off (string)                                                           |
 | `--no-loader`        | Disable builtin TypeScript loader (boolean)                                                     |
 | `--file <path>`      | Run only suite that contains the value in their paths (string)                                  |
 | `--name <regex>`     | Run benchmark with names matching the Regex pattern (string)                                    |

@@ -46,6 +46,10 @@ const program = yargs(hideBin(argv))
 			description: "Disable builtin TypeScript loader",
 			default: false,
 		},
+		logLevel: {
+			type: "string",
+			description: "Log level (debug | info | warn | error | off)",
+		},
 		file: {
 			type: "string",
 			description: "Run only suites that contains the value in their paths",
@@ -67,12 +71,16 @@ const program = yargs(hideBin(argv))
 			description: "Execute suites in a specified shard",
 		},
 	}, async args => {
-		const { config, ...filter } = args;
+		const { config, logLevel, ...filter } = args;
 		if (!args.noLoader) {
 			nodeModule.register?.("./loader.js", import.meta.url);
 		}
-		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
-		return start(cfgObj ?? {}, filter);
+		let cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
+		cfgObj ??= {};
+		if (logLevel) {
+			cfgObj.logLevel = logLevel;
+		}
+		return start(cfgObj, filter);
 	});
 
 
