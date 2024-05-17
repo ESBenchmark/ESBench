@@ -60,7 +60,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 		return logger.warn("\nNo files match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
-	logger.info(`\n${count} jobs for ${jobs.length} executors.`);
+	logger.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
 
 	for (const { executorName, executor, builds } of jobs) {
 		let builder = "";

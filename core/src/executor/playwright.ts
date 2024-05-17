@@ -87,7 +87,6 @@ export class PlaywrightExecutor implements Executor {
 	}
 
 	async start() {
-		console.log("[Playwright] Launching browser...");
 		const browser = await this.type.launch(this.options);
 		this.context = await browser.newContext();
 	}

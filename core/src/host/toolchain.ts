@@ -1,5 +1,5 @@
 import { cwd } from "process";
-import { join, relative } from "path";
+import { basename, join, relative } from "path";
 import { mkdtempSync } from "fs";
 import { normalize } from "path/posix";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
@@ -7,7 +7,6 @@ import glob from "fast-glob";
 import picomatch from "picomatch";
 import { ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
-import noBuild from "../builder/default.js";
 import { HostLogger } from "./logger.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";
 
@@ -182,13 +181,15 @@ export default class JobGenerator {
 	}
 
 	async build() {
-		const { directory, bOutput, t2n } = this;
+		const { directory, bInclude, bOutput, t2n } = this;
 		const { file, shared } = this.filter;
+
+		this.logger.info(`Building suites with ${bInclude.size} builders [tempDir = ${directory}]...`);
 
 		const pathFilter = file && relative(cwd(), file).replaceAll("\\", "/");
 		const sharedFilter = SharedModeFilter.parse(shared);
 
-		for (const [builder, include] of this.bInclude) {
+		for (const [builder, include] of bInclude) {
 			let files = sharedFilter.select(await glob(include));
 			if (pathFilter) {
 				files = files.filter(p => p.includes(pathFilter));
@@ -199,9 +200,7 @@ export default class JobGenerator {
 
 			const root = mkdtempSync(join(directory, "build-"));
 			const name = t2n.get(builder)!;
-			if (builder !== noBuild) {
-				this.logger.info(`Building suites with ${name} [${root}]... `);
-			}
+			this.logger.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
 
 			await builder.build(root, files);
 			bOutput.set(builder, { name, root, files });
