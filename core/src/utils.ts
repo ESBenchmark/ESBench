@@ -1,8 +1,6 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
 
-export const logLevelPriority = { debug: 0, info: 1, warn: 2, error: 3, off: 4 };
-
 export const kWorkingParams = Symbol();
 
 export const RE_ANY = new RegExp("");

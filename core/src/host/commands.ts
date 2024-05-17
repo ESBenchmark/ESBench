@@ -42,10 +42,10 @@ export async function report(config: ESBenchConfig, files: string[]) {
 }
 
 export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
-	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
+	const { reporters, toolchains, tempDir, diff, cleanTempDir, logLevel } = normalizeConfig(config);
 	const startTime = performance.now();
 
-	const logger = createLogger("debug");
+	const logger = createLogger(logLevel);
 	const result: ESBenchResult = {};
 	mkdirSync(tempDir, { recursive: true });
 
@@ -57,20 +57,20 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const jobs = Array.from(generator.getJobs());
 
 	if (jobs.length === 0) {
-		return console.warn("\nNo files match the includes, please check your config.");
+		return logger.warn("\nNo files match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
-	console.log(`\n${count} jobs for ${jobs.length} executors.`);
+	logger.info(`\n${count} jobs for ${jobs.length} executors.`);
 
 	for (const { executorName, executor, builds } of jobs) {
 		let builder = "";
-		console.log(`Running suites with executor "${executorName}"`);
+		logger.info(`Running suites with executor "${executorName}"`);
 
 		await executor.start?.();
 		try {
 			for (const build of builds) {
 				builder = build.name;
-				console.log(`${build.files.length} suites from builder "${builder}"`);
+				logger.info(`${build.files.length} suites from builder "${builder}"`);
 
 				const { files, root } = build;
 				const { promise, reject, dispatch } = messageResolver(logger.handler);
@@ -103,18 +103,18 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				}
 			}
 		} catch (e) {
-			console.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
+			logger.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
 			if (e.name !== "RunSuiteError") {
 				throw e;
 			}
-			console.error(`At scene ${e.paramStr}`);
+			logger.error(`At scene ${e.paramStr}`);
 			throw e.cause;
 		} finally {
 			await executor.close?.();
 		}
 	}
 
-	console.log(); // Add an empty line between running & reporting phase.
+	logger.info(); // Add an empty line between running & reporting phase.
 
 	const previous = diff && loadJSON(diff, false);
 	for (const reporter of reporters) {
@@ -129,10 +129,10 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 		try {
 			rmSync(tempDir, { recursive: true });
 		} catch (e) {
-			console.error(e);
+			logger.error(e);
 		}
 	}
 
 	const timeUsage = performance.now() - startTime;
-	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
+	logger.info(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }

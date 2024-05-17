@@ -1,6 +1,7 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "../connect.js";
 import { Builder, Executor, Nameable, ToolChainItem } from "./toolchain.js";
+import { LogLevel } from "./logger.js";
 import noBuild from "../builder/default.js";
 import inProcess from "../executor/in-process.js";
 import textReporter from "../reporter/text.js";
@@ -54,6 +55,13 @@ export interface ESBenchConfig {
 	tempDir?: string;
 
 	/**
+	 * Adjust console output verbosity.
+	 *
+	 * @default "debug"
+	 */
+	logLevel?: LogLevel;
+
+	/**
 	 * Choose whether or not to remove the temporary directory after benchmark.
 	 *
 	 * @default true
@@ -90,6 +98,7 @@ export function normalizeConfig(input: ESBenchConfig) {
 
 	const config: ESBenchConfig = {
 		tempDir: ".esbench-tmp",
+		logLevel: "debug",
 		cleanTempDir: true,
 		reporters: [textReporter()],
 		...input,

@@ -1,6 +1,9 @@
 import chalk from "chalk";
-import { logLevelPriority } from "../utils.js";
 import { LogHandler } from "../profiling.js";
+
+export const logLevelPriority = { debug: 0, info: 1, warn: 2, error: 3, off: 4 };
+
+export type LogLevel = keyof typeof logLevelPriority;
 
 const colors = [chalk.cyan, chalk, chalk.yellow, chalk.redBright];
 
@@ -17,7 +20,7 @@ export interface HostLogger {
 	error(message?: string): void;
 }
 
-export function createLogger(minLevel: keyof typeof logLevelPriority) {
+export function createLogger(minLevel: LogLevel) {
 	const priority = logLevelPriority[minLevel];
 
 	const handler: LogHandler = (message, level) => {

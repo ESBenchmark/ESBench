@@ -1,6 +1,6 @@
 import { Awaitable } from "@kaciras/utilities/browser";
 import { deserializeError, ErrorObject, serializeError } from "serialize-error";
-import { LogHandler, LogLevel } from "./profiling.js";
+import { LogHandler, LogType } from "./profiling.js";
 import { UserSuite } from "./suite.js";
 import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
 
@@ -20,7 +20,7 @@ export type ESBenchResult = Record<string, ToolchainResult[]>;
 
 type ErrorMessage = { e: ErrorObject; params?: string };
 
-type LogMessage = { log?: string; level: LogLevel };
+type LogMessage = { log?: string; level: LogType };
 
 /**
  * Some types of objects that need to be sent to the host.

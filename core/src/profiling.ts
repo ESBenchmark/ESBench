@@ -1,14 +1,15 @@
 import { Awaitable, cartesianObject } from "@kaciras/utilities/browser";
+import { LogLevel } from "./host/logger.js";
 import { RunSuiteOption } from "./runner.js";
 import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
-import { kWorkingParams, logLevelPriority, RE_ANY, runFns } from "./utils.js";
+import { kWorkingParams, RE_ANY, runFns } from "./utils.js";
 
-export type LogLevel = Exclude<keyof typeof logLevelPriority, "off">;
+export type LogType = Exclude<LogLevel, "off">;
 
 /**
  * Calling this function always requires `await` in order to send the message as soon as possible.
  */
-export type LogHandler = (message: string | undefined, level: LogLevel) => Awaitable<any>;
+export type LogHandler = (message: string | undefined, level: LogType) => Awaitable<any>;
 
 const consoleLogHandler: LogHandler = (message = "", level) => console[level](message);
 
