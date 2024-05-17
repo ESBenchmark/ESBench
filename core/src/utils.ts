@@ -1,8 +1,7 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
-import { LogHandler } from "./profiling.js";
 
-export const consoleLogHandler: LogHandler = (message = "", level) => console[level](message);
+export const logLevelPriority = { debug: 0, info: 1, warn: 2, error: 3, off: 4 };
 
 export const kWorkingParams = Symbol();
 

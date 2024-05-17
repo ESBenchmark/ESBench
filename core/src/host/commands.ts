@@ -1,10 +1,11 @@
 import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
-import JobGenerator, { BuildResult, ExecuteOptions } from "./toolchain.js";
+import JobGenerator, { ExecuteOptions } from "./toolchain.js";
 import { ESBenchConfig, normalizeConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../index.js";
-import { consoleLogHandler, resolveRE } from "../utils.js";
+import { resolveRE } from "../utils.js";
+import { createLogger } from "./logger.js";
 
 export interface FilterOptions {
 	file?: string;
@@ -42,12 +43,13 @@ export async function report(config: ESBenchConfig, files: string[]) {
 
 export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const { reporters, toolchains, tempDir, diff, cleanTempDir } = normalizeConfig(config);
-	const result: ESBenchResult = {};
 	const startTime = performance.now();
 
+	const logger = createLogger("debug");
+	const result: ESBenchResult = {};
 	mkdirSync(tempDir, { recursive: true });
 
-	const generator = new JobGenerator(tempDir, filter);
+	const generator = new JobGenerator(tempDir, filter, logger);
 	for (const toolchain of toolchains) {
 		generator.add(toolchain);
 	}
@@ -70,7 +72,19 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				builder = build.name;
 				console.log(`${build.files.length} suites from builder "${builder}"`);
 
-				const context = newExecuteContext(tempDir, build, filter);
+				const { files, root } = build;
+				const { promise, reject, dispatch } = messageResolver(logger.handler);
+				const pattern = resolveRE(filter.name).source;
+
+				const context: ExecuteOptions = {
+					tempDir,
+					pattern,
+					files,
+					root,
+					dispatch,
+					reject,
+					promise,
+				};
 				const [records] = await Promise.all([
 					context.promise,
 					executor.execute(context),
@@ -109,7 +123,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 
 	/*
 	 * We did not put the cleanup code into finally block,
-	 * so that you can check the build output when error occurred.
+	 * so that user can check the build output when error occurred.
 	 */
 	if (cleanTempDir) {
 		try {
@@ -121,12 +135,4 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 
 	const timeUsage = performance.now() - startTime;
 	console.log(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
-}
-
-function newExecuteContext(tempDir: string, build: BuildResult, filter: FilterOptions) {
-	const { files, root } = build;
-	const { promise, reject, dispatch } = messageResolver(consoleLogHandler);
-	const pattern = resolveRE(filter.name).source;
-
-	return { tempDir, pattern, files, root, dispatch, reject, promise } as ExecuteOptions;
 }

@@ -1,15 +1,14 @@
-import { cwd, stdout } from "process";
+import { cwd } from "process";
 import { join, relative } from "path";
 import { mkdtempSync } from "fs";
-import { performance } from "perf_hooks";
 import { normalize } from "path/posix";
-import { Awaitable, durationFmt, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
+import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
-import chalk from "chalk";
 import picomatch from "picomatch";
 import { ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
 import noBuild from "../builder/default.js";
+import { HostLogger } from "./logger.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";
 
 /*
@@ -144,10 +143,12 @@ export default class JobGenerator {
 
 	private readonly directory: string;
 	private readonly filter: FilterOptions;
+	private readonly logger: HostLogger;
 
-	constructor(directory: string, filter: FilterOptions) {
+	constructor(directory: string, filter: FilterOptions, logger: HostLogger) {
 		this.directory = directory;
 		this.filter = filter;
+		this.logger = logger;
 	}
 
 	add(toolchain: ToolChainItem) {
@@ -188,28 +189,21 @@ export default class JobGenerator {
 		const sharedFilter = SharedModeFilter.parse(shared);
 
 		for (const [builder, include] of this.bInclude) {
-			const name = t2n.get(builder)!;
 			let files = sharedFilter.select(await glob(include));
 			if (pathFilter) {
 				files = files.filter(p => p.includes(pathFilter));
 			}
-
 			if (files.length === 0) {
 				continue;
 			}
-			if (builder !== noBuild) {
-				stdout.write(`Building suites with ${name}... `);
-			}
 
 			const root = mkdtempSync(join(directory, "build-"));
-			const start = performance.now();
-			await builder.build(root, files);
-			const time = performance.now() - start;
-
+			const name = t2n.get(builder)!;
 			if (builder !== noBuild) {
-				const t = durationFmt.formatDiv(time, "ms");
-				console.log(chalk.greenBright(t));
+				this.logger.info(`Building suites with ${name} [${root}]... `);
 			}
+
+			await builder.build(root, files);
 			bOutput.set(builder, { name, root, files });
 		}
 	}
