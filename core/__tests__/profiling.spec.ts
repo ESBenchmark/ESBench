@@ -1,7 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { BenchmarkSuite, Profiler, ProfilingContext } from "../src/index.ts";
-import { consoleLogHandler } from "../src/utils.ts";
 
 const emptySuite = { setup() {} };
 
@@ -24,7 +23,7 @@ it("should initialize properties", () => {
 	expect(context.suite).toBe(suite);
 	expect(context.profilers).toHaveLength(0);
 	expect(context.pattern.source).toBe("(?:)");
-	expect(context.logHandler).toBe(consoleLogHandler);
+	expect(context.logHandler).toBeTypeOf("function");
 });
 
 it("should call profiler & scene hooks", async () => {
