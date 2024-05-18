@@ -41,10 +41,10 @@ export class BenchCase {
 	/**
 	 * Call the workload and each iteration hook once.
 	 */
-	async invoke() {
+	async invoke(): Promise<any> {
 		await runFns(this.beforeHooks);
 		try {
-			return this.fn();
+			return await this.fn();
 		} finally {
 			await runFns(this.afterHooks);
 		}
