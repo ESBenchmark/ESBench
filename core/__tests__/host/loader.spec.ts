@@ -32,11 +32,19 @@ describe.each(compilerWithNames)("$name", ({ create }) => {
 		const sourceCode = "export default a ?? b as string";
 
 		const compile = await create();
-		const js = await compile(sourceCode, "script.ts");
+		const js = await compile(sourceCode, "script.ts", true);
 
 		const b64 = js.slice(js.lastIndexOf(",") + 1);
 		const sourceMap = JSON.parse(Buffer.from(b64, "base64").toString());
 		expect(js).toContain("export default a ?? b;");
 		expect(sourceMap.sources).toStrictEqual(["script.ts"]);
+	});
+
+	it("should transform file to CJS",async () => {
+		const sourceCode = "export default 11";
+		const compile = await create();
+
+		const js = await compile(sourceCode, "script.cts", false);
+		expect(js).toContain("exports.default = 11;");
 	});
 });

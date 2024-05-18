@@ -43,14 +43,6 @@ async function swcCompiler(): Promise<CompileFn> {
 	};
 }
 
-async function viteEsbuildCompiler(): Promise<CompileFn> {
-	const { transformWithEsbuild } = await import("vite");
-	const options: TransformOptions = { sourcemap: "inline" };
-
-	return (code, filename) =>
-		transformWithEsbuild(code, filename, options).then(r => r.code);
-}
-
 async function esbuildCompiler(): Promise<CompileFn> {
 	const { transform } = await import("esbuild");
 	const cache = new TSConfckCache<any>();
@@ -88,7 +80,7 @@ async function tsCompiler(): Promise<CompileFn> {
 	};
 }
 
-export const compilers = [swcCompiler, viteEsbuildCompiler, esbuildCompiler, tsCompiler];
+export const compilers = [swcCompiler, esbuildCompiler, tsCompiler];
 
 let compile: CompileFn;
 
