@@ -1,4 +1,5 @@
 export * from "./config.js";
+export { HostLogger } from "./logger.js";
 export { Builder, Executor, ExecuteOptions } from "./toolchain.js";
 export { start, report } from "./commands.js";
 

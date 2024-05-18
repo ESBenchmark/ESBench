@@ -10,5 +10,5 @@ it("should merge results", async () => {
 		"__tests__/fixtures/result-1.json",
 		"__tests__/fixtures/result-2.json",
 	]);
-	expect(mockReporter).toHaveBeenCalledWith(result1And2, undefined);
+	expect(mockReporter).toHaveBeenCalledWith(result1And2, {});
 });

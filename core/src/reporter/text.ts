@@ -66,7 +66,7 @@ function print(
  */
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
-	return async (result, prev) => {
+	return (result, prev) => {
 		if (console) {
 			print(result, prev, options, stdout, chalk);
 		}

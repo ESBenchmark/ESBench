@@ -36,7 +36,7 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 		return createWriteStream(filename);
 	}
 
-	return async (result, previous) => {
+	return (result, previous, logger) => {
 		const entries = Object.entries(result);
 		for (const [name, results] of entries) {
 			const diff = previous[name];
@@ -49,6 +49,6 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 			}
 			fp.end("\r\n").close();
 		}
-		console.log(`${entries.length} CSV files saved at ${directory}/`);
+		logger.info(`${entries.length} CSV files saved at ${directory}/`);
 	};
 }

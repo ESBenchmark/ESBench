@@ -22,7 +22,7 @@ export const DEFAULT_NAME = "reports/benchmark.json";
  * @param name The pattern to use for naming result file.
  */
 export default function (name = DEFAULT_NAME): Reporter {
-	const zoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+	const zoneOffset = new Date().getTimezoneOffset() * 60_000;
 
 	return result => {
 		const now = new Date(Date.now() - zoneOffset);
@@ -33,6 +33,5 @@ export default function (name = DEFAULT_NAME): Reporter {
 
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, JSON.stringify(result));
-		console.info(`Benchmark result saved to: ${file}\n`);
 	};
 }

@@ -1,7 +1,7 @@
 import { Awaitable, identity } from "@kaciras/utilities/node";
 import { ESBenchResult } from "../connect.js";
 import { Builder, Executor, Nameable, ToolChainItem } from "./toolchain.js";
-import { LogLevel } from "./logger.js";
+import { HostLogger, LogLevel } from "./logger.js";
 import noBuild from "../builder/default.js";
 import inProcess from "../executor/in-process.js";
 import textReporter from "../reporter/text.js";
@@ -39,7 +39,7 @@ export interface ToolchainOptions {
  * @param result The result of all suites.
  * @param prev Another result used to calculate difference.
  */
-export type Reporter = (result: ESBenchResult, prev: ESBenchResult) => Awaitable<unknown>;
+export type Reporter = (result: ESBenchResult, prev: ESBenchResult, logger: HostLogger) => Awaitable<unknown>;
 
 export interface ESBenchConfig {
 	/**

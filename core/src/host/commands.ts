@@ -15,29 +15,34 @@ export interface FilterOptions {
 	shared?: string;
 }
 
-function loadJSON(path: string, throwIfMissing: boolean) {
+function loadResults(path: string, throwIfMissing: true): ESBenchResult;
+
+function loadResults(path: string, throwIfMissing: false): ESBenchResult | undefined;
+
+function loadResults(path: string, throwIfMissing: boolean) {
 	try {
-		return JSON.parse(readFileSync(path, "utf8"));
+		return JSON.parse(readFileSync(path, "utf8")) as ESBenchResult;
 	} catch (e) {
 		if (throwIfMissing || e.code !== "ENOENT") throw e;
 	}
 }
 
 export async function report(config: ESBenchConfig, files: string[]) {
-	const { reporters, diff } = normalizeConfig(config);
+	const { reporters, diff, logLevel } = normalizeConfig(config);
 
-	const result = loadJSON(files[0], true) as ESBenchResult;
+	const result = loadResults(files[0], true);
+	const logger = createLogger(logLevel);
 
 	for (let i = 1; i < files.length; i++) {
-		const more = loadJSON(files[i], true) as ESBenchResult;
+		const more = loadResults(files[i], true);
 		for (const [name, suite] of Object.entries(more)) {
 			(result[name] ??= []).push(...suite);
 		}
 	}
 
-	const previous = diff && loadJSON(diff, false) || {};
+	const previous = diff && loadResults(diff, false) || {};
 	for (const reporter of reporters) {
-		await reporter(result, previous);
+		await reporter(result, previous, logger);
 	}
 }
 
@@ -116,9 +121,9 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 
 	logger.info(); // Add an empty line between running & reporting phase.
 
-	const previous = diff && loadJSON(diff, false) || {};
+	const previous = diff && loadResults(diff, false) || {};
 	for (const reporter of reporters) {
-		await reporter(result, previous);
+		await reporter(result, previous, logger);
 	}
 
 	/*
