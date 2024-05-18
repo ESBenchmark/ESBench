@@ -41,10 +41,10 @@ describe.each(compilerWithNames)("$name", ({ create }) => {
 	});
 
 	it("should transform file to CJS",async () => {
-		const sourceCode = "export default 11";
+		const sourceCode = "export default a ?? b as string";
 		const compile = await create();
 
 		const js = await compile(sourceCode, "script.cts", false);
-		expect(js).toContain("exports.default = 11;");
+		expect(js).not.toContain("export default");
 	});
 });

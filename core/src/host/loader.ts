@@ -6,18 +6,22 @@ import { readFileSync } from "fs";
 import { Awaitable } from "@kaciras/utilities/node";
 import { parse, TSConfckCache } from "tsconfck";
 
-type CompileFn = (code: string, filename: string) => Awaitable<string>;
+type CompileFn = (code: string, filename: string, isESM: boolean) => Awaitable<string>;
 
 async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
 	const cache = new TSConfckCache<any>();
 
-	return async (code, filename) => {
+	return async (code, filename, isESM) => {
 		const { tsconfig: { compilerOptions } } = await parse(filename, { cache });
 		const { target = "es2022", module = "esnext" } = compilerOptions;
 
 		const options: any = {
 			filename,
+			module: {
+				noInterop: !compilerOptions.esModuleInterop,
+				type: "es6",
+			},
 			swcrc: false,
 			sourceMaps: "inline",
 			jsc: {
@@ -35,27 +39,37 @@ async function swcCompiler(): Promise<CompileFn> {
 				options.jsc.target = "es2022";
 		}
 
-		options.module = {
-			type: module.toLowerCase() === "commonjs" ? "commonjs" : "es6",
-		};
+		switch (module.toLowerCase()) {
+			case "nodenext":
+				options.module.type = isESM ? "es6" : "commonjs";
+				break;
+			case "commonjs":
+				options.module.type = "commonjs";
+		}
 
 		return (await swc.transform(code, options)).code;
 	};
 }
 
 async function esbuildCompiler(): Promise<CompileFn> {
-	const { transform } = await import("esbuild");
+	const esbuild = await import("esbuild");
 	const cache = new TSConfckCache<any>();
 
-	return async (code, sourcefile) => {
+	return async (code, sourcefile, isESM) => {
 		const { tsconfig } = await parse(sourcefile, { cache });
+		const module = tsconfig.compilerOptions.module?.toLowerCase();
+
 		const options: TransformOptions = {
 			sourcefile,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
 			tsconfigRaw: tsconfig,
 		};
-		return (await transform(code, options)).code;
+
+		if (module === "commonjs" || module === "nodenext" && !isESM) {
+			options.format = "cjs";
+		}
+		return (await esbuild.transform(code, options)).code;
 	};
 }
 
@@ -63,7 +77,7 @@ async function tsCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
 	const cache = new TSConfckCache<any>();
 
-	return async (code, fileName) => {
+	return async (code, fileName, isESM) => {
 		const { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
 
 		compilerOptions.sourceMap = true;
@@ -74,7 +88,9 @@ async function tsCompiler(): Promise<CompileFn> {
 		 * "NodeNext" does not work with transpileModule().
 		 * https://github.com/microsoft/TypeScript/issues/53022
 		 */
-		compilerOptions.module = "ESNext";
+		if (compilerOptions.module.toLowerCase() === "nodenext") {
+			compilerOptions.module = isESM ? "ESNext" : "CommonJS";
+		}
 
 		return ts.transpileModule(code, { fileName, compilerOptions }).outputText;
 	};
@@ -151,7 +167,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 	if (!compile) {
 		compile = await detectTypeScriptCompiler();
 	}
-	const source = await compile(code, filename);
+	const source = await compile(code, filename, format === "module");
 
 	return { source, format, shortCircuit: true };
 };
