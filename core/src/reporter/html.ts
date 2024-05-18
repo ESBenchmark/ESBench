@@ -22,11 +22,10 @@ export default function (file = "reports/benchmark.html") {
 		);
 	}
 
-	return (result: ESBenchResult, prev?: ESBenchResult) => {
+	return (result: ESBenchResult, prev: ESBenchResult) => {
 		let html = interpolate(template, "Result", result);
-		if (prev) {
-			html = interpolate(html, "Previous", prev);
-		}
+		html = interpolate(html, "Previous", prev);
+
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, html);
 

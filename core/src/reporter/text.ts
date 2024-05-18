@@ -23,7 +23,7 @@ export interface TextReporterOptions extends SummaryTableOptions, FormatOptions 
 
 function print(
 	result: ESBenchResult,
-	previous: ESBenchResult | undefined,
+	previous: ESBenchResult,
 	options: TextReporterOptions,
 	out: Writable,
 	chalk: ChalkInstance,
@@ -32,7 +32,7 @@ function print(
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, toolchains] of entries) {
-		const diff = previous?.[name];
+		const diff = previous[name];
 		const table = buildSummaryTable(toolchains, diff, options, chalk);
 
 		out.write(chalk.greenBright("\nSuite: "));

@@ -39,7 +39,7 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 	return async (result, previous) => {
 		const entries = Object.entries(result);
 		for (const [name, results] of entries) {
-			const diff = previous?.[name];
+			const diff = previous[name];
 			const table = buildSummaryTable(results, diff, options);
 
 			const fp = openWrite(name);

@@ -39,7 +39,7 @@ export interface ToolchainOptions {
  * @param result The result of all suites.
  * @param prev Another result used to calculate difference.
  */
-export type Reporter = (result: ESBenchResult, prev?: ESBenchResult) => Awaitable<unknown>;
+export type Reporter = (result: ESBenchResult, prev: ESBenchResult) => Awaitable<unknown>;
 
 export interface ESBenchConfig {
 	/**

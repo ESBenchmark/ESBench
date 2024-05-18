@@ -35,7 +35,7 @@ export async function report(config: ESBenchConfig, files: string[]) {
 		}
 	}
 
-	const previous = diff && loadJSON(diff, false);
+	const previous = diff && loadJSON(diff, false) || {};
 	for (const reporter of reporters) {
 		await reporter(result, previous);
 	}
@@ -116,7 +116,7 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 
 	logger.info(); // Add an empty line between running & reporting phase.
 
-	const previous = diff && loadJSON(diff, false);
+	const previous = diff && loadJSON(diff, false) || {};
 	for (const reporter of reporters) {
 		await reporter(result, previous);
 	}
