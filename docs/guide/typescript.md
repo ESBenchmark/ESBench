@@ -8,12 +8,10 @@ When started, ESBench installs an [ESM Loader Hooks](https://nodejs.org/docs/lat
 
 When importing a TS file for the first time, ESBench will detect installed compilers use the following steps:
 
-1. if `@swc/core` installed, use [SWC](https://github.com/swc-project/swc).
-2. if `vite` installed, use [esbuild from Vite](https://vitejs.dev/guide/api-javascript.html#transformwithesbuild)
-3. if `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild) .
-4. if `typescript` installed, use [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
-
-If none of the supported compilers are installed, the import fails.
+1. If `@swc/core` installed, use [SWC](https://github.com/swc-project/swc).
+2. If `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild) .
+3. If `typescript` installed, use [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
+4. No supported compiler, the import fails.
 
 ESBench only transforms TS files and does not process other types of imports.
 
@@ -73,21 +71,21 @@ Just run `esbench`, no new arguments needed, the TS loader is enabled by default
 esbench --file benchmark/cartesian-product.ts
 ```
 
-## Use the Loader
+## Use in Executor
 
 ESM loader hooks only act on the current process and are not inherited by spawned processes, so new Node instances started at the executor cannot load TS suites.
 
-To use the loader without ESBench CLI, you can import `esbench/loader` in Node options:
+To achieve the same behavior, you can use [ts-directly](https://github.com/Kaciras/ts-directly).
 
 ```javascript
 import { defineConfig, ProcessExecutor } from "esbench/host";
 
 export default defineConfig({ 
-	toolchains: [{ 
+	toolchains: [{
 		executors: [
-			new ProcessExecutor("node --import esbench/loader"),
+			new ProcessExecutor("node --import ts-directly/register"),
 		],
-	}], 
+	}],
 });
 ```
 

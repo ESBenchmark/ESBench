@@ -30,7 +30,7 @@ const program = yargs(hideBin(argv))
 	}, async args => {
 		const { config, files } = args;
 		if (!args.noLoader) {
-			nodeModule.register?.("./loader.js", import.meta.url);
+			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
 		return report(cfgObj ?? {}, files);
@@ -73,7 +73,7 @@ const program = yargs(hideBin(argv))
 	}, async args => {
 		const { config, logLevel, ...filter } = args;
 		if (!args.noLoader) {
-			nodeModule.register?.("./loader.js", import.meta.url);
+			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		let cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
 		cfgObj ??= {};
