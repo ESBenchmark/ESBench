@@ -2,7 +2,7 @@ import { defineSuite } from "esbench";
 
 export default defineSuite({
 	params: {
-		length: [1, 1009],
+		length: [1, 1000],
 	},
 	setup(scene) {
 		const { length } = scene.params;

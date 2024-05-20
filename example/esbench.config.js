@@ -1,7 +1,7 @@
 import {
 	defineConfig,
+	htmlReporter,
 	inProcessExecutor,
-	ProcessExecutor,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -26,9 +26,10 @@ export default defineConfig({
 	reporters: [
 		rawReporter(),
 		textReporter(),
+		htmlReporter(),
 	],
 	toolchains: [{
-		include: ["./self/*.[jt]s", "./node/*.js"],
+		include: ["./self/*.[jt]s", "./node/*.[jt]s"],
 	}, {
 		include: ["./es/*.js"],
 
@@ -42,7 +43,10 @@ export default defineConfig({
 			inProcessExecutor,
 
 			// More JS runtimes, you need install them manually.
+			// TODO: https://github.com/oven-sh/bun/issues/9963
 			// new ProcessExecutor("bun"),
+
+			// TODO: https://github.com/denoland/deno/issues/18192
 			// new ProcessExecutor("deno run --allow-net"),
 		],
 	}, {
