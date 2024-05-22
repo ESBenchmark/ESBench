@@ -15,14 +15,22 @@ it("should set default properties", () => {
 	const config = normalizeConfig({});
 
 	expect(config.tempDir).toBe(".esbench-tmp");
+	expect(config.diff).toBe("reports/benchmark.json");
 	expect(config.cleanTempDir).toBe(true);
-	expect(config.reporters).toHaveLength(1);
+	expect(config.reporters).toHaveLength(2);
 	expect(config.toolchains).toHaveLength(1);
 
 	const { include, builders, executors } = config.toolchains[0];
 	expect(builders).toHaveLength(1);
 	expect(executors).toHaveLength(1);
 	expect(include).toStrictEqual(["./benchmark/**/*.[jt]s?(x)"]);
+});
+
+it("should override defaults with undefined properties", () => {
+	const config = normalizeConfig({
+		diff: undefined,
+	});
+	expect(config.diff).toBeUndefined();
 });
 
 it("should not modify the user config", () => {
