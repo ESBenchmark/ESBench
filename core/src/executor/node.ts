@@ -37,7 +37,9 @@ export default class NodeExecutor implements Executor {
 	}
 
 	close() {
-		this.process?.kill();
+		if (this.process?.pid) {
+			this.process.kill();
+		}
 	}
 
 	execute({ root, files, pattern, dispatch, reject }: ExecuteOptions) {

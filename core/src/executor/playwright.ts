@@ -202,7 +202,6 @@ export class WebextExecutor extends PlaywrightExecutor {
 	}
 
 	async start() {
-		console.log("[Playwright] Launching browser...");
 		const dataDir = this.dataDir ??= mkdtempSync(join(tmpdir(), "browser-"));
 
 		writeFileSync(join(dataDir, "manifest.json"), JSON.stringify(manifest));
