@@ -59,6 +59,12 @@
 				Chart Report
 			</button>
 
+			<button
+				type='button'
+				@click='share'
+			>
+				Share
+			</button>
 			<a :class='$style.link' href='/'>Document</a>
 			<a :class='$style.link' href='https://github.com/Kaciras/ESBench'>GitHub</a>
 		</section>
@@ -147,7 +153,7 @@ import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { useData } from "vitepress";
-import { buildSummaryTable,FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
+import { buildSummaryTable, FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
@@ -180,6 +186,23 @@ const showChart = shallowRef(false);
 const results = shallowReactive<BenchmarkHistory[]>([]);
 
 let editor: monaco.editor.IStandaloneCodeEditor;
+
+function share() {
+	const code = editor.getModel()!.getValue();
+	const url = new URL(location.href);
+
+	const base64 = new TextEncoder().encode(code);
+	const binString = Array.from(base64, b => String.fromCodePoint(b));
+	url.hash = btoa(binString.join(""));
+
+	if (executor.value === executeWorker) {
+		url.search = "exec=worker";
+	} else {
+		url.search = "exec=iframe";
+	}
+	navigator.clipboard.writeText(url.toString());
+	window.alert("Link is copied to clipboard.");
+}
 
 function appendLog(message = "", level = "info") {
 	const el = consoleEl.value!;
@@ -273,14 +296,23 @@ function handleMouseMove(event: MouseEvent) {
 onUnmounted(() => editor.dispose());
 
 onMounted(() => {
-	const demo = new URLSearchParams(location.search).get("demo");
+	const params = new URLSearchParams(location.search);
 	let value = suiteTemplate;
 
+	const demo = params.get("demo");
 	if (demo) {
 		const { code, category } = demos[parseInt(demo)];
 		value = code;
 		executor.value = category === "web"
 			? executeIFrame : executeWorker;
+	} else if (location.hash) {
+		const b64 = atob(location.hash.slice(1));
+		const bytes = Uint8Array.from(b64, c => c.codePointAt(0));
+		value = new TextDecoder().decode(bytes);
+	}
+
+	if (params.get("exec") === "iframe") {
+		executor.value = executeIFrame;
 	}
 
 	editor = monaco.editor.create(editorEl.value!, {
