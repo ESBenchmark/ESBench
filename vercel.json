@@ -3,6 +3,7 @@
 		"autoJobCancelation": true,
 		"silent": true
 	},
+	"cleanUrls": true,
 	"headers": [{
 		"source": "/(.*)",
 		"headers": [{
