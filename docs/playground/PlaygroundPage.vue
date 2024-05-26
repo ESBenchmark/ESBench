@@ -153,6 +153,7 @@ import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
 import { useData } from "vitepress";
+import { transformBuffer } from "@kaciras/utilities/browser";
 import { buildSummaryTable, FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
@@ -187,12 +188,13 @@ const results = shallowReactive<BenchmarkHistory[]>([]);
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
-function share() {
+async function share() {
 	const code = editor.getModel()!.getValue();
 	const url = new URL(location.href);
 
-	const base64 = new TextEncoder().encode(code);
-	const binString = Array.from(base64, b => String.fromCodePoint(b));
+	let bytes = new TextEncoder().encode(code);
+	bytes = await transformBuffer(bytes, new CompressionStream("deflate-raw"));
+	const binString = Array.from(bytes, b => String.fromCodePoint(b));
 	url.hash = btoa(binString.join(""));
 
 	if (executor.value === executeWorker) {
@@ -200,7 +202,7 @@ function share() {
 	} else {
 		url.search = "exec=iframe";
 	}
-	navigator.clipboard.writeText(url.toString());
+	await navigator.clipboard.writeText(url.toString());
 	window.alert("Link is copied to clipboard.");
 }
 
@@ -295,7 +297,7 @@ function handleMouseMove(event: MouseEvent) {
 
 onUnmounted(() => editor.dispose());
 
-onMounted(() => {
+onMounted(async () => {
 	const params = new URLSearchParams(location.search);
 	let value = suiteTemplate;
 
@@ -307,7 +309,8 @@ onMounted(() => {
 			? executeIFrame : executeWorker;
 	} else if (location.hash) {
 		const b64 = atob(location.hash.slice(1));
-		const bytes = Uint8Array.from(b64, c => c.codePointAt(0));
+		let bytes = Uint8Array.from(b64, c => c.codePointAt(0));
+		bytes = await transformBuffer(bytes, new DecompressionStream("deflate-raw"));
 		value = new TextDecoder().decode(bytes);
 	}
 

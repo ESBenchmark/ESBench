@@ -7,6 +7,7 @@
 		"preview": "vitepress preview"
 	},
 	"dependencies": {
+		"@kaciras/utilities": "^0.13.1",
 		"@tabler/icons-vue": "^3.5.0",
 		"@vueuse/core": "^10.9.0",
 		"esbench": "workspace:^",
