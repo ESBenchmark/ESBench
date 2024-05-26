@@ -6,8 +6,8 @@
 		"build": "vite build"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^0.13.0",
-		"@tabler/icons-vue": "^3.4.0",
+		"@kaciras/utilities": "^0.13.1",
+		"@tabler/icons-vue": "^3.5.0",
 		"@vueuse/core": "^10.9.0",
 		"chart.js": "^4.4.3",
 		"chartjs-chart-error-bars": "^4.4.0",
