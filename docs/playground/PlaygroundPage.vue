@@ -151,7 +151,7 @@ const webChalk = new Proxy<any>(logColors, {
 <script setup lang="ts">
 import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
-import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef } from "vue";
+import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw } from "vue";
 import { useData } from "vitepress";
 import { transformBuffer } from "@kaciras/utilities/browser";
 import { buildSummaryTable, FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
@@ -189,19 +189,18 @@ const results = shallowReactive<BenchmarkHistory[]>([]);
 let editor: monaco.editor.IStandaloneCodeEditor;
 
 async function share() {
-	const code = editor.getModel()!.getValue();
-	const url = new URL(location.href);
+	const data = {
+		code: editor.getModel()!.getValue(),
+		exec: executor.value === executeWorker ? "worker" : "iframe",
+		table: toRaw(tableOptions.value),
+	};
 
-	let bytes = new TextEncoder().encode(code);
+	const url = new URL(location.href);
+	let bytes = new TextEncoder().encode(JSON.stringify(data));
 	bytes = await transformBuffer(bytes, new CompressionStream("deflate-raw"));
 	const binString = Array.from(bytes, b => String.fromCodePoint(b));
 	url.hash = btoa(binString.join(""));
 
-	if (executor.value === executeWorker) {
-		url.search = "exec=worker";
-	} else {
-		url.search = "exec=iframe";
-	}
 	await navigator.clipboard.writeText(url.toString());
 	window.alert("Link is copied to clipboard.");
 }
@@ -311,11 +310,14 @@ onMounted(async () => {
 		const b64 = atob(location.hash.slice(1));
 		let bytes = Uint8Array.from(b64, c => c.codePointAt(0));
 		bytes = await transformBuffer(bytes, new DecompressionStream("deflate-raw"));
-		value = new TextDecoder().decode(bytes);
-	}
+		const json = new TextDecoder().decode(bytes);
 
-	if (params.get("exec") === "iframe") {
-		executor.value = executeIFrame;
+		const { code, exec, table } = JSON.parse(json);
+		value = code;
+		if (exec === "iframe") {
+			executor.value = executeIFrame;
+		}
+		tableOptions.value = table;
 	}
 
 	editor = monaco.editor.create(editorEl.value!, {
