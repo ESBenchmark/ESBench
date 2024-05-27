@@ -136,7 +136,7 @@ export default defineConfig({
 });
 ```
 
-![Job Graph](./Toolchains.svg)
+![Job Graph](../assets/Toolchains.svg)
 
 ## Tool Names
 

@@ -128,4 +128,4 @@ export default defineSuite({
 });
 ```
 
-![Suite Lifecycle](./SuiteLifecycle.svg)
+![Suite Lifecycle](../assets/SuiteLifecycle.svg)

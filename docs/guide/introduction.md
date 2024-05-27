@@ -1,6 +1,23 @@
 # Introduction
 
-ESBench is a full-featured JavaScript benchmarking tool.
+ESBench is a modern JavaScript benchmarking tool.
+
+- **Cross-runtime**: run your benchmark on Node, Bun, browsers, and more...
+- **Parameterization**: provide a series of parameters and see the performance of each combination.
+- **Comparable**: support baselines and diff with previous runs.
+- **TypeScript Out-of-box**: load your `.ts` files with zero config.
+- **HTML Reporter**: plot the results into an interactive chart.
+- **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
+
+## Why ESBench
+
+### Benchmark JS Runtimes
+
+One difference between JavaScript and other languages is that there is no official interpreter.
+
+### TypeScript Without the Hassle
+
+### 
 
 ## Installation
 
@@ -45,7 +62,7 @@ export default defineSuite(scene => {
 	});
 
 	scene.bench("Array.reduce", () => {
-		return values.reduce((v, s) => s + v, 0);
+		return values.reduce((v, s) => s + v);
 	});
 });
 ```

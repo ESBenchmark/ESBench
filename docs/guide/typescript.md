@@ -15,10 +15,13 @@ When importing a TS file for the first time, ESBench will detect installed compi
 
 ESBench only transforms TS files and does not process other types of imports.
 
+In the vast majority of cases where projects using TypeScript have typescript installed, this feature comes out of box.
+
 ## Run With TypeScript
 
 ::: code-group
 ```typescript [esbench.config.ts]
+// TypeScript config file is also supported.
 import { ESBenchConfig, Executor, ProcessExecutor } from "esbench/host";
 
 const executors: Executor[] = [new ProcessExecutor("node")];

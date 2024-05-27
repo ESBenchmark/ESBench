@@ -54,4 +54,4 @@ Files are saved in the specified directory (default "reports") with the path of 
 
 Plot the results in interactive charts.
 
-![HTML Reporter](./html-reporter.webp)
+![HTML Reporter](../assets/html-reporter.webp)

@@ -40,11 +40,11 @@ export default defineSuite({
 
 If the baseline option is set, rows in the text report will be grouped and a new `*.ratio` column will be added to show the difference between the other use cases and the baseline case:
 
-![Text Report 1](./baseline1.webp)
+![Text Report 1](../assets/baseline1.webp)
 
 Change the baseline to `{ type: "length", value: 10 }` and the report will be:
 
-![Text Report 2](./baseline2.webp)
+![Text Report 2](../assets/baseline2.webp)
 
 ## Previous Runs
 
@@ -72,8 +72,8 @@ export default defineConfig({
 
 Run a suite twice, you'll see a `*.diff` column added to the table, showing the difference between the current result and the saved result.
 
-![Text Report](./diff.webp)
+![Text Report](../assets/diff.webp)
 
 The built-in `htmlReporter` also compares the differences, with the previous run plotted as a patterned bar.
 
-![HTML Report](./diff-html.webp)
+![HTML Report](../assets/diff-html.webp)

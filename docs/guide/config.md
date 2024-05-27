@@ -12,6 +12,8 @@ export default defineConfig({
 });
 ```
 
+The full type of configuration can be found at [config.ts](https://github.com/ESBenchmark/ESBench/blob/master/core/src/host/config.ts)
+
 You can also explicitly specify a config file to use with the `--config` CLI option:
 
 ```shell

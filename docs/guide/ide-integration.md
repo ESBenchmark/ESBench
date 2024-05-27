@@ -6,10 +6,10 @@ ESBench provide official IDE plugins that help you to run suites and cases with 
 
 [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/24361-esbench)
 
-![IDEA Screenshot](./idea-plugin.webp)
+![IDEA Screenshot](../assets/idea-plugin.webp)
 
 ## VSCode
 
 [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=Kaciras.esbench-vscode)
 
-![VSCode Screenshot](./vscode-plugin.webp)
+![VSCode Screenshot](../assets/vscode-plugin.webp)
