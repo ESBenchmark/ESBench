@@ -14,7 +14,6 @@ const program = yargs(hideBin(argv))
 		config: {
 			type: "string",
 			description: "Use specified config file",
-			default: DEFAULT_CONFIG_FILE,
 		},
 		noLoader: {
 			type: "boolean",
@@ -32,14 +31,13 @@ const program = yargs(hideBin(argv))
 		if (!args.noLoader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
-		const cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
+		const cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
 		return report(cfgObj ?? {}, files);
 	})
 	.command("*", "Run benchmark", {
 		config: {
 			type: "string",
 			description: "Use specified config file",
-			default: DEFAULT_CONFIG_FILE,
 		},
 		noLoader: {
 			type: "boolean",
@@ -75,7 +73,7 @@ const program = yargs(hideBin(argv))
 		if (!args.noLoader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
-		let cfgObj = await importCWD(config, DEFAULT_CONFIG_FILE);
+		let cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
 		cfgObj ??= {};
 		if (logLevel) {
 			cfgObj.logLevel = logLevel;
