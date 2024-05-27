@@ -116,7 +116,7 @@ interface ColumnFactory {
 
 	prepare?(cases: FlattedResult[]): void;
 
-	getValue(data: FlattedResult): ColoredValue | void;
+	getValue(data: FlattedResult): ColoredValue | undefined;
 }
 
 class RowNumberColumn implements ColumnFactory {
@@ -420,22 +420,111 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
-type CellColor =ANSIColor | null;
+type CellColor = ANSIColor | null;
 
 export class SummaryTable {
-	formats: Array<string | undefined>;
-	cells: CellValue[][];
-	colors: CellColor[][];
-	groupEnds: number[];
 
-	hints: string[];
-	warnings: string[];
+	readonly formats: Array<string | undefined>;
+	readonly cells: CellValue[][] = [];
+	readonly colors: CellColor[][] = [];
+	readonly groupEnds: number[] = [];
 
-	format(options?: FormatOptions): FormattedTable;
-}
+	readonly hints: string[] = [];
+	readonly warnings: string[] = [];
 
-function toMarkdown(this: FormattedTable, stringLength?: any) {
-	return markdownTable(this, { stringLength, align: "r" });
+	constructor(summary: Summary, columnDefs: ColumnFactory[]) {
+		this.formats = columnDefs.map(c => c.format);
+
+		for (const note of summary.notes) {
+			const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
+			const msg = scope + note.text;
+			if (note.type === "info") {
+				this.hints.push(msg);
+			} else {
+				this.warnings.push(msg);
+			}
+		}
+
+		let colorRow: CellColor[];
+		let row: CellValue[];
+
+		const addRow = () => {
+			this.cells.push(row = []);
+			this.colors.push(colorRow = []);
+		};
+
+		function push(vc?: ColoredValue) {
+			if (vc === undefined) {
+				row.push(undefined);
+				colorRow.push(null);
+			} else if (Array.isArray(vc)) {
+				row.push(vc[0]);
+				colorRow.push(vc[1]);
+			} else {
+				row.push(vc);
+				colorRow.push(null);
+			}
+		}
+
+		addRow();
+		for (const column of columnDefs) {
+			push(column.name);
+		}
+
+		const rawGroups = summary.baseline
+			? summary.split(summary.baseline.type).values()
+			: [summary.results];
+
+		for (const group of rawGroups) {
+			for (const metricColumn of columnDefs) {
+				metricColumn.prepare?.(group);
+			}
+			for (const result of group) {
+				addRow();
+				for (const column of columnDefs) {
+					push(column.getValue(result));
+				}
+			}
+			this.groupEnds.push(this.cells.length);
+		}
+	}
+
+	format(options: FormatOptions = {}) {
+		const { formats, cells, colors, groupEnds } = this;
+		const { flexUnit = false, chalk = noColors } = options;
+		const table = [[]] as unknown as FormattedTable;
+
+		for (let i = 0; i < formats.length; i++) {
+			const v = cells[0][i];
+			const c = colors[0][i] ?? "whiteBright";
+			table[0].push(chalk[c](v as string));
+		}
+
+		let offset = 1;
+		for (const e of groupEnds) {
+			const copy = cells.slice(offset, e)
+				.map(r => r.slice());
+
+			for (let i = 0; i < formats.length; i++) {
+				if (formats[i]) {
+					formatColumn(copy, i, formats[i]!, flexUnit);
+				}
+				for (let j = 0; j < copy.length; j++) {
+					const v = copy[j][i];
+					const c = colors[offset + j][i] ?? "whiteBright";
+					copy[j][i] = chalk[c](v as string);
+				}
+			}
+
+			offset = e;
+			table.push(...copy as string[][], []);
+		}
+		table.pop();
+		table.toMarkdown = stringLength => {
+			return markdownTable(table, { stringLength, align: "r" });
+		};
+		return table;
+	}
 }
 
 export function buildSummaryTable(
@@ -443,18 +532,12 @@ export function buildSummaryTable(
 	diff?: ToolchainResult[],
 	options: SummaryTableOptions = {},
 ) {
-	const {
-		showSingle,
-		stdDev = true,
-		percentiles = [],
-		ratioStyle = "percentage",
-	} = options;
+	const { showSingle, stdDev = true, percentiles = [], ratioStyle = "percentage" } = options;
 
 	const summary = new Summary(result);
 	const prev = new Summary(diff || []);
 	const { baseline } = summary;
 
-	// 1. Create columns
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
 	for (const [p, v] of summary.vars.entries()) {
 		if (showSingle || v.size > 1 || p === "Name") {
@@ -483,107 +566,8 @@ export function buildSummaryTable(
 		}
 	}
 
-	// 2. Preprocess metrics
 	preprocess(summary, options);
 	preprocess(prev, options);
 
-	// 3. Define properties
-	const formats = columnDefs.map(c => c.format);
-	const colors = [];
-	const hints = [];
-	const warnings = [];
-	const cells = [];
-	const groupEnds = [];
-
-	// 4. Fill the table
-	let colorRow: ANSIColor[];
-	let row: string[];
-
-	function addRow() {
-		cells.push(row = []);
-		colors.push(colorRow = []);
-	}
-
-	function setCell(valueAndColor?: ColoredValue) {
-		if (valueAndColor === undefined) {
-			row.push(undefined);
-			colorRow.push(null);
-		} else if (Array.isArray(valueAndColor)) {
-			row.push(valueAndColor[0]);
-			colorRow.push(valueAndColor[1]);
-		} else {
-			colorRow.push(null);
-			row.push(valueAndColor);
-		}
-	}
-
-	addRow();
-	for (const column of columnDefs) {
-		setCell(column.name);
-	}
-
-	const rawGroups = baseline
-		? summary.split(baseline.type).values()
-		: [summary.results];
-
-	for (const group of rawGroups) {
-		// 4-1. Prepare
-		for (const metricColumn of columnDefs) {
-			metricColumn.prepare?.(group);
-		}
-		// 4-2. Add values to cells
-		for (const result of group) {
-			addRow();
-			for (const column of columnDefs) {
-				setCell(column.getValue(result));
-			}
-		}
-		groupEnds.push(cells.length);
-	}
-
-	function format(this: SummaryTable, options: FormatOptions = {}) {
-		const { flexUnit = false, chalk = noColors } = options;
-		const table = [[]] as unknown as FormattedTable;
-
-		for (let i = 0; i < this.formats.length; i++) {
-			const v = this.cells[0][i];
-			const c = this.colors[0][i] ?? "whiteBright";
-			table[0].push(chalk[c](v as string));
-		}
-
-		let offset = 1;
-		for (const e of this.groupEnds) {
-			const copy = this.cells.slice(offset, e)
-				.map(r => r.slice());
-
-			for (let i = 0; i < this.formats.length; i++) {
-				if (formats[i])
-					formatColumn(copy, i, formats[i]!, flexUnit);
-				for (let j = 0; j < copy.length; j++) {
-					const v = copy[j][i];
-					const c = this.colors[offset + j][i] ?? "whiteBright";
-					copy[j][i] = chalk[c](v as string);
-				}
-			}
-
-			offset = e;
-			table.push(...copy as string[][], []);
-		}
-		table.pop();
-		table.toMarkdown = toMarkdown;
-		return table;
-	}
-
-	// 5. Generate additional properties
-	for (const note of summary.notes) {
-		const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
-		const msg = scope + note.text;
-		if (note.type === "info") {
-			hints.push(msg);
-		} else {
-			warnings.push(msg);
-		}
-	}
-
-	return { groupEnds, colors, cells, formats, hints, warnings, format } as SummaryTable;
+	return new SummaryTable(summary, columnDefs);
 }
