@@ -259,11 +259,12 @@ async function startBenchmark() {
 }
 
 function printTable(result: RunSuiteResult[]) {
+	const { flexUnit } = tableOptions.value;
 	resetColorMap(consoleEl.value!);
-	const table = buildSummaryTable(result, undefined, tableOptions.value, webChalk);
+	const table = buildSummaryTable(result, undefined, tableOptions.value);
 
 	appendLog();
-	appendLog(table.format(tableOptions.value).toMarkdown(stringLength));
+	appendLog(table.format({ chalk: webChalk, flexUnit }).toMarkdown(stringLength));
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");

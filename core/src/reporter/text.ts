@@ -1,7 +1,7 @@
 import { createWriteStream } from "fs";
 import { stdout } from "process";
 import { Writable } from "stream";
-import chalk, { Chalk, ChalkInstance } from "chalk";
+import chalk, { Chalk } from "chalk";
 import stringLength from "string-width";
 import { ESBenchResult } from "../connect.js";
 import { Reporter } from "../host/config.js";
@@ -26,14 +26,13 @@ function print(
 	previous: ESBenchResult,
 	options: TextReporterOptions,
 	out: Writable,
-	chalk: ChalkInstance,
 ) {
 	const entries = Object.entries(result);
 	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, toolchains] of entries) {
 		const diff = previous[name];
-		const table = buildSummaryTable(toolchains, diff, options, chalk);
+		const table = buildSummaryTable(toolchains, diff, options);
 
 		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);
@@ -44,7 +43,7 @@ function print(
 		if (table.hints.length > 0) {
 			out.write(chalk.cyan("Hints:\n"));
 			for (const note of table.hints) {
-				out.write(note);
+				out.write(chalk.cyan(note));
 				out.write("\n");
 			}
 		}
@@ -52,7 +51,7 @@ function print(
 		if (table.warnings.length > 0) {
 			out.write(chalk.yellowBright("Warnings:\n"));
 			for (const note of table.warnings) {
-				out.write(note);
+				out.write(chalk.yellowBright(note));
 				out.write("\n");
 			}
 		}
@@ -68,11 +67,13 @@ export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
 	return (result, prev) => {
 		if (console) {
-			print(result, prev, options, stdout, chalk);
+			options.chalk = chalk;
+			print(result, prev, options, stdout);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
-			print(result, prev, options, stream, new Chalk({ level: 0 }));
+			options.chalk = new Chalk({ level: 0 });
+			print(result, prev, options, stream);
 		}
 	};
 }

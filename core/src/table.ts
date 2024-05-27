@@ -86,34 +86,37 @@ function getMetrics(item: FlattedResult) {
 	return item[kProcessedMetrics] as Metrics;
 }
 
-function styleRatio(v: number, style: RatioStyle, meta: MetricMeta, chalk: ChalkLike) {
+function styleRatio(v: number, style: RatioStyle, meta: MetricMeta): ColoredValue {
 	if (!Number.isFinite(v)) {
-		return chalk.blackBright("N/A");
+		return ["N/A", "blackBright"];
 	}
-	const color = v === 1
-		? identity : (v < 1 === meta.lowerIsBetter)
-			? chalk.green : chalk.red;
+	const color: ANSIColor | null = v === 1
+		? null : (v < 1 === meta.lowerIsBetter)
+			? "green" : "red";
 
 	switch (style) {
 		case "trend":
-			return color(`${(v * 100).toFixed(2)}%`);
+			return [`${(v * 100).toFixed(2)}%`, color];
 		case "value":
-			return color(`${v.toFixed(2)}x`);
+			return [`${v.toFixed(2)}x`, color];
 		case "percentage":
 			v = (v - 1) * 100;
-			return color(v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`);
+			return [v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`, color];
 	}
 }
 
+type CellValue = string | number | undefined;
+type ColoredValue = CellValue | [CellValue, ANSIColor | null];
+
 interface ColumnFactory {
 
-	name: string;
+	name: ColoredValue;
 
 	format?: string;
 
 	prepare?(cases: FlattedResult[]): void;
 
-	getValue(data: FlattedResult, chalk: ChalkLike): any;
+	getValue(data: FlattedResult): ColoredValue | void;
 }
 
 class RowNumberColumn implements ColumnFactory {
@@ -130,14 +133,14 @@ class RowNumberColumn implements ColumnFactory {
 
 class VariableColumn implements ColumnFactory {
 
-	readonly name: string;
+	readonly name: ColoredValue;
 
 	private readonly key: string;
 
-	constructor(key: string, chalk: ChalkLike) {
+	constructor(key: string) {
 		this.name = this.key = key;
 		if (!BUILTIN_VARS.includes(this.key)) {
-			this.name = chalk.magentaBright(this.name);
+			this.name = [this.name, "magentaBright"];
 		}
 	}
 
@@ -261,11 +264,11 @@ class BaselineColumn implements ColumnFactory {
 		throw new Error(`Baseline (${variable}=${value}) does not in results`);
 	}
 
-	getValue(data: FlattedResult, chalk: ChalkLike) {
+	getValue(data: FlattedResult) {
 		const { ratio1, meta } = this;
 
 		const ratio = this.toNumber(data) / ratio1;
-		return styleRatio(ratio, this.style, meta, chalk);
+		return styleRatio(ratio, this.style, meta);
 	}
 }
 
@@ -290,7 +293,7 @@ class DifferenceColumn implements ColumnFactory {
 		return Array.isArray(metric) ? mean(metric) : metric as number;
 	}
 
-	getValue(data: FlattedResult, chalk: ChalkLike) {
+	getValue(data: FlattedResult) {
 		const previous = this.another.find(data);
 		if (!previous) {
 			return "";
@@ -301,21 +304,8 @@ class DifferenceColumn implements ColumnFactory {
 		if (p === undefined || c === undefined) {
 			return "";
 		}
-		return styleRatio(c / p, this.style, this.meta, chalk);
+		return styleRatio(c / p, this.style, this.meta);
 	}
-}
-
-type CellValue = string | number | undefined;
-
-export interface SummaryTable {
-	groupEnds: number[];
-	formats: Array<string | undefined>;
-	header: string[];
-	body: CellValue[][];
-	hints: string[];
-	warnings: string[];
-
-	format(options?: FormatOptions): FormattedTable;
 }
 
 function preprocess(summary: Summary, options: SummaryTableOptions) {
@@ -361,6 +351,11 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 }
 
 export interface FormatOptions {
+	/**
+	 * How to apply color to cell, default is ignore colors.
+	 */
+	chalk?: ChalkLike;
+
 	/**
 	 * Allow values in the column have different unit.
 	 *
@@ -425,6 +420,20 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
+type CellColor =ANSIColor | null;
+
+export class SummaryTable {
+	formats: Array<string | undefined>;
+	cells: CellValue[][];
+	colors: CellColor[][];
+	groupEnds: number[];
+
+	hints: string[];
+	warnings: string[];
+
+	format(options?: FormatOptions): FormattedTable;
+}
+
 function toMarkdown(this: FormattedTable, stringLength?: any) {
 	return markdownTable(this, { stringLength, align: "r" });
 }
@@ -433,7 +442,6 @@ export function buildSummaryTable(
 	result: ToolchainResult[],
 	diff?: ToolchainResult[],
 	options: SummaryTableOptions = {},
-	chalk = noColors,
 ) {
 	const {
 		showSingle,
@@ -450,12 +458,12 @@ export function buildSummaryTable(
 	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
 	for (const [p, v] of summary.vars.entries()) {
 		if (showSingle || v.size > 1 || p === "Name") {
-			columnDefs.push(new VariableColumn(p, chalk));
+			columnDefs.push(new VariableColumn(p));
 		}
 	}
 	for (const meta of summary.meta.values()) {
 		columnDefs.push(new RawMetricColumn(meta));
-		if (!meta.analysis /* 0 or undefined */) {
+		if (!meta.analysis /* None or undefined */) {
 			continue;
 		}
 		if (meta.analysis === MetricAnalysis.Statistics) {
@@ -479,15 +487,41 @@ export function buildSummaryTable(
 	preprocess(summary, options);
 	preprocess(prev, options);
 
-	// 3. Create the table
-	const header = columnDefs.map(c => c.name);
+	// 3. Define properties
 	const formats = columnDefs.map(c => c.format);
+	const colors = [];
 	const hints = [];
 	const warnings = [];
-	const body = [];
+	const cells = [];
 	const groupEnds = [];
 
-	// 4. Fill the body
+	// 4. Fill the table
+	let colorRow: ANSIColor[];
+	let row: string[];
+
+	function addRow() {
+		cells.push(row = []);
+		colors.push(colorRow = []);
+	}
+
+	function setCell(valueAndColor?: ColoredValue) {
+		if (valueAndColor === undefined) {
+			row.push(undefined);
+			colorRow.push(null);
+		} else if (Array.isArray(valueAndColor)) {
+			row.push(valueAndColor[0]);
+			colorRow.push(valueAndColor[1]);
+		} else {
+			colorRow.push(null);
+			row.push(valueAndColor);
+		}
+	}
+
+	addRow();
+	for (const column of columnDefs) {
+		setCell(column.name);
+	}
+
 	const rawGroups = baseline
 		? summary.split(baseline.type).values()
 		: [summary.results];
@@ -499,29 +533,41 @@ export function buildSummaryTable(
 		}
 		// 4-2. Add values to cells
 		for (const result of group) {
-			const cells: any[] = [];
-			body.push(cells);
+			addRow();
 			for (const column of columnDefs) {
-				cells.push(column.getValue(result, chalk));
+				setCell(column.getValue(result));
 			}
 		}
-		groupEnds.push(body.length);
+		groupEnds.push(cells.length);
 	}
 
 	function format(this: SummaryTable, options: FormatOptions = {}) {
-		const { flexUnit = true } = options;
-		const table = [this.header] as FormattedTable;
+		const { flexUnit = false, chalk = noColors } = options;
+		const table = [[]] as unknown as FormattedTable;
 
-		let offset = 0;
+		for (let i = 0; i < this.formats.length; i++) {
+			const v = this.cells[0][i];
+			const c = this.colors[0][i] ?? "whiteBright";
+			table[0].push(chalk[c](v as string));
+		}
+
+		let offset = 1;
 		for (const e of this.groupEnds) {
-			const group = this.body.slice(offset, e);
-			offset = e;
+			const copy = this.cells.slice(offset, e)
+				.map(r => r.slice());
 
-			for (let i = 0; i < this.header.length; i++) {
+			for (let i = 0; i < this.formats.length; i++) {
 				if (formats[i])
-					formatColumn(group, i, formats[i]!, flexUnit);
+					formatColumn(copy, i, formats[i]!, flexUnit);
+				for (let j = 0; j < copy.length; j++) {
+					const v = copy[j][i];
+					const c = this.colors[offset + j][i] ?? "whiteBright";
+					copy[j][i] = chalk[c](v as string);
+				}
 			}
-			table.push(...group as string[][], []);
+
+			offset = e;
+			table.push(...copy as string[][], []);
 		}
 		table.pop();
 		table.toMarkdown = toMarkdown;
@@ -533,11 +579,11 @@ export function buildSummaryTable(
 		const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
 		const msg = scope + note.text;
 		if (note.type === "info") {
-			hints.push(chalk.cyan(msg));
+			hints.push(msg);
 		} else {
-			warnings.push(chalk.yellowBright(msg));
+			warnings.push(msg);
 		}
 	}
 
-	return { header, groupEnds, body, formats, hints, warnings, format } as SummaryTable;
+	return { groupEnds, colors, cells, formats, hints, warnings, format } as SummaryTable;
 }
