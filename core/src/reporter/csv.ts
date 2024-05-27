@@ -1,7 +1,11 @@
 import { createWriteStream, mkdirSync, WriteStream } from "fs";
+import { finished } from "stream";
+import { promisify } from "util";
 import { dirname } from "path";
 import { Reporter } from "../host/config.js";
 import { buildSummaryTable, SummaryTableOptions } from "../table.js";
+
+const finishedAsync = promisify(finished);
 
 export interface CSVReporterOptions extends SummaryTableOptions {
 	/**
@@ -36,7 +40,7 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 		return createWriteStream(filename);
 	}
 
-	return (result, previous, logger) => {
+	return async (result, previous, logger) => {
 		const entries = Object.entries(result);
 		for (const [name, results] of entries) {
 			const diff = previous[name];
@@ -45,8 +49,9 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 			const fp = openWrite(name);
 			for (const row of table.cells) {
 				writeRow(row, fp);
+				fp.write("\r\n");
 			}
-			fp.end("\r\n").close();
+			await finishedAsync(fp.end());
 		}
 		logger.info(`${entries.length} CSV files saved at ${directory}/`);
 	};
