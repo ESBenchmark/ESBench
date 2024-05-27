@@ -87,7 +87,8 @@ export default class ProcessExecutor implements Executor {
 
 		// No need to make the filename unique because only one executor can run at the same time.
 		const entry = join(tempDir, "main.js");
-		this.writeEntry(entry, options);
+		const code = this.createEntry(options);
+		writeFileSync(entry, code);
 
 		const command = this.getCommand(entry);
 		const [file, ...args] = splitCLI(command);
@@ -96,7 +97,12 @@ export default class ProcessExecutor implements Executor {
 		return this.postprocess(options);
 	}
 
-	protected writeEntry(file: string, options: ExecuteOptions) {
+	/**
+	 * Get the code of the entry file that process will execute.
+	 *
+	 * @param options Execute options
+	 */
+	protected createEntry(options: ExecuteOptions) {
 		const { tempDir, root, files, pattern } = options;
 
 		const info = this.server.address() as AddressInfo;
@@ -105,11 +111,11 @@ export default class ProcessExecutor implements Executor {
 		// relative() from path/posix also uses system-depend slash.
 		const specifier = relative(tempDir, join(root, "index.js"));
 
-		writeFileSync(file, template
+		return template
 			.replace("__PATTERN__", JSON.stringify(pattern))
 			.replace("__ADDRESS__", JSON.stringify(address))
 			.replace("__FILES__", JSON.stringify(files))
-			.replace("__ENTRY__", specifier.replaceAll("\\", "/")));
+			.replace("__ENTRY__", specifier.replaceAll("\\", "/"));
 	}
 
 	/**
