@@ -3,7 +3,7 @@
 	"type": "module",
 	"scripts": {
 		"run-all": "esbench",
-		"report": "esbench report reports/result.json"
+		"report": "esbench report reports/benchmark.json"
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^0.13.1",

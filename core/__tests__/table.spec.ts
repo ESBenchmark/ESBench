@@ -24,10 +24,8 @@ it("should works", () => {
 	}], undefined, {
 		stdDev: false,
 	});
-	expect(table.header).toStrictEqual(
+	expect(table.cells).toStrictEqual([
 		["No.", "Name", "time"],
-	);
-	expect(table.body).toStrictEqual([
 		["0", "foo", 0.75],
 		["1", "bar", 1.75],
 	]);
@@ -62,10 +60,8 @@ it("should support custom metrics", () => {
 		stdDev: false,
 		percentiles: [50],
 	});
-	expect(table.header).toStrictEqual(
+	expect(table.cells).toStrictEqual([
 		["No.", "Name", "foo", "foo.p50", "bar", "baz"],
-	);
-	expect(table.body).toStrictEqual([
 		["0", "case 1", 0.75, 1, 2048, "OOXX"],
 	]);
 });
@@ -84,10 +80,8 @@ it("should allow optional metrics value", () => {
 	}], undefined, {
 		outliers: false,
 	});
-	expect(table.header).toStrictEqual(
+	expect(table.cells).toStrictEqual([
 		["No.", "Name", "time", "time.SD", "time.ratio"],
-	);
-	expect(table.body).toStrictEqual([
 		["0", "foo", undefined, undefined, "N/A"],
 		["1", "bar", 1.75, 0.4330127018922193, "N/A"],
 	]);
@@ -113,9 +107,9 @@ it.each([
 		stdDev: false,
 		ratioStyle: style as any,
 	});
-	expect(table.body[0][3]).toBe(values[0]);
-	expect(table.body[1][3]).toBe(values[1]);
-	expect(table.body[2][3]).toBe(values[2]);
+	expect(table.cells[1][3]).toBe(values[0]);
+	expect(table.cells[2][3]).toBe(values[1]);
+	expect(table.cells[3][3]).toBe(values[2]);
 });
 
 it("should allow a column has different units", () => {
@@ -148,10 +142,8 @@ it("should calculate ratio with previous", () => {
 			foo: { time: [4, 3, 9, 6] },
 		}],
 	}]);
-	expect(table.header).toStrictEqual(
+	expect(table.cells).toStrictEqual([
 		["No.", "Name", "time", "time.SD", "time.diff"],
-	);
-	expect(table.body).toStrictEqual([
 		["0", "foo", 0.75, 0.4330127018922193, "-86.36%"],
 	]);
 });

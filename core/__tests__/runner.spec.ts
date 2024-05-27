@@ -110,11 +110,12 @@ it.each([
 });
 
 it("should not check baseline that uses variable outside client", async () => {
-	const result = await runSuite({
+	const suite = {
 		baseline: { type: "Name", value: "NOT_EXISTS" },
 		setup() {},
 		params: { bar: [22, 33] },
-	});
+	};
+	const result = await runSuite(suite, { log: vi.fn() });
 	expect(result.baseline).toStrictEqual({ type: "Name", value: "NOT_EXISTS" });
 });
 

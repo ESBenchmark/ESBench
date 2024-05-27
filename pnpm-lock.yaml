@@ -84,6 +84,9 @@ importers:
 
   docs:
     dependencies:
+      '@kaciras/utilities':
+        specifier: ^0.13.1
+        version: 0.13.1
       '@tabler/icons-vue':
         specifier: ^3.5.0
         version: 3.5.0(vue@3.4.27(typescript@5.4.5))

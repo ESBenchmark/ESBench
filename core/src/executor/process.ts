@@ -15,12 +15,10 @@ type GetCommand = (file: string) => string;
 const template = `\
 import runAndSend from "./__ENTRY__";
 
-function postMessage(message) {
-    return fetch(__ADDRESS__, {
-        method: "POST",
-        body: JSON.stringify(message),
-    });
-}
+const postMessage = message => fetch(__ADDRESS__, {
+	method: "POST",
+	body: JSON.stringify(message),
+});
 
 runAndSend(postMessage, __FILES__, __PATTERN__);`;
 
@@ -50,10 +48,10 @@ export default class ProcessExecutor implements Executor {
 	 * or specific a function accept the entry filename and return the command line.
 	 *
 	 * @example
-	 * // Will execute command: `node --jitless /path/to/your/suite.js`
+	 * // Will execute command: `node --jitless .esbench-tmp/main.js`
 	 * new ProcessExecutor("node --jitless");
 	 *
-	 * // Will execute command: `bun /path/to/your/suite.js --foo=bar`
+	 * // Will execute command: `bun .esbench-tmp/main.js --foo=bar`
 	 * new ProcessExecutor(file => `bun ${file} --foo=bar`);
 	 */
 	constructor(command: string | GetCommand) {
@@ -76,7 +74,7 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	close() {
-		if (this.process.pid) {
+		if (this.process?.pid) {
 			this.process.kill();
 		}
 		this.server.close();
@@ -114,6 +112,9 @@ export default class ProcessExecutor implements Executor {
 			.replace("__ENTRY__", specifier.replaceAll("\\", "/")));
 	}
 
+	/**
+	 * Attach error handler to the process, and set the highest priority.
+	 */
 	protected postprocess(options: ExecuteOptions) {
 		const { reject } = options;
 		this.process.on("spawn", () => highestPriority(this.process.pid!));
