@@ -1,7 +1,7 @@
+import type { RollupOptions } from "rollup";
+import type { InlineConfig, Plugin } from "vite";
 import { isBuiltin } from "module";
 import { resolve } from "path";
-import { rollup, RollupOptions } from "rollup";
-import { build, InlineConfig, mergeConfig, Plugin } from "vite";
 import { Builder } from "../host/toolchain.js";
 
 const entryId = "./ESBench-index.js";
@@ -85,6 +85,8 @@ export class RollupBuilder implements Builder {
 	}
 
 	async build(dir: string, files: string[]) {
+		const { rollup } = await import("rollup");
+
 		let plugins = (await this.config.plugins) || [];
 		if (!Array.isArray(plugins)) {
 			plugins = [plugins];
@@ -112,12 +114,10 @@ export class RollupBuilder implements Builder {
  */
 export class ViteBuilder implements Builder {
 
-	private readonly config: InlineConfig;
+	private readonly config?: InlineConfig;
 
 	constructor(config?: InlineConfig) {
-		this.config = config
-			? mergeConfig(defaultConfig, config)
-			: libraryPreset;
+		this.config = config;
 	}
 
 	get name() {
@@ -125,6 +125,12 @@ export class ViteBuilder implements Builder {
 	}
 
 	async build(outDir: string, files: string[]) {
+		const { build, mergeConfig } = await import("vite");
+
+		const config = this.config
+			? mergeConfig(defaultConfig, this.config)
+			: libraryPreset;
+
 		const overrides: InlineConfig = {
 			build: {
 				// Vite's root may different with CWD.
@@ -141,6 +147,6 @@ export class ViteBuilder implements Builder {
 			},
 			plugins: [entryPlugin(files)],
 		};
-		await build(mergeConfig(this.config, overrides));
+		await build(mergeConfig(config, overrides));
 	}
 }
