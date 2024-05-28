@@ -1,5 +1,5 @@
 import { defineSuite } from "esbench";
-import packageJson from "../package.json" assert { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 
 if (globalThis.browser === undefined) {
 	// noinspection JSUnresolvedVariable; The `chrome` is available in Chromium-based browsers.

@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { report } from "../../src/host/commands.ts";
-import result1And2 from "../fixtures/merge-1+2.json" assert { type: " json" };
+import result1And2 from "../fixtures/merge-1+2.json" with { type: " json" };
 
 it("should merge results", async () => {
 	const mockReporter = vi.fn();
