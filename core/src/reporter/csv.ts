@@ -15,16 +15,20 @@ export interface CSVReporterOptions extends SummaryTableOptions {
 }
 
 function writeRow(row: any[], out: WriteStream) {
-	for (const cell of row) {
-		if (row === undefined) {
+	const e = row.length - 1;
+	for (let i = 0; i <= e; i++) {
+		const value = row[i];
+		if (value === undefined) {
 			continue;
 		}
-		let v = cell.toString();
+		let v = value.toString();
 		if (/[\r\n",]/.test(v)) {
 			v = '"' + v.replaceAll('"', '""') + '"';
 		}
 		out.write(v);
-		out.write(",");
+		if (i !== e) {
+			out.write(",");
+		}
 	}
 }
 
