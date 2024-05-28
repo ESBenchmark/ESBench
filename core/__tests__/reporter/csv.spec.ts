@@ -4,8 +4,7 @@ import { tmpdir } from "os";
 import { expect, it } from "vitest";
 import { createLogger } from "../../src/host/logger.ts";
 import csvReporter from "../../src/reporter/csv.ts";
-import { useTempDirectory } from "../helper.ts";
-import { MetricAnalysis, MetricMeta, ToolchainResult } from "../../src/index.ts";
+import { resultStub, useTempDirectory } from "../helper.ts";
 
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));
 useTempDirectory(directory);
@@ -13,38 +12,53 @@ useTempDirectory(directory);
 const report = csvReporter({ directory });
 const logger = createLogger("off");
 
-const time: MetricMeta = {
-	key: "time",
-	format: "{duration.ms}",
-	analysis: MetricAnalysis.Statistics,
-	lowerIsBetter: true,
-};
-
-const defaultResult = {
-	name: "test",
-	notes: [],
-	paramDef: [],
-	meta: { time },
-};
-
-const result: ToolchainResult[] = [{
-	...defaultResult,
-	scenes: [{
-		"case,1": { time: [0, 1, 1, 1] },
-		"case,2": { time: [1, 2, 2, 2] },
-	}],
-}];
+function assertCSVFile(name: string, rows: string[]) {
+	const csv = rows.join("\r\n") + "\r\n";
+	expect(readFileSync(join(directory, name), "utf8")).toBe(csv);
+}
 
 it("should works", async () => {
-	await report({ perf: result }, {}, logger);
-	const expected = [
-		"No.,Name,time,time.SD",
-		'0,"case,1",0.75,0.4330127018922193',
-		'1,"case,2",1.75,0.4330127018922193',
-	];
-	const csv = expected.join("\r\n") + "\r\n";
+	await report({ perf: [resultStub] }, {}, logger);
 
-	const files = readdirSync(directory, { recursive: true }) as string[];
-	expect(files).toStrictEqual(["perf.csv"]);
-	expect(readFileSync(join(directory, files[0]), "utf8")).toBe(csv);
+	assertCSVFile("perf.csv", [
+		"No.,Name,time,time.SD",
+		"0,foo,0.75,0.4330127018922193",
+		"1,bar,1.75,0.4330127018922193",
+	]);
+	expect(readdirSync(directory, { recursive: true })).toStrictEqual(["perf.csv"]);
+});
+
+it("should escape special characters", async () => {
+	const results = [{
+		...resultStub,
+		meta: {
+			text: { key: "text" },
+		},
+		scenes: [{
+			"case, 1 ": { text: "a\nb" },
+			'case-"2"': { text: [114514] },
+		}],
+	}];
+	await report({ perf: results }, {}, logger);
+	assertCSVFile("perf.csv", [
+		"No.,Name,text",
+		'0,"case, 1 ","a\nb"',
+		'1,"case-""2""",114514',
+	]);
+});
+
+it("should write empty for undefined ", async () => {
+	const results = [{
+		...resultStub,
+		scenes: [{
+			foo: {},
+			bar: { time: [1, 2, 2, 2] },
+		}],
+	}];
+	await report({ perf: results }, {}, logger);
+	assertCSVFile("perf.csv", [
+		"No.,Name,time,time.SD",
+		"0,foo,,",
+		"1,bar,1.75,0.4330127018922193",
+	]);
 });

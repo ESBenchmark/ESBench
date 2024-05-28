@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { firstItem } from "@kaciras/utilities/browser";
 import { Summary, ToolchainResult } from "../src/index.ts";
-import data from "./fixtures/result-0.json" with { type: "json" };
+import data from "./fixtures/params-12.json" with { type: "json" };
 
 const result = data.Suite as unknown as ToolchainResult[];
 

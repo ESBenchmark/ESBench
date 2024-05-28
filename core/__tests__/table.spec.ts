@@ -1,22 +1,10 @@
 import { expect, it } from "vitest";
-import { buildSummaryTable, MetricAnalysis, MetricMeta } from "../src/index.js";
-
-const time: MetricMeta = {
-	key: "time",
-	format: "{duration.ms}",
-	analysis: MetricAnalysis.Statistics,
-};
-
-const defaultResult = {
-	name: "test",
-	notes: [],
-	paramDef: [],
-	meta: { time },
-};
+import { buildSummaryTable, MetricAnalysis } from "../src/index.js";
+import { resultStub } from "./helper.ts";
 
 it("should works", () => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
 			bar: { time: [1, 2, 2, 2] },
@@ -35,7 +23,7 @@ it("should works", () => {
 
 it("should support custom metrics", () => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		meta: {
 			foo: {
 				key: "foo",
@@ -68,7 +56,7 @@ it("should support custom metrics", () => {
 
 it("should allow optional metrics value", () => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		baseline: {
 			type: "Name",
 			value: "foo",
@@ -93,7 +81,7 @@ it.each([
 	["trend", ["100.00%", "200.00%", "25.00%"]],
 ])("should apply ratio style: %s", (style, values) => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		baseline: {
 			type: "Name",
 			value: "A",
@@ -114,7 +102,7 @@ it.each([
 
 it("should allow a column has different units", () => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
 			bar: { time: [1, 2, 2, 2] },
@@ -132,12 +120,12 @@ it("should allow a column has different units", () => {
 
 it("should calculate ratio with previous", () => {
 	const table = buildSummaryTable([{
-		...defaultResult,
+		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
 		}],
 	}], [{
-		...defaultResult,
+		...resultStub,
 		scenes: [{
 			foo: { time: [4, 3, 9, 6] },
 		}],

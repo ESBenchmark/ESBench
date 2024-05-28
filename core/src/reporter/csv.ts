@@ -18,10 +18,10 @@ function writeRow(row: any[], out: WriteStream) {
 	const e = row.length - 1;
 	for (let i = 0; i <= e; i++) {
 		const value = row[i];
-		if (value === undefined) {
-			continue;
-		}
-		let v = value.toString();
+		let v = value === undefined
+			? ""
+			: value.toString();
+
 		if (/[\r\n",]/.test(v)) {
 			v = '"' + v.replaceAll('"', '""') + '"';
 		}

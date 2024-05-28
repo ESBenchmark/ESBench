@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { report } from "../../src/host/commands.ts";
-import result1And2 from "../fixtures/result-1+2.json" assert { type: " json" };
+import result1And2 from "../fixtures/merge-1+2.json" assert { type: " json" };
 
 it("should merge results", async () => {
 	const mockReporter = vi.fn();
@@ -8,8 +8,8 @@ it("should merge results", async () => {
 	await report({
 		reporters: [mockReporter],
 	}, [
-		"__tests__/fixtures/result-1.json",
-		"__tests__/fixtures/result-2.json",
+		"__tests__/fixtures/merge-1.json",
+		"__tests__/fixtures/merge-2.json",
 	]);
 
 	const { calls } = mockReporter.mock;

@@ -2,12 +2,29 @@ import { mkdirSync, rmSync } from "fs";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, Mock, vi } from "vitest";
 import { BenchmarkSuite } from "../src/suite.ts";
-import { Profiler, ProfilingContext } from "../src/profiling.ts";
-import { ClientMessage, messageResolver } from "../src/connect.ts";
+import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
+import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
+
+export const resultStub: ToolchainResult = {
+	paramDef: [],
+	notes: [],
+	meta: {
+		time: {
+			format: "{duration.ms}",
+			key: "time",
+			analysis: MetricAnalysis.Statistics,
+			lowerIsBetter: true,
+		},
+	},
+	scenes: [{
+		foo: { time: [0, 1, 1, 1] },
+		bar: { time: [1, 2, 2, 2] },
+	}],
+};
 
 /**
  * setTimeout() has a large error, so we use a synchronized loop for delay.
