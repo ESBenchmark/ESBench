@@ -73,11 +73,7 @@
 
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
 
-		<pre ref='consoleEl' :class='$style.console'>
-Execute in iframe allow DOM operations, but the page may be unresponsive until it finishes.
-
-Since WebWorker does not support import maps, you cannot import esbench in the suite.
-		</pre>
+		<ConsoleView ref='consoleView' :class='$style.console'/>
 
 		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
@@ -96,56 +92,6 @@ window.MonacoEnvironment = {
 		return new editorWorker();
 	},
 };
-
-// IDEA Darcula theme
-const logColors: Record<string, string> = {
-	// no alias (gray & grey)
-	black: "#000",
-	blackBright: "#595959",
-	blue: "#3993D4",
-	blueBright: "#1FB0FF",
-	cyan: "#00A3A3",
-	cyanBright: "#00E5E5",
-	green: "#5C962C",
-	greenBright: "#4FC414",
-	magenta: "#A771BF",
-	magentaBright: "#ED7EED",
-	red: "#F0524F",
-	redBright: "#FF4050",
-	white: "#808080",
-	whiteBright: "#fff",
-	yellow: "#A68A0D",
-	yellowBright: "#E5BF00",
-
-	// Log level colors
-	error: "#F0524F",
-	warning: "#E5BF00",
-};
-
-const ctx = document.createElement("canvas").getContext("2d")!;
-const colorTextMap = new Map<string, string>();
-let dashWidth: number;
-
-function resetColorMap(el: HTMLElement) {
-	ctx.font = getComputedStyle(el).font;
-	colorTextMap.clear();
-	dashWidth = ctx.measureText("-").width;
-}
-
-function stringLength(s: string) {
-	s = colorTextMap.get(s) ?? s;
-	return Math.round(ctx.measureText(s).width / dashWidth);
-}
-
-const webChalk = new Proxy<any>(logColors, {
-	get(colors: typeof logColors, p: string) {
-		return (s: string) => {
-			const c = `<span style="color: ${colors[p]}">${s}</span>`;
-			colorTextMap.set(c, s);
-			return c;
-		};
-	},
-});
 </script>
 
 <script setup lang="ts">
@@ -154,12 +100,13 @@ import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw } from "vue";
 import { useData } from "vitepress";
 import { transformBuffer } from "@kaciras/utilities/browser";
-import { buildSummaryTable, FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
+import { FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
 import demos from "./demo-suites.ts";
 import ReportView from "./ReportView.vue";
+import ConsoleView from "./ConsoleView.vue";
 import TableDropdown from "./TableDropdown.vue";
 import { executeIFrame, executeWorker } from "./executor.ts";
 
@@ -170,7 +117,7 @@ export interface BenchmarkHistory {
 }
 
 const editorEl = shallowRef<HTMLElement>();
-const consoleEl = shallowRef<HTMLElement>();
+const consoleView = shallowRef<InstanceType<typeof ConsoleView>>();
 const vpData = useData();
 
 const editorWidth = useLocalStorage("EW", "50%");
@@ -205,32 +152,6 @@ async function share() {
 	window.alert("Link is copied to clipboard.");
 }
 
-function appendLog(message = "", level = "info") {
-	const el = consoleEl.value!;
-	switch (level) {
-		case "error":
-			message = webChalk.red(message);
-			break;
-		case "warn":
-			message = webChalk.yellowBright(message);
-			break;
-	}
-	el.insertAdjacentHTML("beforeend", message + "\n");
-	el.scrollTop = el.scrollHeight;
-}
-
-function logError(e: Error) {
-	appendLog(`\n${e.name}: ${e.message}`, "error");
-
-	for (let c = e.cause as Error; c; c = c.cause as Error) {
-		appendLog("Caused by:", "error");
-		appendLog(`${c.name}: ${c.message}`, "error");
-	}
-
-	console.error(e);
-	appendLog("\nFor stacktrace and more details, see console.", "error");
-}
-
 let resolver: any;
 
 function stopBenchmark() {
@@ -238,43 +159,26 @@ function stopBenchmark() {
 }
 
 async function startBenchmark() {
-	consoleEl.value!.textContent = "Start Benchmark\n";
+	const webConsole = consoleView.value!;
+	webConsole.clear();
 	running.value = true;
-	const start = performance.now();
 
-	const { promise, dispatch } = resolver = messageResolver(appendLog);
+	const { promise, dispatch } = resolver = messageResolver(webConsole.appendLog);
+	const start = performance.now();
+	webConsole.appendLog("Start Benchmark\n");
 
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
 		const result = await promise;
-		printTable(result);
+		webConsole.printTable(result, tableOptions.value);
 		results.push({ name: "playground-suite", result, time: new Date() });
 	} catch (e) {
-		logError(e);
+		webConsole.printError(e);
 	}
 
 	running.value = false;
 	const t = (performance.now() - start) / 1000;
-	appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
-}
-
-function printTable(result: RunSuiteResult[]) {
-	const { flexUnit } = tableOptions.value;
-	resetColorMap(consoleEl.value!);
-	const table = buildSummaryTable(result, undefined, tableOptions.value);
-
-	appendLog();
-	appendLog(table.format({ chalk: webChalk, flexUnit }).toMarkdown(stringLength));
-
-	if (table.hints.length > 0) {
-		appendLog("Hints:");
-		for (const note of table.hints) appendLog(note);
-	}
-
-	if (table.warnings.length > 0) {
-		appendLog("Warnings:");
-		for (const note of table.warnings) appendLog(note);
-	}
+	webConsole.appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
 }
 
 function handleDragEnd() {
