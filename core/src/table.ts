@@ -64,8 +64,8 @@ export interface SummaryTableOptions {
 	 * Using ratioStyle, we can override the style of the diff and the baseline column.
 	 *
 	 * @example
-	 *             "percentage"      "trend"       "value"
-	 *      time | time.ratio | | time.ratio | | time.ratio |
+	 *            "percentage"      "trend"       "value"
+	 *    time   | time.ratio | | time.ratio | | time.ratio |
 	 * 117.26 us |      0.00% | |    100.00% | |      1.00x | (baseline)
 	 * 274.14 us |   +133.79% | |    233.79% | |      2.34x |
 	 *  19.82 us |    -83.10% | |     16.90% | |      0.17x |
@@ -424,10 +424,11 @@ type CellColor = ANSIColor | null;
 
 export class SummaryTable {
 
-	readonly formats: Array<string | undefined>;
+	private readonly formats: Array<string | undefined>;
+	private readonly groupEnds: number[] = [];
+	private readonly colors: CellColor[][] = [];
+
 	readonly cells: CellValue[][] = [];
-	readonly colors: CellColor[][] = [];
-	readonly groupEnds: number[] = [];
 
 	readonly hints: string[] = [];
 	readonly warnings: string[] = [];
@@ -489,6 +490,12 @@ export class SummaryTable {
 		}
 	}
 
+	/**
+	 * Format the table for better presentation, it will perform:
+	 * - Add an empty line between groups.
+	 * - Convert numeric values to string with units if possible.
+	 * - Apply colors to cells, using `options.chalk`.
+	 */
 	format(options: FormatOptions = {}) {
 		const { formats, cells, colors, groupEnds } = this;
 		const { flexUnit = false, chalk = noColors } = options;
@@ -502,8 +509,7 @@ export class SummaryTable {
 
 		let offset = 1;
 		for (const e of groupEnds) {
-			const copy = cells.slice(offset, e)
-				.map(r => r.slice());
+			const copy = cells.slice(offset, e).map(r => r.slice());
 
 			for (let i = 0; i < formats.length; i++) {
 				if (formats[i]) {

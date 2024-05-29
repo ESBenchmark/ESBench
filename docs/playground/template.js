@@ -12,7 +12,7 @@ export default {
 	},
 	setup(scene) {
 		scene.bench("case 1", () => {
-			// Your code here...
+
 		});
 
 		// More cases

@@ -17,7 +17,7 @@ const result = await runSuite(suite);
 const summaryTable = buildSummaryTable([result]);
 
 // Print the table
-console.log("\n" + summaryTable.toMarkdown());
+console.log("\n" + summaryTable.format().toMarkdown());
 if (summaryTable.hints.length > 0) {
 	console.log("Hints:");
 	summaryTable.hints.forEach(n => console.log(n));

@@ -70,9 +70,7 @@
 		</section>
 
 		<section :class='$style.editor' ref='editorEl'/>
-
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
-
 		<ConsoleView ref='consoleView' :class='$style.console'/>
 
 		<ReportView v-model='showChart' :summaries='results'/>
@@ -135,19 +133,30 @@ const results = shallowReactive<BenchmarkHistory[]>([]);
 
 let editor: monaco.editor.IStandaloneCodeEditor;
 
+/**
+ * Serialize the data as Base64 so that it can be appended to the URL,
+ * and also compress it to keep the URL as short as possible.
+ */
+async function serialize(data: unknown) {
+	let bytes = new TextEncoder().encode(JSON.stringify(data));
+	bytes = await transformBuffer(bytes, new CompressionStream("deflate-raw"));
+	return btoa(Array.from(bytes, b => String.fromCodePoint(b)).join(""));
+}
+
+async function deserialize(base64: string) {
+	// @ts-expect-error TypeScript's declaration is incorrect.
+	let bytes = Uint8Array.from(atob(base64), c => c.codePointAt(0));
+	bytes = await transformBuffer(bytes, new DecompressionStream("deflate-raw"));
+	return JSON.parse(new TextDecoder().decode(bytes));
+}
+
 async function share() {
-	const data = {
+	const url = new URL(location.href);
+	url.hash = await serialize({
 		code: editor.getModel()!.getValue(),
 		exec: executor.value === executeWorker ? "worker" : "iframe",
 		table: toRaw(tableOptions.value),
-	};
-
-	const url = new URL(location.href);
-	let bytes = new TextEncoder().encode(JSON.stringify(data));
-	bytes = await transformBuffer(bytes, new CompressionStream("deflate-raw"));
-	const binString = Array.from(bytes, b => String.fromCodePoint(b));
-	url.hash = btoa(binString.join(""));
-
+	});
 	await navigator.clipboard.writeText(url.toString());
 	window.alert("Link is copied to clipboard.");
 }
@@ -212,12 +221,8 @@ onMounted(async () => {
 		executor.value = category === "web"
 			? executeIFrame : executeWorker;
 	} else if (location.hash) {
-		const b64 = atob(location.hash.slice(1));
-		let bytes = Uint8Array.from(b64, c => c.codePointAt(0));
-		bytes = await transformBuffer(bytes, new DecompressionStream("deflate-raw"));
-		const json = new TextDecoder().decode(bytes);
-
-		const { code, exec, table } = JSON.parse(json);
+		const data = await deserialize(location.hash.slice(1));
+		const { code, exec, table } = data;
 		value = code;
 		if (exec === "iframe") {
 			executor.value = executeIFrame;

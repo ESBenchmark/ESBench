@@ -22,10 +22,9 @@ const browserExecutors = [
  * For more configuration examples, see ./configs
  */
 export default defineConfig({
-	diff: "reports/benchmark.json",
 	reporters: [
-		rawReporter(),
 		textReporter(),
+		rawReporter(),
 		htmlReporter(),
 	],
 	toolchains: [{

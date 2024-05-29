@@ -116,6 +116,18 @@ export class ViteBuilder implements Builder {
 
 	private readonly config?: InlineConfig;
 
+	/**
+	 * Create a new ViteBuilder, by default it build suites in library mode,
+	 * you can provide custom config.
+	 *
+	 * These options will be overridden in build:
+	 * - build.outDir
+	 * - build.rollupOptions.preserveEntrySignatures
+	 * - build.rollupOptions.input
+	 * - build.rollupOptions.output.entryFileNames
+	 *
+	 * ViteBuilder does not automatically resolve config from project root.
+	 */
 	constructor(config?: InlineConfig) {
 		this.config = config;
 	}

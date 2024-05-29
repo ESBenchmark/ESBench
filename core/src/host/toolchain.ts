@@ -85,13 +85,15 @@ export interface Executor {
 	start?(): Awaitable<unknown>;
 
 	/**
-	 * Called only once after all suites execution finished,
-	 * or an error occurred during the execution.
+	 * Called only once after all suites execution finished, or an error occurred during the execution.
 	 */
 	close?(): Awaitable<unknown>;
 
 	/**
 	 * This method is called for every build output.
+	 *
+	 * An execution will complete when ESBenchResult is passed to `options.dispatch`
+	 * and the returned Promise is satisfied (is present).
 	 */
 	execute(options: ExecuteOptions): Awaitable<unknown>;
 }
