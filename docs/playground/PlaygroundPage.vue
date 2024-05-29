@@ -174,7 +174,7 @@ async function startBenchmark() {
 
 	const { promise, dispatch } = resolver = messageResolver(webConsole.appendLog);
 	const start = performance.now();
-	webConsole.appendLog("Start Benchmark\n");
+	webConsole.appendLog("Start Benchmark");
 
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
@@ -215,12 +215,7 @@ onMounted(async () => {
 	let value = suiteTemplate;
 
 	const demo = params.get("demo");
-	if (demo) {
-		const { code, category } = demos[parseInt(demo)];
-		value = code;
-		executor.value = category === "web"
-			? executeIFrame : executeWorker;
-	} else if (location.hash) {
+	if (location.hash) {
 		const data = await deserialize(location.hash.slice(1));
 		const { code, exec, table } = data;
 		value = code;
@@ -228,6 +223,11 @@ onMounted(async () => {
 			executor.value = executeIFrame;
 		}
 		tableOptions.value = table;
+	} else if (demo) {
+		const { code, category } = demos[parseInt(demo)];
+		value = code;
+		executor.value = category === "web"
+			? executeIFrame : executeWorker;
 	}
 
 	editor = monaco.editor.create(editorEl.value!, {
