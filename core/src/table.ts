@@ -501,10 +501,14 @@ export class SummaryTable {
 		const { flexUnit = false, chalk = noColors } = options;
 		const table = [[]] as unknown as FormattedTable;
 
+		function applyColor(value: any, r: number, c: number) {
+			const x = colors[r][c];
+			return x ? chalk[x](value) : value;
+		}
+
 		for (let i = 0; i < formats.length; i++) {
 			const v = cells[0][i];
-			const c = colors[0][i] ?? "whiteBright";
-			table[0].push(chalk[c](v as string));
+			table[0].push(applyColor(v, 0, i));
 		}
 
 		let offset = 1;
@@ -517,8 +521,7 @@ export class SummaryTable {
 				}
 				for (let j = 0; j < copy.length; j++) {
 					const v = copy[j][i];
-					const c = colors[offset + j][i] ?? "whiteBright";
-					copy[j][i] = chalk[c](v as string);
+					copy[j][i] = applyColor(v, offset + j, i);
 				}
 			}
 
