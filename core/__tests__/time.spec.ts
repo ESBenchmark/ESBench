@@ -1,9 +1,12 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { PartialSuite, runProfilers, spin } from "./helper.js";
-import { TimeProfiler, TimingOptions, unroll } from "../src/time.js";
+import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
+import { defineSuite, ProfilingContext, Scene } from "../src/index.ts";
 
-function measureTime(options: TimingOptions, suite?: PartialSuite) {
+const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
+
+function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
 	const profiler = new TimeProfiler({
 		iterations: 1,
 		samples: 1,
@@ -13,12 +16,12 @@ function measureTime(options: TimingOptions, suite?: PartialSuite) {
 	return runProfilers([profiler], suite);
 }
 
-function mockZeroMeasurement(profiler: TimeProfiler) {
-	profiler.measure = (ctx, name, iterator, count) => {
+function mockZeroMeasurement(measurement: ExecutionTimeMeasurement) {
+	measurement.measure = function (name, iterator, count)  {
 		if (name === "Overhead") {
-			return Promise.resolve([1, 1, 1]);
+			return Promise.resolve([1, 1]);
 		}
-		return TimeProfiler.prototype.measure.call(profiler, ctx, name, iterator, count);
+		return ExecutionTimeMeasurement.prototype.measure.call(this, name, iterator, count);
 	};
 }
 
@@ -87,6 +90,9 @@ it("should support specify number of iterations", async () => {
 });
 
 it("should estimate number of iterations", async () => {
+	const ctx = { info: noop } as any;
+	const measurement = new ExecutionTimeMeasurement(ctx, null as any, {} as any);
+
 	const iterator = {
 		calls: 1,
 		async iterate(count: number) {
@@ -95,10 +101,8 @@ it("should estimate number of iterations", async () => {
 			return performance.now() - start;
 		},
 	};
-	const profiler = new TimeProfiler({});
-	const ctx = { info: noop } as any;
 
-	const iterations = await profiler.estimate(ctx, iterator, "100ms");
+	const iterations = await measurement.estimate(iterator, "100ms");
 
 	expect(iterations).toBeLessThan(105);
 	expect(iterations).toBeGreaterThan(95);
@@ -106,20 +110,27 @@ it("should estimate number of iterations", async () => {
 
 // we mock heavy overhead to make the test stable.
 it("should check zero measurement", async () => {
-	const mockProfiler = new TimeProfiler({
+	const scene = new Scene({});
+	scene.bench("Test", noop);
+
+	const suite = defineSuite({
+		setup: scene => scene.bench("Test", noop),
+	});
+	const ctx = new ProfilingContext(suite as any, [], { log: () => {} });
+	const measurement = new ExecutionTimeMeasurement(ctx, scene.cases[0], {
 		warmup: 0,
 		iterations: "10ms",
 		samples: 10,
+		unrollFactor: 16,
+		evaluateOverhead: true,
 	});
-	mockZeroMeasurement(mockProfiler);
+	mockZeroMeasurement(measurement);
 
-	const result = await runProfilers([mockProfiler], {
-		setup: scene => scene.bench("Test", noop),
-	});
+	const time = await measurement.run();
 
-	expect(result.notes[0].type).toBe("warn");
-	expect(result.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
-	expect(result.scenes[0].Test.time).toStrictEqual([0]);
+	expect(time).toStrictEqual([0]);
+	expect(ctx.notes[0].type).toBe("warn");
+	expect(ctx.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
 });
 
 it("should not set throughput for zero measurement", async () => {
@@ -129,7 +140,7 @@ it("should not set throughput for zero measurement", async () => {
 		samples: 10,
 		throughput: "s",
 	});
-	mockZeroMeasurement(mockProfiler);
+	mockMeasureRun.mockResolvedValue([0]);
 
 	const result = await runProfilers([mockProfiler], {
 		setup: scene => scene.bench("Test", noop),

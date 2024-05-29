@@ -1,7 +1,7 @@
 import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/browser";
 import { RE_ANY, runFns } from "./utils.js";
 import { Profiler } from "./profiling.js";
-import { TimingOptions } from "./time.js";
+import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
 
 export type HookFn = () => Awaitable<unknown>;
@@ -165,7 +165,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	 *
 	 * @default true
 	 */
-	timing?: boolean | TimingOptions;
+	timing?: boolean | TimeProfilerOptions;
 
 	/**
 	 * Checks if it is possible to run your benchmarks.

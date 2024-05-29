@@ -97,18 +97,6 @@ function timeDetail(time: number, count: number) {
 
 export interface TimingOptions {
 	/**
-	 * Measure throughput (ops/<unit>) instead of time (time/op). The value can be a duration unit.
-	 *
-	 * @example
-	 * defineSuite({ timing: { throughput: "s" } });
-	 * | No. |   Name |   throughput |
-	 * | --: | -----: | -----------: |
-	 * |   0 | object | 14.39M ops/s |
-	 * |   1 |    map | 17.32M ops/s |
-	 */
-	throughput?: string;
-
-	/**
 	 * How many target iterations should be performed.
 	 *
 	 * @default 10
@@ -148,98 +136,79 @@ export interface TimingOptions {
 	evaluateOverhead?: boolean;
 }
 
-export class TimeProfiler implements Profiler {
+function normalizeOptions(input: TimingOptions) {
+	const normalized = {
+		samples: input.samples ?? 10,
+		warmup: input.warmup ?? 5,
+		unrollFactor: input.unrollFactor ?? 16,
+		iterations: input.iterations ?? "1s",
+		evaluateOverhead: input.evaluateOverhead !== false,
+	};
 
-	private readonly throughput?: string;
-	private readonly samples: number;
-	private readonly warmup: number;
-	private readonly unrollFactor: number;
-	private readonly iterations: number | string;
-	private readonly evaluateOverhead: boolean;
-
-	constructor(config: TimingOptions = {}) {
-		this.evaluateOverhead = config.evaluateOverhead !== false;
-		this.throughput = config.throughput;
-		this.samples = config.samples ?? 10;
-		this.warmup = config.warmup ?? 5;
-		this.unrollFactor = config.unrollFactor ?? 16;
-		this.iterations = config.iterations ?? "1s";
-
-		if (this.unrollFactor < 1) {
-			throw new Error("The unrollFactor must be at least 1");
-		}
-		if (this.samples <= 0) {
-			throw new Error("The number of samples must be at least 1");
-		}
-
-		const { unrollFactor, iterations } = this;
-		if (typeof iterations === "number") {
-			if (iterations <= 0) {
-				throw new Error("The number of iterations cannot be 0 or negative");
-			}
-			if (iterations < unrollFactor) {
-				this.unrollFactor = iterations;
-			} else if (iterations % unrollFactor !== 0) {
-				throw new Error("iterations must be a multiple of unrollFactor");
-			}
-		}
+	if (normalized.unrollFactor < 1) {
+		throw new Error("The unrollFactor must be at least 1");
+	}
+	if (normalized.samples <= 0) {
+		throw new Error("The number of samples must be at least 1");
 	}
 
-	async onStart(ctx: ProfilingContext) {
-		// @ts-ignore
-		if (globalThis.crossOriginIsolated === false) {
-			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
+	const { unrollFactor, iterations } = normalized;
+	if (typeof iterations === "number") {
+		if (iterations <= 0) {
+			throw new Error("The number of iterations cannot be 0 or negative");
 		}
+		if (iterations < unrollFactor) {
+			normalized.unrollFactor = iterations;
+		} else if (iterations % unrollFactor !== 0) {
+			throw new Error("iterations must be a multiple of unrollFactor");
+		}
+	}
+	return normalized as Required<TimingOptions>;
+}
 
-		const { throughput } = this;
-		ctx.defineMetric(throughput ? {
-			key: "throughput",
-			format: `{number} ops/${throughput}`,
-			lowerIsBetter: false,
-			analysis: MetricAnalysis.Statistics,
-		} : {
-			key: "time",
-			format: "{duration.ms}",
-			lowerIsBetter: true,
-			analysis: MetricAnalysis.Statistics,
-		});
+export class ExecutionTimeMeasurement {
+
+	private readonly ctx: ProfilingContext;
+	private readonly bc: BenchCase;
+	private readonly options: Required<TimingOptions>;
+
+	constructor(ctx: ProfilingContext, bc: BenchCase, options: Required<TimingOptions>) {
+		this.ctx = ctx;
+		this.bc = bc;
+		this.options = options;
 	}
 
-	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
-		const { throughput, samples, unrollFactor, evaluateOverhead } = this;
-		let { iterations } = this;
+	async run() {
+		const { ctx, bc } = this;
+		const { samples, unrollFactor, evaluateOverhead } = this.options;
+		let { iterations } = this.options;
 
-		const iterator = createIterator(unrollFactor, case_);
+		const iterator = createIterator(unrollFactor, bc);
 
 		if (typeof iterations === "string") {
-			iterations = await this.estimate(ctx, iterator, iterations);
+			iterations = await this.estimate(iterator, iterations);
 			await ctx.info();
 		}
 
-		const time = await this.measure(ctx, "Actual", iterator, iterations);
+		const time = await this.measure("Actual", iterator, iterations);
 		if (evaluateOverhead && samples > 1) {
-			await this.subtractOverhead(ctx, case_, iterations, time);
+			await this.subtractOverhead(iterations, time);
 		}
-
-		if (!throughput) {
-			metrics.time = time;
-		} else if (time.length > 1 || time[0] !== 0) {
-			const d = durationFmt.getFraction(throughput, "ms");
-			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
-		}
+		return time;
 	}
 
-	async subtractOverhead(ctx: ProfilingContext, case_: BenchCase, iterations: number, time: number[]) {
-		const { unrollFactor } = this;
+	async subtractOverhead(iterations: number, time: number[]) {
+		const { bc, ctx } = this;
+		const { unrollFactor } = this.options;
 
 		const iterate = createIterator(unrollFactor, {
 			beforeHooks: [],
 			afterHooks: [],
-			isAsync: case_.isAsync,
-			fn: case_.fn.constructor === Function ? noop : asyncNoop,
+			isAsync: bc.isAsync,
+			fn: bc.fn.constructor === Function ? noop : asyncNoop,
 		});
 		await ctx.info();
-		const overheads = await this.measure(ctx, "Overhead", iterate, iterations);
+		const overheads = await this.measure("Overhead", iterate, iterations);
 
 		if (welchTest(time, overheads, "greater") < 0.05) {
 			const overhead = medianSorted(overheads);
@@ -250,11 +219,12 @@ export class TimeProfiler implements Profiler {
 			time.length = 1;
 			time[0] = 0;
 			ctx.note("warn",
-				"The function duration is indistinguishable from the empty function duration.", case_);
+				"The function duration is indistinguishable from the empty function duration.", bc);
 		}
 	}
 
-	async estimate(ctx: ProfilingContext, iterator: Iterator, target: string) {
+	async estimate(iterator: Iterator, target: string) {
+		const { ctx } = this;
 		const { iterate, calls } = iterator;
 		const targetMS = durationFmt.parse(target, "ms");
 		if (targetMS === 0) {
@@ -286,8 +256,9 @@ export class TimeProfiler implements Profiler {
 		throw new Error("Iteration time is too long and the fn runs too fast");
 	}
 
-	async measure(ctx: ProfilingContext, name: string, iterator: Iterator, count: number) {
-		const { warmup, samples } = this;
+	async measure(name: string, iterator: Iterator, count: number) {
+		const { ctx } = this;
+		const { warmup, samples } = this.options;
 		const { iterate, calls } = iterator;
 
 		const timeUsageList = [];
@@ -307,5 +278,64 @@ export class TimeProfiler implements Profiler {
 		}
 
 		return timeUsageList.sort((a, b) => a - b);
+	}
+}
+
+export interface TimeProfilerOptions extends TimingOptions {
+	/**
+	 * Measure throughput (ops/<unit>) instead of time (time/op).
+	 * The value can be a duration unit.
+	 *
+	 * @example
+	 * defineSuite({ timing: { throughput: "s" } });
+	 * | No. |   Name |   throughput |
+	 * | --: | -----: | -----------: |
+	 * |   0 | object | 14.39M ops/s |
+	 * |   1 |    map | 17.32M ops/s |
+	 */
+	throughput?: string;
+}
+
+export class TimeProfiler implements Profiler {
+
+	private readonly throughput?: string;
+	private readonly config: Required<TimingOptions>;
+
+	constructor(config: TimeProfilerOptions = {}) {
+		this.throughput = config.throughput;
+		this.config = normalizeOptions(config);
+	}
+
+	async onStart(ctx: ProfilingContext) {
+		// @ts-ignore
+		if (globalThis.crossOriginIsolated === false) {
+			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
+		}
+
+		const { throughput } = this;
+		ctx.defineMetric(throughput ? {
+			key: "throughput",
+			format: `{number} ops/${throughput}`,
+			lowerIsBetter: false,
+			analysis: MetricAnalysis.Statistics,
+		} : {
+			key: "time",
+			format: "{duration.ms}",
+			lowerIsBetter: true,
+			analysis: MetricAnalysis.Statistics,
+		});
+	}
+
+	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
+		const { throughput, config } = this;
+		const measurement = new ExecutionTimeMeasurement(ctx, case_, config);
+		const time = await measurement.run();
+
+		if (!throughput) {
+			metrics.time = time;
+		} else if (time.length > 1 || time[0] !== 0) {
+			const d = durationFmt.getFraction(throughput, "ms");
+			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
+		}
 	}
 }
