@@ -345,7 +345,7 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 		summary.notes.push({
 			type: "info",
 			case: row,
-			text: `${row.Name}: ${removed} outliers were removed.`,
+			text: `${removed} outliers were removed.`,
 		});
 	}
 }
@@ -436,16 +436,6 @@ export class SummaryTable {
 	constructor(summary: Summary, columnDefs: ColumnFactory[]) {
 		this.formats = columnDefs.map(c => c.format);
 
-		for (const note of summary.notes) {
-			const scope = note.case ? `[No.${note.case[kRowNumber]}] ` : "";
-			const msg = scope + note.text;
-			if (note.type === "info") {
-				this.hints.push(msg);
-			} else {
-				this.warnings.push(msg);
-			}
-		}
-
 		let colorRow: CellColor[];
 		let row: CellValue[];
 
@@ -487,6 +477,14 @@ export class SummaryTable {
 				}
 			}
 			this.groupEnds.push(this.cells.length);
+		}
+
+		const { hints, warnings } =  this;
+		for (const note of summary.notes) {
+			const c = note.case;
+			const scope = c ? `[No.${c[kRowNumber]}] ${c.Name}: ` : "";
+			const message = scope + note.text;
+			(note.type === "info" ? hints : warnings).push(message);
 		}
 	}
 

@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
-import { buildSummaryTable, MetricAnalysis } from "../src/index.js";
+import { MetricAnalysis, SummaryTable } from "../src/index.js";
 import { resultStub } from "./helper.ts";
 
 it("should works", () => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
@@ -22,7 +22,7 @@ it("should works", () => {
 });
 
 it("should support custom metrics", () => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		meta: {
 			foo: {
@@ -55,7 +55,7 @@ it("should support custom metrics", () => {
 });
 
 it("should allow optional metrics value", () => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		baseline: {
 			type: "Name",
@@ -80,7 +80,7 @@ it.each([
 	["value", ["1.00x", "2.00x", "0.25x"]],
 	["trend", ["100.00%", "200.00%", "25.00%"]],
 ])("should apply ratio style: %s", (style, values) => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		baseline: {
 			type: "Name",
@@ -101,7 +101,7 @@ it.each([
 });
 
 it("should allow a column has different units", () => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
@@ -119,7 +119,7 @@ it("should allow a column has different units", () => {
 });
 
 it("should calculate ratio with previous", () => {
-	const table = buildSummaryTable([{
+	const table = SummaryTable.from([{
 		...resultStub,
 		scenes: [{
 			foo: { time: [0, 1, 1, 1] },
@@ -134,4 +134,16 @@ it("should calculate ratio with previous", () => {
 		["No.", "Name", "time", "time.SD", "time.diff"],
 		["0", "foo", 0.75, 0.4330127018922193, "-86.36%"],
 	]);
+});
+
+it("should add row number to notes if it associated with a case", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		notes: [{
+			type: "info",
+			caseId: 0,
+			text: "Note text",
+		}],
+	}]);
+	expect(table.hints).toStrictEqual(["[No.0] foo: Note text"]);
 });
