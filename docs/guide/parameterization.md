@@ -2,6 +2,8 @@
 
 Understanding how code performs under different inputs is a common requirement. ESBench has built-in support for that.
 
+## Define Params
+
 Through the `params` property, you can specify parameters with their set of values. As a result, you will get results for each combination of params values. 
 
 The parameters of the combination can be retrieved via `scene.params`.
@@ -79,6 +81,33 @@ In the above example, the variables with their possible values is:
 ```
 
 By default, variables have only 1 value are not shown in text report.
+
+Builtin variable names are Pascal case, and suite cannot redefine parameter with the same name.
+
+```javascript
+export default defineSuite({
+	params: {
+		// Error: "Builder" is a builtin variable.
+		Builder: [0, 1000, 1000_000],
+	},
+});
+```
+
+If you [run a suite with multiple runtimes](./toolchains), the names of all variables must be consistent.
+
+```javascript
+const params = { foo: [1, 1000] };
+
+// Don't do this.
+if (typeof window === "undefined") {
+	params.bar = ["a", "b"];
+}
+
+export default defineSuite({
+	params,
+	setup(scene) { /*...*/ },
+});
+```
 
 ## Avoiding Conflicts
 

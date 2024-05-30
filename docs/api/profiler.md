@@ -1,10 +1,18 @@
 # Custom Profilers
 
+::: warning
+Custom Profilers is an experimental feature.
+:::
+
 ESBench only has built-in support for measuring function execution time, but the term benchmarking isn't the only one, the size of the returned value or other metrics may also be something we want to know.
 
 For that, ESBench allow to add custom profilers to suite, whose measured metrics will be displayed in the report.
 
-For example, measure execution time and result size of compress functions in `zlib`: 
+[Type declaration of Profiler](https://github.com/ESBenchmark/ESBench/blob/927a02f49d8554c0c35013ef15a02e11ad80a50d/core/src/profiling.ts#L82).
+
+## Usage Example
+
+Measure execution time and result size of compress functions in `zlib`: 
 
 ```javascript
 import { readFileSync } from "fs";
@@ -15,18 +23,16 @@ const data = readFileSync("../pnpm-lock.yaml");
 
 const dataSizeProfiler = {
 	// In onStart hook, we define a size metric.
-	onStart(ctx) {
-		ctx.defineMetric({
-            // The value should be stored in `metrics.size`
-			key: "size",
-            // How to format the metric into string.
-			format: "{dataSize}",
-            // The value is comparable, so `*.ratio` and `*.diff` columns can be drived from it.
-			analysis: MetricAnalysis.Compare,
-            // For compression algorithms, the smaller the result the better.
-			lowerIsBetter: true,
-		});
-	},
+	onStart: ctx=> ctx.defineMetric({
+        // The value should be stored in `metrics.size`
+		key: "size",
+        // How to format the metric into string.
+		format: "{dataSize}",
+        // The value is comparable, so `*.ratio` and `*.diff` columns can be drived from it.
+		analysis: MetricAnalysis.Compare,
+        // For compression algorithms, the smaller the result the better.
+		lowerIsBetter: true,
+	}),
     // This hook is run once per benchmark case.
     // Use `BenchCase.invoke` to call the workload function.
 	async onCase(ctx, case_, metrics) {

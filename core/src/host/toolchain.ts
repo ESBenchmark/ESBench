@@ -5,7 +5,7 @@ import { normalize } from "path/posix";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import picomatch from "picomatch";
-import { ClientMessage, ToolchainResult } from "../connect.js";
+import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
 import { HostLogger } from "./logger.js";
 import { resolveRE, SharedModeFilter } from "../utils.js";
@@ -34,6 +34,13 @@ export interface Builder {
 	 */
 	build(outDir: string, files: string[]): Awaitable<void>;
 }
+
+/**
+ * The entry file that build output needs to export a function that match the signature.
+ *
+ * This function needs to call `runAndSend` and provide the import module function.
+ */
+export type EntryExport = (postMessage: Channel, files: string[], pattern?: string) => Promise<void>;
 
 export interface ExecuteOptions {
 	/**

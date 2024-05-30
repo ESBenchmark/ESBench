@@ -13,11 +13,9 @@ ESBench is a modern JavaScript benchmarking tool.
 
 ### Benchmark JS Runtimes
 
-One difference between JavaScript and other languages is that there is no official interpreter.
+One difference between JavaScript and other languages is that it has no official interpreter. Browsers, Node, and the new Deno and bun are all possible target platforms, and the performance of the code on different platforms is a worthwhile question.
 
-### TypeScript Without the Hassle
-
-### 
+ESBench aims to run your benchmarks on different runtimes and let you know comprehensive and reliable results.
 
 ## Installation
 
@@ -34,7 +32,7 @@ pnpm add -D esbench
 :::
 
 :::tip
-ESBench requires Node >=v18.0.0
+ESBench requires Node >= 18.19.0
 :::
 
 ## Writing Benchmarks

@@ -94,8 +94,6 @@ export default defineConfig({
 
 ## Customize Loaders
 
-Unfortunately, in order to transform configuration files, the loader has to be registered before reading the config, which makes it hard to configure.
-
 If you prefer other TypeScript loaders (e.g. [ts-node](https://github.com/TypeStrong/ts-node) or [tsx](https://github.com/privatenumber/tsx)), you can disable ESBench's loader with `--no-loader` CLI argument:
 
 ```shell

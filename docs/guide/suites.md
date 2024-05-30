@@ -27,7 +27,7 @@ export default defineSuite(scene => {
 });
 ```
 
-The function style suite is a shorthand for the full form of:
+The function-style suite is a shorthand for:
 
 ```javascript
 import { defineSuite } from "esbench";

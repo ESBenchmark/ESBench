@@ -48,7 +48,7 @@ export function checkParams(params: CPSrcObject) {
 	for (let i = 0; i < entries.length; i++) {
 		const [key, values] = entries[i];
 		if (BUILTIN_VARS.includes(key)) {
-			throw new Error(`'${key}' is a builtin parameter`);
+			throw new Error(`'${key}' is a builtin variable`);
 		}
 		const current: string[] = [];
 		set.clear();
