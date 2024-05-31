@@ -509,6 +509,7 @@ export class SummaryTable {
 			table[0].push(applyColor(v, 0, i));
 		}
 
+		const separator = new Array(formats.length);
 		let offset = 1;
 		for (const e of groupEnds) {
 			const copy = cells.slice(offset, e).map(r => r.slice());
@@ -524,7 +525,7 @@ export class SummaryTable {
 			}
 
 			offset = e;
-			table.push(...copy as string[][], []);
+			table.push(...copy as string[][], separator);
 		}
 		table.pop();
 		table.toMarkdown = stringLength => {
