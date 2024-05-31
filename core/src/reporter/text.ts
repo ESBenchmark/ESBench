@@ -5,7 +5,7 @@ import chalk, { Chalk } from "chalk";
 import stringLength from "string-width";
 import { ESBenchResult } from "../connect.js";
 import { Reporter } from "../host/config.js";
-import { buildSummaryTable, FormatOptions, SummaryTableOptions } from "../table.js";
+import { FormatOptions, SummaryTable, SummaryTableOptions } from "../table.js";
 
 export interface TextReporterOptions extends SummaryTableOptions, FormatOptions {
 	/**
@@ -32,7 +32,7 @@ function print(
 
 	for (const [name, toolchains] of entries) {
 		const diff = previous[name];
-		const table = buildSummaryTable(toolchains, diff, options);
+		const table = SummaryTable.from(toolchains, diff, options);
 
 		out.write(chalk.greenBright("\nSuite: "));
 		out.write(name);

@@ -59,7 +59,7 @@ const chalk = new Proxy<any>(logColors, {
 </script>
 
 <script setup lang="ts">
-import { buildSummaryTable, FormatOptions, RunSuiteResult, SummaryTableOptions } from "esbench";
+import { SummaryTable, FormatOptions, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { shallowRef } from "vue";
 
 type PrintTableOptions = FormatOptions & SummaryTableOptions;
@@ -99,7 +99,7 @@ function printError(e: Error) {
 function printTable(result: RunSuiteResult[], options: PrintTableOptions) {
 	const { flexUnit } = options;
 	resetColorMap(consoleEl.value!);
-	const table = buildSummaryTable(result, undefined, options);
+	const table = SummaryTable.from(result, undefined, options);
 
 	appendLog();
 	appendLog(table.format({ chalk, flexUnit }).toMarkdown(stringLength));

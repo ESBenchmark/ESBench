@@ -1,4 +1,4 @@
-import { buildSummaryTable, defineSuite, runSuite } from "esbench";
+import { defineSuite, runSuite, SummaryTable } from "esbench";
 
 const suite = defineSuite({
 	name: "Array.sort",
@@ -14,7 +14,7 @@ const suite = defineSuite({
 const result = await runSuite(suite);
 
 // Convert the result to a table
-const summaryTable = buildSummaryTable([result]);
+const summaryTable = SummaryTable.from([result]);
 
 // Print the table
 console.log("\n" + summaryTable.format().toMarkdown());

@@ -3,7 +3,7 @@ import { finished } from "stream";
 import { promisify } from "util";
 import { dirname } from "path";
 import { Reporter } from "../host/config.js";
-import { buildSummaryTable, SummaryTableOptions } from "../table.js";
+import { SummaryTable, SummaryTableOptions } from "../table.js";
 
 const finishedAsync = promisify(finished);
 
@@ -48,7 +48,7 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 		const entries = Object.entries(result);
 		for (const [name, results] of entries) {
 			const diff = previous[name];
-			const table = buildSummaryTable(results, diff, options);
+			const table = SummaryTable.from(results, diff, options);
 
 			const fp = openWrite(name);
 			for (const row of table.cells) {

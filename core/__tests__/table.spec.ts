@@ -100,24 +100,6 @@ it.each([
 	expect(table.cells[3][3]).toBe(values[2]);
 });
 
-it("should allow a column has different units", () => {
-	const table = SummaryTable.from([{
-		...resultStub,
-		scenes: [{
-			foo: { time: [0, 1, 1, 1] },
-			bar: { time: [1, 2, 2, 2] },
-		}],
-	}], undefined, {
-		stdDev: false,
-	});
-	const formatted = table.format({ flexUnit: true });
-	expect(Array.from(formatted)).toStrictEqual([
-		["No.", "Name", "time"],
-		["0", "foo", "750 us"],
-		["1", "bar", "1.75 ms"],
-	]);
-});
-
 it("should calculate ratio with previous", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
@@ -146,4 +128,38 @@ it("should add row number to notes if it associated with a case", () => {
 		}],
 	}]);
 	expect(table.hints).toStrictEqual(["[No.0] foo: Note text"]);
+});
+
+it("should format undefined values in the table", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		scenes: [{
+			foo: {},
+			bar: { time: [1, 2, 2, 2] },
+		}],
+	}]);
+	const formatted = table.format();
+	expect(Array.from(formatted)).toStrictEqual([
+		["No.", "Name", "time", "time.SD"],
+		["0", "foo", "", ""],
+		["1", "bar", "1.75 ms", "433.01 us"],
+	]);
+});
+
+it("should allow a column has different units", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: { time: [1, 2, 2, 2] },
+		}],
+	}], undefined, {
+		stdDev: false,
+	});
+	const formatted = table.format({ flexUnit: true });
+	expect(Array.from(formatted)).toStrictEqual([
+		["No.", "Name", "time"],
+		["0", "foo", "750 us"],
+		["1", "bar", "1.75 ms"],
+	]);
 });

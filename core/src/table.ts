@@ -106,6 +106,7 @@ function styleRatio(v: number, style: RatioStyle, meta: MetricMeta): ColoredValu
 }
 
 type CellValue = string | number | undefined;
+type CellColor = ANSIColor | null;
 type ColoredValue = CellValue | [CellValue, ANSIColor | null];
 
 interface ColumnFactory {
@@ -342,11 +343,7 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 
 	const removed = before.length - after.length;
 	if (removed !== 0) {
-		summary.notes.push({
-			type: "info",
-			case: row,
-			text: `${removed} outliers were removed.`,
-		});
+		summary.notes.push({ type: "info", case: row, text: `${removed} outliers were removed.` });
 	}
 }
 
@@ -420,7 +417,9 @@ function formatColumn(table: any[][], column: number, template: string, flex: bo
 	}
 }
 
-type CellColor = ANSIColor | null;
+function toMarkdown(this: string[][], stringLength: any) {
+	return markdownTable(this, { stringLength, align: "r" });
+}
 
 export class SummaryTable {
 
@@ -432,6 +431,54 @@ export class SummaryTable {
 
 	readonly hints: string[] = [];
 	readonly warnings: string[] = [];
+
+	/**
+	 * Build SummaryTable of a suite from its benchmark result.
+	 *
+	 * @param result Results of the suite with toolchains.
+	 * @param diff Used to generate *.diff columns.
+	 * @param options The options, see its type for details.
+	 */
+	static from(result: ToolchainResult[], diff?: ToolchainResult[], options: SummaryTableOptions = {}) {
+		const { stdDev = true, percentiles = [], ratioStyle = "percentage" } = options;
+
+		const summary = new Summary(result);
+		const prev = new Summary(diff || []);
+		const { baseline } = summary;
+
+		const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
+		for (const [p, v] of summary.vars.entries()) {
+			if (options.showSingle || v.size > 1 || p === "Name") {
+				columnDefs.push(new VariableColumn(p));
+			}
+		}
+		for (const meta of summary.meta.values()) {
+			columnDefs.push(new RawMetricColumn(meta));
+			if (!meta.analysis /* None or undefined */) {
+				continue;
+			}
+			if (meta.analysis === MetricAnalysis.Statistics) {
+				if (stdDev) {
+					columnDefs.push(new StdDevColumn(meta));
+				}
+				for (const k of percentiles) {
+					columnDefs.push(new PercentileColumn(meta, k));
+				}
+			}
+			if (baseline) {
+				columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
+			}
+			// Assume the meta has not changed.
+			if (prev.meta.has(meta.key)) {
+				columnDefs.push(new DifferenceColumn(prev, meta, ratioStyle));
+			}
+		}
+
+		preprocess(summary, options);
+		preprocess(prev, options);
+
+		return new SummaryTable(summary, columnDefs);
+	}
 
 	constructor(summary: Summary, columnDefs: ColumnFactory[]) {
 		this.formats = columnDefs.map(c => c.format);
@@ -479,7 +526,7 @@ export class SummaryTable {
 			this.groupEnds.push(this.cells.length);
 		}
 
-		const { hints, warnings } =  this;
+		const { hints, warnings } = this;
 		for (const note of summary.notes) {
 			const c = note.case;
 			const scope = c ? `[No.${c[kRowNumber]}] ${c.Name}: ` : "";
@@ -528,54 +575,7 @@ export class SummaryTable {
 			table.push(...copy as string[][], separator);
 		}
 		table.pop();
-		table.toMarkdown = stringLength => {
-			return markdownTable(table, { stringLength, align: "r" });
-		};
+		table.toMarkdown = toMarkdown;
 		return table;
 	}
-}
-
-export function buildSummaryTable(
-	result: ToolchainResult[],
-	diff?: ToolchainResult[],
-	options: SummaryTableOptions = {},
-) {
-	const { showSingle, stdDev = true, percentiles = [], ratioStyle = "percentage" } = options;
-
-	const summary = new Summary(result);
-	const prev = new Summary(diff || []);
-	const { baseline } = summary;
-
-	const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
-	for (const [p, v] of summary.vars.entries()) {
-		if (showSingle || v.size > 1 || p === "Name") {
-			columnDefs.push(new VariableColumn(p));
-		}
-	}
-	for (const meta of summary.meta.values()) {
-		columnDefs.push(new RawMetricColumn(meta));
-		if (!meta.analysis /* None or undefined */) {
-			continue;
-		}
-		if (meta.analysis === MetricAnalysis.Statistics) {
-			if (stdDev) {
-				columnDefs.push(new StdDevColumn(meta));
-			}
-			for (const k of percentiles) {
-				columnDefs.push(new PercentileColumn(meta, k));
-			}
-		}
-		if (baseline) {
-			columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
-		}
-		// Assume the meta has not changed.
-		if (prev.meta.has(meta.key)) {
-			columnDefs.push(new DifferenceColumn(prev, meta, ratioStyle));
-		}
-	}
-
-	preprocess(summary, options);
-	preprocess(prev, options);
-
-	return new SummaryTable(summary, columnDefs);
 }
