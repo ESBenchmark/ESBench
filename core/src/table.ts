@@ -262,7 +262,6 @@ class BaselineColumn implements ColumnFactory {
 				return this.ratio1 = this.toNumber(row);
 			}
 		}
-		throw new Error(`Baseline (${variable}=${value}) does not in results`);
 	}
 
 	getValue(data: FlattedResult) {
@@ -466,7 +465,22 @@ export class SummaryTable {
 				}
 			}
 			if (baseline) {
-				columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
+				const { type, value } = baseline;
+
+				// Variable names should be consistent and cannot be filtered,
+				const values = summary.vars.get(type);
+				if (!values) {
+					throw new Error(`${type} is not in variables`);
+				}
+
+				if (values.has(value)) {
+					columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
+				} else {
+					summary.notes.push({
+						type: "warn",
+						text: `Baseline [${type} = ${value}] does not in results`,
+					});
+				}
 			}
 			// Assume the meta has not changed.
 			if (prev.meta.has(meta.key)) {
