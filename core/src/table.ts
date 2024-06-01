@@ -76,7 +76,9 @@ export interface SummaryTableOptions {
 }
 
 type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
-type ChalkLike = Record<ANSIColor, (str: string) => string>;
+type ChalkLike = Record<ANSIColor, (str: string) => string> & {
+	(str: string) : string;
+};
 
 const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
 const kRowNumber = Symbol();
@@ -348,7 +350,9 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 
 export interface FormatOptions {
 	/**
-	 * How to apply color to cell, default is ignore colors.
+	 * How to apply style to cell, default not change the value.
+	 *
+	 * All cells will have its function applied, it is also the place for escaping.
 	 */
 	chalk?: ChalkLike;
 
@@ -478,7 +482,7 @@ export class SummaryTable {
 				} else {
 					summary.notes.push({
 						type: "warn",
-						text: `Baseline [${type} = ${value}] does not in results`,
+						text: `Baseline { ${type}: ${value} } does not in the results.`,
 					});
 				}
 			}
@@ -560,14 +564,14 @@ export class SummaryTable {
 		const { flexUnit = false, chalk = noColors } = options;
 		const table = [[]] as unknown as FormattedTable;
 
-		function applyColor(value: any, r: number, c: number) {
+		function applyStyle(value: any, r: number, c: number) {
 			const x = colors[r][c];
-			return x ? chalk[x](value) : value;
+			return x ? chalk[x](value) : chalk(value);
 		}
 
 		for (let i = 0; i < formats.length; i++) {
 			const v = cells[0][i];
-			table[0].push(applyColor(v, 0, i));
+			table[0].push(applyStyle(v, 0, i));
 		}
 
 		const separator = new Array(formats.length);
@@ -581,7 +585,7 @@ export class SummaryTable {
 				}
 				for (let j = 0; j < copy.length; j++) {
 					const v = copy[j][i];
-					copy[j][i] = applyColor(v, offset + j, i);
+					copy[j][i] = applyStyle(v, offset + j, i);
 				}
 			}
 
