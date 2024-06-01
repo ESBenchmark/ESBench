@@ -8,6 +8,8 @@ Since WebWorker does not support import maps, you cannot import esbench in the s
 
 <script lang="ts">
 // IDEA Darcula theme
+import { escapeHTML } from "@kaciras/utilities/browser";
+
 const colors: Record<string, string> = {
 	// no alias (gray & grey)
 	black: "#000",
@@ -35,24 +37,33 @@ const colors: Record<string, string> = {
 const ctx = document.createElement("canvas").getContext("2d")!;
 let dashWidth: number;
 
-function resetColorMap(el: HTMLElement) {
+function setMeasurerFont(el: HTMLElement) {
 	ctx.font = getComputedStyle(el).font;
 	dashWidth = ctx.measureText("-").width;
 }
+
+const htmlEscapes: Record<string, string> = {
+	"&amp;": "&",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&quot;": '"',
+	"&#39;": "'",
+};
 
 function stringLength(s: string) {
 	if (s.startsWith("<span ")) {
 		s = s.slice(29, -7);
 	}
+	s = s.replaceAll(/&(?:amp|lt|gt|quot|#39);/g, v => htmlEscapes[v]);
 	return Math.round(ctx.measureText(s).width / dashWidth);
 }
 
 const chalk = new Proxy<any>(stringLength, {
 	apply(_, __, argArray) {
-		return argArray[0];
+		return escapeHTML(argArray[0]);
 	},
 	get(_, p: string) {
-		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
+		return (s: string) => `<span style="color: ${colors[p]}">${escapeHTML(s)}</span>`;
 	},
 });
 </script>
@@ -70,17 +81,19 @@ function clear() {
 }
 
 function appendLog(message = "", level = "info") {
-	const el = consoleEl.value!;
-	switch (level) {
-		case "error":
-			message = chalk.red(message);
-			break;
-		case "warn":
-			message = chalk.yellowBright(message);
-			break;
+	const pre = consoleEl.value!;
+	const color = colors[level];
+
+	message += "\n";
+	if (color) {
+		const span = document.createElement("span");
+		span.style.color = color;
+		span.textContent = message;
+		pre.append(span);
+	} else {
+		pre.insertAdjacentText("beforeend", message);
 	}
-	el.insertAdjacentHTML("beforeend", message + "\n");
-	el.scrollTop = el.scrollHeight;
+	pre.scrollTop = pre.scrollHeight;
 }
 
 function printError(e: Error) {
@@ -96,12 +109,17 @@ function printError(e: Error) {
 }
 
 function printTable(result: RunSuiteResult[], options: PrintTableOptions) {
+	const pre = consoleEl.value!;
 	const { flexUnit } = options;
-	resetColorMap(consoleEl.value!);
-	const table = SummaryTable.from(result, undefined, options);
+	setMeasurerFont(pre);
 
+	const table = SummaryTable.from(result, undefined, options);
+	const markdown = table.format({ chalk, flexUnit }).toMarkdown(stringLength);
+
+	console.log(markdown);
 	appendLog();
-	appendLog(table.format({ chalk, flexUnit }).toMarkdown(stringLength));
+	pre.insertAdjacentHTML("beforeend", markdown);
+	appendLog();
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");
