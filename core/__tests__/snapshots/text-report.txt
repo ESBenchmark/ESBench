@@ -1,0 +1,7 @@
+Text reporter: Format benchmark results of 1 suites:
+Suite: perf
+| No. | Name |        time |   time.SD |
+| --: | ---: | ----------: | --------: |
+|   0 |  foo |   750.00 us | 433.01 us |
+|   1 |  bar | 1,750.00 us | 433.01 us |
+

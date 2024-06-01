@@ -133,6 +133,6 @@ it("should resolve built-in profilers", async () => {
 	const [, profilers] = contextFactory.mock.calls[0];
 	const class0 = Object.getPrototypeOf(profilers[0]).constructor;
 	expect(class0.name).toBe("DefaultEventLogger");
-	expect(profilers[1]).toBe(profiler1);
-	expect(profilers[2]).toBeInstanceOf(ExecutionValidator);
+	expect(profilers[2]).toBe(profiler1);
+	expect(profilers[1]).toBeInstanceOf(ExecutionValidator);
 });

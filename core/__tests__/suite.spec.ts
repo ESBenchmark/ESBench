@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { BenchCase, Scene } from "../src/index.js";
+import { noop } from "@kaciras/utilities/browser";
 
 describe("Scene", () => {
 	it("should reject blank case name", () => {
@@ -46,5 +47,19 @@ describe("BenchCase", () => {
 
 		await expect(promise).rejects.toThrow();
 		expect(after).toHaveBeenCalledOnce();
+	});
+
+	it("should support derive with new workload", () => {
+		const newFn = vi.fn();
+		const case_ = new BenchCase(scene, "Test", noop, false);
+		case_.id = 123;
+
+		const derived = case_.derive(true, newFn);
+		expect(derived.name).toBe("Test");
+		expect(derived.id).toBe(123);
+		expect(derived.isAsync).toBe(true);
+		expect(derived.fn).toBe(newFn);
+		expect(derived.beforeHooks).not.toBe(case_.beforeHooks);
+		expect(derived.afterHooks).not.toBe(case_.afterHooks);
 	});
 });

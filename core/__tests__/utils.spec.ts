@@ -45,7 +45,7 @@ describe("checkParams", () => {
 
 	it("should fail if a property is builtin parameter", () => {
 		expect(() => checkParams({ Builder: [11] }))
-			.toThrow("'Builder' is a builtin parameter");
+			.toThrow("'Builder' is a builtin variable");
 	});
 
 	it("should fail if a parameter does not have value", () => {

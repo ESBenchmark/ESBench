@@ -1,6 +1,7 @@
 import { createWriteStream } from "fs";
 import { stdout } from "process";
 import { Writable } from "stream";
+import { once } from "events";
 import chalk, { Chalk } from "chalk";
 import stringLength from "string-width";
 import { ESBenchResult } from "../connect.js";
@@ -27,31 +28,32 @@ function print(
 	options: TextReporterOptions,
 	out: Writable,
 ) {
+	const stainer = options.chalk ?? chalk;
 	const entries = Object.entries(result);
-	out.write(chalk.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
+	out.write(stainer.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
 	for (const [name, toolchains] of entries) {
 		const diff = previous[name];
 		const table = SummaryTable.from(toolchains, diff, options);
 
-		out.write(chalk.greenBright("\nSuite: "));
+		out.write(stainer.greenBright("\nSuite: "));
 		out.write(name);
 		out.write("\n");
 		out.write(table.format(options).toMarkdown(stringLength));
 		out.write("\n");
 
 		if (table.hints.length > 0) {
-			out.write(chalk.cyan("Hints:\n"));
+			out.write(stainer.cyan("Hints:\n"));
 			for (const note of table.hints) {
-				out.write(chalk.cyan(note));
+				out.write(stainer.cyan(note));
 				out.write("\n");
 			}
 		}
 
 		if (table.warnings.length > 0) {
-			out.write(chalk.yellowBright("Warnings:\n"));
+			out.write(stainer.yellowBright("Warnings:\n"));
 			for (const note of table.warnings) {
-				out.write(chalk.yellowBright(note));
+				out.write(stainer.yellowBright(note));
 				out.write("\n");
 			}
 		}
@@ -65,7 +67,7 @@ function print(
  */
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
-	return (result, prev) => {
+	return async (result, prev) => {
 		if (console) {
 			options.chalk = chalk;
 			print(result, prev, options, stdout);
@@ -74,6 +76,7 @@ export default function (options: TextReporterOptions = {}): Reporter {
 			const stream = createWriteStream(file);
 			options.chalk = new Chalk({ level: 0 });
 			print(result, prev, options, stream);
+			await once(stream.end(), "finish");
 		}
 	};
 }

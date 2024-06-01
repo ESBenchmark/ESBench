@@ -59,10 +59,14 @@ it("should run iteration hooks", async () => {
 		setup(scene) {
 			scene.beforeIteration(() => invocations.push("before"));
 			scene.afterIteration(() => invocations.push("after"));
-			scene.benchAsync("Test", () => invocations.push("bench"));
+			scene.bench("A", () => invocations.push("bench A"));
+			scene.benchAsync("B", () => invocations.push("bench B"));
 		},
 	});
-	expect(invocations).toStrictEqual(["before", "bench", "after", "before", "bench", "after"]);
+	expect(invocations).toStrictEqual([
+		"before", "bench A", "after", "before", "bench A", "after",
+		"before", "bench B", "after", "before", "bench B", "after",
+	]);
 });
 
 it("should support specify number of samples", async () => {
