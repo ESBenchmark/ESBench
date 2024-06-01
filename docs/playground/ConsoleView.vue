@@ -8,7 +8,7 @@ Since WebWorker does not support import maps, you cannot import esbench in the s
 
 <script lang="ts">
 // IDEA Darcula theme
-const logColors: Record<string, string> = {
+const colors: Record<string, string> = {
 	// no alias (gray & grey)
 	black: "#000",
 	blackBright: "#595959",
@@ -33,27 +33,26 @@ const logColors: Record<string, string> = {
 };
 
 const ctx = document.createElement("canvas").getContext("2d")!;
-const colorTextMap = new Map<string, string>();
 let dashWidth: number;
 
 function resetColorMap(el: HTMLElement) {
 	ctx.font = getComputedStyle(el).font;
-	colorTextMap.clear();
 	dashWidth = ctx.measureText("-").width;
 }
 
 function stringLength(s: string) {
-	s = colorTextMap.get(s) ?? s;
+	if (s.startsWith("<span ")) {
+		s = s.slice(29, -7);
+	}
 	return Math.round(ctx.measureText(s).width / dashWidth);
 }
 
-const chalk = new Proxy<any>(logColors, {
-	get(colors: typeof logColors, p: string) {
-		return (s: string) => {
-			const c = `<span style="color: ${colors[p]}">${s}</span>`;
-			colorTextMap.set(c, s);
-			return c;
-		};
+const chalk = new Proxy<any>(stringLength, {
+	apply(_, __, argArray) {
+		return argArray[0];
+	},
+	get(_, p: string) {
+		return (s: string) => `<span style="color: ${colors[p]}">${s}</span>`;
 	},
 });
 </script>
