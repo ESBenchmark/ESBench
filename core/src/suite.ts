@@ -49,6 +49,27 @@ export class BenchCase {
 			await runFns(this.afterHooks);
 		}
 	}
+
+	/**
+	 * Create an new benchmark case for the workload function,
+	 * and it has the same name & id with the original.
+	 *
+	 * `beforeHooks` and `afterHooks` can be added later.
+	 *
+	 * @param isAsync Indicates whether ESBench need to `await` for
+	 *                the return value of `fn` while measuring.
+	 * @param fn the new workload function.
+	 */
+	derive(isAsync: boolean, fn: Workload) {
+		const instance: any = Object.create(BenchCase.prototype);
+		instance.name = this.name;
+		instance.fn = fn;
+		instance.isAsync = isAsync;
+		instance.beforeHooks = [];
+		instance.afterHooks = [];
+		instance.id = this.id;
+		return instance as BenchCase;
+	}
 }
 
 export class Scene<P = any> {

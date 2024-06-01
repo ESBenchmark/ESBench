@@ -41,9 +41,7 @@ export function unroll(factor: number, isAsync: boolean) {
  * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
 
-type IterOptions = Pick<BenchCase, "beforeHooks" | "afterHooks" | "fn" | "isAsync">;
-
-function createIterator(factor: number, case_: IterOptions): Iterator {
+function createIterator(factor: number, case_: BenchCase): Iterator {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 
 	async function syncWithHooks(count: number) {
@@ -146,7 +144,7 @@ export class ExecutionTimeMeasurement {
 		this.options = options;
 	}
 
-	static normalize(options: TimingOptions) {
+	static normalize(options: TimingOptions = {}) {
 		const normalized = {
 			unrollFactor: options.unrollFactor ?? 16,
 			samples: options.samples ?? 10,
@@ -199,12 +197,8 @@ export class ExecutionTimeMeasurement {
 		const { benchCase, ctx } = this;
 		const { unrollFactor } = this.options;
 
-		const iterate = createIterator(unrollFactor, {
-			beforeHooks: [],
-			afterHooks: [],
-			isAsync: benchCase.isAsync,
-			fn: benchCase.fn.constructor === Function ? noop : asyncNoop,
-		});
+		const fn = benchCase.fn.constructor === Function ? noop : asyncNoop;
+		const iterate = createIterator(unrollFactor, benchCase.derive(benchCase.isAsync, fn));
 		await ctx.info();
 		const overheads = await this.measure("Overhead", iterate, iterations);
 
@@ -299,8 +293,8 @@ export class TimeProfiler implements Profiler {
 	private readonly throughput?: string;
 	private readonly config: Required<TimingOptions>;
 
-	constructor(config: TimeProfilerOptions = {}) {
-		this.throughput = config.throughput;
+	constructor(config?: TimeProfilerOptions) {
+		this.throughput = config?.throughput;
 		this.config = ExecutionTimeMeasurement.normalize(config);
 	}
 
