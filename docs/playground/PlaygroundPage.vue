@@ -346,6 +346,5 @@ onMounted(async () => {
 	overflow: scroll;
 	color: whitesmoke;
 	background: #2b2b2b;
-	white-space: pre-wrap;
 }
 </style>
