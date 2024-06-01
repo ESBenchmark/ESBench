@@ -76,11 +76,11 @@ export interface SummaryTableOptions {
 }
 
 type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
-type ChalkLike = Record<ANSIColor, (str: string) => string> & {
+type Stainer = Record<ANSIColor, (str: string) => string> & {
 	(str: string) : string;
 };
 
-const noColors = new Proxy<ChalkLike>(identity as any, { get: identity });
+const noColors = new Proxy<Stainer>(identity as any, { get: identity });
 const kRowNumber = Symbol();
 const kProcessedMetrics = Symbol();
 
@@ -354,7 +354,7 @@ export interface FormatOptions {
 	 *
 	 * All cells will have its function applied, it is also the place for escaping.
 	 */
-	chalk?: ChalkLike;
+	stainer?: Stainer;
 
 	/**
 	 * Allow values in the column have different unit.
@@ -557,16 +557,16 @@ export class SummaryTable {
 	 * Format the table for better presentation, it will perform:
 	 * - Add an empty line between groups.
 	 * - Convert numeric values to string with units if possible.
-	 * - Apply colors to cells, using `options.chalk`.
+	 * - Apply colors to cells, using `options.stainer`.
 	 */
 	format(options: FormatOptions = {}) {
 		const { formats, cells, colors, groupEnds } = this;
-		const { flexUnit = false, chalk = noColors } = options;
+		const { flexUnit = false, stainer = noColors } = options;
 		const table = [[]] as unknown as FormattedTable;
 
 		function applyStyle(value: any, r: number, c: number) {
 			const x = colors[r][c];
-			return x ? chalk[x](value) : chalk(value);
+			return x ? stainer[x](value) : stainer(value);
 		}
 
 		for (let i = 0; i < formats.length; i++) {

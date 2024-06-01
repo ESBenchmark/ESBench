@@ -12,7 +12,7 @@ import { escapeHTML } from "@kaciras/utilities/browser";
 
 const colors: Record<string, string> = {
 	// no alias (gray & grey)
-	black: "#000",
+	black: "#000000",
 	blackBright: "#595959",
 	blue: "#3993D4",
 	blueBright: "#1FB0FF",
@@ -34,6 +34,12 @@ const colors: Record<string, string> = {
 	warning: "#E5BF00",
 };
 
+/**
+ * Detect string length with `CanvasRenderingContext2D.measureText`.
+ *
+ * Adding text to an element and then getting the width is also a solution,
+ * but it requires deciding where to hide the element.
+ */
 const ctx = document.createElement("canvas").getContext("2d")!;
 let dashWidth: number;
 
@@ -58,7 +64,7 @@ function stringLength(s: string) {
 	return Math.round(ctx.measureText(s).width / dashWidth);
 }
 
-const chalk = new Proxy<any>(stringLength, {
+const stainer = new Proxy<any>(stringLength, {
 	apply(_, __, argArray) {
 		return escapeHTML(argArray[0]);
 	},
@@ -114,9 +120,8 @@ function printTable(result: RunSuiteResult[], options: PrintTableOptions) {
 	setMeasurerFont(pre);
 
 	const table = SummaryTable.from(result, undefined, options);
-	const markdown = table.format({ chalk, flexUnit }).toMarkdown(stringLength);
+	const markdown = table.format({ stainer, flexUnit }).toMarkdown(stringLength);
 
-	console.log(markdown);
 	appendLog();
 	pre.insertAdjacentHTML("beforeend", markdown);
 	appendLog();

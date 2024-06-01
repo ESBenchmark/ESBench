@@ -28,7 +28,7 @@ function print(
 	options: TextReporterOptions,
 	out: Writable,
 ) {
-	const stainer = options.chalk ?? chalk;
+	const { stainer = chalk } = options;
 	const entries = Object.entries(result);
 	out.write(stainer.blueBright(`Text reporter: Format benchmark results of ${entries.length} suites:`));
 
@@ -69,12 +69,12 @@ export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
 	return async (result, prev) => {
 		if (console) {
-			options.chalk = chalk;
+			options.stainer = chalk;
 			print(result, prev, options, stdout);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
-			options.chalk = new Chalk({ level: 0 });
+			options.stainer = new Chalk({ level: 0 });
 			print(result, prev, options, stream);
 			await once(stream.end(), "finish");
 		}
