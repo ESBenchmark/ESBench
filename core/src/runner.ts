@@ -114,16 +114,15 @@ function resolveProfilers(suite: BenchmarkSuite) {
 	const { timing, validate } = suite;
 
 	const resolved: any = [new DefaultEventLogger()];
-	if (suite.profilers) {
-		resolved.push(...suite.profilers);
-	}
 	if (validate) {
 		resolved.push(new ExecutionValidator(validate));
 	}
 	if (timing !== false) {
 		resolved.push(new TimeProfiler(timing === true ? {} : timing));
 	}
-
+	if (suite.profilers) {
+		resolved.push(...suite.profilers);
+	}
 	return resolved.filter(Boolean) as Profiler[];
 }
 
