@@ -1,4 +1,4 @@
-import { AsyncFunction, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
+import { AsyncFunction, asyncNoop, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
@@ -9,8 +9,6 @@ interface Iterator {
 	calls: number;
 	iterate: (count: number) => Awaitable<number>;
 }
-
-const asyncNoop = async () => {};
 
 const MIN_ITERATIONS = 4;
 
@@ -136,54 +134,54 @@ export interface TimingOptions {
 	evaluateOverhead?: boolean;
 }
 
-function normalizeOptions(input: TimingOptions) {
-	const normalized = {
-		samples: input.samples ?? 10,
-		warmup: input.warmup ?? 5,
-		unrollFactor: input.unrollFactor ?? 16,
-		iterations: input.iterations ?? "1s",
-		evaluateOverhead: input.evaluateOverhead !== false,
-	};
-
-	if (normalized.unrollFactor < 1) {
-		throw new Error("The unrollFactor must be at least 1");
-	}
-	if (normalized.samples <= 0) {
-		throw new Error("The number of samples must be at least 1");
-	}
-
-	const { unrollFactor, iterations } = normalized;
-	if (typeof iterations === "number") {
-		if (iterations <= 0) {
-			throw new Error("The number of iterations cannot be 0 or negative");
-		}
-		if (iterations < unrollFactor) {
-			normalized.unrollFactor = iterations;
-		} else if (iterations % unrollFactor !== 0) {
-			throw new Error("iterations must be a multiple of unrollFactor");
-		}
-	}
-	return normalized as Required<TimingOptions>;
-}
-
 export class ExecutionTimeMeasurement {
 
 	private readonly ctx: ProfilingContext;
-	private readonly bc: BenchCase;
+	private readonly benchCase: BenchCase;
 	private readonly options: Required<TimingOptions>;
 
-	constructor(ctx: ProfilingContext, bc: BenchCase, options: Required<TimingOptions>) {
+	constructor(ctx: ProfilingContext, case_: BenchCase, options: Required<TimingOptions>) {
 		this.ctx = ctx;
-		this.bc = bc;
+		this.benchCase = case_;
 		this.options = options;
 	}
 
-	async run() {
-		const { ctx, bc } = this;
-		const { samples, unrollFactor, evaluateOverhead } = this.options;
-		let { iterations } = this.options;
+	static normalize(options: TimingOptions) {
+		const normalized = {
+			unrollFactor: options.unrollFactor ?? 16,
+			samples: options.samples ?? 10,
+			warmup: options.warmup ?? 5,
+			iterations: options.iterations ?? "1s",
+			evaluateOverhead: options.evaluateOverhead !== false,
+		};
 
-		const iterator = createIterator(unrollFactor, bc);
+		if (normalized.unrollFactor < 1) {
+			throw new Error("The unrollFactor must be at least 1");
+		}
+		if (normalized.samples <= 0) {
+			throw new Error("The number of samples must be at least 1");
+		}
+
+		const { unrollFactor, iterations } = normalized;
+		if (typeof iterations === "number") {
+			if (iterations <= 0) {
+				throw new Error("The number of iterations cannot be 0 or negative");
+			}
+			if (iterations < unrollFactor) {
+				normalized.unrollFactor = iterations;
+			} else if (iterations % unrollFactor !== 0) {
+				throw new Error("iterations must be a multiple of unrollFactor");
+			}
+		}
+		return normalized as Required<TimingOptions>;
+	}
+
+	async run() {
+		const { ctx, benchCase, options } = this;
+		const { samples, unrollFactor, evaluateOverhead } = options;
+		let { iterations } = options;
+
+		const iterator = createIterator(unrollFactor, benchCase);
 
 		if (typeof iterations === "string") {
 			iterations = await this.estimate(iterator, iterations);
@@ -198,14 +196,14 @@ export class ExecutionTimeMeasurement {
 	}
 
 	async subtractOverhead(iterations: number, time: number[]) {
-		const { bc, ctx } = this;
+		const { benchCase, ctx } = this;
 		const { unrollFactor } = this.options;
 
 		const iterate = createIterator(unrollFactor, {
 			beforeHooks: [],
 			afterHooks: [],
-			isAsync: bc.isAsync,
-			fn: bc.fn.constructor === Function ? noop : asyncNoop,
+			isAsync: benchCase.isAsync,
+			fn: benchCase.fn.constructor === Function ? noop : asyncNoop,
 		});
 		await ctx.info();
 		const overheads = await this.measure("Overhead", iterate, iterations);
@@ -219,7 +217,7 @@ export class ExecutionTimeMeasurement {
 			time.length = 1;
 			time[0] = 0;
 			ctx.note("warn",
-				"The function duration is indistinguishable from the empty function duration.", bc);
+				"The function duration is indistinguishable from the empty function duration.", benchCase);
 		}
 	}
 
@@ -261,7 +259,7 @@ export class ExecutionTimeMeasurement {
 		const { warmup, samples } = this.options;
 		const { iterate, calls } = iterator;
 
-		const timeUsageList = [];
+		const timeUsageList = new Array(samples);
 		const n = count * calls;
 
 		for (let i = 0; i < warmup; i++) {
@@ -273,7 +271,7 @@ export class ExecutionTimeMeasurement {
 
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
-			timeUsageList.push(time / n);
+			timeUsageList[i] = time / n;
 			await ctx.info(`${name} ${i}: ${timeDetail(time, n)}`);
 		}
 
@@ -303,7 +301,7 @@ export class TimeProfiler implements Profiler {
 
 	constructor(config: TimeProfilerOptions = {}) {
 		this.throughput = config.throughput;
-		this.config = normalizeOptions(config);
+		this.config = ExecutionTimeMeasurement.normalize(config);
 	}
 
 	async onStart(ctx: ProfilingContext) {
