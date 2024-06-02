@@ -93,6 +93,7 @@ export class RollupBuilder implements Builder {
 		}
 
 		const bundle = await rollup({
+			logLevel: "silent",
 			external,
 			...this.config,
 			input: entryId,
