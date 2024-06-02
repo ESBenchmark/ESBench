@@ -350,9 +350,12 @@ function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, met
 
 export interface FormatOptions {
 	/**
-	 * How to apply style to cell, default not change the value.
+	 * How to apply style to cell, it is also the place for escaping.
 	 *
-	 * All cells will have its function applied, it is also the place for escaping.
+	 * Values have associated colors in the table will be converted using
+	 * `stainer[color](value)`, others using `stainer(value)`.
+	 *
+	 * By default, it will just return the value as is.
 	 */
 	stainer?: Stainer;
 

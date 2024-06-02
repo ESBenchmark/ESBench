@@ -11,6 +11,10 @@ export default function (channel, files, name) {
 	return runAndSend(channel, doImport, files, name);
 }`;
 
+/**
+ * Although no code transformation is needed, it is still necessary
+ * to create an entry module according to ESBench conventions.
+ */
 export default <Builder>{
 	name: "None",
 	build(outDir: string) {

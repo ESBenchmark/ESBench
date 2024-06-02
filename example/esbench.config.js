@@ -2,6 +2,7 @@ import {
 	defineConfig,
 	htmlReporter,
 	inProcessExecutor,
+	ProcessExecutor,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -46,9 +47,7 @@ export default defineConfig({
 			inProcessExecutor,
 
 			// More JS runtimes, you need install them manually.
-			// TODO: https://github.com/oven-sh/bun/issues/9963
 			// new ProcessExecutor("bun"),
-
 			// TODO: https://github.com/denoland/deno/issues/18192
 			// new ProcessExecutor("deno run --allow-net"),
 		],

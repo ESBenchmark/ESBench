@@ -3,7 +3,7 @@ import { build, Plugin, Rollup } from "vite";
 /**
  * Build esbench to a separated chunk that can be imported from workers and iframes.
  *
- * This is needed because ?url does not treat the file as a module.
+ * This plugin is needed because `?url` does not treat the file as a module.
  * Related issue: https://github.com/vitejs/vite/issues/6757
  */
 export default <Plugin>{

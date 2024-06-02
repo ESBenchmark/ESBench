@@ -20,7 +20,7 @@ export interface HostLogger {
 	error(message?: string): void;
 }
 
-export function createLogger(minLevel: LogLevel) {
+export function createLogger(minLevel: LogLevel): HostLogger {
 	const priority = logLevelPriority[minLevel];
 
 	const handler: LogHandler = (message, level) => {
@@ -30,7 +30,7 @@ export function createLogger(minLevel: LogLevel) {
 		}
 	};
 
-	return <HostLogger>{
+	return {
 		handler,
 		debug: message => handler(message, "debug"),
 		info: message => handler(message, "info"),

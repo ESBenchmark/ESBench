@@ -9,7 +9,9 @@ const finishedAsync = promisify(finished);
 
 export interface CSVReporterOptions extends SummaryTableOptions {
 	/**
-	 * Path of the directory to save the CSV files.
+	 * Files are saved in the specified directory with the path of the suite filename + `.csv`.
+	 *
+	 * @default "reports"
 	 */
 	directory?: string;
 }
@@ -34,6 +36,8 @@ function writeRow(row: any[], out: WriteStream) {
 
 /**
  * Format the results into text and output to various streams.
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc4180
  */
 export default function (options: CSVReporterOptions = {}): Reporter {
 	const { directory = "reports" } = options;

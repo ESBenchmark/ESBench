@@ -27,20 +27,6 @@ export function unroll(factor: number, isAsync: boolean) {
 	return new FunctionType("f", "count", body);
 }
 
-/*
- * One idea is treat iteration hooks as overhead, run them with an empty benchmark,
- * then subtract the time from result.
- * but this cannot handle some cases. for example, consider the code:
- *
- * let data = null;
- * scene.bench("foo", () => data = create());
- * scene.afterIteration(() => {
- *     if (data) heavyCleanup(data);
- * });
- *
- * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
- */
-
 function createIterator(factor: number, case_: BenchCase): Iterator {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 
@@ -205,6 +191,19 @@ export class ExecutionTimeMeasurement {
 		return time;
 	}
 
+	/*
+	 * Another idea is treat iteration hooks as overhead, run them with an empty benchmark,
+	 * then subtract the time from result.
+	 * but this cannot handle some cases. for example, consider the code:
+	 *
+	 * let data = null;
+	 * scene.bench("foo", () => data = create());
+	 * scene.afterIteration(() => {
+	 *     if (data) heavyCleanup(data);
+	 * });
+	 *
+	 * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
+	 */
 	async subtractOverhead(iterations: number, time: number[]) {
 		const { benchCase, ctx } = this;
 		const overheads = await this.measureOverhead(iterations);

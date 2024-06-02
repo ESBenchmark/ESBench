@@ -40,10 +40,9 @@ export type Importer = (path: string) => Awaitable<{ default: UserSuite }>;
 /**
  * A function that post messages to the host. Provided by executors.
  *
- * Log messages are sent multiple times, others are sent only once.
- *
- * If you implement an executor that does not support continuous transmission
- * of messages, you can ignore logs.
+ * It will be used to send multiple log messages, and send a results message
+ * or an error object at the end. If you implement an executor that does not
+ * support continuous transmission, you can ignore logs.
  */
 export type Channel = (message: ClientMessage) => Awaitable<void>;
 

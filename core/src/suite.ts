@@ -10,15 +10,20 @@ type Workload = () => Awaitable<unknown>;
 
 export class BenchCase {
 
-	readonly beforeHooks: HookFn[];
-	readonly afterHooks: HookFn[];
-
 	readonly name: string;
 
 	/**
 	 * The workload function, should be called with iteration hooks.
+	 *
+	 * Always treat the iteration hooks and `fn` as a whole,
+	 * calling `fn` separately will result in undefined behavior.
+	 *
+	 * @see BenchCase.invoke
 	 */
 	readonly fn: Workload;
+
+	readonly beforeHooks: HookFn[];
+	readonly afterHooks: HookFn[];
 
 	/**
 	 * true if the case defined by `benchAsync`, false for `bench`.
@@ -27,8 +32,9 @@ export class BenchCase {
 
 	/**
 	 * A unique number within a suite execution.
+	 * It is used to associate some objects with this case.
 	 */
-	id!: number;
+	id?: number;
 
 	constructor(scene: Scene, name: string, fn: Workload, isAsync: boolean) {
 		this.name = name;
@@ -177,6 +183,8 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 
 	/**
 	 * Add more profilers for the suite, falsy values are ignored.
+	 *
+	 * @see https://esbench.vercel.app/api/profiler
 	 */
 	profilers?: Array<Profiler | false | undefined>;
 
@@ -205,7 +213,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	params?: T;
 
 	/**
-	 * In order to scale your results, you can mark a variable as a baseline.
+	 * Mark a variable as a baseline to scale your results.
 	 *
 	 * @example
 	 * // The result with baseline: { type: "Name", value: "map" }

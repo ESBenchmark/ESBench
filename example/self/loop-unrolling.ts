@@ -30,6 +30,7 @@ factories[0] = 1;
 
 // Use the least common multiple as invocation count.
 const iterations = factories.reduce(lcm, 1);
+console.log(`Number of invocations: ${iterations}`);
 
 export default defineSuite({
 	params: {
