@@ -10,20 +10,20 @@ For that, ESBench allow to add custom profilers to suite, whose measured metrics
 
 [Type declaration of Profiler](https://github.com/ESBenchmark/ESBench/blob/927a02f49d8554c0c35013ef15a02e11ad80a50d/core/src/profiling.ts#L82).
 
-## Usage Example
+## Buffer Size
 
 Measure execution time and result size of compress functions in `zlib`: 
 
-```javascript
+```typescript
 import { readFileSync } from "fs";
 import { brotliCompressSync, deflateSync, gzipSync } from "zlib";
-import { defineSuite, MetricAnalysis } from "esbench";
+import { defineSuite, MetricAnalysis, Profiler } from "esbench";
 
 const data = readFileSync("../pnpm-lock.yaml");
 
-const dataSizeProfiler = {
+const dataSizeProfiler: Profiler = {
 	// In onStart hook, we define a size metric.
-	onStart: ctx=> ctx.defineMetric({
+	onStart: ctx => ctx.defineMetric({
         // The value should be stored in `metrics.size`
 		key: "size",
         // How to format the metric into string.
@@ -55,12 +55,97 @@ export default defineSuite({
 });
 ```
 
+Run the suite and the result will contain `size` column:
+
+```text
+| No. |    Name |      time |   time.SD | time.ratio |      size | size.ratio |
+| --: | ------: | --------: | --------: | ---------: | --------: | ---------: |
+|   0 | deflate |   1.98 ms |   3.07 us |      0.00% | 43.94 KiB |      0.00% |
+|   1 |    gzip |   2.01 ms |   3.87 us |     +1.40% | 43.95 KiB |     +0.03% |
+|   2 |  brotli | 142.99 ms | 176.42 us |  +7103.51% | 38.97 KiB |    -11.32% |
+```
+
+## Execution Time
+
+In addition to compression, the decompression time is also of concern, for which we next add another profiler.
+
+Knowing exactly how long a function takes to execute needs some technique, ESBench provides `ExecutionTimeMeasurement` to help with that.
+
+```typescript
+import { brotliDecompressSync, inflateSync, unzipSync } from "zlib";
+import { ExecutionTimeMeasurement, MetricAnalysis, Profiler } from "esbench";
+
+const decompressProfiler: Profiler = {
+	onStart: ctx => ctx.defineMetric({
+		key: "decompress",
+		format: "{duration.ms}",
+		analysis: MetricAnalysis.Statistics,
+		lowerIsBetter: true,
+	}),
+	async onCase(ctx, case_, metrics) {
+		// Get decompress function of the case.
+		let decompress: typeof inflateSync;
+		switch (case_.name) {
+			case "deflate":
+				decompress = inflateSync;
+				break;
+			case "gzip":
+				decompress = unzipSync;
+				break;
+			case "brotli":
+				decompress = brotliDecompressSync;
+				break;
+		}
+
+		// `ctx.info()` can write a log to the host.
+		ctx.info("Measuring decompress performance...");
+
+		// Get the compressed data.
+		const zipped = await case_.invoke();
+
+		// Reuse the options of TimeProfiler.
+		let options = ctx.suite.timing;
+		if (options === false) {
+			return;
+		}
+		if (options === true) {
+			options = undefined;
+		}
+
+		/*
+		 * Use `BenchCase.derive` to create a new case. Derived case is
+ 		 * can be thought of as another aspect of the original case.
+ 		 */
+		const newCase = case_.derive(false, () => decompress(zipped));
+
+		/*
+		 * ExecutionTimeMeasurement can be used for accurately measure
+		 * the execution time of a benchmark case.
+		 */
+		const measurer = new ExecutionTimeMeasurement(ctx, newCase, options);
+		metrics.decompress = await measurer.run();
+	},
+};
+```
+
+Also add it to the suite. The full code can be found [here](https://github.com/ESBenchmark/ESBench/blob/master/example/custom-profiler/compress.ts).
+
+```typescript
+export default defineSuite({
+	profilers: [
+		dataSizeProfiler,
+		decompressProfiler,
+	],
+	// ...other options
+});
+```
+
 Output:
 
 ```text
-| No. |    Name |      size | size.ratio |      time |  time.SD | time.ratio |
-| --: | ------: | --------: | ---------: | --------: | -------: | ---------: |
-|   0 | deflate | 38.02 KiB |      0.00% |   1.60 ms |  3.06 us |      0.00% |
-|   1 |    gzip | 38.04 KiB |     +0.03% |   1.62 ms |  4.77 us |     +1.56% |
-|   2 |  brotli | 34.45 KiB |     -9.40% | 110.01 ms | 23.32 us |  +6794.70% |
+| No. |    Name |      time |  time.SD | time.ratio |      size | size.ratio | decompress | decompress.SD | decompress.ratio |
+| --: | ------: | --------: | -------: | ---------: | --------: | ---------: | ---------: | ------------: | ---------------: |
+|   0 | deflate |   2.05 ms | 76.20 us |      0.00% | 43.94 KiB |      0.00% |  196.95 us |       2.97 us |            0.00% |
+|   1 |    gzip |   1.98 ms |  6.58 us |     -3.48% | 43.95 KiB |     +0.03% |  220.83 us |       2.73 us |          +12.13% |
+|   2 |  brotli | 143.06 ms | 91.27 us |  +6882.06% | 38.97 KiB |    -11.32% |  373.88 us |       2.38 us |          +89.84% |
 ```

@@ -28,7 +28,11 @@ export default defineConfig({
 		htmlReporter(),
 	],
 	toolchains: [{
-		include: ["./self/*.[jt]s", "./node/*.[jt]s"],
+		include: [
+			"./custom-profiler/*.[jt]s",
+			"./self/*.[jt]s",
+			"./node/*.[jt]s",
+		],
 	}, {
 		include: ["./es/*.js"],
 
