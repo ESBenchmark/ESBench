@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join, resolve } from "path";
 import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { expect, it, vi } from "vitest";
@@ -176,4 +176,33 @@ it("should dedupe builders with same executor", async () => {
 	});
 	expect(jobs).toHaveLength(1);
 	expect(jobs[0].builds).toHaveLength(1);
+});
+
+it("should ignore files with the exclude option", async () => {
+	const jobs = await testBuild({}, {
+		include: ["__tests__/fixtures/error-*/*"],
+		exclude: ["**/*-outside/*"],
+		builders: [noBuild],
+		executors: [inProcess],
+	});
+	expect(jobs[0].builds[0].files).toHaveLength(1);
+});
+
+it("should support absolute path patterns", async () => {
+	const pattern = resolve("__tests__/fixtures/*-inside/*");
+	const jobs = await testBuild({}, {
+		include: [pattern],
+		builders: [noBuild],
+		executors: [inProcess],
+	});
+	expect(jobs[0].builds[0].files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
+});
+
+it("should convert paths to import specifiers", async () => {
+	const jobs = await testBuild({}, {
+		include: ["__tests__/fixtures/*-inside/*"],
+		builders: [noBuild],
+		executors: [inProcess],
+	});
+	expect(jobs[0].builds[0].files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
 });

@@ -123,7 +123,9 @@ export interface Executor {
  */
 export type Nameable<T> = T | { name: string; use: T };
 
+// Only the `exclude` is not necessary.
 export interface ToolChainItem {
+	exclude?: string[];
 	include: string[];
 	builders: Array<Nameable<Builder>>;
 	executors: Array<Nameable<Executor>>;
@@ -160,7 +162,7 @@ export default class JobGenerator {
 	}
 
 	add(toolchain: ToolChainItem) {
-		const { include, builders, executors } = toolchain;
+		const { exclude = [], include, builders, executors } = toolchain;
 		const builderRE = resolveRE(this.filter.builder);
 		const executorRE = resolveRE(this.filter.executor);
 		const workingDir = cwd();
@@ -169,11 +171,21 @@ export default class JobGenerator {
 			.filter(executor => executorRE.test(executor.name))
 			.map(this.unwrap.bind(this, "execute"));
 
-		// Ensure glob patterns is relative and starts with ./ or ../
-		const dotGlobs = include.map(p => {
-			p = relative(workingDir, p).replaceAll("\\", "/");
+		function normalize(pattern: string) {
+			let p = relative(workingDir, pattern);
+			p = p.replaceAll("\\", "/");
 			return /\.\.?\//.test(p) ? p : "./" + p;
-		});
+		}
+
+		// Merge include & exclude patterns into one array.
+		// Ensure glob patterns is relative and starts with ./ or ../
+		const dotGlobs: string[] = [];
+		for (const pattern of exclude) {
+			dotGlobs.push("!" + normalize(pattern));
+		}
+		for (const pattern of include) {
+			dotGlobs.push(normalize(pattern));
+		}
 
 		for (const builder of builders) {
 			if (!builderRE.test(builder.name)) {

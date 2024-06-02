@@ -18,6 +18,11 @@ export interface ToolchainOptions {
 	include?: string[];
 
 	/**
+	 * The micromatch glob patterns to ignore files.
+	 */
+	exclude?: string[];
+
+	/**
 	 * Specific a list of builder to transform source files before execution,
 	 * falsy values are ignored. Each build results as a new set of benchmarks.
 	 *
