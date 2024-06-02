@@ -8,7 +8,7 @@ Since WebWorker does not support import maps, you cannot import esbench in the s
 
 <script lang="ts">
 // IDEA Darcula theme
-import { escapeHTML } from "@kaciras/utilities/browser";
+import { escapeHTML, unescapeHTML } from "@kaciras/utilities/browser";
 
 const colors: Record<string, string> = {
 	// no alias (gray & grey)
@@ -48,19 +48,11 @@ function setMeasurerFont(el: HTMLElement) {
 	dashWidth = ctx.measureText("-").width;
 }
 
-const htmlEscapes: Record<string, string> = {
-	"&amp;": "&",
-	"&lt;": "<",
-	"&gt;": ">",
-	"&quot;": '"',
-	"&#39;": "'",
-};
-
 function stringLength(s: string) {
 	if (s.startsWith("<span ")) {
 		s = s.slice(29, -7);
 	}
-	s = s.replaceAll(/&(?:amp|lt|gt|quot|#39);/g, v => htmlEscapes[v]);
+	s = unescapeHTML(s);
 	return Math.round(ctx.measureText(s).width / dashWidth);
 }
 

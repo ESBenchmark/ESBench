@@ -5,12 +5,12 @@
 		"docs:build": "pnpm --filter=./core build && pnpm --filter=./docs build"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^3.0.1",
-		"@kaciras/eslint-config-typescript": "^3.0.1",
-		"@kaciras/eslint-config-vue": "^3.0.1",
-		"@types/node": "^20.12.12",
+		"@kaciras/eslint-config-core": "^3.0.3",
+		"@kaciras/eslint-config-typescript": "^3.0.3",
+		"@kaciras/eslint-config-vue": "^3.0.3",
+		"@types/node": "^20.13.0",
 		"@vitest/coverage-v8": "^1.6.0",
-		"eslint": "^9.3.0",
+		"eslint": "^9.4.0",
 		"typescript": "^5.4.5",
 		"vitest": "^1.6.0"
 	}
