@@ -132,16 +132,28 @@ export interface TimingOptions {
 	evaluateOverhead?: boolean;
 }
 
+/**
+ * A tool used for accurately measure the execution time of a benchmark case.
+ *
+ * @example
+ * const profiler = {
+ *     async onCase(ctx, case_, metrics) {
+ *         const measurement = new ExecutionTimeMeasurement(ctx, case_);
+ * 		   const samples = await measurement.run();
+ * 		   ctx.info(`Samples: [${samples.join(", ")}]`);
+ *     },
+ * }
+ */
 export class ExecutionTimeMeasurement {
 
 	private readonly ctx: ProfilingContext;
 	private readonly benchCase: BenchCase;
 	private readonly options: Required<TimingOptions>;
 
-	constructor(ctx: ProfilingContext, case_: BenchCase, options: Required<TimingOptions>) {
+	constructor(ctx: ProfilingContext, case_: BenchCase, options?: TimingOptions) {
 		this.ctx = ctx;
 		this.benchCase = case_;
-		this.options = options;
+		this.options = ExecutionTimeMeasurement.normalize(options);
 	}
 
 	static normalize(options: TimingOptions = {}) {
@@ -195,12 +207,7 @@ export class ExecutionTimeMeasurement {
 
 	async subtractOverhead(iterations: number, time: number[]) {
 		const { benchCase, ctx } = this;
-		const { unrollFactor } = this.options;
-
-		const fn = benchCase.fn.constructor === Function ? noop : asyncNoop;
-		const iterate = createIterator(unrollFactor, benchCase.derive(benchCase.isAsync, fn));
-		await ctx.info();
-		const overheads = await this.measure("Overhead", iterate, iterations);
+		const overheads = await this.measureOverhead(iterations);
 
 		if (welchTest(time, overheads, "greater") < 0.05) {
 			const overhead = medianSorted(overheads);
@@ -213,6 +220,16 @@ export class ExecutionTimeMeasurement {
 			ctx.note("warn",
 				"The function duration is indistinguishable from the empty function duration.", benchCase);
 		}
+	}
+
+	async measureOverhead(iterations: number) {
+		const { benchCase } = this;
+
+		const fn = benchCase.fn.constructor === Function ? noop : asyncNoop;
+		const c = benchCase.derive(benchCase.isAsync, fn);
+
+		const iterate = createIterator(this.options.unrollFactor, c);
+		return this.measure("Overhead", iterate, iterations);
 	}
 
 	async estimate(iterator: Iterator, target: string) {
@@ -291,11 +308,14 @@ export interface TimeProfilerOptions extends TimingOptions {
 export class TimeProfiler implements Profiler {
 
 	private readonly throughput?: string;
-	private readonly config: Required<TimingOptions>;
+	private readonly config?: TimingOptions;
 
 	constructor(config?: TimeProfilerOptions) {
 		this.throughput = config?.throughput;
-		this.config = ExecutionTimeMeasurement.normalize(config);
+		this.config = config;
+
+		// Verify the config.
+		ExecutionTimeMeasurement.normalize(config);
 	}
 
 	async onStart(ctx: ProfilingContext) {
