@@ -68,7 +68,7 @@ function getInfo(this: Rollup.PluginContext, code: string) {
 	};
 }
 
-const categoryRE = /\/example\/(.+?)\/.+?\.js$/;
+const categoryRE = /\/example\/(.+?\/.+?\.js)$/;
 
 export default <Plugin>{
 	name: "esbench:suite-info",
@@ -91,7 +91,7 @@ export default <Plugin>{
 			const info = getInfo.call(this, suite);
 			exports.push(info);
 			info.name = name;
-			info.category = categoryRE.exec(file)[1];
+			info.path = categoryRE.exec(file)[1];
 		}
 		return "export default " + JSON.stringify(exports);
 	},

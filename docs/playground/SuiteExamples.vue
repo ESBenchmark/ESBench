@@ -5,10 +5,10 @@
 	</section>
 	<section :class='$style.cards'>
 		<a
-			v-for='(suite, i) of suites'
+			v-for='suite of suites'
 			:key='suite.name'
 			:class='$style.suite'
-			:href='"/playground.html?demo=" + i'
+			:href='"/playground?demo=" + suite.path'
 		>
 			{{ suite.name }}
 			<span :class='$style.attrs'>

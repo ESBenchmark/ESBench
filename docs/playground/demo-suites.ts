@@ -1,12 +1,12 @@
-// This file will be transformed with .vitepress/suite-loader.ts
 export interface SuiteInfo {
 	name: string;
-	category: string;
+	path: string;
 	code: string;
 	cases: number;
 	params: number;
 }
 
+// This file will be transformed with .vitepress/suite-loader.ts
 export default [] as SuiteInfo[];
 
 // Import syntax is used to leverage IDE's intellisense.

@@ -224,9 +224,9 @@ onMounted(async () => {
 		}
 		tableOptions.value = table;
 	} else if (demo) {
-		const { code, category } = demos[parseInt(demo)];
+		const { code, path } = demos.find(i => i.path === demo)!;
 		value = code;
-		executor.value = category === "web"
+		executor.value = path.startsWith("web")
 			? executeIFrame : executeWorker;
 	}
 
