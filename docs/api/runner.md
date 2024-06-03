@@ -9,7 +9,7 @@ The `esbench` package exports 2 entry points:
 ## Run Suites
 
 ```javascript
-import { buildSummaryTable, defineSuite, runSuite } from "esbench";
+import { defineSuite, runSuite, SummaryTable } from "esbench";
 
 const suite = defineSuite(scene => {
 	const template = Array.from({ length: 1000 }, () => Math.random());
@@ -22,7 +22,7 @@ const suite = defineSuite(scene => {
 const result = await runSuite(suite);
 
 // Convert the result to a table
-const summaryTable = buildSummaryTable([result]);
+const summaryTable = SummaryTable.from([result]);
 
 // Print the table
 console.log("\n" + summaryTable.format().toMarkdown());

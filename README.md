@@ -1,7 +1,8 @@
 # ESBench
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ESBenchmark/ESBench/test.yml?style=flat-square)
 ![NPM Version](https://img.shields.io/npm/v/esbench?style=flat-square)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ESBenchmark/ESBench/test.yml?style=flat-square)
+![Codecov](https://img.shields.io/codecov/c/gh/ESBenchmark/ESBench?style=flat-square)
 
 A modern JavaScript benchmarking tool.
 
@@ -10,6 +11,7 @@ A modern JavaScript benchmarking tool.
 - **Comparable**: support baselines and diff with previous runs.
 - **TypeScript Out-of-box**: load your `.ts` files with zero config.
 - **HTML Reporter**: plot the results into an interactive chart.
+- **Extensible**: support custom profiler, executor, and reporter.
 - **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
 
 **For more details and getting started, visit [Document](https://esbench.vercel.app)**

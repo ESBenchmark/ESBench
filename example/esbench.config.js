@@ -1,6 +1,5 @@
 import {
 	defineConfig,
-	htmlReporter,
 	inProcessExecutor,
 	ProcessExecutor,
 	PlaywrightExecutor,
@@ -26,7 +25,6 @@ export default defineConfig({
 	reporters: [
 		textReporter(),
 		rawReporter(),
-		htmlReporter(),
 	],
 	toolchains: [{
 		include: [

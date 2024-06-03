@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: ESBench
-  text: Powerful JavaScript Benchmarking Tool
+  text: Modern JavaScript Benchmarking Tool
 
   image:
     src: /logo.svg
