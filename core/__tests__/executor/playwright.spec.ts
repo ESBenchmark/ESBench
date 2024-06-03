@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { chromium, firefox } from "playwright-core";
+import { chromium, firefox, webkit } from "playwright-core";
 import { executorFixtures, executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
 import { RunSuiteResult } from "../../src/index.ts";
+
+it.each([
+	[new PlaywrightExecutor(firefox), "firefox"],
+	[new PlaywrightExecutor(webkit), "webkit"],
+	[new PlaywrightExecutor(chromium), "chromium"],
+	[new WebextExecutor(chromium), "chromium addon"],
+])("should suggest a name %#", (executor, name) => {
+	expect(executor.name).toBe(name);
+});
 
 describe("PlaywrightExecutor", () => {
 	const execute = executorTester(new PlaywrightExecutor(firefox));

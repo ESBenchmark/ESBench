@@ -24,6 +24,13 @@ async function testBundle(builder: Builder) {
 	return [readFileSync(url, "utf8"), module];
 }
 
+it.each([
+	[new RollupBuilder(), "Rollup"],
+	[new ViteBuilder(), "Vite"],
+])("should suggest a name %#", (executor, name) => {
+	expect(executor.name).toBe(name);
+});
+
 it("should generate loader entry with Rollup", () => {
 	return testBundle(new RollupBuilder());
 });

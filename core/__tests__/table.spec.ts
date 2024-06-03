@@ -2,6 +2,16 @@ import { expect, it } from "vitest";
 import { MetricAnalysis, SummaryTable } from "../src/index.js";
 import { resultStub } from "./helper.ts";
 
+it("should fail with invalid metric type", () => {
+	const results: any = [{
+		...resultStub,
+		scenes: [{
+			foo: { time: false },
+		}],
+	}];
+	expect(() => SummaryTable.from(results)).toThrow('Metric "time" must be an array');
+});
+
 it("should works", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
@@ -115,6 +125,29 @@ it("should calculate ratio with previous", () => {
 	expect(table.cells).toStrictEqual([
 		["No.", "Name", "time", "time.SD", "time.diff"],
 		["0", "foo", 0.75, 0.4330127018922193, "-86.36%"],
+	]);
+});
+
+it("should keep blank if no matched previous value", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: {},
+			baz: { time: [4, 3, 9, 6] },
+		}],
+	}], [{
+		...resultStub,
+		scenes: [{
+			foo: {},
+			bar: { time: [8, 9, 6, 4] },
+		}],
+	}]);
+	expect(table.cells).toStrictEqual([
+		["No.", "Name", "time", "time.SD", "time.diff"],
+		["0", "foo", 0.75, 0.4330127018922193, undefined],
+		["1", "bar", undefined, undefined, undefined],
+		["2", "baz", 5.5, 2.29128784747792, undefined],
 	]);
 });
 

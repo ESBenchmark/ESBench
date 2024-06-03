@@ -195,7 +195,7 @@ abstract class StatisticsColumn implements ColumnFactory {
 			return this.calculate(values);
 		}
 		if (values !== undefined) {
-			throw new TypeError(`Metric ${key} must be an array`);
+			throw new TypeError(`Metric "${key}" must be an array`);
 		}
 	}
 }
@@ -298,13 +298,13 @@ class DifferenceColumn implements ColumnFactory {
 	getValue(data: FlattedResult) {
 		const previous = this.another.find(data);
 		if (!previous) {
-			return "";
+			return;
 		}
 		const p = this.toNumber(getMetrics(previous));
 		const c = this.toNumber(getMetrics(data));
 
 		if (p === undefined || c === undefined) {
-			return "";
+			return;
 		}
 		return styleRatio(c / p, this.style, this.meta);
 	}
