@@ -25,5 +25,7 @@ jobs:
       - run: pnpm exec playwright-core install
         working-directory: core
 
-      - run: pnpm run test
+      - run: pnpm run test --coverage
         working-directory: core
+
+      - uses: codecov/codecov-action@v4
