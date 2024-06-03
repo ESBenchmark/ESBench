@@ -59,8 +59,8 @@ it("should support custom metrics", () => {
 		percentiles: [50],
 	});
 	expect(table.cells).toStrictEqual([
-		["No.", "Name", "foo", "foo.p50", "bar", "baz"],
-		["0", "case 1", 0.75, 1, 2048, "OOXX"],
+		["No.", "foo", "foo.p50", "bar", "baz"],
+		["0", 0.75, 1, 2048, "OOXX"],
 	]);
 });
 
@@ -123,8 +123,8 @@ it("should calculate ratio with previous", () => {
 		}],
 	}]);
 	expect(table.cells).toStrictEqual([
-		["No.", "Name", "time", "time.SD", "time.diff"],
-		["0", "foo", 0.75, 0.4330127018922193, "-86.36%"],
+		["No.", "time", "time.SD", "time.diff"],
+		["0", 0.75, 0.4330127018922193, "-86.36%"],
 	]);
 });
 

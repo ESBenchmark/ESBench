@@ -34,7 +34,7 @@ export interface SummaryTableOptions {
 	stdDev?: boolean;
 
 	/**
-	 * By default, variables (expect Name) with only one value are not shown.
+	 * By default, variables with only one value are not shown.
 	 * Set to true to show all variables.
 	 */
 	showSingle?: boolean;
@@ -454,7 +454,7 @@ export class SummaryTable {
 
 		const columnDefs: ColumnFactory[] = [new RowNumberColumn()];
 		for (const [p, v] of summary.vars.entries()) {
-			if (options.showSingle || v.size > 1 || p === "Name") {
+			if (options.showSingle || v.size > 1) {
 				columnDefs.push(new VariableColumn(p));
 			}
 		}
