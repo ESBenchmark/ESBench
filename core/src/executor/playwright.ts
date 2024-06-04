@@ -3,13 +3,14 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { tmpdir } from "os";
+import { env, execArgv } from "process";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { detectTypeScriptCompiler } from "ts-directly";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
-// Playwright doesn't work well on about:blank, so we use localhost.
+// Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
@@ -55,18 +56,31 @@ const client: any = new AsyncFunction("args", `\
 	return loader.default(_ESBenchChannel, args.files, args.pattern);
 `);
 
+function hasFlag(flag: string) {
+	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
+}
+
+function needTransform(specifier: string) {
+	return specifier === "/index.js"
+		|| specifier.startsWith("/@fs/")
+		&& /\.[cm]?[jt]sx?$/.test(specifier);
+}
+
 let compileTS;
 
 async function loadModule(specifier: string) {
 	let code = readFileSync(specifier, "utf8");
 
-	if (/\.tsx?$/.test(specifier)) {
+	if (/tsx?$/.test(specifier)) {
 		compileTS ??= await detectTypeScriptCompiler();
 		code = await compileTS(code, specifier, true);
 	}
+	return transformImports(code, specifier);
+}
 
-	const importer = pathToFileURL(specifier).toString();
-	const [imports] = importParser.parse(code, specifier);
+function transformImports(code: string, path: string) {
+	const importer = pathToFileURL(path).toString();
+	const [imports] = importParser.parse(code);
 
 	for (const { n, t, s, e } of imports.toReversed()) {
 		if (!n) {
@@ -77,11 +91,8 @@ async function loadModule(specifier: string) {
 		path = fileURLToPath(path);
 		path = `/@fs/${path.replaceAll("\\", "/")}`;
 
-		if (t === 2) {
-			code = code.slice(0, s + 1) + path + code.slice(e - 1);
-		} else {
-			code = code.slice(0, s) + path + code.slice(e);
-		}
+		const trim = t === 2 ? 1 : 0;
+		code = code.slice(0, s + trim) + path + code.slice(e - trim);
 	}
 	return code;
 }
@@ -133,7 +144,9 @@ export class PlaywrightExecutor implements Executor {
 	async initialize(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
-		const resolveEnabled = process.execArgv.includes("--experimental-import-meta-resolve");
+
+		// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
+		const resolveEnabled = hasFlag("--experimental-import-meta-resolve");
 
 		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
 			if ("e" in message) {
@@ -146,25 +159,24 @@ export class PlaywrightExecutor implements Executor {
 			if (path === "/") {
 				return route.fulfill(pageHTML);
 			}
-			if (resolveEnabled && (path === "/index.js" || path.startsWith("/@fs/"))) {
-				try {
-					const body = path === "/index.js"
-						? await loadModule(join(root, path))
-						: await loadModule(path.slice(5));
+			try {
+				if (resolveEnabled && needTransform(path)) {
+					const file = path === "/index.js"
+						? join(root, path) : path.slice(5);
 
 					return route.fulfill({
-						body,
+						body: await loadModule(file),
 						contentType: "text/javascript",
 					});
-				} catch (e) {
-					if (e.code !== "ENOENT") {
-						throw e;
-					}
-					return route.fulfill({ status: 404 });
+				} else {
+					return route.fulfill({ path: join(root, path) });
 				}
+			} catch (e) {
+				if (e.code !== "ENOENT") {
+					throw e;
+				}
+				return route.fulfill({ status: 404 });
 			}
-			return route.fulfill({ path: join(root, path) })
-				.catch(() => route.fulfill({ status: 404 }));
 		});
 
 		await page.goto(url);
