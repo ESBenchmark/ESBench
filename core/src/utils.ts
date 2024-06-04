@@ -1,5 +1,6 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
+import { relative } from "path";
 
 export const kWorkingParams = Symbol();
 
@@ -80,6 +81,12 @@ export function resolveRE(pattern?: string | RegExp) {
 		return RE_ANY;
 	}
 	return pattern instanceof RegExp ? pattern : new RegExp(pattern);
+}
+
+export function toSpecifier(path: string, parent: string) {
+	path = relative(parent, path);
+	path = path.replaceAll("\\", "/");
+	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
 export class SharedModeFilter {

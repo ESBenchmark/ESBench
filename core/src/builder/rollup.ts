@@ -2,22 +2,10 @@ import type { RollupOptions } from "rollup";
 import type { InlineConfig, Plugin } from "vite";
 import { isBuiltin } from "module";
 import { resolve } from "path";
+import { simpleLoader } from "./default.js";
 import { Builder } from "../host/toolchain.js";
 
 const entryId = "./ESBench-index.js";
-
-const template = `\
-import { runAndSend } from "esbench";
-
-const suites = {__IMPORTS__\n};
-
-function doImport(file) {
-	return suites[file]();
-}
-
-export default function (channel, files, name) {
-	return runAndSend(channel, doImport, files, name);
-}`;
 
 // https://github.com/vitejs/vite/blob/bb79c9b653eeab366dccc855713369aea9f90d8f/packages/vite/src/node/utils.ts#L99
 function external(id: string) {
@@ -36,11 +24,7 @@ function entryPlugin(files: string[]): Plugin {
 			if (id !== entryId) {
 				return;
 			}
-			let imports = "";
-			for (const file of files) {
-				imports += `\n\t"${file}": () => import("${file}"),`;
-			}
-			return template.replace("__IMPORTS__", imports);
+			return simpleLoader(files);
 		},
 	};
 }

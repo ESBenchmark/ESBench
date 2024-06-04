@@ -8,7 +8,7 @@ import picomatch from "picomatch";
 import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
 import { HostLogger } from "./logger.js";
-import { resolveRE, SharedModeFilter } from "../utils.js";
+import { resolveRE, SharedModeFilter, toSpecifier } from "../utils.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -171,20 +171,14 @@ export default class JobGenerator {
 			.filter(executor => executorRE.test(executor.name))
 			.map(this.unwrap.bind(this, "execute"));
 
-		function normalize(pattern: string) {
-			let p = relative(workingDir, pattern);
-			p = p.replaceAll("\\", "/");
-			return /\.\.?\//.test(p) ? p : "./" + p;
-		}
-
 		// Merge include & exclude patterns into one array.
 		// Ensure glob patterns is relative and starts with ./ or ../
 		const dotGlobs: string[] = [];
 		for (const pattern of exclude) {
-			dotGlobs.push("!" + normalize(pattern));
+			dotGlobs.push("!" + toSpecifier(pattern, workingDir));
 		}
 		for (const pattern of include) {
-			dotGlobs.push(normalize(pattern));
+			dotGlobs.push(toSpecifier(pattern, workingDir));
 		}
 
 		for (const builder of builders) {
