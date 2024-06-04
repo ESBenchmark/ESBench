@@ -92,6 +92,10 @@ export default defineConfig({
 });
 ```
 
+::: tip
+`PlaywrightExecutor` and `WebextExecutor` can handle TS files because ESBench intercepts their import requests.
+:::
+
 ## Customize Loaders
 
 If you prefer other TypeScript loaders (e.g. [ts-node](https://github.com/TypeStrong/ts-node) or [tsx](https://github.com/privatenumber/tsx)), you can disable ESBench's loader with `--no-loader` CLI argument:

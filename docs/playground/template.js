@@ -1,5 +1,4 @@
 export default {
-	name: "New Benchmark Suite",
 	timing: {
 		// Show the number of calls over a period of time rather than the time of one call.
 		// throughput: "s",

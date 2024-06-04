@@ -4,27 +4,23 @@ ESBench is a cross runtime benchmark tool, which means you can run your suite on
 
 ## Run In Browsers
 
-Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
+Benefit from the plug-in architecture, ESBench can use executor to customize how to run the code. Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
 
-First install playwright and a builder (Vite). 
+First install playwright:
 
 ```shell
-pnpm add -D playwright vite
+pnpm add -D playwright
 ```
 
-> [!INFO]
-> The builder is needed because browser and Node have a different import resolving algorithm, and ESBench does not handle that, so suites need to be built to transform imports.
-
-Then add builder & executors to config:
+Then add executors to config:
 
 ::: code-group
 ```javascript [esbench.config.js]
-import { defineConfig, PlaywrightExecutor, ViteBuilder } from "esbench/host";
+import { defineConfig, PlaywrightExecutor } from "esbench/host";
 import { chromium, firefox, webkit } from "playwright";
 
 export default defineConfig({
 	toolchains: [{
-		builders: [new ViteBuilder()],
 		executors: [
 			new PlaywrightExecutor(firefox, { headless: false }),
 			new PlaywrightExecutor(webkit, { headless: false }),
@@ -59,7 +55,27 @@ export default defineSuite(scene => {
 ```
 :::
 
-Run `esbench` pop up the browser window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config makes browsers run in background.
+Because of browser and Node have a different import resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
+
+* Add flag `--experimental-import-meta-resolve` to enable ESBench builtin transformer.
+* Use a builder, see [the next section](./toolchains#builder).
+
+::: code-group
+```shell [Windows]
+set NODE_OPTIONS=--experimental-import-meta-resolve && esbench
+```
+```shell [Linux]
+NODE_OPTIONS=--experimental-import-meta-resolve && esbench
+```
+:::
+
+::: warning
+Import transformation is only works for string literals, using `import(someVar)` will cause a module not found error.
+
+**Importing TypeScript files is supported**, but importing assets are outside of the scope for ESBench, which needs a builder.
+:::
+
+During execution, the browser pops up window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config makes browsers run in background.
 
 The results reveal the performance differences between browsers:
 
@@ -76,6 +92,30 @@ The results reveal the performance differences between browsers:
 |   7 |       For-of | chromium |   542.60 ns |  6.00 ns |
 |   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
 ```
+
+## Builder
+
+ESBench allows you to add a build step for suites, it is useful when:
+
+* The code must be built before it can be run, e.g. contains `import "style.css"`.
+* You want to know the performance of the built code.
+
+```javascript
+import { defineConfig, ViteBuilder, PlaywrightExecutor } from "esbench/host";
+import { chromium } from "playwright";
+
+export default defineConfig({
+	toolchains: [{
+		// Build suites with Vite, requires `vite` package installed.
+		builders: [new ViteBuilder()],
+        
+        // Will run build output of ViteBuilder, not the source files.
+		executors: [new PlaywrightExecutor(chromium)],
+	}],
+});
+```
+
+Then you can just run `esbench` without flags, as imports are already transformed by the builder. 
 
 ## Builtin Tools
 

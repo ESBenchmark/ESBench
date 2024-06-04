@@ -27,22 +27,23 @@ export default defineConfig({
 		rawReporter(),
 	],
 	toolchains: [{
-		include: [
-			"./custom-profiler/*.[jt]s",
-			"./self/*.[jt]s",
-			"./node/*.[jt]s",
-		],
+		// The micromatch patterns ESBench used to glob suite files.
+		include: ["./{self,node,custom-profiler}/*.[jt]s"],
 	}, {
 		include: ["./es/*.js"],
 
-		// Build is required for browserExecutors.
+		/*
+		 * To run suites with `browserExecutors`, uncomment the next line
+		 * or add `--experimental-import-meta-resolve` to Node options.
+		 */
 		// builders: [viteBuilder],
 
 		executors: [
+			// Run suites directly in the context, it's also the default value.
+			inProcessExecutor,
+
 			// Measure performance of suites on browsers.
 			// ...browserExecutors,
-
-			inProcessExecutor,
 
 			// More JS runtimes, you need install them manually.
 			// new ProcessExecutor("bun"),
