@@ -1,9 +1,10 @@
 import type { BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { pathToFileURL } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { tmpdir } from "os";
 import { AsyncFunction } from "@kaciras/utilities/node";
+import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -52,6 +53,31 @@ const client: any = new AsyncFunction("args", `\
 	const loader = await import("./index.js");
 	return loader.default(_ESBenchChannel, args.files, args.pattern);
 `);
+
+async function loadModule(specifier: string) {
+	let code = readFileSync(specifier, "utf8");
+
+	const importer = pathToFileURL(specifier).toString();
+	await importParser.init;
+	const [imports] = importParser.parse(code, specifier);
+
+	for (const { n, t, s, e } of imports.toReversed()) {
+		if (!n) {
+			continue;
+		}
+		// Require `--experimental-import-meta-resolve`
+		let path = import.meta.resolve(n, importer);
+		path = fileURLToPath(path);
+		path = `/@fs/${path.replaceAll("\\", "/")}`;
+
+		if (t === 2) {
+			code = code.slice(0, s + 1) + path + code.slice(e - 1);
+		} else {
+			code = code.slice(0, s) + path + code.slice(e);
+		}
+	}
+	return code;
+}
 
 /**
  * Run suites on browser with Playwright driver.
@@ -106,10 +132,27 @@ export class PlaywrightExecutor implements Executor {
 			}
 			dispatch(message);
 		});
-		await page.route(origin + "/**", (route, request) => {
+		await page.route(origin + "/**", async (route, request) => {
 			const path = decodeURIComponent(request.url().slice(origin.length));
 			if (path === "/") {
 				return route.fulfill(pageHTML);
+			}
+			if (path === "/index.js" || path.startsWith("/@fs/")) {
+				try {
+					const body = path === "/index.js"
+						? await loadModule(join(root, path))
+						: await loadModule(path.slice(5));
+
+					return route.fulfill({
+						body,
+						contentType: "text/javascript",
+					});
+				} catch (e) {
+					if (e.code !== "ENOENT") {
+						throw e;
+					}
+					return route.fulfill({ status: 404 });
+				}
 			}
 			return route.fulfill({ path: join(root, path) })
 				.catch(() => route.fulfill({ status: 404 }));
