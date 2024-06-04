@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { tmpdir } from "os";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
+import { detectTypeScriptCompiler } from "ts-directly";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -54,8 +55,15 @@ const client: any = new AsyncFunction("args", `\
 	return loader.default(_ESBenchChannel, args.files, args.pattern);
 `);
 
+let compileTS;
+
 async function loadModule(specifier: string) {
 	let code = readFileSync(specifier, "utf8");
+
+	if (/\.tsx?$/.test(specifier)) {
+		compileTS ??= await detectTypeScriptCompiler();
+		code = await compileTS(code, specifier, true);
+	}
 
 	const importer = pathToFileURL(specifier).toString();
 	await importParser.init;
