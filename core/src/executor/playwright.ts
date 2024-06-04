@@ -66,7 +66,6 @@ async function loadModule(specifier: string) {
 	}
 
 	const importer = pathToFileURL(specifier).toString();
-	await importParser.init;
 	const [imports] = importParser.parse(code, specifier);
 
 	for (const { n, t, s, e } of imports.toReversed()) {
@@ -122,6 +121,7 @@ export class PlaywrightExecutor implements Executor {
 
 	async start() {
 		const browser = await this.type.launch(this.options);
+		await importParser.init;
 		this.context = await browser.newContext();
 	}
 
@@ -133,6 +133,7 @@ export class PlaywrightExecutor implements Executor {
 	async initialize(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
+		const resolveEnabled = process.execArgv.includes("--experimental-import-meta-resolve");
 
 		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
 			if ("e" in message) {
@@ -145,7 +146,7 @@ export class PlaywrightExecutor implements Executor {
 			if (path === "/") {
 				return route.fulfill(pageHTML);
 			}
-			if (path === "/index.js" || path.startsWith("/@fs/")) {
+			if (resolveEnabled && (path === "/index.js" || path.startsWith("/@fs/"))) {
 				try {
 					const body = path === "/index.js"
 						? await loadModule(join(root, path))
