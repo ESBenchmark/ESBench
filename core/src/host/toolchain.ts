@@ -8,7 +8,7 @@ import picomatch from "picomatch";
 import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
 import { HostLogger } from "./logger.js";
-import { resolveRE, SharedModeFilter, toSpecifier } from "../utils.js";
+import { resolveRE, SharedModeFilter } from "../utils.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -141,6 +141,12 @@ export interface Job {
 	executorName: string;
 	executor: Executor;
 	builds: BuildResult[];
+}
+
+export function toSpecifier(path: string, parent: string) {
+	path = relative(parent, path);
+	path = path.replaceAll("\\", "/");
+	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
 export default class JobGenerator {
