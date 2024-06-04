@@ -15,10 +15,10 @@ const program = yargs(hideBin(argv))
 			type: "string",
 			description: "Use specified config file",
 		},
-		noLoader: {
+		loader: {
 			type: "boolean",
-			description: "Disable builtin TypeScript loader",
-			default: false,
+			description: "Enable builtin TypeScript loader hooks",
+			default: true,
 		},
 		files: {
 			type: "string",
@@ -28,7 +28,7 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, files } = args;
-		if (!args.noLoader) {
+		if (args.loader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		const cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
@@ -39,10 +39,10 @@ const program = yargs(hideBin(argv))
 			type: "string",
 			description: "Use specified config file",
 		},
-		noLoader: {
+		loader: {
 			type: "boolean",
-			description: "Disable builtin TypeScript loader",
-			default: false,
+			description: "Enable builtin TypeScript loader hooks",
+			default: true,
 		},
 		logLevel: {
 			type: "string",
@@ -70,7 +70,7 @@ const program = yargs(hideBin(argv))
 		},
 	}, async args => {
 		const { config, logLevel, ...filter } = args;
-		if (!args.noLoader) {
+		if (args.loader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		let cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
