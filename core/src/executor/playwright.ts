@@ -168,8 +168,10 @@ export class PlaywrightExecutor implements Executor {
 						body: await loadModule(file),
 						contentType: "text/javascript",
 					});
+				} else if (path.startsWith("/@fs/")) {
+					return await route.fulfill({ path: path.slice(5) });
 				} else {
-					return route.fulfill({ path: join(root, path) });
+					return await route.fulfill({ path: join(root, path) });
 				}
 			} catch (e) {
 				if (e.code !== "ENOENT") {

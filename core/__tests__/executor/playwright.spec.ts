@@ -14,7 +14,7 @@ it.each([
 });
 
 describe("PlaywrightExecutor", () => {
-	const execute = executorTester(new PlaywrightExecutor(firefox));
+	const execute = executorTester(new PlaywrightExecutor(chromium));
 
 	it("should work", async () => {
 		const dispatch = await execute({
@@ -51,6 +51,14 @@ describe("PlaywrightExecutor", () => {
 		});
 		const [result] = dispatch.mock.calls[0][0] as RunSuiteResult[];
 		expect(result.notes[0].text).toBe("Status: 404");
+	});
+
+	it("should support import JSON modules", async () => {
+		const dispatch = await execute({
+			files: ["./foo.js"],
+			root: "__tests__/fixtures/import-assertion",
+		});
+		expect(dispatch.mock.calls[0][0]).toStrictEqual([{ hello: "world" }]);
 	});
 });
 
