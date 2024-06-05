@@ -79,7 +79,7 @@ async function loadModule(specifier: string) {
 }
 
 function transformImports(code: string, path: string) {
-	const importer = pathToFileURL(path).toString();
+	const importer = pathToFileURL(path);
 	const [imports] = importParser.parse(code);
 
 	for (const { n, t, s, e } of imports.toReversed()) {
@@ -161,6 +161,7 @@ export class PlaywrightExecutor implements Executor {
 			}
 			try {
 				if (resolveEnabled && needTransform(path)) {
+					// Transformed JS/TS module import
 					const file = path === "/index.js"
 						? join(root, path) : path.slice(5);
 
@@ -169,8 +170,10 @@ export class PlaywrightExecutor implements Executor {
 						contentType: "text/javascript",
 					});
 				} else if (path.startsWith("/@fs/")) {
+					// Transformed asset import
 					return await route.fulfill({ path: path.slice(5) });
 				} else {
+					// Non-import request or resolving disabled.
 					return await route.fulfill({ path: join(root, path) });
 				}
 			} catch (e) {

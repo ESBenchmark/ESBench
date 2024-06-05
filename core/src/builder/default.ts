@@ -17,8 +17,10 @@ export default function (post, files, pattern) {
 /**
  * Generate entry code for builder, use dynamic imports for files.
  *
+ * Each file create an import with string literal so that it can be statically analyzed.
+ *
  * @param files List of modules to add to the build.
- * @param parent Folder of the importer, use empty string for CWD.
+ * @param parent Folder of the importer, default is CWD.
  */
 export function simpleLoader(files: string[], parent = "") {
 	let imports = "";

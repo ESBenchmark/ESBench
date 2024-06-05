@@ -11,7 +11,7 @@ type ToolConfig<T> = Nameable<T> | undefined | null | false;
 
 export interface ToolchainOptions {
 	/**
-	 * The micromatch glob patterns ESBench uses to detect suite files.
+	 * The micromatch patterns ESBench uses to glob suite files.
 	 *
 	 * @default ["./benchmark/**\/*.[jt]s?(x)"]
 	 */

@@ -47,7 +47,6 @@ function indexOf<T>(iter: Iterable<T>, v: T) {
 }
 
 export class Summary {
-
 	/**
 	 * All variable names and each of their possible values.
 	 */

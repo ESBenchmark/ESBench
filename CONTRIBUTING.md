@@ -14,8 +14,21 @@ A build step is required before running examples and tests:
 pnpm --filter ./core build
 ```
 
-If you're going to use `htmlReporter`, you need to build it first to generate the single file HTML:
+If you're going to use `htmlReporter`, you need to build the HTML template first:
 
 ```shell
 pnpm --filter ./reporter-html build
 ```
+
+## Folder Structure
+
+* core: The package `esbench`
+  * Files in `src/` (not includes its subfolder) is used to run suite and parse results, they should be compatibility with browsers.
+  * Subfolders of `src/` are modules of the entry point `esbench/host` and the `esbench` CLI.
+
+* docs: Source code of https://esbench.vercel.app
+
+* example: Contains example codes.
+
+* reporter-html: Source of the HTML page used by playground, and run its `build` script will generate the HTML template file for `htmlReporter`. 
+

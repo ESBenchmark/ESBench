@@ -71,7 +71,7 @@ export class RollupBuilder implements Builder {
 	async build(dir: string, files: string[]) {
 		const { rollup } = await import("rollup");
 
-		let plugins = (await this.config.plugins) || [];
+		let { plugins = [] } = this.config;
 		if (!Array.isArray(plugins)) {
 			plugins = [plugins];
 		}

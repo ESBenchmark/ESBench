@@ -103,7 +103,6 @@ export interface Profiler {
 }
 
 export class ProfilingContext {
-
 	/**
 	 * Result for each case in each scene.
 	 */
