@@ -2,7 +2,9 @@ import { mkdtempSync, readFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { pathToFileURL } from "url";
+import { NormalizedInputOptions } from "rollup";
 import { expect, it, vi } from "vitest";
+import { ResolvedConfig } from "vite";
 import { RollupBuilder, ViteBuilder } from "../../src/builder/rollup.ts";
 import { Builder } from "../../src/host/index.ts";
 
@@ -35,7 +37,41 @@ it("should generate loader entry with Rollup", () => {
 	return testBundle(new RollupBuilder());
 });
 
+it("should merge config in Rollup", async () => {
+	let options!: NormalizedInputOptions;
+
+	await testBundle(new RollupBuilder({
+		external: undefined,
+		input: "foo.js",
+		plugins: {
+			name: "test",
+			buildStart: arg0 => { options = arg0; },
+		},
+	}));
+
+	expect(options.input).not.toBe("foo.js");
+	expect(options.external("fs", "x.js", true)).toBe(false);
+});
+
 it("should generate loader entry with Vite", async () => {
 	const [code] = await testBundle(new ViteBuilder());
 	expect(code).not.toContain("__vitePreload");
+});
+
+it("should merge config in Vite", async () => {
+	let options!: ResolvedConfig;
+
+	await testBundle(new ViteBuilder({
+		build: {
+			rollupOptions: {
+				input: "foo.js",
+			},
+		},
+		plugins: [{
+			name: "test",
+			config: arg0 => { options = arg0 as any; },
+		}],
+	}));
+	expect(options.configFile).toBe(false);
+	expect(options.build.rollupOptions.input).not.toBe("foo.js");
 });

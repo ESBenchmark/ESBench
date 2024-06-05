@@ -12,7 +12,7 @@ const file = join(directory, "report.txt");
 const report = textReporter({ console: false, file });
 const logger = createLogger("off");
 
-it("should works", async () => {
+it("should write to text file without color", async () => {
 	await report({ perf: [resultStub] }, {}, logger);
 
 	const output = readFileSync(file, "utf8");

@@ -1,5 +1,4 @@
 import nodeModule from "module";
-import { argv } from "process";
 import { importCWD } from "@kaciras/utilities/node";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -9,7 +8,7 @@ const DEFAULT_CONFIG_FILE = "esbench.config.js";
 
 process.title = "node (esbench)";
 
-const program = yargs(hideBin(argv))
+const program = yargs(hideBin(process.argv))
 	.command("report <files...>", "Generate report from result files", {
 		config: {
 			type: "string",

@@ -163,6 +163,37 @@ it("should add row number to notes if it associated with a case", () => {
 	expect(table.hints).toStrictEqual(["[No.0] foo: Note text"]);
 });
 
+it("should remove outliers", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		scenes: [{
+			foo: { time: [0, 10, 11, 12, 13, 99] },
+		}],
+	}]);
+	expect(table.cells).toStrictEqual([
+		["No.", "time", "time.SD"],
+		["0", 11.5, 1.118033988749895],
+	]);
+	expect(table.hints).toStrictEqual(["[No.0] foo: 2 outliers were removed."]);
+});
+
+it("should warn if the value of baseline does not in the table", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		baseline: {
+			type: "Name",
+			value: "XX",
+		},
+		scenes: [{
+			A: { time: [4] },
+			B: { time: [8] },
+			C: { time: [1] },
+		}],
+	}]);
+	expect(table.cells[0]).toHaveLength(4);
+	expect(table.warnings).toStrictEqual(["Baseline { Name: XX } does not in the results."]);
+});
+
 it("should format undefined values in the table", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
