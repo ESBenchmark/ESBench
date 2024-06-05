@@ -10,8 +10,6 @@ interface Iterator {
 	iterate: (count: number) => Awaitable<number>;
 }
 
-const MIN_ITERATIONS = 4;
-
 export function unroll(factor: number, isAsync: boolean) {
 	const [call, FunctionType] = isAsync
 		? ["await f()", AsyncFunction]
@@ -151,14 +149,14 @@ export class ExecutionTimeMeasurement {
 			evaluateOverhead: options.evaluateOverhead !== false,
 		};
 
-		if (normalized.unrollFactor < 1) {
-			throw new Error("The unrollFactor must be at least 1");
-		}
-		if (normalized.samples <= 0) {
+		const { unrollFactor, iterations, samples } = normalized;
+		if (samples <= 0) {
 			throw new Error("The number of samples must be at least 1");
 		}
+		if (unrollFactor < 1) {
+			throw new Error("The unrollFactor must be at least 1");
+		}
 
-		const { unrollFactor, iterations } = normalized;
 		if (typeof iterations === "number") {
 			if (iterations <= 0) {
 				throw new Error("The number of iterations cannot be 0 or negative");
@@ -175,13 +173,16 @@ export class ExecutionTimeMeasurement {
 	async run() {
 		const { ctx, benchCase, options } = this;
 		const { samples, unrollFactor, evaluateOverhead } = options;
-		let { iterations } = options;
 
-		const iterator = createIterator(unrollFactor, benchCase);
+		let { iterations } = options;
+		let iterator: Iterator;
 
 		if (typeof iterations === "string") {
-			iterations = await this.estimate(iterator, iterations);
+			[iterations, iterator] = await this.estimate(iterations);
 			await ctx.info();
+		} else {
+			iterator = createIterator(unrollFactor, benchCase);
+			iterations /= iterator.calls;
 		}
 
 		const time = await this.measure("Actual", iterator, iterations);
@@ -231,34 +232,45 @@ export class ExecutionTimeMeasurement {
 		return this.measure("Overhead", iterate, iterations);
 	}
 
-	async estimate(iterator: Iterator, target: string) {
-		const { ctx } = this;
-		const { iterate, calls } = iterator;
+	async estimate(target: string) {
+		const { options: { unrollFactor }, benchCase } = this;
+
 		const targetMS = durationFmt.parse(target, "ms");
 		if (targetMS === 0) {
 			throw new Error("Iteration time cannot be 0");
 		}
 
-		let count = MIN_ITERATIONS;
+		let iterator = createIterator(1, benchCase);
+		let unrolled = false;
+		let count = 1;
 		let downCount = 0;
+
 		while (count < Number.MAX_SAFE_INTEGER) {
-			const time = await iterate(count);
-			await ctx.info(`Pilot: ${timeDetail(time, count * calls)}`);
+			const time = await iterator.iterate(count);
+			await this.ctx.info(`Pilot: ${timeDetail(time, count * iterator.calls)}`);
 
 			if (time === 0) {
-				count *= 2;
+				count *= 8;
 				continue; // Less than the precision, re-run with larger count.
 			}
 
 			const previous = count;
-			count = Math.round(count * targetMS / time);
-			count = Math.max(MIN_ITERATIONS, count);
+			count = Math.max(1, count * targetMS / time);
+
+			// Make a rough estimate before unrolling, avoid exceeding the target.
+			if (!unrolled && count > unrollFactor * 100) {
+				unrolled = true;
+				count = count / unrollFactor;
+				iterator = createIterator(unrollFactor, benchCase);
+			}
+
+			count = Math.round(count);
 
 			if (Math.abs(previous - count) <= 1) {
-				return previous;
+				return [previous, iterator] as const;
 			}
 			if (count < previous && ++downCount >= 3) {
-				return previous;
+				return [previous, iterator] as const;
 			}
 		}
 		throw new Error("Iteration time is too long and the fn runs too fast");

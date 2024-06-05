@@ -2,7 +2,7 @@ import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
-import { defineSuite, ProfilingContext, Scene } from "../src/index.ts";
+import { BenchCase, defineSuite, ProfilingContext, Scene } from "../src/index.ts";
 
 const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
 
@@ -84,30 +84,26 @@ it("should support specify number of samples", async () => {
 it("should support specify number of iterations", async () => {
 	const fn = vi.fn(spin);
 	const result = await measureTime({
-		iterations: 33,
-		unrollFactor: 1,
+		iterations: 16,
+		unrollFactor: 8,
 	}, {
 		setup: scene => scene.bench("Test", fn),
 	});
-	expect(fn).toHaveBeenCalledTimes(33);
+	expect(fn).toHaveBeenCalledTimes(16);
 	expect(result.scenes[0].Test.time).toHaveLength(1);
 });
 
 it("should estimate number of iterations", async () => {
 	const ctx = { info: noop } as any;
-	const measurement = new ExecutionTimeMeasurement(ctx, null as any, {} as any);
 
-	const iterator = {
-		calls: 1,
-		async iterate(count: number) {
-			const start = performance.now();
-			spin(count);
-			return performance.now() - start;
-		},
-	};
+	const fn = () => spin();
+	const scene = new Scene({});
+	const case_ = new BenchCase(scene, "Test", fn, false);
 
-	const iterations = await measurement.estimate(iterator, "100ms");
+	const measurement = new ExecutionTimeMeasurement(ctx, case_, {} as any);
+	const [iterations, iter] = await measurement.estimate("100ms");
 
+	expect(iter.calls).toBe(1);
 	expect(iterations).toBeLessThan(105);
 	expect(iterations).toBeGreaterThan(95);
 });
@@ -180,7 +176,7 @@ it("should measure time as duration", async () => {
 it("should measure time as throughput", async () => {
 	const result = await measureTime({
 		throughput: "s",
-		iterations: 32,
+		iterations: 512,
 	}, {
 		setup: scene => scene.bench("Test", spin),
 	});
