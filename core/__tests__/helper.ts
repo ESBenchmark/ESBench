@@ -1,11 +1,12 @@
 import { mkdirSync, rmSync } from "fs";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { afterAll, afterEach, beforeAll, beforeEach, Mock, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, Mock, vi } from "vitest";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
+import { BuildResult } from "../src/host/toolchain.ts";
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
@@ -63,12 +64,32 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 // Use shared folder may cause tests to fail randomly with parallel execution.
 const BUILD_OUT_DIR = ".esbench-test-temp";
 
+const logMessage = { level: "info", log: "log message" };
+const emptyResults = [{ paramDef: [], meta: {}, notes: [], scenes: [] }];
+const stubError = new Error("Stub Error");
+
+/**
+ * Utility design to run an Executor, it only calls `start` once to make tests faster.
+ * If there are multiple executors, each one should be wrapped with a `describe` block.
+ *
+ * @example
+ * const tester = executorTester(executor);
+ * it("should 1", () => tester.execute(...));
+ * it("should 2", () => tester.execute(...));
+ *
+ * describe("Executor 2", () => {
+ *     const tester = executorTester(executor2);
+ *     // Test cases...
+ * });
+ *
+ * @param executor The Executor instance to tested.
+ */
 export function executorTester(executor: Executor) {
 	useTempDirectory(BUILD_OUT_DIR);
 	beforeAll(() => executor.start?.() as any);
 	afterAll(() => executor.close?.() as any);
 
-	return async (build: any) => {
+	async function execute(build: Omit<BuildResult, "name">) {
 		const context = messageResolver(noop) as unknown as ExecuteOptions;
 		context.tempDir = BUILD_OUT_DIR;
 		context.pattern = RE_ANY.source;
@@ -80,14 +101,42 @@ export function executorTester(executor: Executor) {
 		await Promise.all([context.promise, w]);
 
 		return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
+	}
+
+	return {
+		execute,
+
+		successCase() {
+			return async () => {
+				const dispatch = await execute({
+					files: ["./foo.js"],
+					root: "__tests__/fixtures/success-suite",
+				});
+				const { calls } = dispatch.mock;
+				expect(calls).toHaveLength(2);
+				expect(calls[0][0]).toStrictEqual(logMessage);
+				expect(calls[1][0]).toStrictEqual(emptyResults);
+			};
+		},
+
+		insideError() {
+			return async () => {
+				const promise = execute({
+					files: ["./foo.js"],
+					root: "__tests__/fixtures/error-inside",
+				});
+				await expect(promise).rejects.toThrow(stubError);
+			};
+		},
+
+		outsideError(message = stubError.message) {
+			return async () => {
+				const promise = execute({
+					files: ["./foo.js"],
+					root: "__tests__/fixtures/error-outside",
+				});
+				return expect(promise).rejects.toThrow(message);
+			};
+		},
 	};
 }
-
-export const executorFixtures = {
-
-	empty: [{ paramDef: [], meta: {}, notes: [], scenes: [] }],
-
-	log: { level: "info", log: "log message" },
-
-	error: new Error("Stub Error"),
-};

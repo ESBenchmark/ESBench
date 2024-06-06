@@ -1,33 +1,11 @@
-import { expect, it } from "vitest";
-import { executorFixtures, executorTester } from "../helper.ts";
+import { it } from "vitest";
+import { executorTester } from "../helper.ts";
 import inProcess from "../../src/executor/in-process.ts";
 
-const execute = executorTester(inProcess);
+const tester = executorTester(inProcess);
 
-it("should transfer log messages", async () => {
-	const dispatch = await execute({
-		files: ["./foo.js"],
-		root: "__tests__/fixtures/success-suite",
-	});
+it("should transfer messages", tester.successCase());
 
-	const { calls } = dispatch.mock;
-	expect(calls).toHaveLength(2);
-	expect(calls[0][0]).toStrictEqual(executorFixtures.log);
-	expect(calls[1][0]).toStrictEqual(executorFixtures.empty);
-});
+it("should forward errors from runAndSend()", tester.insideError());
 
-it("should forward errors from runAndSend()", async () => {
-	const promise = execute({
-		files: ["./foo.js"],
-		root: "__tests__/fixtures/error-inside",
-	});
-	await expect(promise).rejects.toThrow(executorFixtures.error);
-});
-
-it("should throw error if exception occurred outside runAndSend()", () => {
-	const promise = execute({
-		files: ["./foo.js"],
-		root: "__tests__/fixtures/error-outside",
-	});
-	return expect(promise).rejects.toThrow("Stub Error");
-});
+it("should forward top level errors", tester.outsideError());
