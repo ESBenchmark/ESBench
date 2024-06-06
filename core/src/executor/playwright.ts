@@ -1,4 +1,4 @@
-import type { BrowserContext, BrowserType, LaunchOptions, Page } from "playwright-core";
+import type { BrowserContext, BrowserType, LaunchOptions, Page, Route } from "playwright-core";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -53,12 +53,15 @@ const manifest = {
 // Define the function with strings to bypass Vitest transformation.
 const client: any = new AsyncFunction("args", `\
 	const loader = await import("./index.js");
-	return loader.default(_ESBenchChannel, args.files, args.pattern);
+	return loader.default(_ESBenchPost, args.files, args.pattern);
 `);
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
 }
+
+// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
+const resolveEnabled = hasFlag("--experimental-import-meta-resolve");
 
 function needTransform(specifier: string) {
 	return specifier === "/index.js"
@@ -141,47 +144,48 @@ export class PlaywrightExecutor implements Executor {
 		await this.context.browser()?.close();
 	}
 
+	async serve(root: string, path: string, route: Route) {
+		if (path === "/") {
+			return route.fulfill(pageHTML);
+		}
+		try {
+			if (resolveEnabled && needTransform(path)) {
+				// Transformed JS/TS module import
+				const file = path === "/index.js"
+					? join(root, path) : path.slice(5);
+
+				return route.fulfill({
+					body: await loadModule(file),
+					contentType: "text/javascript",
+				});
+			} else if (path.startsWith("/@fs/")) {
+				// Transformed asset import
+				return await route.fulfill({ path: path.slice(5) });
+			} else {
+				// Non-import request or resolving disabled.
+				return await route.fulfill({ path: join(root, path) });
+			}
+		} catch (e) {
+			if (e.code !== "ENOENT") {
+				throw e;
+			}
+			return route.fulfill({ status: 404 });
+		}
+	}
+
 	async initialize(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
 
-		// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
-		const resolveEnabled = hasFlag("--experimental-import-meta-resolve");
-
-		await page.exposeFunction("_ESBenchChannel", (message: ClientMessage) => {
+		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
 			if ("e" in message) {
 				this.fixStacktrace(message.e, origin, root);
 			}
 			dispatch(message);
 		});
-		await page.route(origin + "/**", async (route, request) => {
-			const path = decodeURIComponent(request.url().slice(origin.length));
-			if (path === "/") {
-				return route.fulfill(pageHTML);
-			}
-			try {
-				if (resolveEnabled && needTransform(path)) {
-					// Transformed JS/TS module import
-					const file = path === "/index.js"
-						? join(root, path) : path.slice(5);
-
-					return route.fulfill({
-						body: await loadModule(file),
-						contentType: "text/javascript",
-					});
-				} else if (path.startsWith("/@fs/")) {
-					// Transformed asset import
-					return await route.fulfill({ path: path.slice(5) });
-				} else {
-					// Non-import request or resolving disabled.
-					return await route.fulfill({ path: join(root, path) });
-				}
-			} catch (e) {
-				if (e.code !== "ENOENT") {
-					throw e;
-				}
-				return route.fulfill({ status: 404 });
-			}
+		await page.route(origin + "/**", (route, request) => {
+			const path = request.url().slice(origin.length);
+			return this.serve(root, decodeURIComponent(path), route);
 		});
 
 		await page.goto(url);

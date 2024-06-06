@@ -45,10 +45,10 @@
 </template>
 
 <script setup lang="ts">
-import { SummaryTableOptions } from "esbench";
 import { computed } from "vue";
+import { PrintTableOptions } from "./ConsoleView.vue";
 
-const options = defineModel<SummaryTableOptions>({ required: true });
+const options = defineModel<PrintTableOptions>({ required: true });
 
 const removeOutliers = computed({
 	get: () => Boolean(options.value.outliers),

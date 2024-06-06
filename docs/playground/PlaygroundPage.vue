@@ -98,13 +98,13 @@ import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw } from "vue";
 import { useData } from "vitepress";
 import { transformBuffer } from "@kaciras/utilities/browser";
-import { FormatOptions, messageResolver, RunSuiteResult, SummaryTableOptions } from "esbench";
+import { messageResolver, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import suiteTemplate from "./template.js?raw";
 import demos from "./demo-suites.ts";
 import ReportView from "./ReportView.vue";
-import ConsoleView from "./ConsoleView.vue";
+import ConsoleView, { PrintTableOptions } from "./ConsoleView.vue";
 import TableDropdown from "./TableDropdown.vue";
 import { executeIFrame, executeWorker } from "./executor.ts";
 
@@ -119,7 +119,7 @@ const consoleView = shallowRef<InstanceType<typeof ConsoleView>>();
 const vpData = useData();
 
 const editorWidth = useLocalStorage("EW", "50%");
-const tableOptions = useLocalStorage<SummaryTableOptions & FormatOptions>("TableOptions", {
+const tableOptions = useLocalStorage<PrintTableOptions>("TableOptions", {
 	flexUnit: false,
 	stdDev: true,
 	outliers: "all",

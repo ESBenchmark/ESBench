@@ -26,30 +26,30 @@ export interface SummaryTableOptions {
 	 *
 	 * @example
 	 * textReporter({ stdDev: true })
-	 * | No. |         Name |          time |      time.SD |
-	 * | --: | -----------: | ------------: | -----------: |
-	 * |   0 |    For-index |       0.37 ns |      0.01 ns |
-	 * |   1 |       For-of |       6.26 ns |      2.88 ns |
+	 * | No. |      Name |    time | time.SD |
+	 * | --: | --------: | ------: | ------: |
+	 * |   0 | For-index | 0.37 ns | 0.01 ns |
+	 * |   1 |    For-of | 6.26 ns | 2.88 ns |
 	 */
 	stdDev?: boolean;
 
 	/**
 	 * By default, variables with only one value are not shown.
 	 * Set to true to show all variables.
+	 *
+	 * @default false
 	 */
 	showSingle?: boolean;
 
 	/**
 	 * Show percentiles columns in the report.
 	 *
-	 * To make this value more accurate, you can increase `samples` and decrease `iterations` in suite config.
-	 *
 	 * @example
 	 * textReporter({ percentiles: [75, 99] })
-	 * |   name |    size |      time |  time.p75 | time.p99 |
-	 * | -----: | ------: | --------: | --------: | -------: |
-	 * | object |    1000 | 938.45 ms | 992.03 ms |   1.08 s |
-	 * |    map |    1000 |    1.03 s |    1.07 s |    1.1 s |
+	 * | No. |   name |      time |  time.p75 | time.p99 |
+	 * | --: | -----: | --------: | --------: | -------: |
+	 * |   0 | object | 938.45 ms | 992.03 ms |   1.08 s |
+	 * |   1 |    map |    1.03 s |    1.07 s |    1.1 s |
 	 */
 	percentiles?: number[];
 

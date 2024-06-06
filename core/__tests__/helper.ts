@@ -61,6 +61,10 @@ export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 	return context.run().then(() => context);
 }
 
+function factory<T extends any[]>(f: (...args: T) => unknown) {
+	return (...args: T) => () => f(...args);
+}
+
 // Use shared folder may cause tests to fail randomly with parallel execution.
 const BUILD_OUT_DIR = ".esbench-test-temp";
 
@@ -106,37 +110,40 @@ export function executorTester(executor: Executor) {
 	return {
 		execute,
 
-		successCase() {
-			return async () => {
-				const dispatch = await execute({
-					files: ["./foo.js"],
-					root: "__tests__/fixtures/success-suite",
-				});
-				const { calls } = dispatch.mock;
-				expect(calls).toHaveLength(2);
-				expect(calls[0][0]).toStrictEqual(logMessage);
-				expect(calls[1][0]).toStrictEqual(emptyResults);
-			};
-		},
+		/*
+		 * Shared test cases, they should be passed for every executor.
+		 *
+		 * @example
+		 * it("should transfer messages", tester.successCase());
+		 * it("should forward errors from runAndSend()", tester.insideError());
+		 * it("should forward top level errors", tester.outsideError("message"));
+		 */
 
-		insideError() {
-			return async () => {
-				const promise = execute({
-					files: ["./foo.js"],
-					root: "__tests__/fixtures/error-inside",
-				});
-				await expect(promise).rejects.toThrow(stubError);
-			};
-		},
+		successCase: factory(async () => {
+			const dispatch = await execute({
+				files: ["./foo.js"],
+				root: "__tests__/fixtures/success-suite",
+			});
+			const { calls } = dispatch.mock;
+			expect(calls).toHaveLength(2);
+			expect(calls[0][0]).toStrictEqual(logMessage);
+			expect(calls[1][0]).toStrictEqual(emptyResults);
+		}),
 
-		outsideError(message = stubError.message) {
-			return async () => {
-				const promise = execute({
-					files: ["./foo.js"],
-					root: "__tests__/fixtures/error-outside",
-				});
-				return expect(promise).rejects.toThrow(message);
-			};
-		},
+		insideError: factory(() => {
+			const promise = execute({
+				files: ["./foo.js"],
+				root: "__tests__/fixtures/error-inside",
+			});
+			return expect(promise).rejects.toThrow(stubError);
+		}),
+
+		outsideError: factory((error = stubError.message) => {
+			const promise = execute({
+				files: ["./foo.js"],
+				root: "__tests__/fixtures/error-outside",
+			});
+			return expect(promise).rejects.toThrow(error);
+		}),
 	};
 }

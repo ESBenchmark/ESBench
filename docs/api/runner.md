@@ -12,11 +12,8 @@ The `esbench` package exports 2 entry points:
 import { defineSuite, runSuite, SummaryTable } from "esbench";
 
 const suite = defineSuite(scene => {
-	const template = Array.from({ length: 1000 }, () => Math.random());
-	let array = [];
-
-	scene.beforeIteration(() => array = template.slice());
-	scene.bench("builtin", () => array.sort((a, b) => a - b));
+	const values = Array.from({ length: 1000 }, () => Math.random());
+	scene.bench("reduce", () => values.reduce((v, s) => s + v));
 });
 
 const result = await runSuite(suite);

@@ -2,9 +2,13 @@ import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
-import { BenchCase, defineSuite, ProfilingContext, Scene } from "../src/index.ts";
+import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
 
 const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
+
+function newContext() {
+	return new ProfilingContext({ setup: noop }, [], { log: noop });
+}
 
 function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
 	const profiler = new TimeProfiler({
@@ -16,9 +20,13 @@ function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
 	return runProfilers([profiler], suite);
 }
 
+// Mock heavy overhead to make the test stable and fast.
 function mockZeroMeasurement(measurement: ExecutionTimeMeasurement) {
 	measurement.measure = function (name, iterator, count) {
 		if (name === "Overhead") {
+			return Promise.resolve([22, 22]);
+		}
+		if (name === "Actual") {
 			return Promise.resolve([1, 1]);
 		}
 		return ExecutionTimeMeasurement.prototype.measure.call(this, name, iterator, count);
@@ -42,7 +50,8 @@ it.each([
 	[{ unrollFactor: 0 }, "The unrollFactor must be at least 1"],
 	[{ samples: 0 }, "The number of samples must be at least 1"],
 	[{ iterations: 0 }, "The number of iterations cannot be 0 or negative"],
-	[{ iterations: "0m" }, "Iteration time cannot be 0"],
+	[{ iterations: "0m" }, "Iteration time must be > 0"],
+	[{ iterations: "-2s" }, "Iteration time must be > 0"],
 	[
 		{ unrollFactor: 2, iterations: 3 },
 		"iterations must be a multiple of unrollFactor",
@@ -82,7 +91,7 @@ it("should support specify number of samples", async () => {
 });
 
 it("should support specify number of iterations", async () => {
-	const fn = vi.fn(spin);
+	const fn = vi.fn();
 	const result = await measureTime({
 		iterations: 16,
 		unrollFactor: 8,
@@ -98,39 +107,28 @@ it.each([
 	[1, "100ms", 100, 1],
 	[42, "100ms", 2, 1],
 ])("should estimate iterations %#", async (s, t, i, c) => {
-	const ctx = { info: noop, warn: noop } as any;
-	const fn = () => spin(s);
 	const scene = new Scene({});
-	const case_ = new BenchCase(scene, "Test", fn, false);
+	const case_ = new BenchCase(scene, "Test", () => spin(s), false);
 
-	const measurement = new ExecutionTimeMeasurement(ctx, case_, {});
-	const [iterations, iter] = await measurement.estimate(t);
+	const etm = new ExecutionTimeMeasurement(newContext(), case_);
+	const [iterations, iter] = await etm.estimate(t);
 
 	expect(iter.calls).toBe(c);
 	expect(Math.round(iterations)).toBeLessThan(i * 1.05); // ±5%
 	expect(Math.round(iterations)).toBeGreaterThan(i * 0.95);
 });
 
-// we mock heavy overhead to make the test stable.
 it("should check zero measurement", async () => {
+	const ctx = newContext();
 	const scene = new Scene({});
 	scene.bench("Test", noop);
 
-	const suite = defineSuite({
-		setup: scene => scene.bench("Test", noop),
-	});
-	const ctx = new ProfilingContext(suite as any, [], { log: () => {} });
 	const measurement = new ExecutionTimeMeasurement(ctx, scene.cases[0], {
-		warmup: 0,
-		iterations: "10ms",
-		samples: 10,
-		unrollFactor: 16,
-		evaluateOverhead: true,
+		iterations: 1,
 	});
 	mockZeroMeasurement(measurement);
 
 	const time = await measurement.run();
-
 	expect(time).toStrictEqual([0]);
 	expect(ctx.notes[0].type).toBe("warn");
 	expect(ctx.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
@@ -170,9 +168,8 @@ it("should measure time as duration", async () => {
 		setup: scene => scene.bench("Test", spin),
 	});
 
-	expect(result.meta.time).toBeDefined();
-
 	const metrics = result.scenes[0].Test;
+	expect(result.meta.time).toBeDefined();
 	expect((metrics.time as number[])[0]).toBeCloseTo(1, 1);
 });
 

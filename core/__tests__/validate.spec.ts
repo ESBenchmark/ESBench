@@ -42,14 +42,9 @@ it("should validate the return value", () => {
 });
 
 it("should be able to access scene parameters in check()", async () => {
-	const checkedParams: unknown[] = [];
+	const check = vi.fn();
 
-	await runWithValidator({
-		check(value, params) {
-			expect(value).toBe(11);
-			checkedParams.push(params);
-		},
-	}, {
+	await runWithValidator({ check }, {
 		params: {
 			a: [false, true],
 		},
@@ -58,7 +53,8 @@ it("should be able to access scene parameters in check()", async () => {
 		},
 	});
 
-	expect(checkedParams).toStrictEqual([{ a: false }, { a: true }]);
+	expect(check).toHaveBeenNthCalledWith(1, 11, { a: false });
+	expect(check).toHaveBeenNthCalledWith(2, 11, { a: true });
 });
 
 it("should check return values are equal", () => {

@@ -48,7 +48,7 @@ const decompressProfiler: Profiler = {
 		}
 
 		// `ctx.info()` can write a log to the host.
-		ctx.info("Measuring decompress performance...");
+		ctx.info("\nMeasuring decompress performance...");
 
 		// Get the compressed data.
 		const zipped = await case_.invoke();

@@ -2,11 +2,12 @@ import { mkdtempSync, readFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { expect, it } from "vitest";
-import { resultStub } from "../helper.ts";
+import { resultStub, useTempDirectory } from "../helper.ts";
 import { createLogger } from "../../src/host/logger.ts";
 import { textReporter } from "../../src/host/index.ts";
 
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));
+useTempDirectory(directory);
 
 const file = join(directory, "report.txt");
 const report = textReporter({ console: false, file });

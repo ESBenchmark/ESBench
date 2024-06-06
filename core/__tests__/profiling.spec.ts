@@ -75,7 +75,7 @@ it("should filter workloads with pattern", async () => {
 	const bar = vi.fn();
 
 	const profiler: Profiler = {
-		onCase: (_, c) => {c.invoke();},
+		onCase: (_, c) => c.invoke(),
 	};
 	const suite: BenchmarkSuite = {
 		params: { param: [11, 22] },

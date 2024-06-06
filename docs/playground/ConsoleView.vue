@@ -61,7 +61,7 @@ const stainer = new Proxy<any>(stringLength, {
 		return escapeHTML(argArray[0]);
 	},
 	get(_, p: string) {
-		return (s: string) => `<span style="color: ${colors[p]}">${escapeHTML(s)}</span>`;
+		return (s: string) => `<span style="color:${colors[p]}">${escapeHTML(s)}</span>`;
 	},
 });
 </script>
@@ -70,7 +70,7 @@ const stainer = new Proxy<any>(stringLength, {
 import { SummaryTable, FormatOptions, RunSuiteResult, SummaryTableOptions } from "esbench";
 import { shallowRef } from "vue";
 
-type PrintTableOptions = FormatOptions & SummaryTableOptions;
+export type PrintTableOptions = FormatOptions & SummaryTableOptions;
 
 const consoleEl = shallowRef<HTMLElement>();
 

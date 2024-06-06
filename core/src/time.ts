@@ -244,8 +244,8 @@ export class ExecutionTimeMeasurement {
 		const { options: { unrollFactor }, benchCase } = this;
 
 		const targetMS = durationFmt.parse(target, "ms");
-		if (targetMS === 0) {
-			throw new Error("Iteration time cannot be 0");
+		if (targetMS <= 0) {
+			throw new Error("Iteration time must be > 0");
 		}
 
 		// Make a rough estimate before unrolling, avoid exceeding the target.
@@ -267,15 +267,16 @@ export class ExecutionTimeMeasurement {
 			const previous = count;
 			count = Math.max(1, count * targetMS / time);
 
+			// Unroll it after enough count to keep the time stable.
 			if (!unrolled && count > unrollFactor * 100) {
 				unrolled = true;
 				iterator = createIterator(unrollFactor, benchCase);
 			}
 
-			if (Math.abs(previous - count) < iterator.calls) {
-				return [previous, iterator] as const;
-			}
-			if (count < previous && ++downCount >= 3) {
+			if (
+				Math.abs(previous - count) < iterator.calls
+				|| count < previous && ++downCount >= 3
+			) {
 				return [previous, iterator] as const;
 			}
 		}
@@ -336,7 +337,7 @@ export class TimeProfiler implements Profiler {
 	}
 
 	async onStart(ctx: ProfilingContext) {
-		// @ts-ignore
+		// @ts-expect-error
 		if (globalThis.crossOriginIsolated === false) {
 			await ctx.note("warn", "Context is non-isolated, performance.now() may work in low-precision mode");
 		}
@@ -364,7 +365,7 @@ export class TimeProfiler implements Profiler {
 			metrics.time = time;
 		} else if (time.length > 1 || time[0] !== 0) {
 			const d = durationFmt.getFraction(throughput, "ms");
-			metrics.throughput = time.map(ms => Math.round(d / ms)).reverse();
+			metrics.throughput = time.map(ms => Math.round(d / ms));
 		}
 	}
 }
