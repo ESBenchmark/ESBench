@@ -82,7 +82,8 @@ async function loadModule(specifier: string) {
 }
 
 function transformImports(code: string, path: string) {
-	const importer = pathToFileURL(path);
+	// Currently `import.meta.resolve` does not work well with URL importer.
+	const importer = pathToFileURL(path).toString();
 	const [imports] = importParser.parse(code);
 
 	for (const { n, t, s, e } of imports.toReversed()) {
