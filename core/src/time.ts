@@ -77,7 +77,7 @@ function timeDetail(time: number, count: number) {
 
 export interface TimingOptions {
 	/**
-	 * How many target iterations should be performed.
+	 * How many target iterations should be performed. The value must >= 1.
 	 *
 	 * @default 10
 	 */
@@ -91,21 +91,28 @@ export interface TimingOptions {
 	warmup?: number;
 
 	/**
-	 * how many times the benchmark method will be invoked per one iteration of a generated loop.
+	 * Invocation count or time in a single sample.
 	 *
-	 * @default 16
-	 */
-	unrollFactor?: number;
-
-	/**
-	 * Invocation count or time in a single iteration.
+	 * If is a duration string, it used by Pilot stage to estimate the number of invocations per sample.
 	 *
-	 * If the value is a number it used as invocation count, must be a multiple of `unrollFactor`.
-	 * It is a duration string, it used by Pilot stage to estimate the number of invocations per iteration.
+	 * If the value is a number, it must be a multiple of `unrollFactor`, the load will call the given
+	 * number of times for each sample. It's better for benchmarks which doesn't have a steady state
+	 * and the performance distribution is tricky.
+	 *
+	 * If the value is less than the `unrollFactor`, `unrollFactor` will be forced to be the same.
 	 *
 	 * @default "1s"
 	 */
 	iterations?: number | string;
+
+	/**
+	 * How many times the benchmark method will be invoked per one iteration of a generated loop.
+	 *
+	 * It can be ignored if `iterations` is a duration and the workload takes long time.
+	 *
+	 * @default 16
+	 */
+	unrollFactor?: number;
 
 	/**
 	 * Specifies if the overhead should be evaluated (Idle runs) and it's average value
@@ -182,8 +189,9 @@ export class ExecutionTimeMeasurement {
 			await ctx.info();
 		} else {
 			iterator = createIterator(unrollFactor, benchCase);
-			iterations /= iterator.calls;
 		}
+
+		iterations = Math.round(iterations / iterator.calls);
 
 		const time = await this.measure("Actual", iterator, iterations);
 		if (evaluateOverhead && samples > 1) {
@@ -240,14 +248,16 @@ export class ExecutionTimeMeasurement {
 			throw new Error("Iteration time cannot be 0");
 		}
 
+		// Make a rough estimate before unrolling, avoid exceeding the target.
 		let iterator = createIterator(1, benchCase);
 		let unrolled = false;
 		let count = 1;
 		let downCount = 0;
 
 		while (count < Number.MAX_SAFE_INTEGER) {
-			const time = await iterator.iterate(count);
-			await this.ctx.info(`Pilot: ${timeDetail(time, count * iterator.calls)}`);
+			const n = Math.round(count / iterator.calls);
+			const time = await iterator.iterate(n);
+			await this.ctx.info(`Pilot: ${timeDetail(time, n)}`);
 
 			if (time === 0) {
 				count *= 8;
@@ -257,16 +267,12 @@ export class ExecutionTimeMeasurement {
 			const previous = count;
 			count = Math.max(1, count * targetMS / time);
 
-			// Make a rough estimate before unrolling, avoid exceeding the target.
 			if (!unrolled && count > unrollFactor * 100) {
 				unrolled = true;
-				count = count / unrollFactor;
 				iterator = createIterator(unrollFactor, benchCase);
 			}
 
-			count = Math.round(count);
-
-			if (Math.abs(previous - count) <= 1) {
+			if (Math.abs(previous - count) < iterator.calls) {
 				return [previous, iterator] as const;
 			}
 			if (count < previous && ++downCount >= 3) {

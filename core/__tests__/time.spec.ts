@@ -17,7 +17,7 @@ function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
 }
 
 function mockZeroMeasurement(measurement: ExecutionTimeMeasurement) {
-	measurement.measure = function (name, iterator, count)  {
+	measurement.measure = function (name, iterator, count) {
 		if (name === "Overhead") {
 			return Promise.resolve([1, 1]);
 		}
@@ -93,19 +93,22 @@ it("should support specify number of iterations", async () => {
 	expect(result.scenes[0].Test.time).toHaveLength(1);
 });
 
-it("should estimate number of iterations", async () => {
-	const ctx = { info: noop } as any;
-
-	const fn = () => spin();
+it.each([
+	[0.1, "165ms", 1650, 16],
+	[1, "100ms", 100, 1],
+	[42, "100ms", 2, 1],
+])("should estimate iterations %#", async (s, t, i, c) => {
+	const ctx = { info: noop, warn: noop } as any;
+	const fn = () => spin(s);
 	const scene = new Scene({});
 	const case_ = new BenchCase(scene, "Test", fn, false);
 
-	const measurement = new ExecutionTimeMeasurement(ctx, case_, {} as any);
-	const [iterations, iter] = await measurement.estimate("100ms");
+	const measurement = new ExecutionTimeMeasurement(ctx, case_, {});
+	const [iterations, iter] = await measurement.estimate(t);
 
-	expect(iter.calls).toBe(1);
-	expect(iterations).toBeLessThan(105);
-	expect(iterations).toBeGreaterThan(95);
+	expect(iter.calls).toBe(c);
+	expect(Math.round(iterations)).toBeLessThan(i * 1.05); // ±5%
+	expect(Math.round(iterations)).toBeGreaterThan(i * 0.95);
 });
 
 // we mock heavy overhead to make the test stable.
