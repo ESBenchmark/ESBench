@@ -50,9 +50,6 @@ importers:
       markdown-table:
         specifier: ^3.0.3
         version: 3.0.3
-      picomatch:
-        specifier: ^4.0.2
-        version: 4.0.2
       rollup:
         specifier: ^4.17.2
         version: 4.17.2
@@ -70,7 +67,7 @@ importers:
         version: 1.0.3(@swc/core@1.5.24)(esbuild@0.21.4)(typescript@5.4.5)
       vite:
         specifier: ^5.2.11
-        version: 5.2.11(@types/node@20.13.0)
+        version: 5.2.11(@types/node@20.14.1)
       yargs:
         specifier: ^17.7.2
         version: 17.7.2
@@ -1746,10 +1743,6 @@ packages:
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
-
-  picomatch@4.0.2:
-    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
-    engines: {node: '>=12'}
 
   pkg-types@1.1.1:
     resolution: {integrity: sha512-ko14TjmDuQJ14zsotODv7dBlwxKhUKQEhuhmbqo1uCi9BB0Z2alo/wAXg6q1dTR5TyuqYyWhjtfe/Tsh+X28jQ==}
@@ -3712,8 +3705,6 @@ snapshots:
 
   picomatch@2.3.1: {}
 
-  picomatch@4.0.2: {}
-
   pkg-types@1.1.1:
     dependencies:
       confbox: 0.1.7
@@ -3978,6 +3969,15 @@ snapshots:
       rollup: 4.17.2
     optionalDependencies:
       '@types/node': 20.13.0
+      fsevents: 2.3.3
+
+  vite@5.2.11(@types/node@20.14.1):
+    dependencies:
+      esbuild: 0.20.2
+      postcss: 8.4.38
+      rollup: 4.17.2
+    optionalDependencies:
+      '@types/node': 20.14.1
       fsevents: 2.3.3
 
   vite@5.2.12(@types/node@20.14.1):

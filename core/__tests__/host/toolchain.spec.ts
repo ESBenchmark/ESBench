@@ -145,24 +145,66 @@ it("should generate jobs with files needed", async () => {
 	]);
 });
 
-it("should filter files by shared", async () => {
-	const builderA = { name: "A", build: vi.fn() };
-	const builderB = { name: "B", build: vi.fn() };
+it("should dedupe files", async () => {
+	const mockBuilder = { name: "mock", build: vi.fn() };
 
-	const jobs = await testBuild({ shared: "1/2" }, {
+	const jobs = await testBuild({}, {
 		include: ["./__tests__/fixtures/*-inside/*"],
-		builders: [builderA],
+		builders: [mockBuilder],
 		executors: [inProcess],
 	}, {
-		include: ["./__tests__/fixtures/*-outside/*"],
-		builders: [builderB],
+		include: ["./__tests__/fixtures/error-*/*"],
+		builders: [mockBuilder],
 		executors: [inProcess],
 	});
 
-	expect(jobs).toHaveLength(1);
-	expect(jobs[0].builds[0].name).toBe("A");
-	expect(jobs[0].builds[0].files).toHaveLength(1);
+	expect(mockBuilder.build).toHaveBeenCalledOnce();
+	expect(mockBuilder.build.mock.calls[0][1]).toStrictEqual([
+		"./__tests__/fixtures/error-inside/index.js",
+		"./__tests__/fixtures/error-outside/index.js",
+	]);
+	expect(jobs[0].builds[0].files).toStrictEqual([
+		"./__tests__/fixtures/error-inside/index.js",
+		"./__tests__/fixtures/error-outside/index.js",
+	]);
 });
+
+it("should only execute files in the build", async () => {
+	const mockBuilder = { name: "mock", build: vi.fn() };
+
+	const jobs = await testBuild({}, {
+		include: ["./__tests__/fixtures/*-inside/*"],
+		builders: [noBuild],
+		executors: [inProcess],
+	}, {
+		include: ["./__tests__/fixtures/error-*/*"],
+		builders: [mockBuilder],
+		executors: [inProcess],
+	});
+
+	expect(jobs[0].builds[0].files).toStrictEqual([
+		"./__tests__/fixtures/error-inside/index.js",
+	]);
+});
+
+// it("should filter files by shared", async () => {
+// 	const builderA = { name: "A", build: vi.fn() };
+// 	const builderB = { name: "B", build: vi.fn() };
+//
+// 	const jobs = await testBuild({ shared: "1/2" }, {
+// 		include: ["./__tests__/fixtures/*-inside/*"],
+// 		builders: [builderA],
+// 		executors: [inProcess],
+// 	}, {
+// 		include: ["./__tests__/fixtures/*-outside/*"],
+// 		builders: [builderB],
+// 		executors: [inProcess],
+// 	});
+//
+// 	expect(jobs).toHaveLength(1);
+// 	expect(jobs[0].builds[0].name).toBe("A");
+// 	expect(jobs[0].builds[0].files).toHaveLength(1);
+// });
 
 it("should dedupe builders with same executor", async () => {
 	const jobs = await testBuild({}, {
@@ -186,6 +228,25 @@ it("should ignore files with the exclude option", async () => {
 		executors: [inProcess],
 	});
 	expect(jobs[0].builds[0].files).toHaveLength(1);
+});
+
+it("should exclude files only in item scope",async  () => {
+	const pattern = ["__tests__/fixtures/error-inside/*"];
+	const executorStub = { name: "test", execute: vi.fn() };
+
+	const jobs = await testBuild({}, {
+		include: pattern,
+		builders: [noBuild],
+		executors: [inProcess],
+	}, {
+		include: ["__tests__/fixtures/error-*/*"],
+		exclude: pattern,
+		builders: [noBuild],
+		executors: [executorStub],
+	});
+	expect(jobs).toHaveLength(2);
+	expect(jobs[0].builds[0].files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
+	expect(jobs[1].builds[0].files).toStrictEqual(["./__tests__/fixtures/error-outside/index.js"]);
 });
 
 it("should support absolute path patterns", async () => {

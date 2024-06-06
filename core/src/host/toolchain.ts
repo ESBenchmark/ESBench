@@ -1,14 +1,12 @@
 import { cwd } from "process";
 import { basename, join, relative } from "path";
 import { mkdtempSync } from "fs";
-import { normalize } from "path/posix";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
-import picomatch from "picomatch";
-import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 import { FilterOptions } from "./commands.js";
 import { HostLogger } from "./logger.js";
-import { resolveRE, SharedModeFilter } from "../utils.js";
+import { resolveRE } from "../utils.js";
+import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -149,11 +147,25 @@ export function toSpecifier(path: string, parent: string) {
 	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
+interface Patterns {
+	include: string[];
+	exclude: string[];
+	matches?: string[];
+}
+
+function globInto(set: Set<string>, patterns: Patterns) {
+	const { include, exclude } = patterns;
+	patterns.matches ??= glob.sync(include, {
+		ignore: exclude,
+	});
+	for (const file of patterns.matches) set.add(file);
+}
+
 export default class JobGenerator {
 
 	private readonly t2n = new Map<Builder | Executor, string>();
-	private readonly bInclude = new MultiMap<Builder, string>();
-	private readonly eInclude = new MultiMap<Executor, string>();
+	private readonly bPatterns = new MultiMap<Builder, Patterns>();
+	private readonly ePatterns = new MultiMap<Executor, Patterns>();
 	private readonly e2b = new UniqueMultiMap<Executor, Builder>();
 	private readonly bOutput = new Map<Builder, BuildResult>();
 
@@ -177,43 +189,41 @@ export default class JobGenerator {
 			.filter(executor => executorRE.test(executor.name))
 			.map(this.unwrap.bind(this, "execute"));
 
-		// Merge include & exclude patterns into one array.
 		// Ensure glob patterns is relative and starts with ./ or ../
-		const dotGlobs: string[] = [];
-		for (const pattern of exclude) {
-			dotGlobs.push("!" + toSpecifier(pattern, workingDir));
-		}
-		for (const pattern of include) {
-			dotGlobs.push(toSpecifier(pattern, workingDir));
-		}
+		const patterns = {
+			include: include.map(i => toSpecifier(i, workingDir)),
+			exclude: exclude.map(i => toSpecifier(i, workingDir)),
+		};
 
+		for (const executor of ue) {
+			this.ePatterns.add(executor, patterns);
+		}
 		for (const builder of builders) {
 			if (!builderRE.test(builder.name)) {
 				continue;
 			}
 			const builderUsed = this.unwrap("build", builder);
-			this.bInclude.add(builderUsed, ...dotGlobs);
 			this.e2b.distribute(ue, builderUsed);
-		}
-
-		for (const executor of ue) {
-			this.eInclude.add(executor, ...dotGlobs);
+			this.bPatterns.add(builderUsed, patterns);
 		}
 	}
 
 	async build() {
-		const { directory, bInclude, bOutput, t2n } = this;
-		const { file, shared } = this.filter;
+		const { directory, bPatterns, filter, bOutput, t2n } = this;
 
-		this.logger.info(`Building suites with ${bInclude.size} builders [tempDir = ${directory}]...`);
+		const part = filter.file ? relative(cwd(), filter.file).replaceAll("\\", "/") : "";
+		this.logger.info(`Building suites with ${bPatterns.size} builders [tempDir=${directory}]...`);
 
-		const pathFilter = file && relative(cwd(), file).replaceAll("\\", "/");
-		const sharedFilter = SharedModeFilter.parse(shared);
+		for (const [builder, include] of bPatterns) {
+			const dedupe = new Set<string>();
+			for (const patterns of include) {
+				globInto(dedupe, patterns);
+			}
 
-		for (const [builder, include] of bInclude) {
-			let files = sharedFilter.select(await glob(include));
-			if (pathFilter) {
-				files = files.filter(p => p.includes(pathFilter));
+			const files = [];
+			for (const file of dedupe) {
+				if (file.includes(part))
+					files.push(file);
 			}
 			if (files.length === 0) {
 				continue;
@@ -230,8 +240,12 @@ export default class JobGenerator {
 
 	* getJobs() {
 		for (const [executor, builders] of this.e2b) {
-			const isMatch = picomatch(this.eInclude.get(executor)!);
+			const dedupe = new Set<string>();
 			const builds = [];
+
+			for (const patterns of this.ePatterns.get(executor)!) {
+				globInto(dedupe, patterns);
+			}
 
 			// Only add builds that have files match the executor's glob pattern.
 			for (const name of builders) {
@@ -239,7 +253,7 @@ export default class JobGenerator {
 				if (!output) {
 					continue;
 				}
-				const files = output.files.filter(p => isMatch(normalize(p)));
+				const files = output.files.filter(f => dedupe.has(f));
 				if (files.length) {
 					builds.push({ ...output, files });
 				}
