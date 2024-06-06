@@ -82,7 +82,7 @@ async function loadModule(specifier: string) {
 }
 
 function transformImports(code: string, path: string) {
-	// Currently `import.meta.resolve` does not work well with URL importer.
+	// Currently `import.meta.resolve` does not work well with URL parent.
 	const importer = pathToFileURL(path).toString();
 	const [imports] = importParser.parse(code);
 
@@ -174,7 +174,7 @@ export class PlaywrightExecutor implements Executor {
 		}
 	}
 
-	async initialize(page: Page, options: ExecuteOptions, url: string) {
+	async executeInPage(page: Page, options: ExecuteOptions, url: string) {
 		const { files, pattern, root, dispatch } = options;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
 
@@ -184,7 +184,7 @@ export class PlaywrightExecutor implements Executor {
 			}
 			dispatch(message);
 		});
-		await page.route(origin + "/**", (route, request) => {
+		await this.context.route(origin + "/**", (route, request) => {
 			const path = request.url().slice(origin.length);
 			return this.serve(root, decodeURIComponent(path), route);
 		});
@@ -192,12 +192,13 @@ export class PlaywrightExecutor implements Executor {
 		await page.goto(url);
 		await page.evaluate(client, { files, pattern });
 
+		await this.context.unrouteAll();
 		await Promise.all(this.context.pages().map(p => p.close()));
 	}
 
 	async execute(options: ExecuteOptions) {
 		const page = await this.context.newPage();
-		await this.initialize(page, options, baseURL);
+		await this.executeInPage(page, options, baseURL);
 	}
 
 	/**
@@ -296,7 +297,7 @@ export class WebextExecutor extends PlaywrightExecutor {
 		const baseURL = `chrome-extension://${extensionId}/`;
 
 		const page = await this.context.newPage();
-		await this.initialize(page, options, baseURL + "index.html");
+		await this.executeInPage(page, options, baseURL + "index.html");
 	}
 
 	// https://webdriver.io/docs/extension-testing/web-extensions/#test-popup-modal-in-chrome
