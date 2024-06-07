@@ -195,6 +195,7 @@ export class ExecutionTimeMeasurement {
 
 		const time = await this.measure("Actual", iterator, iterations);
 		if (evaluateOverhead && samples > 1) {
+			await ctx.info();
 			await this.subtractOverhead(iterations, time);
 		}
 		return time;

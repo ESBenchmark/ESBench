@@ -1,9 +1,5 @@
 <template>
-	<pre ref='consoleEl'>
-Execute in iframe allow DOM operations, but the page may be unresponsive until it finishes.
-
-Since WebWorker does not support import maps, you cannot import esbench in the suite.
-	</pre>
+	<pre ref='consoleEl'/>
 </template>
 
 <script lang="ts">
@@ -108,12 +104,12 @@ function printError(e: Error) {
 	appendLog(`\n${e.name}: ${e.message}`, "error");
 
 	for (let c = e.cause as Error; c; c = c.cause as Error) {
-		appendLog("Caused by:", "error");
+		appendLog("Caused by:", "white");
 		appendLog(`${c.name}: ${c.message}`, "error");
 	}
 
 	console.error(e);
-	appendLog("\nFor stacktrace and more details, see console.", "error");
+	appendLog("\nFor stacktrace and more details, see developer console.", "white");
 }
 
 function printTable(result: RunSuiteResult[], options: PrintTableOptions) {

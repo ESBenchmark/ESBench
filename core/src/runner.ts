@@ -11,17 +11,21 @@ class DefaultEventLogger implements Profiler {
 	private sceneIndex = 0;
 	private caseOfScene = 0;
 
-	onScene(ctx: ProfilingContext, scene: Scene) {
+	async onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
 		const sceneCount = Object.values<unknown[][]>(ctx.suite.params ?? {})
 			.reduce((s, v) => s * v.length, 1);
 
-		this.caseOfScene = 0;
 		const i = ++this.sceneIndex;
+		this.caseOfScene = 0;
 
+		let paramsText = "no parameters defined.";
+		if (ctx.suite.params) {
+			paramsText = `params: \n${JSON.stringify(scene.params)}`;
+		}
 		return caseCount === 0
-			? ctx.warn(`\nNo case found from scene #${i}.`)
-			: ctx.info(`\nScene #${i} of ${sceneCount}, ${caseCount} cases.`);
+			? ctx.warn(`\nNo case found from scene #${i}, ${paramsText}`)
+			: ctx.info(`\nScene #${i} of ${sceneCount}, ${caseCount} cases, ${paramsText}`);
 	}
 
 	onCase(ctx: ProfilingContext, case_: BenchCase) {
@@ -37,7 +41,6 @@ class DefaultEventLogger implements Profiler {
  * The original error can be retrieved by the cause property.
  */
 export class RunSuiteError extends Error {
-
 	/**
 	 * The params property of the scene that threw the error.
 	 *
@@ -48,7 +51,7 @@ export class RunSuiteError extends Error {
 	/** JSON represent of the params */
 	readonly paramStr?: string;
 
-	constructor(message: string, cause: Error, params?: object, ps?: string) {
+	constructor(message?: string, cause?: Error, params?: object, ps?: string) {
 		super(message, { cause });
 		this.params = params;
 		this.paramStr = ps;

@@ -95,7 +95,7 @@ window.MonacoEnvironment = {
 <script setup lang="ts">
 import "monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
-import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw } from "vue";
+import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw, watch } from "vue";
 import { useData } from "vitepress";
 import { transformBuffer } from "@kaciras/utilities/browser";
 import { messageResolver, RunSuiteResult } from "esbench";
@@ -107,6 +107,7 @@ import ReportView from "./ReportView.vue";
 import ConsoleView, { PrintTableOptions } from "./ConsoleView.vue";
 import TableDropdown from "./TableDropdown.vue";
 import { executeIFrame, executeWorker } from "./executor.ts";
+import { version } from "../../core/package.json" with { type: "json" };
 
 export interface BenchmarkHistory {
 	name: string;
@@ -161,10 +162,17 @@ async function share() {
 	window.alert("Link is copied to clipboard.");
 }
 
+watch(executor, value => {
+	consoleView.value!.clear();
+	if (value === executeIFrame) {
+		consoleView.value!.appendLog("Execute in iframe allows DOM operations, but the page may be unresponsive until it finishes.", "yellowBright");
+	}
+});
+
 let resolver: any;
 
 function stopBenchmark() {
-	resolver.reject(new Error("Benchmark Stopped"));
+	resolver.reject(new Error("Benchmark cancelled by user."));
 }
 
 async function startBenchmark() {
@@ -174,7 +182,8 @@ async function startBenchmark() {
 
 	const { promise, dispatch } = resolver = messageResolver(webConsole.appendLog);
 	const start = performance.now();
-	webConsole.appendLog("Start Benchmark");
+	webConsole.appendLog(
+		`[ESBench v${version}] Start benchmarking, it will take a while...`, "blueBright");
 
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
@@ -187,7 +196,7 @@ async function startBenchmark() {
 
 	running.value = false;
 	const t = (performance.now() - start) / 1000;
-	webConsole.appendLog(`\nGlobal total time: ${t.toFixed(2)} seconds.`);
+	webConsole.appendLog(`\nFinished, global total time: ${t.toFixed(2)} seconds.`, "blueBright");
 }
 
 function handleDragEnd() {
@@ -343,7 +352,7 @@ onMounted(async () => {
 	margin: 0;
 	padding: 1em;
 	font-size: 0.875em;
-	overflow: scroll;
+	overflow-y: scroll;
 	color: whitesmoke;
 	background: #2b2b2b;
 }

@@ -1,3 +1,6 @@
+// Since WebWorker does not support import maps,
+// you cannot import "esbench" in playground.
+
 export default {
 	timing: {
 		// Show the number of calls over a period of time rather than the time of one call.
