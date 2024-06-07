@@ -4,7 +4,8 @@ import { PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
 import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
 
-const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
+// Does not work!
+// const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
 
 function newContext() {
 	return new ProfilingContext({ setup: noop }, [], { log: noop });
@@ -135,19 +136,18 @@ it("should check zero measurement", async () => {
 });
 
 it("should not set throughput for zero measurement", async () => {
-	const mockProfiler = new TimeProfiler({
-		warmup: 0,
-		iterations: "10ms",
-		samples: 10,
-		throughput: "s",
-	});
-	mockMeasureRun.mockResolvedValue([0]);
+	const mockProfiler = new TimeProfiler({ throughput: "s" });
 
-	const result = await runProfilers([mockProfiler], {
-		setup: scene => scene.bench("Test", noop),
-	});
-
-	expect(result.scenes[0].Test).toStrictEqual({});
+	const oldRun = ExecutionTimeMeasurement.prototype.run;
+	ExecutionTimeMeasurement.prototype.run = () => Promise.resolve([0]);
+	try {
+		const result = await runProfilers([mockProfiler], {
+			setup: scene => scene.bench("Test", noop),
+		});
+		expect(result.scenes[0].Test).toStrictEqual({});
+	} finally {
+		ExecutionTimeMeasurement.prototype.run = oldRun;
+	}
 });
 
 it("should skip overhead stage if evaluateOverhead is false", async () => {
