@@ -10,6 +10,11 @@ Since WebWorker does not support import maps, you cannot import esbench in the s
 // IDEA Darcula theme
 import { escapeHTML, unescapeHTML } from "@kaciras/utilities/browser";
 
+// https://stackoverflow.com/a/44893438/7065321
+function isScrollToEnd(el: HTMLElement) {
+	return Math.ceil(el.clientHeight + el.scrollTop) === el.scrollHeight;
+}
+
 const colors: Record<string, string> = {
 	// no alias (gray & grey)
 	black: "#000000",
@@ -82,8 +87,7 @@ function appendLog(message = "", type = "info") {
 	const pre = consoleEl.value!;
 	const color = colors[type];
 
-	// https://stackoverflow.com/a/44893438/7065321
-	const scrollToEnd = Math.ceil(pre.scrollHeight - pre.scrollTop) === pre.clientHeight;
+	const scrollToEnd = isScrollToEnd(pre);
 
 	message += "\n";
 	if (color) {
@@ -119,10 +123,15 @@ function printTable(result: RunSuiteResult[], options: PrintTableOptions) {
 
 	const table = SummaryTable.from(result, undefined, options);
 	const markdown = table.format({ stainer, flexUnit }).toMarkdown(stringLength);
+	const scrollToEnd = isScrollToEnd(pre);
 
-	appendLog();
+	pre.append("\n");
 	pre.insertAdjacentHTML("beforeend", markdown);
-	appendLog();
+	pre.append("\n");
+
+	if (scrollToEnd) {
+		pre.scrollTop = pre.scrollHeight;
+	}
 
 	if (table.hints.length > 0) {
 		appendLog("Hints:");
