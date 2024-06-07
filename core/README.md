@@ -1,9 +1,5 @@
 # ESBench
 
-[![NPM Version](https://img.shields.io/npm/v/esbench?style=flat-square)](https://www.npmjs.com/package/esbench)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ESBenchmark/ESBench/test.yml?style=flat-square)
-[![Codecov](https://img.shields.io/codecov/c/gh/ESBenchmark/ESBench?style=flat-square)](https://codecov.io/gh/ESBenchmark/ESBench)
-
 A modern JavaScript benchmarking tool.
 
 - **Cross-runtime**: run your benchmark on Node, Bun, browsers, and more...
@@ -17,18 +13,3 @@ A modern JavaScript benchmarking tool.
 ## Getting Started
 
 Visit [https://esbench.vercel.app](https://esbench.vercel.app) to get started and try ESBench on browser.
-
-## Run Examples
-
-To run examples (files in the `example` folder), you need to build ESBench first:
-
-```shell
-pnpm build
-```
-
-It is recommended to run one suite at a time using `--file` parameter, as it can take a long time.
-
-```shell
-cd example
-pnpm exec esbench --filer <filename.js>
-```

@@ -11,13 +11,7 @@ After cloning and installing, there are a few more steps before you can run it.
 A build step is required before running examples and tests:
 
 ```shell
-pnpm --filter ./core build
-```
-
-If you're going to use `htmlReporter`, you need to build the HTML template first:
-
-```shell
-pnpm --filter ./reporter-html build
+pnpm build
 ```
 
 ## Folder Structure
