@@ -78,9 +78,12 @@ function clear() {
 	consoleEl.value!.textContent = "";
 }
 
-function appendLog(message = "", level = "info") {
+function appendLog(message = "", type = "info") {
 	const pre = consoleEl.value!;
-	const color = colors[level];
+	const color = colors[type];
+
+	// https://stackoverflow.com/a/44893438/7065321
+	const scrollToEnd = Math.ceil(pre.scrollHeight - pre.scrollTop) === pre.clientHeight;
 
 	message += "\n";
 	if (color) {
@@ -91,7 +94,10 @@ function appendLog(message = "", level = "info") {
 	} else {
 		pre.insertAdjacentText("beforeend", message);
 	}
-	pre.scrollTop = pre.scrollHeight;
+
+	if (scrollToEnd) {
+		pre.scrollTop = pre.scrollHeight;
+	}
 }
 
 function printError(e: Error) {
