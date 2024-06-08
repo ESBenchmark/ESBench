@@ -174,6 +174,18 @@ export default class JobGenerator {
 		this.context = context;
 	}
 
+	/**
+	 * Convenience functions for generating jobs using the context's toolchains.
+	 */
+	static async generate(context: HostContext) {
+		const generator = new JobGenerator(context);
+		for (const toolchain of context.config.toolchains) {
+			generator.add(toolchain);
+		}
+		await generator.build();
+		return Array.from(generator.getJobs());
+	}
+
 	add(toolchain: ToolChainItem) {
 		const { exclude = [], include, builders, executors } = toolchain;
 		const { filter } = this.context;

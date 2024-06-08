@@ -17,12 +17,9 @@ function create(filter?: FilterOptions) {
 	return new JobGenerator(new HostContext({ logLevel: "off", tempDir }, filter));
 }
 
-function testBuild(filter: FilterOptions, ...items: ToolChainItem[]) {
-	const generator = create(filter);
-	for (const item of items) {
-		generator.add(item);
-	}
-	return generator.build().then(() => Array.from(generator.getJobs()));
+function testBuild(filter: FilterOptions, ...toolchains: ToolChainItem[]) {
+	const config = { logLevel: "off", tempDir, toolchains } as const;
+	return JobGenerator.generate(new HostContext(config, filter));
 }
 
 it("should throw error if a tool have more than 1 names", () => {

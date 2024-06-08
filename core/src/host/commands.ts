@@ -42,18 +42,13 @@ export async function report(config: ESBenchConfig, files: string[]) {
 
 export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const context = new HostContext(config, filter);
-	const { reporters, toolchains, tempDir, diff, cleanTempDir } = context.config;
+	const { reporters, tempDir, diff, cleanTempDir } = context.config;
 
 	const startTime = performance.now();
 	const result: ESBenchResult = {};
 	mkdirSync(tempDir, { recursive: true });
 
-	const generator = new JobGenerator(context);
-	for (const toolchain of toolchains) {
-		generator.add(toolchain);
-	}
-	await generator.build();
-	const jobs = Array.from(generator.getJobs());
+	const jobs = await JobGenerator.generate(context);
 
 	if (jobs.length === 0) {
 		return context.warn("\nNo files match the includes, please check your config.");
