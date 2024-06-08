@@ -208,12 +208,13 @@ export class PlaywrightExecutor implements Executor {
 		const { name, message, stack } = error;
 		const lines = stack.split("\n") as string[];
 		let re: RegExp;
+		let newStack = "";
 
 		if (this.type.name() === "chromium") {
 			lines.splice(0, 1);
 			re = / {4}at (.+?) \((.+?)\)/;
 		} else {
-			re = /(.*?)@(.+)/;
+			re = /(.*?)@(.*)/;
 		}
 
 		for (let i = 0; i < lines.length; i++) {
@@ -230,10 +231,10 @@ export class PlaywrightExecutor implements Executor {
 				pos = root + pos.slice(origin.length);
 				pos = pathToFileURL(pos).toString();
 			}
-			lines[i] = `    at ${fn} (${pos})`;
+			newStack += `\n    at ${fn} (${pos})`;
 		}
 
-		error.stack = `${name}: ${message}\n${lines.join("\n")}`;
+		error.stack = `${name}: ${message}${newStack}`;
 
 		if (error.cause) {
 			this.fixStacktrace(error.cause, origin, root);

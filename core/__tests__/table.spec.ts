@@ -163,18 +163,42 @@ it("should add row number to notes if it associated with a case", () => {
 	expect(table.hints).toStrictEqual(["[No.0] foo: Note text"]);
 });
 
-it("should remove outliers", () => {
+it("should remove all outliers", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
 		scenes: [{
-			foo: { time: [0, 10, 11, 12, 13, 99] },
+			foo: { time: [0, 45, 50, 55, 100] },
 		}],
 	}]);
 	expect(table.cells).toStrictEqual([
 		["No.", "time", "time.SD"],
-		["0", 11.5, 1.118033988749895],
+		["0", 50, 4.08248290463863],
 	]);
 	expect(table.hints).toStrictEqual(["[No.0] foo: 2 outliers were removed."]);
+});
+
+it("should remove best outliers", () => {
+	const values = [0, 45, 50, 55, 100];
+	const table = SummaryTable.from([{
+		...resultStub,
+		meta: {
+			...resultStub.meta,
+			money: {
+				key: "money",
+				analysis: 2,
+				lowerIsBetter: false,
+			},
+		},
+		scenes: [{
+			foo: { time: values, money: values },
+		}],
+	}], undefined, {
+		outliers: "best",
+	});
+	expect(table.cells).toStrictEqual([
+		["No.", "time", "time.SD", "money", "money.SD"],
+		["0", 62.5, 21.937410968480304, 37.5, 21.937410968480304],
+	]);
 });
 
 it("should warn if the value of baseline does not in the table", () => {

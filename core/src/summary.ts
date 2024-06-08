@@ -205,7 +205,8 @@ export class Summary {
 			const k = keys[i];
 			const v = props[k];
 
-			const s = vars.get(k) ?? [];
+			// Already checked in `sort`.
+			const s = vars.get(k)!;
 			const varIndex = indexOf(s, v);
 			if (varIndex === -1) {
 				return NaN;

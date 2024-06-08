@@ -4,6 +4,16 @@ import { executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
 import { RunSuiteResult } from "../../src/index.ts";
 
+function assertStackIsV8Format(error: Error) {
+	const { name, message, stack } = error;
+	const lines = stack!.split("\n");
+
+	expect(lines[0]).toBe(`${name}: ${message}`);
+	for (let i = 1; i < lines.length; i++) {
+		expect(lines[i]).toMatch(/ {4}at (.+?) \((.+?)\)/);
+	}
+}
+
 it.each([
 	[new PlaywrightExecutor(firefox), "firefox"],
 	[new PlaywrightExecutor(webkit), "webkit"],
@@ -13,14 +23,25 @@ it.each([
 	expect(executor.name).toBe(name);
 });
 
-describe("PlaywrightExecutor", () => {
-	const tester = executorTester(new PlaywrightExecutor(chromium));
+describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
+	const tester = executorTester(new PlaywrightExecutor(type));
 
 	it("should transfer messages", tester.successCase());
 
 	it("should forward errors from runAndSend()", tester.insideError());
 
 	it("should forward top level errors", tester.outsideError());
+
+	it("should fix error stack", async () => {
+		const promise = tester.execute({
+			files: ["./foo.js"],
+			root: "__tests__/fixtures/error-inside",
+		});
+		const error = await promise.catch(e => e);
+
+		assertStackIsV8Format(error);
+		assertStackIsV8Format(error.cause);
+	});
 
 	it("should respond 404 when resource not exists", async () => {
 		const dispatch = await tester.execute({
@@ -31,7 +52,9 @@ describe("PlaywrightExecutor", () => {
 		expect(result.notes[0].text).toBe("Status: 404");
 	});
 
-	it("should support import JSON modules", async () => {
+	// https://caniuse.com/mdn-javascript_statements_import_import_attributes_type_json
+	it.skipIf(type.name() === "firefox")
+	("should support import attributes", async () => {
 		const dispatch = await tester.execute({
 			files: ["./foo.js"],
 			root: "__tests__/fixtures/import-assertion",

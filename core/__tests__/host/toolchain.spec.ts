@@ -8,6 +8,7 @@ import { FilterOptions, HostContext } from "../../src/host/context.ts";
 import { noBuild } from "../../src/host/index.ts";
 import JobGenerator, { ToolChainItem } from "../../src/host/toolchain.ts";
 import { useTempDirectory } from "../helper.ts";
+import { noop } from "@kaciras/utilities/browser";
 
 const tempDir = mkdtempSync(join(tmpdir(), "esbench-"));
 
@@ -98,6 +99,21 @@ it("should skip builder that has no file matched", () => {
 		executors: [inProcess],
 	});
 	return expect(building).resolves.toHaveLength(0);
+});
+
+it("should ignore builder that name does not match the regexp", async () => {
+	const builderStub = { name: "foobar", build: noop };
+	const jobs = await testBuild({ builder: "foobar" }, {
+		include: ["./__tests__/fixtures/error-*/*"],
+		builders: [noBuild],
+		executors: [inProcess],
+	}, {
+		include: ["./__tests__/fixtures/success-*/*"],
+		builders: [noBuild, builderStub],
+		executors: [inProcess],
+	});
+	expect(jobs[0].builds).toHaveLength(1);
+	expect(jobs[0].builds[0].files).toStrictEqual(["./__tests__/fixtures/success-suite/index.js"]);
 });
 
 it("should skip executor that has no file matched", async () => {

@@ -71,7 +71,19 @@ describe("group", () => {
 });
 
 describe("find", () => {
-	it("should return undefined with invalid variable", () => {
+	it("should return undefined for invalid variable name", () => {
+		const summary = new Summary(result);
+		const props = {
+			__INVALID__: "node",
+			Name: "map",
+			size: "1000",
+			Builder: "None",
+			exists: "false",
+		};
+		expect(summary.find(props)).toBeUndefined();
+	});
+
+	it("should return undefined for invalid variable value", () => {
 		const summary = new Summary(result);
 		const props = {
 			Executor: "__INVALID__",

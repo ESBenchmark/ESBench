@@ -42,7 +42,15 @@ it("should not install TS loader with `--no-loader` argument", async () => {
 	expect(nodeModule.register).not.toHaveBeenCalled();
 });
 
-it("should x", async () => {
+it("should override log level by --logLevel",async () => {
+	process.argv = ["node", "cli.js", "--logLevel=warn"];
+	vi.resetModules();
+	await import("../../src/host/cli.js");
+
+	expect(mockStart.mock.calls[0][0].logLevel).toBe("warn");
+});
+
+it("should generate report from saved results", async () => {
 	process.argv = ["node", "cli.js", "report", "1.json", "2.json"];
 	vi.resetModules();
 	await import("../../src/host/cli.js");
