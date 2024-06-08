@@ -2,18 +2,10 @@ import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
 import JobGenerator, { ExecuteOptions } from "./toolchain.js";
-import { ESBenchConfig, normalizeConfig } from "./config.js";
+import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../index.js";
 import { resolveRE } from "../utils.js";
-import { createLogger } from "./logger.js";
-
-export interface FilterOptions {
-	file?: string;
-	builder?: string | RegExp;
-	executor?: string | RegExp;
-	name?: string | RegExp;
-	shared?: string;
-}
+import { FilterOptions, HostContext } from "./context.js";
 
 function loadResults(path: string, throwIfMissing: true): ESBenchResult;
 
@@ -28,10 +20,10 @@ function loadResults(path: string, throwIfMissing: boolean) {
 }
 
 export async function report(config: ESBenchConfig, files: string[]) {
-	const { reporters, diff, logLevel } = normalizeConfig(config);
+	const context = new HostContext(config);
 
+	const { reporters, diff } = context.config;
 	const result = loadResults(files[0], true);
-	const logger = createLogger(logLevel);
 
 	for (let i = 1; i < files.length; i++) {
 		const more = loadResults(files[i], true);
@@ -40,21 +32,23 @@ export async function report(config: ESBenchConfig, files: string[]) {
 		}
 	}
 
-	const previous = diff && loadResults(diff, false) || {};
+	if (diff) {
+		context.previous = loadResults(diff, false) ?? {};
+	}
 	for (const reporter of reporters) {
-		await reporter(result, previous, logger);
+		await reporter(result, context);
 	}
 }
 
-export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
-	const { reporters, toolchains, tempDir, diff, cleanTempDir, logLevel } = normalizeConfig(config);
-	const startTime = performance.now();
+export async function start(config: ESBenchConfig, filter?: FilterOptions) {
+	const context = new HostContext(config, filter);
+	const { reporters, toolchains, tempDir, diff, cleanTempDir } = context.config;
 
-	const logger = createLogger(logLevel);
+	const startTime = performance.now();
 	const result: ESBenchResult = {};
 	mkdirSync(tempDir, { recursive: true });
 
-	const generator = new JobGenerator(tempDir, filter, logger);
+	const generator = new JobGenerator(context);
 	for (const toolchain of toolchains) {
 		generator.add(toolchain);
 	}
@@ -62,26 +56,26 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 	const jobs = Array.from(generator.getJobs());
 
 	if (jobs.length === 0) {
-		return logger.warn("\nNo files match the includes, please check your config.");
+		return context.warn("\nNo files match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
-	logger.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
+	context.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
 
 	for (const { executorName, executor, builds } of jobs) {
 		let builder = "";
-		logger.info(`Running suites with executor "${executorName}"`);
+		context.info(`Running suites with executor "${executorName}"`);
 
 		await executor.start?.();
 		try {
 			for (const build of builds) {
 				builder = build.name;
-				logger.info(`${build.files.length} suites from builder "${builder}"`);
+				context.info(`${build.files.length} suites from builder "${builder}"`);
 
 				const { files, root } = build;
-				const { promise, reject, dispatch } = messageResolver(logger.handler);
-				const pattern = resolveRE(filter.name).source;
+				const { promise, reject, dispatch } = messageResolver(context.logHandler);
+				const pattern = resolveRE(context.filter.name).source;
 
-				const context: ExecuteOptions = {
+				const input: ExecuteOptions = {
 					tempDir,
 					pattern,
 					files,
@@ -91,8 +85,8 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 					promise,
 				};
 				const [records] = await Promise.all([
-					context.promise,
-					executor.execute(context),
+					input.promise,
+					executor.execute(input),
 				]);
 
 				for (let i = 0; i < records.length; i++) {
@@ -108,22 +102,24 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 				}
 			}
 		} catch (e) {
-			logger.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
+			context.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
 			if (e.name !== "RunSuiteError") {
 				throw e;
 			}
-			logger.error(`At scene ${e.paramStr}`);
+			context.error(`At scene ${e.paramStr}`);
 			throw e.cause;
 		} finally {
 			await executor.close?.();
 		}
 	}
 
-	logger.info(); // Add an empty line between running & reporting phase.
+	context.info(); // Add an empty line between running & reporting phase.
 
-	const previous = diff && loadResults(diff, false) || {};
+	if (diff) {
+		context.previous = loadResults(diff, false) ?? {};
+	}
 	for (const reporter of reporters) {
-		await reporter(result, previous, logger);
+		await reporter(result, context);
 	}
 
 	/*
@@ -134,10 +130,10 @@ export async function start(config: ESBenchConfig, filter: FilterOptions = {}) {
 		try {
 			rmSync(tempDir, { recursive: true });
 		} catch (e) {
-			logger.error(e);
+			context.error(e);
 		}
 	}
 
 	const timeUsage = performance.now() - startTime;
-	logger.info(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
+	context.info(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }

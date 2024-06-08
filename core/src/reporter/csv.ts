@@ -48,10 +48,10 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 		return createWriteStream(filename);
 	}
 
-	return async (result, previous, logger) => {
+	return async (result, context) => {
 		const entries = Object.entries(result);
 		for (const [name, results] of entries) {
-			const diff = previous[name];
+			const diff = context.previous[name];
 			const table = SummaryTable.from(results, diff, options);
 
 			const fp = openWrite(name);
@@ -61,6 +61,6 @@ export default function (options: CSVReporterOptions = {}): Reporter {
 			}
 			await finishedAsync(fp.end());
 		}
-		logger.info(`${entries.length} CSV files saved at ${directory}/`);
+		context.info(`${entries.length} CSV files saved at ${directory}/`);
 	};
 }

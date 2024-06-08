@@ -23,14 +23,14 @@ export default function (file = "reports/benchmark.html"): Reporter {
 		);
 	}
 
-	return (result, prev, logger) => {
+	return (result, context) => {
 		let html = interpolate(template, "Result", result);
-		html = interpolate(html, "Previous", prev);
+		html = interpolate(html, "Previous", context.previous);
 
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, html);
 
 		const url = pathToFileURL(file).toString();
-		logger.info("HTML report can be found at: " + url);
+		context.info("HTML report can be found at: " + url);
 	};
 }

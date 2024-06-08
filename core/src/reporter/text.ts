@@ -67,15 +67,15 @@ function print(
  */
 export default function (options: TextReporterOptions = {}): Reporter {
 	const { file, console = true } = options;
-	return async (result, prev) => {
+	return async (result, context) => {
 		if (console) {
 			options.stainer = chalk;
-			print(result, prev, options, stdout);
+			print(result, context.previous, options, stdout);
 		}
 		if (file) {
 			const stream = createWriteStream(file);
 			options.stainer = new Chalk({ level: 0 });
-			print(result, prev, options, stream);
+			print(result, context.previous, options, stream);
 			await once(stream.end(), "finish");
 		}
 	};

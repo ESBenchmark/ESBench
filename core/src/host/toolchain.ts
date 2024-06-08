@@ -3,8 +3,7 @@ import { basename, join, relative } from "path";
 import { mkdtempSync } from "fs";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
-import { FilterOptions } from "./commands.js";
-import { HostLogger } from "./logger.js";
+import { HostContext } from "./context.js";
 import { resolveRE } from "../utils.js";
 import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 
@@ -169,20 +168,18 @@ export default class JobGenerator {
 	private readonly e2b = new UniqueMultiMap<Executor, Builder>();
 	private readonly bOutput = new Map<Builder, BuildResult>();
 
-	private readonly directory: string;
-	private readonly filter: FilterOptions;
-	private readonly logger: HostLogger;
+	private readonly context: HostContext;
 
-	constructor(directory: string, filter: FilterOptions, logger: HostLogger) {
-		this.directory = directory;
-		this.filter = filter;
-		this.logger = logger;
+	constructor(context: HostContext) {
+		this.context = context;
 	}
 
 	add(toolchain: ToolChainItem) {
 		const { exclude = [], include, builders, executors } = toolchain;
-		const builderRE = resolveRE(this.filter.builder);
-		const executorRE = resolveRE(this.filter.executor);
+		const { filter } = this.context;
+
+		const builderRE = resolveRE(filter.builder);
+		const executorRE = resolveRE(filter.executor);
 		const workingDir = cwd();
 
 		const ue = executors
@@ -209,10 +206,11 @@ export default class JobGenerator {
 	}
 
 	async build() {
-		const { directory, bPatterns, filter, bOutput, t2n } = this;
+		const { context, bPatterns, bOutput, t2n } = this;
+		const { config: { tempDir }, filter } = context;
 
 		const part = filter.file ? relative(cwd(), filter.file).replaceAll("\\", "/") : "";
-		this.logger.info(`Building suites with ${bPatterns.size} builders [tempDir=${directory}]...`);
+		context.info(`Building suites with ${bPatterns.size} builders [tempDir=${tempDir}]...`);
 
 		for (const [builder, include] of bPatterns) {
 			const dedupe = new Set<string>();
@@ -229,9 +227,9 @@ export default class JobGenerator {
 				continue;
 			}
 
-			const root = mkdtempSync(join(directory, "build-"));
+			const root = mkdtempSync(join(tempDir, "build-"));
 			const name = t2n.get(builder)!;
-			this.logger.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
+			context.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
 
 			await builder.build(root, files);
 			bOutput.set(builder, { name, root, files });

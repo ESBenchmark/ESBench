@@ -1,5 +1,5 @@
 import { Awaitable, cartesianObject } from "@kaciras/utilities/browser";
-import { LogLevel } from "./host/logger.js";
+import { LogLevel } from "./host/context.js";
 import { RunSuiteOption } from "./runner.js";
 import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
 import { kWorkingParams, RE_ANY, runFns } from "./utils.js";

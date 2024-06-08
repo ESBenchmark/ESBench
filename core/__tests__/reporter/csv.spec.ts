@@ -2,7 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { expect, it } from "vitest";
-import { createLogger } from "../../src/host/logger.ts";
+import { HostContext } from "../../src/host/context.ts";
 import csvReporter from "../../src/reporter/csv.ts";
 import { resultStub, useTempDirectory } from "../helper.ts";
 
@@ -10,7 +10,7 @@ const directory = mkdtempSync(join(tmpdir(), "esbench-"));
 useTempDirectory(directory);
 
 const report = csvReporter({ directory });
-const logger = createLogger("off");
+const context = new HostContext({ logLevel: "off" });
 
 function assertCSVFile(name: string, rows: string[]) {
 	const csv = rows.join("\r\n") + "\r\n";
@@ -18,7 +18,7 @@ function assertCSVFile(name: string, rows: string[]) {
 }
 
 it("should works", async () => {
-	await report({ perf: [resultStub] }, {}, logger);
+	await report({ perf: [resultStub] }, context);
 
 	assertCSVFile("perf.csv", [
 		"No.,Name,time,time.SD",
@@ -39,7 +39,7 @@ it("should escape special characters", async () => {
 			'case-"2"': { text: [114514] },
 		}],
 	}];
-	await report({ perf: results }, {}, logger);
+	await report({ perf: results }, context);
 	assertCSVFile("perf.csv", [
 		"No.,Name,text",
 		'0,"case, 1 ","a\nb"',
@@ -55,7 +55,7 @@ it("should write empty for undefined ", async () => {
 			bar: { time: [1, 2, 2, 2] },
 		}],
 	}];
-	await report({ perf: results }, {}, logger);
+	await report({ perf: results }, context);
 	assertCSVFile("perf.csv", [
 		"No.,Name,time,time.SD",
 		"0,foo,,",

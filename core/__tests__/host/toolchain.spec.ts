@@ -4,19 +4,21 @@ import { tmpdir } from "os";
 import { expect, it, vi } from "vitest";
 import inProcess from "../../src/executor/in-process.ts";
 import { ViteBuilder } from "../../src/builder/rollup.ts";
-import { createLogger } from "../../src/host/logger.ts";
+import { FilterOptions, HostContext } from "../../src/host/context.ts";
 import { noBuild } from "../../src/host/index.ts";
 import JobGenerator, { ToolChainItem } from "../../src/host/toolchain.ts";
 import { useTempDirectory } from "../helper.ts";
-import { FilterOptions } from "../../src/host/commands.ts";
 
 const tempDir = mkdtempSync(join(tmpdir(), "esbench-"));
-const logger = createLogger("off");
 
 useTempDirectory(tempDir);
 
+function create(filter?: FilterOptions) {
+	return new JobGenerator(new HostContext({ logLevel: "off", tempDir }, filter));
+}
+
 function testBuild(filter: FilterOptions, ...items: ToolChainItem[]) {
-	const generator = new JobGenerator(tempDir, filter, logger);
+	const generator = create(filter);
 	for (const item of items) {
 		generator.add(item);
 	}
@@ -24,7 +26,7 @@ function testBuild(filter: FilterOptions, ...items: ToolChainItem[]) {
 }
 
 it("should throw error if a tool have more than 1 names", () => {
-	const generator = new JobGenerator(tempDir, {}, logger);
+	const generator = create();
 	const item = {
 		executors: [inProcess],
 		include: ["test"],
@@ -37,7 +39,7 @@ it("should throw error if a tool have more than 1 names", () => {
 });
 
 it("should throw error if a name used for more than 1 tools", () => {
-	const generator = new JobGenerator(tempDir, {}, logger);
+	const generator = create();
 	const item = {
 		executors: [inProcess],
 		include: ["test"],
@@ -50,7 +52,7 @@ it("should throw error if a name used for more than 1 tools", () => {
 });
 
 it("should throw error if a tool has invalid name", () => {
-	const generator = new JobGenerator(tempDir, {}, logger);
+	const generator = create();
 	const item = {
 		executors: [inProcess],
 		include: ["a"],
@@ -60,11 +62,9 @@ it("should throw error if a tool has invalid name", () => {
 });
 
 it("should allow a tool used in different toolchain", () => {
-	const generator = new JobGenerator(tempDir, {}, logger);
-	const builder = noBuild;
-
-	generator.add({ executors: [inProcess], include: ["a"], builders: [builder] });
-	generator.add({ executors: [inProcess], include: ["b"], builders: [builder] });
+	const generator = create();
+	generator.add({ executors: [inProcess], include: ["a"], builders: [noBuild] });
+	generator.add({ executors: [inProcess], include: ["b"], builders: [noBuild] });
 });
 
 it("should skip build if no file matching", async () => {
@@ -230,7 +230,7 @@ it("should ignore files with the exclude option", async () => {
 	expect(jobs[0].builds[0].files).toHaveLength(1);
 });
 
-it("should exclude files only in item scope",async  () => {
+it("should exclude files only in item scope", async () => {
 	const pattern = ["__tests__/fixtures/error-inside/*"];
 	const executorStub = { name: "test", execute: vi.fn() };
 

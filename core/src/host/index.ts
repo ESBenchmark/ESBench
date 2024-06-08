@@ -1,5 +1,5 @@
 export * from "./config.js";
-export { HostLogger } from "./logger.js";
+export { HostContext } from "./context.js";
 export { Builder, Executor, ExecuteOptions, EntryExport } from "./toolchain.js";
 export { start, report } from "./commands.js";
 
