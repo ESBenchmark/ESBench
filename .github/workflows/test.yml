@@ -21,7 +21,7 @@ jobs:
       - run: pnpm run build
         working-directory: core
 
-      - run: pnpm exec playwright-core install
+      - run: pnpm exec playwright-core install-deps
         working-directory: core
 
       - run: pnpm run test --coverage

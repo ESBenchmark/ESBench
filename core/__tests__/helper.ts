@@ -1,12 +1,15 @@
 import { mkdirSync, rmSync } from "fs";
 import { CPSrcObject, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, Mock, vi } from "vitest";
+import chalk from "chalk";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
 import { BuildResult } from "../src/host/toolchain.ts";
+
+chalk.level = 1;
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
