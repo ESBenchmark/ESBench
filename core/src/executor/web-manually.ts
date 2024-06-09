@@ -3,9 +3,9 @@ import { json } from "stream/consumers";
 import { once } from "events";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { ClientMessage } from "esbench";
-import { ExecuteOptions, Executor } from "esbench/host";
 import { AddressInfo } from "net";
+import { ClientMessage } from "../connect.js";
+import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const html = `<!DOCTYPE html>
 <html><head>
@@ -55,6 +55,24 @@ export default class WebManuallyExecutor implements Executor {
 		return "web manually";
 	}
 
+	async start() {
+		this.server = createServer(this.handleRequest.bind(this));
+		this.server.listen(this.port, this.host);
+		await once(this.server, "listening");
+
+		const addr = this.server.address() as AddressInfo;
+		const url = `http://${this.host ?? "localhost"}:${addr.port}`;
+		console.info("[WebManuallyExecutor] URL: " + url);
+	}
+
+	close() {
+		this.server.close();
+	}
+
+	execute(options: ExecuteOptions) {
+		this.task = options;
+	}
+
 	async handleRequest(request: IncomingMessage, response: ServerResponse) {
 		const [path] = request.url!.split("?", 2);
 
@@ -91,23 +109,5 @@ export default class WebManuallyExecutor implements Executor {
 				response.writeHead(404).end();
 			}
 		}
-	}
-
-	async start() {
-		this.server = createServer(this.handleRequest.bind(this));
-		this.server.listen(this.port, this.host);
-		await once(this.server, "listening");
-
-		const addr = this.server.address() as AddressInfo;
-		const url = `http://${this.host ?? "localhost"}:${addr.port}`;
-		console.info("[WebManuallyExecutor] URL: " + url);
-	}
-
-	close() {
-		this.server.close();
-	}
-
-	execute(options: ExecuteOptions) {
-		this.task = options;
 	}
 }
