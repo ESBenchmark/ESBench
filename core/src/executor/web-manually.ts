@@ -1,4 +1,6 @@
-import { createServer, IncomingMessage, Server, ServerResponse } from "http";
+import * as http from "http";
+import { IncomingMessage, Server, ServerResponse } from "http";
+import * as https from "https";
 import { json } from "stream/consumers";
 import { once } from "events";
 import { createReadStream } from "fs";
@@ -39,17 +41,20 @@ for (; ; sleep(5)) {
 	}
 }`;
 
+interface WebManuallyExecutorOptions extends https.ServerOptions {
+	host?: string;
+	port?: number;
+}
+
 export default class WebManuallyExecutor implements Executor {
 
 	private server!: Server;
 	private task?: ExecuteOptions;
 
-	private readonly host?: string;
-	private readonly port?: number;
+	private readonly options: WebManuallyExecutorOptions;
 
-	constructor(host?: string, port?: number) {
-		this.host = host;
-		this.port = port;
+	constructor(options: WebManuallyExecutorOptions = {}) {
+		this.options = options;
 	}
 
 	get name() {
@@ -57,17 +62,24 @@ export default class WebManuallyExecutor implements Executor {
 	}
 
 	async start() {
-		this.server = createServer(this.handleRequest.bind(this));
-		this.server.listen(this.port, this.host);
+		const listener = this.handleRequest.bind(this);
+
+		this.server = this.options.key
+			? https.createServer(this.options, listener)
+			: http.createServer(this.options, listener);
+
+		const { host, port } = this.options;
+		this.server.listen(port, host);
 		await once(this.server, "listening");
 
 		const addr = this.server.address() as AddressInfo;
-		const url = `http://${this.host ?? "localhost"}:${addr.port}`;
+		const url = `http://${host ?? "localhost"}:${addr.port}`;
 		console.info("[WebManuallyExecutor] URL: " + url);
 	}
 
 	close() {
 		this.server.close();
+		this.server.closeAllConnections();
 	}
 
 	execute(options: ExecuteOptions) {
@@ -106,16 +118,14 @@ export default class WebManuallyExecutor implements Executor {
 			}));
 		}
 
-		try {
-			const file = join(this.task.root, path);
+		const stream = createReadStream(join(this.task.root, path));
+		stream.on("open", () => {
+			const headers: http.OutgoingHttpHeaders = {};
 			if (path.endsWith("js")) {
-				response.writeHead(200, {
-					"Content-Type": "text/javascript",
-				});
+				headers["Content-Type"] = "text/javascript";
 			}
-			createReadStream(file).pipe(response);
-		} catch (e) {
-			response.writeHead(404).end(e.message);
-		}
+			stream.pipe(response.writeHead(200, headers));
+		});
+		stream.on("error", e => response.writeHead(404).end(e.message));
 	}
 }
