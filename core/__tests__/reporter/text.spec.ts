@@ -22,13 +22,7 @@ it("should write to stdout with color", async () => {
 
 	await textReporter()({ perf: [resultStub] }, context);
 
-	expect(output).toStrictEqual("[94mText reporter: Format benchmark results of 1 suites:[39m[92m[39m\n" +
-		"[92mSuite: [39mperf\n" +
-		"| No. | Name |        time |   time.SD |\n" +
-		"| --: | ---: | ----------: | --------: |\n" +
-		"|   0 |  foo |   750.00 us | 433.01 us |\n" +
-		"|   1 |  bar | 1,750.00 us | 433.01 us |\n" +
-		"\n");
+	expect(output).toStrictEqual(readFileSync("__tests__/snapshots/text-report-colored.txt", "utf8"));
 });
 
 it("should write to text file without color", async () => {

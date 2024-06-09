@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { noop } from "@kaciras/utilities/node";
 import { BenchCase, Scene } from "../src/index.js";
-import { noop } from "@kaciras/utilities/browser";
 
 describe("Scene", () => {
 	it("should reject blank case name", () => {

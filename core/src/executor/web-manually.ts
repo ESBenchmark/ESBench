@@ -1,14 +1,15 @@
 import { createServer, IncomingMessage, Server, ServerResponse } from "http";
 import { json } from "stream/consumers";
 import { once } from "events";
-import { readFileSync } from "fs";
+import { createReadStream } from "fs";
 import { join } from "path";
 import { AddressInfo } from "net";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const html = `<!DOCTYPE html>
-<html><head>
+<html>
+<head>
 <meta charset="UTF-8">
 <title>ESBench Client</title>
 <script type="module" src="/_es-bench/loader.js"></script>
@@ -76,38 +77,45 @@ export default class WebManuallyExecutor implements Executor {
 	async handleRequest(request: IncomingMessage, response: ServerResponse) {
 		const [path] = request.url!.split("?", 2);
 
-		if (path === "/") {
-			response.writeHead(200).end(html);
-		} else if (path === "/_es-bench/loader.js") {
-			response.writeHead(200, { "Content-Type": "text/javascript" });
-			response.end(loader);
-		} else if (!this.task) {
-			response.writeHead(404).end();
-		} else if (path === "/_es-bench/task") {
-			response.end(JSON.stringify({
-				files: this.task.files,
-				pattern: this.task.pattern,
-				entry: `/index.js?cache-busting=${Math.random()}`,
-			}));
-		} else if (path === "/_es-bench/message") {
+		switch (path) {
+			case "/":
+				return response.writeHead(200).end(html);
+			case "/_es-bench/loader.js":
+				return response
+					.writeHead(200, { "Content-Type": "text/javascript" })
+					.end(loader);
+		}
+
+		if (!this.task) {
+			return response.writeHead(404).end();
+		}
+
+		if (path === "/_es-bench/message") {
 			const message = await json(request) as ClientMessage;
-			response.end();
 			this.task.dispatch(message);
 			if (!("level" in message)) {
-				this.task = undefined;
+				this.task = undefined; // Execution finished.
 			}
-		} else {
-			try {
-				const data = readFileSync(join(this.task.root, path));
-				if (path.endsWith("js")) {
-					response.writeHead(200, {
-						"Content-Type": "text/javascript",
-					});
-				}
-				response.end(data);
-			} catch (e) {
-				response.writeHead(404).end();
+			return response.writeHead(204).end();
+		}
+		if (path === "/_es-bench/task") {
+			return response.end(JSON.stringify({
+				pattern: this.task.pattern,
+				files: this.task.files,
+				entry: `/index.js?cache-busting=${Math.random()}`,
+			}));
+		}
+
+		try {
+			const file = join(this.task.root, path);
+			if (path.endsWith("js")) {
+				response.writeHead(200, {
+					"Content-Type": "text/javascript",
+				});
 			}
+			createReadStream(file).pipe(response);
+		} catch (e) {
+			response.writeHead(404).end(e.message);
 		}
 	}
 }

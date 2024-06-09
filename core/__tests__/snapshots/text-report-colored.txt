@@ -1,0 +1,7 @@
+[94mText reporter: Format benchmark results of 1 suites:[39m[92m[39m
+[92mSuite: [39mperf
+| No. | Name |        time |   time.SD |
+| --: | ---: | ----------: | --------: |
+|   0 |  foo |   750.00 us | 433.01 us |
+|   1 |  bar | 1,750.00 us | 433.01 us |
+

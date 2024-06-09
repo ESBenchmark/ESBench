@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { noop } from "@kaciras/utilities/browser";
+import { noop } from "@kaciras/utilities/node";
 import { PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
 import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
@@ -136,18 +136,14 @@ it("should check zero measurement", async () => {
 });
 
 it("should not set throughput for zero measurement", async () => {
+	const run = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
+	run.mockResolvedValue([0]);
 	const mockProfiler = new TimeProfiler({ throughput: "s" });
 
-	const oldRun = ExecutionTimeMeasurement.prototype.run;
-	ExecutionTimeMeasurement.prototype.run = () => Promise.resolve([0]);
-	try {
-		const result = await runProfilers([mockProfiler], {
-			setup: scene => scene.bench("Test", noop),
-		});
-		expect(result.scenes[0].Test).toStrictEqual({});
-	} finally {
-		ExecutionTimeMeasurement.prototype.run = oldRun;
-	}
+	const result = await runProfilers([mockProfiler], {
+		setup: scene => scene.bench("Test", noop),
+	});
+	expect(result.scenes[0].Test).toStrictEqual({});
 });
 
 it("should skip overhead stage if evaluateOverhead is false", async () => {

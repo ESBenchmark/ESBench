@@ -1,6 +1,6 @@
 import { defineSuite } from "esbench";
 
-export default defineSuite(async scene => {
+export default defineSuite(scene => {
 	for (let i = 0; i < 1000; i++) {
 		const attr = document.createElement("div");
 		const clazz = document.createElement("div");
@@ -13,7 +13,7 @@ export default defineSuite(async scene => {
 		return document.querySelectorAll(".data-v");
 	});
 
-	scene.bench("attr", () => {
+	scene.bench("attribute", () => {
 		return document.querySelectorAll("*[data-v]");
 	});
 });

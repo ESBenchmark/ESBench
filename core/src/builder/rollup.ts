@@ -53,8 +53,7 @@ const libraryPreset: InlineConfig = {
 };
 
 /**
- * Transform suites with Rollup for benchmark, you have to
- * install rollup and add a plugin to perform Node resolving.
+ * Transform suites with Rollup for benchmark, you have to install rollup and add plugins to perform Node resolving.
  */
 export class RollupBuilder implements Builder {
 

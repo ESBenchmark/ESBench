@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstItem } from "@kaciras/utilities/browser";
+import { firstItem } from "@kaciras/utilities/node";
 import { Summary, ToolchainResult } from "../src/index.ts";
 import data from "./fixtures/params-12.json" with { type: "json" };
 

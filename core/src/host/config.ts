@@ -7,46 +7,6 @@ import inProcess from "../executor/in-process.js";
 import textReporter from "../reporter/text.js";
 import { rawReporter } from "./index.js";
 
-type ToolConfig<T> = Nameable<T> | undefined | null | false;
-
-export interface ToolchainOptions {
-	/**
-	 * The micromatch patterns ESBench uses to glob suite files.
-	 *
-	 * @default ["./benchmark/**\/*.[jt]s?(x)"]
-	 */
-	include?: string[];
-
-	/**
-	 * The micromatch glob patterns to ignore files.
-	 */
-	exclude?: string[];
-
-	/**
-	 * Specific a list of builder to transform source files before execution,
-	 * falsy values are ignored. Each build results as a new set of benchmarks.
-	 *
-	 * By default, it will perform no transform at all.
-	 */
-	builders?: Array<ToolConfig<Builder>>;
-
-	/**
-	 * With executors, you specify JS runtimes that ESBench execute your suites,
-	 * falsy values are ignored.
-	 *
-	 * By default, ESBench run your suites in the current context.
-	 */
-	executors?: Array<ToolConfig<Executor>>;
-}
-
-/**
- * A reporter allows you to export results of your benchmark in different formats.
- *
- * @param result The result of all suites.
- * @param prev Another result used to calculate difference.
- */
-export type Reporter = (result: ESBenchResult, logger: HostContext) => Awaitable<unknown>;
-
 export interface ESBenchConfig {
 	/**
 	 * Which files will be run as benchmark suites uses which toolchains.
@@ -89,6 +49,46 @@ export interface ESBenchConfig {
 	 */
 	reporters?: Reporter[];
 }
+
+type ToolConfig<T> = Nameable<T> | undefined | null | false;
+
+export interface ToolchainOptions {
+	/**
+	 * The micromatch patterns ESBench uses to glob suite files.
+	 *
+	 * @default ["./benchmark/**\/*.[jt]s?(x)"]
+	 */
+	include?: string[];
+
+	/**
+	 * The micromatch glob patterns to ignore files.
+	 */
+	exclude?: string[];
+
+	/**
+	 * Specific a list of builder to transform source files before execution,
+	 * falsy values are ignored. Each build results as a new set of benchmarks.
+	 *
+	 * By default, it will perform no transform at all.
+	 */
+	builders?: Array<ToolConfig<Builder>>;
+
+	/**
+	 * With executors, you specify JS runtimes that ESBench execute your suites,
+	 * falsy values are ignored.
+	 *
+	 * By default, ESBench run your suites in the current context.
+	 */
+	executors?: Array<ToolConfig<Executor>>;
+}
+
+/**
+ * A reporter allows you to export results of your benchmark in different formats.
+ *
+ * @param result The result of all suites.
+ * @param prev Another result used to calculate difference.
+ */
+export type Reporter = (result: ESBenchResult, logger: HostContext) => Awaitable<unknown>;
 
 /**
  * Type helper to mark the object as an ESBench config.

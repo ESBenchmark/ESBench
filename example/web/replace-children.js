@@ -1,6 +1,6 @@
 import { defineSuite } from "esbench";
 
-export default defineSuite(async scene => {
+export default defineSuite(scene => {
 	const length = 1000;
 	const elements = Array.from({ length }, () => document.createElement("p"));
 

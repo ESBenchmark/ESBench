@@ -22,9 +22,14 @@ afterAll(() => {
 	process.argv = argvBackup;
 });
 
-it("should pass empty object if no config found", async () => {
+function runESBenchCLI(...args: string[]) {
+	process.argv = ["node", "cli.js", ...args];
 	vi.resetModules();
-	await import("../../src/host/cli.js");
+	return import("../../src/host/cli.js");
+}
+
+it("should pass empty object if no config found", async () => {
+	await runESBenchCLI();
 
 	const [config, filters] = mockStart.mock.calls[0];
 	expect(nodeModule.register).toHaveBeenCalledOnce();
@@ -35,26 +40,17 @@ it("should pass empty object if no config found", async () => {
 });
 
 it("should not install TS loader with `--no-loader` argument", async () => {
-	vi.resetModules();
-	process.argv = ["node", "cli.js", "--no-loader"];
-	await import("../../src/host/cli.js");
-
+	await runESBenchCLI("--no-loader");
 	expect(nodeModule.register).not.toHaveBeenCalled();
 });
 
-it("should override log level by --logLevel",async () => {
-	process.argv = ["node", "cli.js", "--logLevel=warn"];
-	vi.resetModules();
-	await import("../../src/host/cli.js");
-
+it("should override log level by --logLevel", async () => {
+	await runESBenchCLI("--logLevel=warn");
 	expect(mockStart.mock.calls[0][0].logLevel).toBe("warn");
 });
 
 it("should generate report from saved results", async () => {
-	process.argv = ["node", "cli.js", "report", "1.json", "2.json"];
-	vi.resetModules();
-	await import("../../src/host/cli.js");
-
+	await runESBenchCLI("report", "1.json", "2.json");
 	expect(mockStart).not.toHaveBeenCalled();
 	expect(mockReport).toHaveBeenCalledWith({}, ["1.json", "2.json"]);
 });
