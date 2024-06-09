@@ -63,7 +63,7 @@ interface WebManuallyExecutorOptions extends https.ServerOptions {
 	port?: number;
 }
 
-export default class WebManuallyExecutor implements Executor {
+export default class WebRemoteExecutor implements Executor {
 
 	private server!: Server;
 	private task?: ExecuteOptions;
@@ -75,7 +75,7 @@ export default class WebManuallyExecutor implements Executor {
 	}
 
 	get name() {
-		return "web manually";
+		return "web remote";
 	}
 
 	async start() {
