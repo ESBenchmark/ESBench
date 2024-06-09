@@ -3,10 +3,40 @@ import { json } from "stream/consumers";
 import { once } from "events";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { ClientMessage } from "esbench";
 import { ExecuteOptions, Executor } from "esbench/host";
+import { AddressInfo } from "net";
 
-const html = readFileSync(join(import.meta.dirname, "web-manually-client.html"), "utf8");
-const loader = readFileSync(join(import.meta.dirname, "web-manually-client.js"), "utf8");
+const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>ESBench Client</title>
+<script type="module" src="/_es-bench/loader.js"></script>
+</head>
+<body></body>
+</html>`;
+
+const loader = `\
+const postMessage = message => fetch("/_es-bench/message", {
+	method: "POST",
+	body: JSON.stringify(message),
+});
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+for (; ; sleep(5)) {
+	try {
+		const response = await fetch("./_es-bench/task");
+		if (!response.ok) {
+			continue;
+		}
+		const { entry, files, pattern } = await response.json();
+		const module = await import(entry);
+		await module.default(postMessage, files, pattern);
+	} catch {
+		// ESBench finished, still poll for the next run.
+	}
+}`;
 
 export default class WebManuallyExecutor implements Executor {
 
@@ -42,7 +72,7 @@ export default class WebManuallyExecutor implements Executor {
 				entry: `/index.js?cache-busting=${Math.random()}`,
 			}));
 		} else if (path === "/_es-bench/message") {
-			const message = await json(request) as any;
+			const message = await json(request) as ClientMessage;
 			response.end();
 			this.task.dispatch(message);
 			if (!("level" in message)) {
@@ -52,7 +82,9 @@ export default class WebManuallyExecutor implements Executor {
 			try {
 				const data = readFileSync(join(this.task.root, path));
 				if (path.endsWith("js")) {
-					response.writeHead(200, { "Content-Type": "text/javascript" });
+					response.writeHead(200, {
+						"Content-Type": "text/javascript",
+					});
 				}
 				response.end(data);
 			} catch (e) {
@@ -66,8 +98,8 @@ export default class WebManuallyExecutor implements Executor {
 		this.server.listen(this.port, this.host);
 		await once(this.server, "listening");
 
-		const addr = this.server.address();
-		const url = `http://localhost:${addr.port}`;
+		const addr = this.server.address() as AddressInfo;
+		const url = `http://${this.host ?? "localhost"}:${addr.port}`;
 		console.info("[WebManuallyExecutor] URL: " + url);
 	}
 
