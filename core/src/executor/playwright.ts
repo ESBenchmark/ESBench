@@ -14,7 +14,7 @@ import { ExecuteOptions, Executor } from "../host/toolchain.js";
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
-const pageHTML = {
+export const pageHTML = {
 	headers: {
 		"Cross-Origin-Opener-Policy": "same-origin",
 		"Cross-Origin-Embedder-Policy": "require-corp",

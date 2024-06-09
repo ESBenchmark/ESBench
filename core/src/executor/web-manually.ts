@@ -7,6 +7,7 @@ import { createReadStream } from "fs";
 import { join } from "path";
 import { AddressInfo } from "net";
 import { ClientMessage } from "../connect.js";
+import { pageHTML } from "./playwright.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const html = `<!DOCTYPE html>
@@ -41,6 +42,22 @@ for (; ; sleep(5)) {
 	}
 }`;
 
+function resolveUrl(server: Server, options: WebManuallyExecutorOptions) {
+	const info = server.address() as AddressInfo;
+	let hostname = info.address;
+	switch (hostname) {
+		case "0.0.0.0":
+		case "::":
+		case "0000:0000:0000:0000:0000:0000:0000:0000":
+			hostname = "localhost";
+	}
+	if (hostname.includes(":")) {
+		hostname = `[${hostname}]`;
+	}
+	const protocol = options.key ? "https" : "http";
+	return `${protocol}://${hostname}:${info.port}`;
+}
+
 interface WebManuallyExecutorOptions extends https.ServerOptions {
 	host?: string;
 	port?: number;
@@ -72,8 +89,7 @@ export default class WebManuallyExecutor implements Executor {
 		this.server.listen(port, host);
 		await once(this.server, "listening");
 
-		const addr = this.server.address() as AddressInfo;
-		const url = `http://${host ?? "localhost"}:${addr.port}`;
+		const url = resolveUrl(this.server, this.options);
 		console.info("[WebManuallyExecutor] URL: " + url);
 	}
 
@@ -91,7 +107,7 @@ export default class WebManuallyExecutor implements Executor {
 
 		switch (path) {
 			case "/":
-				return response.writeHead(200).end(html);
+				return response.writeHead(200, pageHTML.headers).end(html);
 			case "/_es-bench/loader.js":
 				return response
 					.writeHead(200, { "Content-Type": "text/javascript" })
