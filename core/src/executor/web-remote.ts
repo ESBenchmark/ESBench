@@ -165,7 +165,7 @@ export default class WebRemoteExecutor implements Executor {
 			? https.createServer(this.options, listener)
 			: http.createServer(this.options, listener);
 
-		const { host, port } = this.options;
+		const { host, port = 14715 } = this.options;
 		this.server.listen(port, host);
 		await once(this.server, "listening");
 
