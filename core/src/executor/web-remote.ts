@@ -97,18 +97,21 @@ async function doImport(path) {
 	}
 }
 
-for (; ; sleep(5)) {
+for (let imported = false; ; sleep(5)) {
 	try {
 		const response = await fetch("./_es-bench/task");
 		if (!response.ok) {
 			continue;
 		}
+		// Refresh the page to clear module cache.
+		if (imported) {
+			location.reload();
+		}
 		const { entry, files, pattern } = await response.json();
 		const module = await doImport(entry);
+		
+		imported = true;
 		await module.default(postMessage, files, pattern);
-
-		// Refresh the page to clear module cache.
-		location.reload();
 	} catch {
 		// ESBench finished, still poll for the next run.
 	}
