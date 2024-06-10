@@ -28,6 +28,15 @@ const postMessage = message => fetch("/_es-bench/message", {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+async function doImport(path) {
+	try {
+		return await import(path);
+	} catch (e) {
+		const message = "The remote failed to load the module";
+		return postMessage({ e: { name: "Error", message } });
+	}
+}
+
 for (; ; sleep(5)) {
 	try {
 		const response = await fetch("./_es-bench/task");
@@ -35,7 +44,7 @@ for (; ; sleep(5)) {
 			continue;
 		}
 		const { entry, files, pattern } = await response.json();
-		const module = await import(entry);
+		const module = await doImport(entry);
 		await module.default(postMessage, files, pattern);
 	} catch {
 		// ESBench finished, still poll for the next run.
@@ -70,6 +79,11 @@ export default class WebRemoteExecutor implements Executor {
 
 	private readonly options: WebManuallyExecutorOptions;
 
+	/**
+	 *
+	 *
+	 * If `options.key` is set, it will create a HTTPS server.
+	 */
 	constructor(options: WebManuallyExecutorOptions = {}) {
 		this.options = options;
 	}
@@ -90,7 +104,7 @@ export default class WebRemoteExecutor implements Executor {
 		await once(this.server, "listening");
 
 		const url = resolveUrl(this.server, this.options);
-		console.info("[WebManuallyExecutor] URL: " + url);
+		console.info("[WebManuallyExecutor] Waiting for connection from: " + url);
 	}
 
 	close() {
