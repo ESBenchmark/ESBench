@@ -53,7 +53,8 @@ export const transformer = {
 		const importer = pathToFileURL(filename).toString();
 		const [imports] = importParser.parse(code);
 
-		for (const { n, t, s, e } of imports.toReversed()) {
+		for (let i = imports.length - 1; i >= 0; i--) {
+			const { n, t, s, e } = imports[i];
 			if (!n) {
 				continue;
 			}
@@ -208,18 +209,18 @@ export default class WebRemoteExecutor implements Executor {
 			return response.end(JSON.stringify(body));
 		}
 
-		const fullPath = transformer.resolve(root, path);
-		if (!fullPath) {
+		const resolved = transformer.resolve(root, path);
+		if (!resolved) {
 			return this.sendFile(join(root, path), response);
 		}
 
 		try {
-			const body = await transformer.load(path);
+			const body = await transformer.load(resolved);
 			if (body) {
 				const headers = { "Content-Type": "text/javascript" };
 				return response.writeHead(200, headers).end(body);
 			} else {
-				return this.sendFile(fullPath, response);
+				return this.sendFile(resolved, response);
 			}
 		} catch (e) {
 			if (e.code !== "ENOENT") {
