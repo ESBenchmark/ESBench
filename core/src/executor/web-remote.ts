@@ -3,12 +3,71 @@ import { IncomingMessage, Server, ServerResponse } from "http";
 import * as https from "https";
 import { json } from "stream/consumers";
 import { once } from "events";
-import { createReadStream } from "fs";
+import { createReadStream, readFileSync } from "fs";
 import { join } from "path";
 import { AddressInfo } from "net";
+import { env, execArgv } from "process";
+import { fileURLToPath, pathToFileURL } from "url";
+import { CompileFn, detectTypeScriptCompiler } from "ts-directly";
+import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
-import { moduleTransformer, pageHTML } from "./playwright.js";
+import { pageHTML } from "./playwright.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
+
+function hasFlag(flag: string) {
+	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
+}
+
+export const transformer = {
+	// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
+	enabled: hasFlag("--experimental-import-meta-resolve"),
+
+	compileTS: undefined as CompileFn | undefined,
+
+	resolve(root: string, path: string) {
+		if (!this.enabled) {
+			return;
+		}
+		if (path.startsWith("/@fs/")) {
+			return path.slice(5);
+		} else if (path === "/index.js") {
+			return join(root, path);
+		}
+	},
+
+	async load(path: string) {
+		if (!/\.[cm]?[jt]sx?$/.test(path)) {
+			return;
+		}
+		let code = readFileSync(path, "utf8");
+
+		if (/tsx?$/.test(path)) {
+			this.compileTS ??= await detectTypeScriptCompiler();
+			code = await this.compileTS(code, path, true);
+		}
+		return this.transformImports(code, path);
+	},
+
+	transformImports(code: string, filename: string) {
+		// Currently `import.meta.resolve` does not work well with URL parent.
+		const importer = pathToFileURL(filename).toString();
+		const [imports] = importParser.parse(code);
+
+		for (const { n, t, s, e } of imports.toReversed()) {
+			if (!n) {
+				continue;
+			}
+			// Require `--experimental-import-meta-resolve`
+			let path = import.meta.resolve(n, importer);
+			path = fileURLToPath(path);
+			path = `/@fs/${path.replaceAll("\\", "/")}`;
+
+			const trim = t === 2 ? 1 : 0;
+			code = code.slice(0, s + trim) + path + code.slice(e - trim);
+		}
+		return code;
+	},
+};
 
 const html = `<!DOCTYPE html>
 <html>
@@ -134,46 +193,51 @@ export default class WebRemoteExecutor implements Executor {
 		if (!this.task) {
 			return response.writeHead(404).end();
 		}
+		const { root, files, pattern, dispatch } = this.task;
 
 		if (path === "/_es-bench/message") {
 			const message = await json(request) as ClientMessage;
-			this.task.dispatch(message);
+			dispatch(message);
 			if (!("level" in message)) {
 				this.task = undefined; // Execution finished.
 			}
 			return response.writeHead(204).end();
 		}
 		if (path === "/_es-bench/task") {
-			return response.end(JSON.stringify({
-				pattern: this.task.pattern,
-				files: this.task.files,
-				entry: `/index.js?cache-busting=${Math.random()}`,
-			}));
+			const body = { entry: "/index.js", files, pattern };
+			return response.end(JSON.stringify(body));
 		}
 
-		let resolved: string | false = "";
-		const { root } = this.task;
-		if (moduleTransformer.enabled) {
-			resolved = moduleTransformer.check(path);
-			if (path === "/index.js") {
-				resolved = join(root, path);
+		const fullPath = transformer.resolve(root, path);
+		if (!fullPath) {
+			return this.sendFile(join(root, path), response);
+		}
+
+		try {
+			const body = await transformer.load(path);
+			if (body) {
+				const headers = { "Content-Type": "text/javascript" };
+				return response.writeHead(200, headers).end(body);
+			} else {
+				return this.sendFile(fullPath, response);
 			}
+		} catch (e) {
+			if (e.code !== "ENOENT") {
+				throw e;
+			}
+			return response.writeHead(404).end(e.message);
 		}
+	}
 
-		if (resolved && /\.[cm]?[jt]sx?$/.test(path)) {
-			const code = await moduleTransformer.load(resolved);
-			const headers = { "Content-Type": "text/javascript" };
-			return response.writeHead(200, headers).end(code);
-		}
-
-		const stream = createReadStream(resolved || join(root, path));
+	sendFile(fullPath: string, response: ServerResponse) {
+		const stream = createReadStream(fullPath);
 		stream.on("open", () => {
 			const headers: http.OutgoingHttpHeaders = {};
-			if (path.endsWith("js")) {
+			if (fullPath.endsWith("js")) {
 				headers["Content-Type"] = "text/javascript";
 			}
 			stream.pipe(response.writeHead(200, headers));
 		});
-		stream.on("error", e => response.writeHead(404).end(e.message));
+		stream.on("error", () => response.writeHead(404).end());
 	}
 }
