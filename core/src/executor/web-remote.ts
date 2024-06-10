@@ -7,7 +7,7 @@ import { createReadStream } from "fs";
 import { join } from "path";
 import { AddressInfo } from "net";
 import { ClientMessage } from "../connect.js";
-import { pageHTML } from "./playwright.js";
+import { moduleTransformer, pageHTML } from "./playwright.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 const html = `<!DOCTYPE html>
@@ -134,7 +134,22 @@ export default class WebRemoteExecutor implements Executor {
 			}));
 		}
 
-		const stream = createReadStream(join(this.task.root, path));
+		let resolved: string | false = "";
+		const { root } = this.task;
+		if (moduleTransformer.enabled) {
+			resolved = moduleTransformer.check(path);
+			if (path === "/index.js") {
+				resolved = join(root, path);
+			}
+		}
+
+		if (resolved && /\.[cm]?[jt]sx?$/.test(path)) {
+			const code = await moduleTransformer.load(resolved);
+			const headers = { "Content-Type": "text/javascript" };
+			return response.writeHead(200, headers).end(code);
+		}
+
+		const stream = createReadStream(resolved || join(root, path));
 		stream.on("open", () => {
 			const headers: http.OutgoingHttpHeaders = {};
 			if (path.endsWith("js")) {

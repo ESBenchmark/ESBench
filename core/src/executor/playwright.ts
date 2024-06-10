@@ -6,7 +6,7 @@ import { tmpdir } from "os";
 import { env, execArgv } from "process";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
-import { detectTypeScriptCompiler } from "ts-directly";
+import { CompileFn, detectTypeScriptCompiler } from "ts-directly";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
@@ -60,46 +60,46 @@ function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
 }
 
-// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
-const resolveEnabled = hasFlag("--experimental-import-meta-resolve");
+export const moduleTransformer = {
+	// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
+	enabled: hasFlag("--experimental-import-meta-resolve"),
 
-function needTransform(specifier: string) {
-	return specifier === "/index.js"
-		|| specifier.startsWith("/@fs/")
-		&& /\.[cm]?[jt]sx?$/.test(specifier);
-}
+	compileTS: undefined as CompileFn | undefined,
 
-let compileTS;
+	check(specifier: string) {
+		return specifier.startsWith("/@fs/") && specifier.slice(5);
+	},
 
-async function loadModule(specifier: string) {
-	let code = readFileSync(specifier, "utf8");
+	async load(specifier: string) {
+		let code = readFileSync(specifier, "utf8");
 
-	if (/tsx?$/.test(specifier)) {
-		compileTS ??= await detectTypeScriptCompiler();
-		code = await compileTS(code, specifier, true);
-	}
-	return transformImports(code, specifier);
-}
-
-function transformImports(code: string, path: string) {
-	// Currently `import.meta.resolve` does not work well with URL parent.
-	const importer = pathToFileURL(path).toString();
-	const [imports] = importParser.parse(code);
-
-	for (const { n, t, s, e } of imports.toReversed()) {
-		if (!n) {
-			continue;
+		if (/tsx?$/.test(specifier)) {
+			this.compileTS ??= await detectTypeScriptCompiler();
+			code = await this.compileTS(code, specifier, true);
 		}
-		// Require `--experimental-import-meta-resolve`
-		let path = import.meta.resolve(n, importer);
-		path = fileURLToPath(path);
-		path = `/@fs/${path.replaceAll("\\", "/")}`;
+		return this.transformImports(code, specifier);
+	},
 
-		const trim = t === 2 ? 1 : 0;
-		code = code.slice(0, s + trim) + path + code.slice(e - trim);
-	}
-	return code;
-}
+	transformImports(code: string, path: string) {
+		// Currently `import.meta.resolve` does not work well with URL parent.
+		const importer = pathToFileURL(path).toString();
+		const [imports] = importParser.parse(code);
+
+		for (const { n, t, s, e } of imports.toReversed()) {
+			if (!n) {
+				continue;
+			}
+			// Require `--experimental-import-meta-resolve`
+			let path = import.meta.resolve(n, importer);
+			path = fileURLToPath(path);
+			path = `/@fs/${path.replaceAll("\\", "/")}`;
+
+			const trim = t === 2 ? 1 : 0;
+			code = code.slice(0, s + trim) + path + code.slice(e - trim);
+		}
+		return code;
+	},
+};
 
 /**
  * Run suites on browser with Playwright driver.
@@ -149,28 +149,33 @@ export class PlaywrightExecutor implements Executor {
 		if (path === "/") {
 			return route.fulfill(pageHTML);
 		}
+		let resolved: string | false = "";
+		if (moduleTransformer.enabled) {
+			resolved = moduleTransformer.check(path);
+			if (path === "/index.js") {
+				resolved = join(root, path);
+			}
+		}
 		try {
-			if (resolveEnabled && needTransform(path)) {
-				// Transformed JS/TS module import
-				const file = path === "/index.js"
-					? join(root, path) : path.slice(5);
-
-				return route.fulfill({
-					body: await loadModule(file),
-					contentType: "text/javascript",
-				});
-			} else if (path.startsWith("/@fs/")) {
-				// Transformed asset import
-				return await route.fulfill({ path: path.slice(5) });
-			} else {
+			if (!resolved) {
 				// Non-import request or resolving disabled.
 				return await route.fulfill({ path: join(root, path) });
+			}
+			if (/\.[cm]?[jt]sx?$/.test(path)) {
+				// Transformed JS/TS module import
+				return route.fulfill({
+					body: await moduleTransformer.load(resolved),
+					contentType: "text/javascript",
+				});
+			} else {
+				// Transformed asset import
+				return await route.fulfill({ path: resolved });
 			}
 		} catch (e) {
 			if (e.code !== "ENOENT") {
 				throw e;
 			}
-			return route.fulfill({ status: 404 });
+			return route.fulfill({ status: 404, body: e.message });
 		}
 	}
 
