@@ -60,7 +60,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 		let builder = "";
 		context.info(`Running suites with executor "${executorName}"`);
 
-		await executor.start?.();
+		await executor.start?.(context);
 		try {
 			for (const build of builds) {
 				builder = build.name;
@@ -104,7 +104,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 			context.error(`At scene ${e.paramStr}`);
 			throw e.cause;
 		} finally {
-			await executor.close?.();
+			await executor.close?.(context);
 		}
 	}
 

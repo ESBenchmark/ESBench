@@ -12,6 +12,7 @@ import { CompileFn, detectTypeScriptCompiler } from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { HostContext } from "../host/index.js";
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
@@ -196,7 +197,7 @@ export default class WebRemoteExecutor implements Executor {
 		return "web remote";
 	}
 
-	async start() {
+	async start(ctx: HostContext) {
 		const listener = this.handleRequest.bind(this);
 
 		this.server = this.options.key
@@ -208,7 +209,7 @@ export default class WebRemoteExecutor implements Executor {
 		await once(this.server, "listening");
 
 		const url = resolveUrl(this.server, this.options);
-		console.info("[WebManuallyExecutor] Waiting for connection from: " + url);
+		ctx.info("[WebManuallyExecutor] Waiting for connection from: " + url);
 	}
 
 	close() {

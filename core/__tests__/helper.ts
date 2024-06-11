@@ -6,7 +6,7 @@ import { BenchmarkSuite } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
-import { ExecuteOptions, Executor } from "../src/host/index.ts";
+import { ExecuteOptions, Executor, HostContext } from "../src/host/index.ts";
 import { BuildResult } from "../src/host/toolchain.ts";
 
 // Enforce colored console output on CI.
@@ -93,9 +93,11 @@ const stubError = new Error("Stub Error");
  * @param executor The Executor instance to tested.
  */
 export function executorTester(executor: Executor) {
+	const context = new HostContext({ logLevel: "off" });
+
 	useTempDirectory(BUILD_OUT_DIR);
-	beforeAll(() => executor.start?.() as any);
-	afterAll(() => executor.close?.() as any);
+	beforeAll(() => executor.start?.(context) as any);
+	afterAll(() => executor.close?.(context) as any);
 
 	async function execute(build: Omit<BuildResult, "name">) {
 		const context = messageResolver(noop) as unknown as ExecuteOptions;

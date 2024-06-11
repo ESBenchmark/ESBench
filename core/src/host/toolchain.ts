@@ -86,12 +86,12 @@ export interface Executor {
 	/**
 	 * Called once before the executor starts executing suites.
 	 */
-	start?(): Awaitable<unknown>;
+	start?(ctx: HostContext): Awaitable<unknown>;
 
 	/**
 	 * Called only once after all suites execution finished, or an error occurred during the execution.
 	 */
-	close?(): Awaitable<unknown>;
+	close?(ctx: HostContext): Awaitable<unknown>;
 
 	/**
 	 * This method is called for every build output.
