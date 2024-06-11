@@ -7,17 +7,14 @@ import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
-import { transformer } from "./web-remote.js";
+import { isolationHeaders, transformer } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
 export const pageHTML = {
-	headers: {
-		"Cross-Origin-Opener-Policy": "same-origin",
-		"Cross-Origin-Embedder-Policy": "require-corp",
-	},
+	headers: isolationHeaders,
 	contentType: "text/html",
 	body: "<html><head></head><body></body></html>",
 };

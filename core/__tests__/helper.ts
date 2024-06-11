@@ -9,6 +9,7 @@ import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor } from "../src/host/index.ts";
 import { BuildResult } from "../src/host/toolchain.ts";
 
+// Enforce colored console output on CI.
 chalk.level = 1;
 
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;

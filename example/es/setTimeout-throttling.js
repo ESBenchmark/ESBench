@@ -8,6 +8,7 @@ export default defineSuite({
 	},
 	timing: {
 		warmup: 0,
+		iterations: 1,
 		evaluateOverhead: false,
 	},
 	setup(scene) {

@@ -11,19 +11,34 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { CompileFn, detectTypeScriptCompiler } from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
-import { pageHTML } from "./playwright.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
 }
 
+/**
+ * ESBench's builtin module transformer, used for processing files to make them
+ * executable in browser. it performs:
+ *
+ * - Compile TS code to JS code.
+ * - Resolve file imports to absolute path.
+ *
+ * To enable the transformer in Node, you need a flag `--experimental-import-meta-resolve`
+ */
 export const transformer = {
 	// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
 	enabled: hasFlag("--experimental-import-meta-resolve"),
 
 	compileTS: undefined as CompileFn | undefined,
 
+	/**
+	 * Get the file path of the import, or undefined if resolving is
+	 * disabled or the request is not created by import statement.
+	 *
+	 * @param root The root folder of the page.
+	 * @param path The pathname of the request.
+	 */
 	resolve(root: string, path: string) {
 		if (!this.enabled) {
 			return;
@@ -35,6 +50,12 @@ export const transformer = {
 		}
 	},
 
+	/**
+	 * Read the file, and perform necessary transformation if possible.
+	 *
+	 * @param path Path of the file.
+	 * @return Transformed data, or undefined if the file does not need to be transformed.
+	 */
 	async load(path: string) {
 		if (!/\.[cm]?[jt]sx?$/.test(path)) {
 			return;
@@ -80,6 +101,12 @@ const html = `<!DOCTYPE html>
 <body></body>
 </html>`;
 
+// https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#security_requirements
+export const isolationHeaders = {
+	"Cross-Origin-Opener-Policy": "same-origin",
+	"Cross-Origin-Embedder-Policy": "require-corp",
+};
+
 const loader = `\
 const postMessage = message => fetch("/_es-bench/message", {
 	method: "POST",
@@ -117,7 +144,7 @@ for (let imported = false; ; sleep(5)) {
 	}
 }`;
 
-function resolveUrl(server: Server, options: WebManuallyExecutorOptions) {
+function resolveUrl(server: Server, options: WebRemoteExecutorOptions) {
 	const info = server.address() as AddressInfo;
 	let hostname = info.address;
 	switch (hostname) {
@@ -133,24 +160,35 @@ function resolveUrl(server: Server, options: WebManuallyExecutorOptions) {
 	return `${protocol}://${hostname}:${info.port}`;
 }
 
-interface WebManuallyExecutorOptions extends https.ServerOptions {
+interface WebRemoteExecutorOptions extends https.ServerOptions {
+	/**
+	 * The host parameter of `Server.listen`.
+	 */
 	host?: string;
+
+	/**
+	 * The port parameter of `Server.listen`.
+	 *
+	 * @default 14715
+	 */
 	port?: number;
 }
 
+/**
+ * Benchmark on any device that has HTTP access to the machine!
+ */
 export default class WebRemoteExecutor implements Executor {
 
 	private server!: Server;
 	private task?: ExecuteOptions;
 
-	private readonly options: WebManuallyExecutorOptions;
+	private readonly options: WebRemoteExecutorOptions;
 
 	/**
-	 *
-	 *
-	 * If `options.key` is set, it will create a HTTPS server.
+	 * Create a new WebRemoteExecutor instance, if `options.key`
+	 * is set, it will create an HTTPS server.
 	 */
-	constructor(options: WebManuallyExecutorOptions = {}) {
+	constructor(options: WebRemoteExecutorOptions = {}) {
 		this.options = options;
 	}
 
@@ -187,7 +225,7 @@ export default class WebRemoteExecutor implements Executor {
 
 		switch (path) {
 			case "/":
-				return response.writeHead(200, pageHTML.headers).end(html);
+				return response.writeHead(200, isolationHeaders).end(html);
 			case "/_es-bench/loader.js":
 				return response
 					.writeHead(200, { "Content-Type": "text/javascript" })
