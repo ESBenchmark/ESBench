@@ -99,7 +99,7 @@ export function executorTester(executor: Executor) {
 	beforeAll(() => executor.start?.(context) as any);
 	afterAll(() => executor.close?.(context) as any);
 
-	async function execute(build: Omit<BuildResult, "name">) {
+	let execute = async (build: Omit<BuildResult, "name">) => {
 		const context = messageResolver(noop) as unknown as ExecuteOptions;
 		context.tempDir = BUILD_OUT_DIR;
 		context.pattern = RE_ANY.source;
@@ -111,10 +111,12 @@ export function executorTester(executor: Executor) {
 		await Promise.all([context.promise, w]);
 
 		return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
-	}
+	};
 
 	return {
-		execute,
+		// Use getter/setter to make it overrideable.
+		get execute() { return execute; },
+		set execute(value) { execute = value; },
 
 		/*
 		 * Shared test cases, they should be passed for every executor.

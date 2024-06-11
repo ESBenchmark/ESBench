@@ -101,7 +101,7 @@ export class PlaywrightExecutor implements Executor {
 			return route.fulfill(pageHTML);
 		}
 
-		const resolved = transformer.resolve(root, path);
+		const resolved = transformer.parse(root, path);
 		try {
 			if (!resolved) {
 				// Non-import request or resolving disabled.

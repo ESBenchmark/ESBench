@@ -40,7 +40,7 @@ export const transformer = {
 	 * @param root The root folder of the page.
 	 * @param path The pathname of the request.
 	 */
-	resolve(root: string, path: string) {
+	parse(root: string, path: string) {
 		if (!this.enabled) {
 			return;
 		}
@@ -53,6 +53,8 @@ export const transformer = {
 
 	/**
 	 * Read the file, and perform necessary transformation if possible.
+	 *
+	 * If the file does not exists, it will throw an Error with the code "ENOENT".
 	 *
 	 * @param path Path of the file.
 	 * @return Transformed data, or undefined if the file does not need to be transformed.
@@ -70,6 +72,11 @@ export const transformer = {
 		return this.transformImports(code, path);
 	},
 
+	// Require `--experimental-import-meta-resolve`
+	resolve(specifier: string, parent: string) {
+		return fileURLToPath(import.meta.resolve(specifier, parent));
+	},
+
 	transformImports(code: string, filename: string) {
 		// Currently `import.meta.resolve` does not work well with URL parent.
 		const importer = pathToFileURL(filename).toString();
@@ -80,9 +87,7 @@ export const transformer = {
 			if (!n) {
 				continue;
 			}
-			// Require `--experimental-import-meta-resolve`
-			let path = import.meta.resolve(n, importer);
-			path = fileURLToPath(path);
+			let path = this.resolve(n, importer);
 			path = `/@fs/${path.replaceAll("\\", "/")}`;
 
 			const trim = t === 2 ? 1 : 0;
@@ -120,8 +125,8 @@ async function doImport(path) {
 	try {
 		return await import(path);
 	} catch (e) {
-		const message = "The remote failed to load the module";
-		return postMessage({ e: { name: "Error", message } });
+		const { name, message, stack } = e;
+		return postMessage({ e: { name, message, stack } });
 	}
 }
 
@@ -251,7 +256,7 @@ export default class WebRemoteExecutor implements Executor {
 			return response.end(JSON.stringify(body));
 		}
 
-		const resolved = transformer.resolve(root, path);
+		const resolved = transformer.parse(root, path);
 		if (!resolved) {
 			return this.sendFile(join(root, path), response);
 		}
