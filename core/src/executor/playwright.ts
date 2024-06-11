@@ -1,13 +1,12 @@
 import type { BrowserContext, BrowserType, LaunchOptions, Page, Route } from "playwright-core";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { pathToFileURL } from "url";
 import { tmpdir } from "os";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
-import { isolationHeaders, transformer } from "./web-remote.js";
+import { fixStacktrace, isolationHeaders, transformer } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -128,7 +127,7 @@ export class PlaywrightExecutor implements Executor {
 
 		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
 			if ("e" in message) {
-				this.fixStacktrace(message.e, origin, root);
+				fixStacktrace(message.e, origin, root);
 			}
 			dispatch(message);
 		});
@@ -147,46 +146,6 @@ export class PlaywrightExecutor implements Executor {
 	async execute(options: ExecuteOptions) {
 		const page = await this.context.newPage();
 		await this.executeInPage(page, options, baseURL);
-	}
-
-	/**
-	 * Convert stack trace to Node format, and resolve location to file URL.
-	 */
-	fixStacktrace(error: any, origin: string, root: string) {
-		const { name, message, stack } = error;
-		const lines = stack.split("\n") as string[];
-		let re: RegExp;
-		let newStack = "";
-
-		if (this.type.name() === "chromium") {
-			lines.splice(0, 1);
-			re = / {4}at (.+?) \((.+?)\)/;
-		} else {
-			re = /(.*?)@(.*)/;
-		}
-
-		for (let i = 0; i < lines.length; i++) {
-			let [, fn, pos] = re.exec(lines[i]) ?? [];
-			if (!pos) {
-				continue;
-			}
-			if (fn) {
-				fn = fn.replace("*", " ");
-			} else {
-				fn = "<anonymous>";
-			}
-			if (pos.startsWith(origin)) {
-				pos = root + pos.slice(origin.length);
-				pos = pathToFileURL(pos).toString();
-			}
-			newStack += `\n    at ${fn} (${pos})`;
-		}
-
-		error.stack = `${name}: ${message}${newStack}`;
-
-		if (error.cause) {
-			this.fixStacktrace(error.cause, origin, root);
-		}
 	}
 }
 

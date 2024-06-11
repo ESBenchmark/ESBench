@@ -97,6 +97,63 @@ export const transformer = {
 	},
 };
 
+
+function parseV8Stack(line: string) {
+	const i = line.lastIndexOf("(");
+	if (i === -1) {
+		return ["", line.slice(7)];
+	}
+	return [line.slice(7, i - 1), line.slice(i + 1, -1)];
+}
+
+function parseJSCStack(line: string) {
+	const i = line.indexOf("@");
+	return [line.slice(0, i), line.slice(i + 1)];
+}
+
+/**
+ * Convert stack of the error to Node format, and resolve locations to files.
+ *
+ * @param error The Error-like object
+ * @param origin The origin of path that error thrown, no tail slash.
+ * @param root Path of the site root directory.
+ */
+export function fixStacktrace(error: any, origin: string, root: string) {
+	const { name, message, stack } = error;
+	const lines = stack.split("\n") as string[];
+	let newStack = "";
+	let parse: typeof parseV8Stack;
+
+	if (lines[0].includes("@")) {
+		parse = parseJSCStack;
+	} else {
+		lines.splice(0, 1);
+		parse = parseV8Stack;
+	}
+
+	for (let i = 0; i < lines.length; i++) {
+		let [fn, pos] = parse(lines[i]);
+		if (!pos) {
+			continue;
+		}
+		if (pos.startsWith(origin)) {
+			pos = root + pos.slice(origin.length);
+		}
+		if (fn) {
+			fn = fn.replace("*", " ");
+			newStack += `\n    at ${fn} (${pos})`;
+		} else {
+			newStack += `\n    at ${pos}`;
+		}
+	}
+
+	error.stack = `${name}: ${message}${newStack}`;
+
+	if (error.cause) {
+		fixStacktrace(error.cause, origin, root);
+	}
+}
+
 const html = `<!DOCTYPE html>
 <html>
 <head>
