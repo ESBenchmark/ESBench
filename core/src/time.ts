@@ -10,7 +10,7 @@ interface Iterator {
 	iterate: (count: number) => Awaitable<number>;
 }
 
-export function unroll(factor: number, isAsync: boolean) {
+function unroll(factor: number, isAsync: boolean) {
 	const [call, FunctionType] = isAsync
 		? ["await f()", AsyncFunction]
 		: ["f()", Function];

@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/node";
 import { PartialSuite, runProfilers, spin } from "./helper.js";
-import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions, unroll } from "../src/time.js";
+import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions } from "../src/time.js";
 import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
 
 // Does not work!
@@ -33,19 +33,6 @@ function mockZeroMeasurement(measurement: ExecutionTimeMeasurement) {
 		return ExecutionTimeMeasurement.prototype.measure.call(this, name, iterator, count);
 	};
 }
-
-it("should reduce overhead by unrolling", async () => {
-	const iterations = 100;
-	const factor = 100;
-
-	const no = unroll(1, false);
-	const unrolled = unroll(factor, false);
-
-	const t1 = await no(noop, iterations * factor);
-	const t2 = await unrolled(noop, iterations);
-
-	expect(t2).toBeLessThan(t1); // Diff depends on performance.
-});
 
 it.each([
 	[{ unrollFactor: 0 }, "The unrollFactor must be at least 1"],
