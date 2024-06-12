@@ -93,6 +93,8 @@ The results reveal the performance differences between browsers:
 |   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
 ```
 
+ESBench has some [builtin executors](./toolchains#builtin-executors) to help you run benchmarks in a variety of environments.
+
 ## Builder
 
 ESBench allows you to add a build step for suites, it is useful when:
@@ -117,23 +119,7 @@ export default defineConfig({
 
 Then you can just run `esbench` without flags, as imports are already transformed by the builder. 
 
-## Builtin Tools
-
-ESBench provide some builders and executors out of box.
-
-Builder:
-
-* `noBuild` (default) Does not perform any transformation, executors will import source files.
-* `ViteBuilder` Build suites with [Vite](https://vitejs.dev), requires Vite installed.
-* `RollupBuilder` Build suites with [Rollup](https://rollupjs.org/), requires Rollup installed.
-
-Executor:
-
-* `inProcessExecutor` (default) Run suites directly in the current context.
-* `ProcessExecutor` Call an external JS runtime to run suites, the runtime must support the fetch API.
-* `NodeExecutor` Spawn a new Node process to run suites, can be used with legacy Node that does not have `fetch`.
-* `PlaywrightExecutor` Run suites in the browser.
-* `WebextExecutor` Run suites in the browser with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access, only support Chromium.
+See also [built-in builders](./toolchains#builtin-builders).
 
 ## Multiple Toolchains
 
@@ -213,3 +199,205 @@ export default defineConfig({
 	}],
 });
 ```
+
+## Builtin Builders
+
+### noBuild
+
+Does not perform any transformation, executors will import source files.
+
+This is the default builder.
+
+```javascript
+import { defineConfig, noBuild } from "esbench/host";
+
+export default defineConfig({
+	toolchains: [{
+		// This is the default value of `builders`
+		builders: [noBuild],
+	}],
+});
+```
+
+### ViteBuilder
+
+Build suites with [Vite](https://vitejs.dev), requires `vite` installed.
+
+By default, it builds suites in library mode, you can also provide a custom config.
+
+These options will be overridden:
+- `build.outDir`
+- `build.rollupOptions.preserveEntrySignatures`
+- `build.rollupOptions.input`
+- `build.rollupOptions.output.entryFileNames`
+
+`ViteBuilder` does not automatically resolve config from project root.
+
+```javascript
+import { defineConfig, ViteBuilder } from "esbench/host";
+
+export default defineConfig({
+	toolchains: [
+		// Use the default config.
+		new ViteBuilder(),
+        
+        // Use a custom config
+		// new ViteBuilder({ ... }),
+    ],
+});
+```
+
+### RollupBuilder
+Build suites with [Rollup](https://rollupjs.org/), you have to install `rollup` and add plugins to perform Node resolving.
+
+These options will be overridden:
+- `input`
+- `preserveEntrySignatures`
+
+```javascript
+import { defineConfig, RollupBuilder } from "esbench/host";
+
+export default defineConfig({
+	toolchains: [
+		new RollupBuilder(/* config */),
+    ],
+});
+```
+
+## Builtin Executors
+
+### inProcessExecutor
+
+Run suites directly in the current process, Useful for simple scenarios and debugging.
+
+If the toolchain item does not specify `executors`, it equals to `executors: [inProcessExecutor]`
+
+```javascript
+import { inProcessExecutor } from "esbench";
+
+export default defineConfig({
+	toolchains: [{
+		// ...
+		executors: [inProcessExecutor],
+	}],
+});
+```
+
+### ProcessExecutor
+
+Call an external JS runtime to run suites, the runtime must support the fetch API.
+
+You can pass a string as argument to `ProcessExecutor`, the entry file will append to the end, or specific a function accept the entry filename and return the command.
+
+```javascript
+import { ProcessExecutor } from "esbench";
+
+export default defineConfig({
+	toolchains: [{
+		executors: [
+			// Benchmark in Node, Bun, and Deno.
+			new ProcessExecutor("node"),
+			new ProcessExecutor("bun"),
+			new ProcessExecutor("deno run --allow-net"),
+
+            // Pass arguments after the entry.
+			new ProcessExecutor(file => `node ${file} --foo`)
+		],
+	}],
+});
+```
+
+### NodeExecutor
+
+Spawn a new Node process to run suites, can be used with legacy Node that does not have `fetch`.
+
+```javascript
+import { NodeExecutor } from "esbench";
+
+export default defineConfig({
+	toolchains: [{
+		executors: [
+			new NodeExecutor(),
+			// new NodeExecutor("/path/to/node"),
+		],
+	}],
+});
+```
+
+### PlaywrightExecutor
+
+Run suites in the browser, requires Playwright installed. See [Run In browsers](./toolchains#run-in-browsers) for full example.
+
+```javascript
+import { PlaywrightExecutor } from "esbench";
+import { firefox } from "playwright";
+
+// import { firefox } from "playwright-core";
+// import { firefox } from "@playwright/test";
+
+export default defineConfig({
+	toolchains: [{
+		executors: [
+			// Use the Firefox installed by Playwright.
+			new PlaywrightExecutor(firefox),
+
+            // Specify options.
+			new PlaywrightExecutor(firefox, {
+				executablePath: "/path/to/firefox"
+            }),
+		],
+	}],
+});
+```
+
+### WebextExecutor
+
+Like `PlaywrightExecutor`, but run suites with [WebExtension API](https://developer.chrome.com/docs/extensions/reference/api) access, only support Chromium.
+
+::: code-group
+```javascript [esbench.config.js]
+import { defineConfig, ViteBuilder, WebextExecutor } from "esbench";
+import { chromium } from "playwright";
+
+export default defineConfig({
+	toolchains: [{
+		include: ["./webext/*.js"],
+		builders: [new ViteBuilder()],
+		executors: [new WebextExecutor(chromium)],
+	}],
+});
+```
+```javascript [webext/storage.js]
+// https://github.com/ESBenchmark/ESBench/blob/master/example/webext/storage.js
+import { defineSuite } from "esbench";
+import packageJson from "../package.json" with { type: "json" };
+
+if (globalThis.browser === undefined) {
+	globalThis.browser = chrome;
+}
+
+export default defineSuite(async scene => {
+	// Read object.
+	// localStorage vs CacheStorage vs browser.storage.local
+	localStorage.setItem("foo", JSON.stringify(packageJson));
+	await browser.storage.local.set(packageJson);
+	const cs = await caches.open("test");
+	await cs.put("http://example.com", new Response(JSON.stringify(packageJson)));
+
+	scene.bench("localStorage", () => {
+		return JSON.parse(localStorage.getItem("foo"));
+	});
+
+	scene.benchAsync("browser.storage", () => {
+		return browser.storage.local.get();
+	});
+
+	scene.benchAsync("CacheStorage", async () => {
+		return (await cs.match("http://example.com")).json();
+	});
+});
+```
+```shell [Run Benchmark]
+esbench --file webext/storage.js
+```
+:::

@@ -79,7 +79,7 @@ Next, in order to execute the benchmark, add the following section to your `pack
 ```
 
 > [!TIP]
-> To support execution of the suite in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
+> To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
 >
 > For integration with ESBench, we also provide [JavaScript API](../api/runner).
 
@@ -97,3 +97,5 @@ The run will take a while for accurate measurements, during which a lot of logs 
 
 > [!NOTE]
 > `time.SD` is Standard Deviation of the time.
+
+You can find more examples at the [ESBench repository](https://github.com/ESBenchmark/ESBench/tree/master/example)

@@ -149,3 +149,5 @@ Output:
 |   1 |    gzip |   1.98 ms |  6.58 us |     -3.48% | 43.95 KiB |     +0.03% |  220.83 us |       2.73 us |          +12.13% |
 |   2 |  brotli | 143.06 ms | 91.27 us |  +6882.06% | 38.97 KiB |    -11.32% |  373.88 us |       2.38 us |          +89.84% |
 ```
+
+![HTML report](../assets/html-miltiple-metrics.webp)

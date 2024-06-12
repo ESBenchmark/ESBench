@@ -34,6 +34,9 @@ export default defineConfig({
 		search: {
 			provider: "local",
 		},
+		outline: {
+			level: [2, 3],
+		},
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
 			{ text: "Playground", link: "/playground" },
