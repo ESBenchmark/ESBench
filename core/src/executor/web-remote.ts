@@ -277,7 +277,7 @@ export default class WebRemoteExecutor implements Executor {
 		await once(this.server, "listening");
 
 		const url = resolveUrl(this.server, this.options);
-		ctx.info("[WebManuallyExecutor] Waiting for connection from: " + url);
+		ctx.info("[WebManuallyExecutor] Waiting for connection to: " + url);
 	}
 
 	close() {
@@ -308,6 +308,11 @@ export default class WebRemoteExecutor implements Executor {
 
 		if (path === "/_es-bench/message") {
 			const message = await json(request) as ClientMessage;
+			if ("e" in message) {
+				const protocol = this.options.key ? "https" : "http";
+				const origin = `${protocol}://${request.headers.host}`;
+				transformer.fixStack(message.e, origin, root);
+			}
 			dispatch(message);
 			if (!("level" in message)) {
 				this.task = undefined; // Execution finished.

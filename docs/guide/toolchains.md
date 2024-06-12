@@ -72,7 +72,7 @@ NODE_OPTIONS=--experimental-import-meta-resolve && esbench
 ::: warning
 Import transformation is only works for string literals, using `import(someVar)` will cause a module not found error.
 
-**Importing TypeScript files is supported**, but importing assets are outside of the scope for ESBench, which needs a builder.
+**Importing TypeScript files is supported (see [TypeScript](./typescript))**, but importing assets is outside of the scope for ESBench, which needs a builder.
 :::
 
 During execution, the browser pops up window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config makes browsers run in background.
@@ -401,3 +401,52 @@ export default defineSuite(async scene => {
 esbench --file webext/storage.js
 ```
 :::
+
+### WebRemoteExecutor
+
+`WebRemoteExecutor` is designed to run your suite on remote device, it serve the benchmark on a HTTP URL, and you could access the URL on browser.
+
+Once the page is open, it keeps pulling suites and executing them, so that you don't need to open the URL again the next time you run `esbench`.
+
+```javascript
+import { defineConfig, WebRemoteExecutor } from "esbench";
+
+export default defineConfig({
+	toolchains: [{
+		executors: [
+			// Default listening on http://localhost:14715
+			// new WebRemoteExecutor(),
+
+            // Specify host & port to allow network connection.
+            // Assume the device is on 192.168.0.14
+			new WebRemoteExecutor({ 
+                host: "192.168.0.14", 
+                port: 80,
+                // Options of `https.createServer` is supported...
+                // if `key` exists, it will create a HTTPS server.
+			}),
+        ],
+	}],
+});
+```
+
+Run ESBench, since suites will run in browser, the builtin transformer or a builder is required. See [run in browser.](./toolchains#run-in-browsers) for more details.
+
+::: code-group
+```shell [Windows]
+set NODE_OPTIONS=--experimental-import-meta-resolve && esbench
+```
+```shell [Linux]
+NODE_OPTIONS=--experimental-import-meta-resolve && esbench
+```
+:::
+
+When started, it will print the message on console:
+
+```text
+...
+[WebManuallyExecutor] Waiting for connection to: http://192.168.0.14:80
+...
+```
+
+Open a browser on a remote device, such as a mobile phone, to access the URL, and ESBench will measure performance in that environment!

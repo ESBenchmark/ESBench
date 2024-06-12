@@ -4,9 +4,9 @@ TypeScript is a first-class citizen of ESBench, ESBench's APIs are fully typed, 
 
 ## Supported Compilers
 
-When started, ESBench installs an [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) to transform TS files.
+When started, ESBench installs [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) to transform TS files.
 
-When importing a TS file for the first time, ESBench will detect installed compilers use the following steps:
+When importing a TS file for the first time, ESBench will detect installed compilers by the steps:
 
 1. If `@swc/core` installed, use [SWC](https://github.com/swc-project/swc).
 2. If `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild) .
@@ -15,7 +15,7 @@ When importing a TS file for the first time, ESBench will detect installed compi
 
 ESBench only transforms TS files and does not process other types of imports.
 
-In the vast majority of cases where projects using TypeScript have typescript installed, this feature comes out of box.
+In the vast majority of cases where projects using TypeScript have `typescript` installed, this feature comes out-of-box.
 
 ## Run With TypeScript
 
@@ -76,6 +76,8 @@ esbench --file benchmark/cartesian-product.ts
 
 ## Use in Executor
 
+[What is Executor?](./toolchains)
+
 ESM loader hooks only act on the current process and are not inherited by spawned processes, so new Node instances started at the executor cannot load TS suites.
 
 To achieve the same behavior, you can use [ts-directly](https://github.com/Kaciras/ts-directly).
@@ -93,7 +95,7 @@ export default defineConfig({
 ```
 
 ::: tip
-`PlaywrightExecutor` and `WebextExecutor` can handle TS files because ESBench intercepts their import requests.
+`PlaywrightExecutor`, `WebextExecutor` and `WebManuallyExecutor` can handle TS files automatically because ESBench intercepts their import requests.
 :::
 
 ## Customize Loaders
