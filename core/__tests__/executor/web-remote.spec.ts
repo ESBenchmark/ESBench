@@ -1,11 +1,80 @@
 import { pathToFileURL } from "url";
-import { sep } from "path";
+import { resolve, sep } from "path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { chromium } from "playwright-core";
 import WebRemoteExecutor, { transformer } from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
 
 const importerURL = pathToFileURL("module.js").toString();
+
+const lines = (...args: string[]) => args.join("\n");
+
+// Path is system-depend, so we use placeholder __ROOT__/ and replace it in tests.
+const stacks = [{
+	type: "webkit",
+	raw: lines(
+		"main@http://localhost:14715/index.js:5:29",
+		"@",
+		"@http://localhost:14715/loader.js:2:20",
+		"module code@http://localhost:14715/loader.js:1:32",
+	),
+	expected: lines(
+		"Error: the message",
+		"    at main (__ROOT__/index.js:5:29)",
+		"    at __ROOT__/loader.js:2:20",
+		"    at module code (__ROOT__/loader.js:1:32)",
+	),
+}, {
+	type: "chromium",
+	raw: lines(
+		"Error",
+		"    at gen (http://localhost:14715/index.js:2:8)",
+		"    at gen.next (<anonymous>)",
+		"    at x (http://localhost:14715/index.js:6:13)",
+		"    at http://localhost:14715/index.js:10:3",
+	),
+	expected: lines(
+		"Error: the message",
+		"    at gen (__ROOT__/index.js:2:8)",
+		"    at gen.next (<anonymous>)",
+		"    at x (__ROOT__/index.js:6:13)",
+		"    at __ROOT__/index.js:10:3",
+	),
+}];
+
+it.each(stacks)("should convert error stack of $type", input => {
+	const rootResolved = resolve("www");
+	input.expected = input.expected.replaceAll("__ROOT__/", rootResolved + sep);
+
+	const error = {
+		name: "Error",
+		message: "the message",
+		stack: input.raw,
+		cause: {
+			name: "Error",
+			message: "the message",
+			stack: input.raw,
+		},
+	};
+	transformer.fixStack(error, "http://localhost:14715", "www");
+
+	expect(error.stack).toStrictEqual(input.expected);
+	expect(error.cause.stack).toStrictEqual(input.expected);
+});
+
+it("should resolve transformed import paths in error stack", () => {
+	const instance = Object.create(transformer);
+	instance.enabled = true;
+
+	const error = {
+		message: "the message",
+		name: "Error",
+		stack: "main@http://[::1]/@fs/C:/temp/foobar.js:5:29",
+	};
+
+	instance.fixStack(error, "http://[::1]", "C:/www");
+	expect(error.stack).toStrictEqual("Error: the message\n    at main (C:/temp/foobar.js:5:29)");
+});
 
 describe("transformer", () => {
 	const instance = Object.create(transformer);

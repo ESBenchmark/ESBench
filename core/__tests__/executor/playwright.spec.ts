@@ -4,16 +4,6 @@ import { executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
 import { RunSuiteResult } from "../../src/index.ts";
 
-function assertStackIsV8Format(error: Error) {
-	const { name, message, stack } = error;
-	const lines = stack!.split("\n");
-
-	expect(lines[0]).toBe(`${name}: ${message}`);
-	for (let i = 1; i < lines.length; i++) {
-		expect(lines[i]).toMatch(/ {4}at (.+?) \((.+?)\)/);
-	}
-}
-
 it.each([
 	[new PlaywrightExecutor(firefox), "firefox"],
 	[new PlaywrightExecutor(webkit), "webkit"],
@@ -32,17 +22,6 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	it("should forward errors from runAndSend()", tester.insideError());
 
 	it("should forward top level errors", tester.outsideError());
-
-	it("should fix error stack", async () => {
-		const promise = tester.execute({
-			files: ["./foo.js"],
-			root: "__tests__/fixtures/error-inside",
-		});
-		const error = await promise.catch(e => e);
-
-		assertStackIsV8Format(error);
-		assertStackIsV8Format(error.cause);
-	});
 
 	it("should respond 404 when resource not exists", async () => {
 		const dispatch = await tester.execute({

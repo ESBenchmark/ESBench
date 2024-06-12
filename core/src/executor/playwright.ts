@@ -6,7 +6,7 @@ import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
-import { fixStacktrace, isolationHeaders, transformer } from "./web-remote.js";
+import { isolationHeaders, transformer } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -127,7 +127,7 @@ export class PlaywrightExecutor implements Executor {
 
 		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
 			if ("e" in message) {
-				fixStacktrace(message.e, origin, root);
+				transformer.fixStack(message.e, origin, root);
 			}
 			dispatch(message);
 		});
