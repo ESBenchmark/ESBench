@@ -2,11 +2,12 @@ import { defineSuite } from "esbench";
 import packageJson from "../package.json" with { type: "json" };
 
 if (globalThis.browser === undefined) {
-	// noinspection JSUnresolvedVariable; The `chrome` is available in Chromium-based browsers.
 	globalThis.browser = chrome;
 }
 
 export default defineSuite(async scene => {
+	// Read object.
+	// localStorage vs CacheStorage vs browser.storage.local
 	localStorage.setItem("foo", JSON.stringify(packageJson));
 	await browser.storage.local.set(packageJson);
 	const cs = await caches.open("test");

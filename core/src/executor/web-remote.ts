@@ -91,6 +91,7 @@ export const transformer = {
 		return fileURLToPath(import.meta.resolve(specifier, parent));
 	},
 
+	// NOTE: Breaks the source map.
 	transformImports(code: string, filename: string) {
 		// Currently `import.meta.resolve` does not work well with URL parent.
 		const importer = pathToFileURL(filename).toString();

@@ -102,9 +102,9 @@ export class ViteBuilder implements Builder {
 
 	/**
 	 * Create a new ViteBuilder, by default it build suites in library mode,
-	 * you can provide custom config.
+	 * you can also provide a custom config.
 	 *
-	 * These options will be overridden in build:
+	 * These options will be overridden:
 	 * - build.outDir
 	 * - build.rollupOptions.preserveEntrySignatures
 	 * - build.rollupOptions.input

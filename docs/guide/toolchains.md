@@ -55,10 +55,10 @@ export default defineSuite(scene => {
 ```
 :::
 
-Because of browser and Node have a different import resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
+Because of browser and Node have a different module resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
 
-* Add flag `--experimental-import-meta-resolve` to enable ESBench builtin transformer.
-* Use a builder, see [the next section](./toolchains#builder).
+* Add flag `--experimental-import-meta-resolve` to enable [builtin transformer](#builtin-transformer).
+* Use a builder, see [Builder](./toolchains#builder).
 
 ::: code-group
 ```shell [Windows]
@@ -67,12 +67,6 @@ set NODE_OPTIONS=--experimental-import-meta-resolve && esbench
 ```shell [Linux]
 NODE_OPTIONS=--experimental-import-meta-resolve && esbench
 ```
-:::
-
-::: warning
-Import transformation is only works for string literals, using `import(someVar)` will cause a module not found error.
-
-**Importing TypeScript files is supported (see [TypeScript](./typescript))**, but importing assets is outside of the scope for ESBench, which needs a builder.
 :::
 
 During execution, the browser pops up window 3 times, and the suite is executed on a blank page. Remove `headless: false` from the config makes browsers run in background.
@@ -94,6 +88,21 @@ The results reveal the performance differences between browsers:
 ```
 
 ESBench has some [builtin executors](./toolchains#builtin-executors) to help you run benchmarks in a variety of environments.
+
+## Builtin Transformer
+
+To enable browsers to run the suite directly, ESBench provides a simple transformer that can:
+
+- Resolve imports to absolute path, so that they can be used in browser.
+- Compile TypeScript files to JavaScript.
+
+The transformer uses `import.meta.resolve` to resolve imports, it is currently an experimental feature, you need a flag `--experimental-import-meta-resolve` to enable it.
+
+Limitations:
+
+- The transformer does not support source maps, locations in stack of error from transformed files may be incorrect.
+- Import transformation is only works for string literals, `import(someVar)` will be skipped.
+- Importing assets (e.g. `import "style.css"`) is outside of the scope for ESBench, which needs a builder.
 
 ## Builder
 
@@ -206,15 +215,14 @@ export default defineConfig({
 
 Does not perform any transformation, executors will import source files.
 
-This is the default builder.
+This is the default value of `builders` in `toolchains`.
 
 ```javascript
 import { defineConfig, noBuild } from "esbench/host";
 
 export default defineConfig({
 	toolchains: [{
-		// This is the default value of `builders`
-		builders: [noBuild],
+		builders: [noBuild], // This is the default.
 	}],
 });
 ```
@@ -248,6 +256,7 @@ export default defineConfig({
 ```
 
 ### RollupBuilder
+
 Build suites with [Rollup](https://rollupjs.org/), you have to install `rollup` and add plugins to perform Node resolving.
 
 These options will be overridden:
@@ -268,7 +277,7 @@ export default defineConfig({
 
 ### inProcessExecutor
 
-Run suites directly in the current process, Useful for simple scenarios and debugging.
+Run suites directly in the current process, useful for simple scenarios and debugging.
 
 If the toolchain item does not specify `executors`, it equals to `executors: [inProcessExecutor]`
 
@@ -301,7 +310,10 @@ export default defineConfig({
 			new ProcessExecutor("deno run --allow-net"),
 
             // Pass arguments after the entry.
-			new ProcessExecutor(file => `node ${file} --foo`)
+			new ProcessExecutor(file => `node ${file} --foo`),
+
+            // Set env var in the 2nd parameter.
+			new ProcessExecutor("node", { NODE_ENV: "production" }),
 		],
 	}],
 });
@@ -318,7 +330,13 @@ export default defineConfig({
 	toolchains: [{
 		executors: [
 			new NodeExecutor(),
-			// new NodeExecutor("/path/to/node"),
+            
+            // Supported options
+			new NodeExecutor({
+                execPath: "/path/to/node",
+				execArgv: ["--expose_gc"],
+				env: { NODE_ENV: "production" },
+            }),
 		],
 	}],
 });
@@ -404,7 +422,7 @@ esbench --file webext/storage.js
 
 ### WebRemoteExecutor
 
-`WebRemoteExecutor` is designed to run your suite on remote device, it serve the benchmark on a HTTP URL, and you could access the URL on browser.
+`WebRemoteExecutor` is designed to run benchmark on remote device, it serves the suites on a HTTP URL, and you can access the URL to run them.
 
 Once the page is open, it keeps pulling suites and executing them, so that you don't need to open the URL again the next time you run `esbench`.
 
@@ -430,7 +448,7 @@ export default defineConfig({
 });
 ```
 
-Run ESBench, since suites will run in browser, the builtin transformer or a builder is required. See [run in browser.](./toolchains#run-in-browsers) for more details.
+Run ESBench, since suites will run in browser, the builtin transformer or a builder is required. See [run in browsers](./toolchains#run-in-browsers) for more details.
 
 ::: code-group
 ```shell [Windows]
