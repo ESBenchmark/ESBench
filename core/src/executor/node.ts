@@ -1,13 +1,14 @@
-import { env } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
-import { ChildProcess, fork } from "child_process";
+import { ChildProcess, fork, ForkOptions } from "child_process";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
-// Must resolve the filename to generated JS for test.
+// Resolve the filename to generated JS for test.
 let __filename = fileURLToPath(import.meta.url);
 __filename = join(__filename, "../../../lib/executor/node.js");
+
+type NodeExecutorOptions = Pick<ForkOptions, "execPath" | "execArgv" | "env">;
 
 /**
  * Run suites in a new Node process, communicate with the host through IPC channel.
@@ -17,19 +18,15 @@ __filename = join(__filename, "../../../lib/executor/node.js");
 export default class NodeExecutor implements Executor {
 
 	private readonly executable?: string;
+	private readonly env?: NodeJS.ProcessEnv;
 	private readonly args: string[];
 
 	private process?: ChildProcess;
 
-	/**
-	 * Create a new executor that runs suites with Node.
-	 *
-	 * @param executable Path of the Node executable file.
-	 * @param args List of string arguments passed to the executable.
-	 */
-	constructor(executable?: string, args: string[] = []) {
-		this.executable = executable;
-		this.args = args;
+	constructor(options: NodeExecutorOptions = {}) {
+		this.executable = options.execPath;
+		this.env = options.env;
+		this.args = options.execArgv ?? [];
 	}
 
 	get name() {
@@ -50,7 +47,8 @@ export default class NodeExecutor implements Executor {
 			stdio: "ignore",
 			execPath: this.executable,
 			env: {
-				...env,
+				...process.env,
+				...this.env,
 				ES_BENCH_WORKER: "true",
 			},
 		});
@@ -60,13 +58,13 @@ export default class NodeExecutor implements Executor {
 		this.process.on("exit", code => {
 			if (code !== 0) {
 				const args = JSON.stringify(this.args);
-				reject(new Error(`Node execute Failed (${code}), args=${args}`));
+				reject(new Error(`Node execute Failed (${code}), execArgv=${args}`));
 			}
 		});
 	}
 }
 
-if (env.ES_BENCH_WORKER === "true") {
+if (process.env.ES_BENCH_WORKER === "true") {
 	const postMessage = process.send!.bind(process);
 
 	process.once("message", async (message: any) => {

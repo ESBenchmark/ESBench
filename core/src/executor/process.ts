@@ -35,6 +35,7 @@ export function highestPriority(pid: number) {
  */
 export default class ProcessExecutor implements Executor {
 
+	protected readonly env?: NodeJS.ProcessEnv;
 	protected readonly getCommand: GetCommand;
 
 	protected process!: ChildProcess;
@@ -54,7 +55,8 @@ export default class ProcessExecutor implements Executor {
 	 * // Will execute command: `bun .esbench-tmp/main.js --foo=bar`
 	 * new ProcessExecutor(file => `bun ${file} --foo=bar`);
 	 */
-	constructor(command: string | GetCommand) {
+	constructor(command: string | GetCommand, env?: NodeJS.ProcessEnv) {
+		this.env = env;
 		this.getCommand = typeof command === "function"
 			? command
 			: (file) => `${command} ${file}`;
@@ -92,7 +94,9 @@ export default class ProcessExecutor implements Executor {
 
 		const command = this.getCommand(entry);
 		const [file, ...args] = splitCLI(command);
-		this.process = execFile(file, args);
+		this.process = execFile(file, args, {
+			env: { ...process.env, ...this.env },
+		});
 
 		return this.postprocess(options);
 	}

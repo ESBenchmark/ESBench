@@ -9,7 +9,7 @@ it("should transfer messages", tester.successCase());
 it("should forward errors from runAndSend()", tester.insideError());
 
 it("should forward top level errors", tester.outsideError(
-	"Execute Failed (1), Command: node .esbench-test-temp/main.js",
+	"Execute Failed (1), Command: node .esbench-tmp/main.js",
 ));
 
 it("should suggest the filename as executor name", () => {
@@ -18,9 +18,22 @@ it("should suggest the filename as executor name", () => {
 });
 
 describe("Custom command line", () => {
-	const tester = executorTester(new ProcessExecutor(f => `node --expose_gc ${f} "foo bar"`));
+	const instance = new ProcessExecutor(f => `node --expose_gc ${f} "foo bar"`, { BAZ: "qux" });
+	const tester = executorTester(instance);
 
 	it("should forward top level errors", tester.outsideError(
-		'Execute Failed (1), Command: node --expose_gc .esbench-test-temp/main.js "foo bar"',
+		'Execute Failed (1), Command: node --expose_gc .esbench-tmp/main.js "foo bar"',
 	));
+
+	it("should pass arguments and env vars", async () => {
+		const dispatch = await tester.execute({
+			files: ["./foo.js"],
+			root: "__tests__/fixtures/inspect",
+		});
+		const [message] = dispatch.mock.calls[0][0] as any;
+		expect(message.argv.slice(2)).toStrictEqual(["foo bar"]);
+		expect(message.env).toHaveProperty("BAZ", "qux");
+		expect(message.env).toHaveProperty("NODE_ENV", "test");
+		expect(message.execArgv).toStrictEqual(["--expose_gc"]);
+	});
 });
