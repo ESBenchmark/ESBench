@@ -5,6 +5,7 @@ import { expect, it, vi } from "vitest";
 import { resultStub, useTempDirectory } from "../helper.ts";
 import { HostContext } from "../../src/host/context.ts";
 import { textReporter } from "../../src/host/index.ts";
+import { ToolchainResult } from "../../src/index.ts";
 
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));
 useTempDirectory(directory);
@@ -20,7 +21,17 @@ it("should write to stdout with color", async () => {
 		return true;
 	});
 
-	await textReporter()({ perf: [resultStub] }, context);
+	const results: ToolchainResult[] = [{
+		...resultStub,
+		notes: [{
+			type: "info",
+			text: "This is info message",
+		}, {
+			type: "warn",
+			text: "This is warn message",
+		}],
+	}];
+	await textReporter()({ perf: results }, context);
 
 	expect(output).toStrictEqual(readFileSync("__tests__/snapshots/text-report-colored.txt", "utf8"));
 });

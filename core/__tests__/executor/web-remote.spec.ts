@@ -1,9 +1,13 @@
 import { pathToFileURL } from "url";
 import { resolve, sep } from "path";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "fs";
+import { afterAll, describe, expect, it, MockedFunction, vi } from "vitest";
 import { chromium } from "playwright-core";
+import { detectTypeScriptCompiler } from "ts-directly";
 import WebRemoteExecutor, { transformer } from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
+
+vi.mock("ts-directly");
 
 const importerURL = pathToFileURL("module.js").toString();
 
@@ -77,8 +81,13 @@ it("should resolve transformed import paths in error stack", () => {
 });
 
 describe("transformer", () => {
-	const instance = Object.create(transformer);
+	const instance = Object.create(transformer) as typeof transformer;
 	instance.enabled = true;
+
+	it("should not parse imports if transform disabled", () => {
+		expect(transformer.parse("root", "/index.js")).toBeUndefined();
+		expect(transformer.parse("root", "/@fs/foo.js")).toBeUndefined();
+	});
 
 	it.each([
 		["/index.js", "root/index.js"],
@@ -89,19 +98,32 @@ describe("transformer", () => {
 		expect(instance.parse("root", path)).toBe(expected);
 	});
 
+	it("should compile TS", async () => {
+		const compile = vi.fn(() => "foobar");
+		(detectTypeScriptCompiler as MockedFunction<any>).mockResolvedValue(compile);
+		const path = import.meta.filename;
+
+		const code = await transformer.load(path);
+
+		expect(code).toBe("foobar");
+		expect(compile).toHaveBeenCalledWith(readFileSync(path, "utf8"), path, true);
+	});
+
 	it("should replace imports", () => {
 		const mock = vi.spyOn(instance, "resolve");
 		mock.mockReturnValue("foobar.js");
 
 		const code = `\
 			import x from "./x.js";
-			const y = import("y");
+			const y = import(window.main);
+			const z = import("y");
 		`;
 		const output = instance.transformImports(code, "module.js");
 
 		expect(output).toBe(`\
 			import x from "/@fs/foobar.js";
-			const y = import("/@fs/foobar.js");
+			const y = import(window.main);
+			const z = import("/@fs/foobar.js");
 		`);
 		expect(mock).toHaveBeenNthCalledWith(1, "y", importerURL);
 		expect(mock).toHaveBeenNthCalledWith(2, "./x.js", importerURL);

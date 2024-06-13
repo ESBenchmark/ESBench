@@ -4,4 +4,8 @@
 | --: | ---: | ----------: | --------: |
 |   0 |  foo |   750.00 us | 433.01 us |
 |   1 |  bar | 1,750.00 us | 433.01 us |
+[36mHints:[39m
+[36m[39m[36mThis is info message[39m
+[93mWarnings:[39m
+[93m[39m[93mThis is warn message[39m
 

@@ -12,6 +12,22 @@ it("should fail with invalid metric type", () => {
 	expect(() => SummaryTable.from(results)).toThrow('Metric "time" must be an array');
 });
 
+it("should fail with invalid format", () => {
+	const results: any = [{
+		...resultStub,
+		meta: {
+			time: {
+				format: "123456789",
+				key: "time",
+				analysis: 2,
+				lowerIsBetter: true,
+			},
+		},
+	}];
+	const table = SummaryTable.from(results);
+	expect(() => table.format()).toThrow("Invalid metric format: 123456789");
+});
+
 it("should works", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
