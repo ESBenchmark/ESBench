@@ -3,7 +3,7 @@ import { resolve, sep } from "path";
 import { readFileSync } from "fs";
 import { afterAll, describe, expect, it, MockedFunction, vi } from "vitest";
 import { chromium } from "playwright-core";
-import { detectTypeScriptCompiler } from "ts-directly";
+import { transform } from "ts-directly";
 import WebRemoteExecutor, { transformer } from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
 
@@ -99,14 +99,13 @@ describe("transformer", () => {
 	});
 
 	it("should compile TS", async () => {
-		const compile = vi.fn(() => "foobar");
-		(detectTypeScriptCompiler as MockedFunction<any>).mockResolvedValue(compile);
+		(transform as MockedFunction<any>).mockResolvedValue({ source: "foobar" });
 		const path = import.meta.filename;
 
 		const code = await transformer.load(path);
 
 		expect(code).toBe("foobar");
-		expect(compile).toHaveBeenCalledWith(readFileSync(path, "utf8"), path, true);
+		expect(transform).toHaveBeenCalledWith(readFileSync(path, "utf8"), path, "module");
 	});
 
 	it("should replace imports", () => {

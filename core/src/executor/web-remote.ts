@@ -8,7 +8,7 @@ import { join, resolve } from "path";
 import { AddressInfo } from "net";
 import { env, execArgv } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
-import { CompileFn, detectTypeScriptCompiler } from "ts-directly";
+import * as tsDirectly from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
@@ -45,8 +45,6 @@ export const transformer = {
 	// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
 	enabled: hasFlag("--experimental-import-meta-resolve"),
 
-	compileTS: undefined as CompileFn | undefined,
-
 	/**
 	 * Get the file path of the import, or undefined if resolving is
 	 * disabled or the request is not created by import statement.
@@ -80,8 +78,7 @@ export const transformer = {
 		let code = readFileSync(path, "utf8");
 
 		if (/tsx?$/.test(path)) {
-			this.compileTS ??= await detectTypeScriptCompiler();
-			code = await this.compileTS(code, path, true);
+			code = (await tsDirectly.transform(code, path, "module")).source;
 		}
 		return this.transformImports(code, path);
 	},
