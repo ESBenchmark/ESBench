@@ -12,6 +12,7 @@
 		"@vueuse/core": "^10.11.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.49.0",
+		"notivue": "^2.4.4",
 		"vue": "^3.4.29"
 	},
 	"devDependencies": {

@@ -73,6 +73,10 @@
 		<div :class='$style.dragger' @mousedown.prevent='handleDragStart'/>
 		<ConsoleView ref='consoleView' :class='$style.console'/>
 
+		<Notivue v-slot='item'>
+			<Notification :item='item' :theme='materialTheme'/>
+		</Notivue>
+
 		<ReportView v-model='showChart' :summaries='results'/>
 	</main>
 </template>
@@ -101,6 +105,7 @@ import { transformBuffer } from "@kaciras/utilities/browser";
 import { messageResolver, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
+import { Notivue, Notification, push, materialTheme } from "notivue";
 import suiteTemplate from "./template.js?raw";
 import demos from "./demo-suites.ts";
 import ReportView from "./ReportView.vue";
@@ -145,21 +150,30 @@ async function serialize(data: unknown) {
 }
 
 async function deserialize(base64: string) {
-	// @ts-expect-error TypeScript's declaration is incorrect.
+	// @ts-expect-error Declaration is incorrect.
 	let bytes = Uint8Array.from(atob(base64), c => c.codePointAt(0));
-	bytes = await transformBuffer(bytes, new DecompressionStream("deflate-raw"));
+	const transform = new DecompressionStream("deflate-raw");
+	bytes = await transformBuffer(bytes, transform);
 	return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 async function share() {
-	const url = new URL(location.href);
-	url.hash = await serialize({
-		code: editor.getModel()!.getValue(),
+	const data = {
 		exec: executor.value === executeWorker ? "worker" : "iframe",
 		table: toRaw(tableOptions.value),
-	});
+		code: editor.getModel()!.getValue(),
+	};
+
+	const url = new URL(location.href);
+	try {
+		url.hash = await serialize(data);
+	} catch (e) {
+		console.error(e);
+		return push.error({ message: "Failed to create share link, See console for the error." });
+	}
+
 	await navigator.clipboard.writeText(url.toString());
-	window.alert("Link is copied to clipboard.");
+	push.success({ message: "Link is copied to clipboard" });
 }
 
 watch(executor, value => {
@@ -223,15 +237,21 @@ onMounted(async () => {
 	const params = new URLSearchParams(location.search);
 	let value = suiteTemplate;
 
+	const hash = location.hash.slice(1);
 	const demo = params.get("demo");
-	if (location.hash) {
-		const data = await deserialize(location.hash.slice(1));
-		const { code, exec, table } = data;
-		value = code;
-		if (exec === "iframe") {
-			executor.value = executeIFrame;
+	if (hash) {
+		try {
+			const data = await deserialize(hash);
+			const { code, exec, table } = data;
+			value = code;
+			if (exec === "iframe") {
+				executor.value = executeIFrame;
+			}
+			tableOptions.value = table;
+		} catch (e) {
+			console.error(e);
+			push.error({ message: "Failed to restore from shared link, See console for the error." });
 		}
-		tableOptions.value = table;
 	} else if (demo) {
 		const { code, path } = demos.find(i => i.path === demo)!;
 		value = code;
