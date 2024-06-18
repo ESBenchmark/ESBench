@@ -237,7 +237,15 @@
 	],
 	"es/array-sort.js": [
 		{
-			"notes": [],
+			"notes": [{
+				"type": "info",
+				"text": "This is a tip about the results.",
+				"caseId": 0
+			},{
+				"type": "warn",
+				"text": "This is a warning about the results.",
+				"caseId": 3
+			}],
 			"meta": {
 				"time": {
 					"key": "time",

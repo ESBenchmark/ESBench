@@ -241,6 +241,11 @@ export class ExecutionTimeMeasurement {
 		return this.measure("Overhead", iterate, iterations);
 	}
 
+	/*
+	 * References:
+	 * https://github.com/bheisler/criterion.rs/blob/f1ea31a92ff919a455f36b13c9a45fd74559d0fe/src/routine.rs#L82
+	 * https://github.com/dotnet/BenchmarkDotNet/blob/6a7244d76082f098a19785e4e3b0e0f269fed004/src/BenchmarkDotNet/Engines/EnginePilotStage.cs#L106
+	 */
 	async estimate(target: string) {
 		const { options: { unrollFactor }, benchCase } = this;
 

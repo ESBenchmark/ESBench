@@ -20,7 +20,7 @@ type RatioStyle = "value" | "percentage" | "trend";
 
 export interface SummaryTableOptions {
 	/**
-	 * Show standard deviation (*.SD) columns in the report.
+	 * Show standard deviation (*.SD) columns in the table.
 	 *
 	 * @default true
 	 *
@@ -34,7 +34,7 @@ export interface SummaryTableOptions {
 	stdDev?: boolean;
 
 	/**
-	 * By default, variables with only one value are not shown.
+	 * By default, variables with only one value are omitted from the table.
 	 * Set to true to show all variables.
 	 *
 	 * @default false
@@ -42,7 +42,7 @@ export interface SummaryTableOptions {
 	showSingle?: boolean;
 
 	/**
-	 * Show percentiles columns in the report.
+	 * Show percentile columns in the table.
 	 *
 	 * @example
 	 * textReporter({ percentiles: [75, 99] })
