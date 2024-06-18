@@ -15,7 +15,7 @@ it("should set default properties", () => {
 	const config = normalizeConfig({});
 
 	expect(config.tempDir).toBe(".esbench-tmp");
-	expect(config.diff).toBe("reports/benchmark.json");
+	expect(config.diff).toBe("node_modules/.esbench/result.json");
 	expect(config.cleanTempDir).toBe(true);
 	expect(config.reporters).toHaveLength(2);
 	expect(config.toolchains).toHaveLength(1);

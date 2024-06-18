@@ -58,15 +58,15 @@ import { defineConfig, rawReporter, textReporter } from "esbench/host";
 // This is the detault value of `reporters` and `diff`.
 export default defineConfig({
 	reporters: [
-		// Save the results to reports/benchmark.json.
-		rawReporter(),
+		// Save the results to node_modules/.esbench/result.json.
+		rawReporter("node_modules/.esbench/result.json"),
         
         // Show tables in console.
 		textReporter(),
 	],
 	// Read a results file to compare with. 
-    // Set it to undefined to disable comparation.
-	diff: "reports/benchmark.json",
+    // Set it to null to disable comparation.
+	diff: "node_modules/.esbench/result.json",
 });
 ```
 
