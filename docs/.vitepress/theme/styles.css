@@ -6,3 +6,8 @@
 	);
 	--vp-home-hero-image-filter: blur(30px);
 }
+
+.Notivue__icon {
+	box-sizing: content-box;
+	padding: calc(var(--nv-spacing) / 2);
+}

@@ -78,9 +78,12 @@ body {
 
 .nav {
     width: 320px;
-    padding: 0 20px;
     background: #f6f6f7;
 	overflow-y: scroll;
+
+	& > h1 {
+		padding: 0 20px;
+	}
 }
 
 .report {
@@ -90,9 +93,14 @@ body {
 
 .link {
     display: block;
-    margin: 10px 0;
+	padding: 6px 20px;
     text-decoration: none;
     color: inherit;
+	transition: background-color 0.15s;
+
+	&:hover, :focus-visible {
+		background: rgba(0,0,0,0.05);
+	}
 }
 
 .active {

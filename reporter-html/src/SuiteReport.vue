@@ -137,12 +137,13 @@ function isRelevant(note: ResolvedNote) {
 
 .variable {
 	cursor: pointer;
-	padding: 8px;
+	padding: 6px 12px 12px;
 	border-radius: 8px;
+	font-weight: 600;
 
 	&.active {
 		cursor: default;
-		background: #bee3ff;
+		background: #bfe3ff;
 	}
 }
 </style>
