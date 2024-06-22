@@ -2,12 +2,20 @@ import chalk from "chalk";
 import { LogHandler } from "../profiling.js";
 import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
 import { ESBenchResult } from "../connect.js";
+import { RE_ANY } from "../utils.js";
 
 export const logLevelPriority = { debug: 0, info: 1, warn: 2, error: 3, off: 4 };
 
 export type LogLevel = keyof typeof logLevelPriority;
 
 const colors = [chalk.cyan, chalk, chalk.yellow, chalk.redBright];
+
+export function resolveRE(pattern?: string | RegExp) {
+	if (!pattern) {
+		return RE_ANY;
+	}
+	return pattern instanceof RegExp ? pattern : new RegExp(pattern);
+}
 
 export interface FilterOptions {
 	file?: string;
@@ -17,17 +25,29 @@ export interface FilterOptions {
 	shared?: string;
 }
 
+export interface NormalizedFilterOptions {
+	file?: string;
+	name: RegExp;
+	builder: RegExp;
+	executor: RegExp;
+}
+
 export class HostContext {
 
 	readonly config: NormalizedConfig;
-	readonly filter: FilterOptions;
+	readonly filter: NormalizedFilterOptions;
 	readonly logHandler: LogHandler;
 
 	previous: ESBenchResult = {};
 
-	constructor(config: ESBenchConfig, filter: FilterOptions  = {}) {
+	constructor(config: ESBenchConfig, filter: FilterOptions = {}) {
 		this.config = normalizeConfig(config);
-		this.filter = filter;
+		this.filter = {
+			builder: resolveRE(filter.builder),
+			executor: resolveRE(filter.executor),
+			file: filter.file,
+			name: resolveRE(filter.name),
+		};
 
 		const priority = logLevelPriority[this.config.logLevel];
 		this.logHandler = (message, level) => {

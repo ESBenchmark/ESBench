@@ -75,13 +75,6 @@ export function runFns(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
 }
 
-export function resolveRE(pattern?: string | RegExp) {
-	if (!pattern) {
-		return RE_ANY;
-	}
-	return pattern instanceof RegExp ? pattern : new RegExp(pattern);
-}
-
 export class SharedModeFilter {
 
 	readonly index: number;

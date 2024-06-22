@@ -4,7 +4,6 @@ import { durationFmt } from "@kaciras/utilities/node";
 import JobGenerator, { ExecuteOptions } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../index.js";
-import { resolveRE } from "../utils.js";
 import { FilterOptions, HostContext } from "./context.js";
 
 function loadResults(path: string, throwIfMissing: true): ESBenchResult;
@@ -68,7 +67,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 
 				const { files, root } = build;
 				const { promise, reject, dispatch } = messageResolver(context.logHandler);
-				const pattern = resolveRE(context.filter.name).source;
+				const pattern = context.filter.name.source;
 
 				const input: ExecuteOptions = {
 					tempDir,

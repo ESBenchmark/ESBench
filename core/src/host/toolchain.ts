@@ -4,8 +4,7 @@ import { mkdtempSync } from "fs";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import { HostContext } from "./context.js";
-import { resolveRE } from "../utils.js";
-import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
+import { Channel } from "../connect.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -39,44 +38,6 @@ export interface Builder {
  */
 export type EntryExport = (postMessage: Channel, files: string[], pattern?: string) => Promise<void>;
 
-export interface ExecuteOptions {
-	/**
-	 * A folder where the executor can save temporal files.
-	 */
-	tempDir: string;
-
-	/**
-	 * Output directory of the build, can be used to resolve imports.
-	 */
-	root: string;
-
-	/**
-	 * Paths (relative to cwd) of suite files to run.
-	 */
-	files: string[];
-
-	/**
-	 * Run benchmark with names matching the Regex pattern.
-	 */
-	pattern?: string;
-
-	/**
-	 * Used to wait runner finish, it will resolve when receive result message,
-	 * and reject when receive error message or `reject` is called.
-	 */
-	promise: Promise<ToolchainResult[]>;
-
-	/**
-	 * Make execution fail, useful for executions that can't wait to finish.
-	 */
-	reject(error: Error): void;
-
-	/**
-	 * Executor should forward messages from suites to this function.
-	 */
-	dispatch(message: ClientMessage): void;
-}
-
 export interface Executor {
 	/**
 	 * Suggest a name for the executor, it will be used if no name specified from config.
@@ -99,7 +60,7 @@ export interface Executor {
 	 * An execution will complete when ESBenchResult is passed to `options.dispatch`
 	 * and the returned Promise is satisfied (is present).
 	 */
-	execute(options: ExecuteOptions): Awaitable<unknown>;
+	execute(build: BuildResult, ctx: HostContext): Awaitable<unknown>;
 }
 
 /**
@@ -190,8 +151,8 @@ export default class JobGenerator {
 		const { exclude = [], include, builders, executors } = toolchain;
 		const { filter } = this.context;
 
-		const builderRE = resolveRE(filter.builder);
-		const executorRE = resolveRE(filter.executor);
+		const builderRE = filter.builder;
+		const executorRE = filter.executor;
 		const workingDir = cwd();
 
 		const ue = executors
