@@ -57,7 +57,7 @@ export default defineSuite(scene => {
 
 Because of browser and Node have a different module resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
 
-* Add flag `--experimental-import-meta-resolve` to enable [builtin transformer](#builtin-transformer).
+* Add flag `--experimental-import-meta-resolve` to enable [builtin transformer](#built-in-transformer).
 * Use a builder, see [Builder](./toolchains#builder).
 
 ::: code-group
@@ -87,9 +87,9 @@ The results reveal the performance differences between browsers:
 |   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
 ```
 
-ESBench has some [builtin executors](./toolchains#builtin-executors) to help you run benchmarks in a variety of environments.
+ESBench has some [Built-in executors](./toolchains#built-in-executors) to help you run benchmarks in a variety of environments.
 
-## Builtin Transformer
+## Built-in Transformer
 
 To enable browsers to run the suite directly, ESBench provides a simple transformer that can:
 
@@ -128,7 +128,7 @@ export default defineConfig({
 
 Then you can just run `esbench` without flags, as imports are already transformed by the builder. 
 
-See also [built-in builders](./toolchains#builtin-builders).
+See also [built-in builders](./toolchains#built-in-builders).
 
 ## Multiple Toolchains
 
@@ -209,7 +209,7 @@ export default defineConfig({
 });
 ```
 
-## Builtin Builders
+## Built-in Builders
 
 ### noBuild
 
@@ -273,7 +273,7 @@ export default defineConfig({
 });
 ```
 
-## Builtin Executors
+##  Executors
 
 ### inProcessExecutor
 
@@ -304,7 +304,7 @@ import { ProcessExecutor } from "esbench";
 export default defineConfig({
 	toolchains: [{
 		executors: [
-			// Benchmark in Node, Bun, and Deno.
+			// Benchmarking in Node, Bun and Deno. You need to install them before.
 			new ProcessExecutor("node"),
 			new ProcessExecutor("bun"),
 			new ProcessExecutor("deno run --allow-net"),
@@ -312,7 +312,7 @@ export default defineConfig({
             // Pass arguments after the entry.
 			new ProcessExecutor(file => `node ${file} --foo`),
 
-            // Set env var in the 2nd parameter.
+            // Set environment variables at the 2nd parameter.
 			new ProcessExecutor("node", { NODE_ENV: "production" }),
 		],
 	}],

@@ -32,9 +32,9 @@ export default defineConfig({
 });
 ```
 
-## Builtin Reporters
+## Built-in Reporters
 
-### textReporter
+### Text Reporter
 
 Format the results into Markdown tables with additional hints and output them to various streams.
 
@@ -116,11 +116,15 @@ interface SummaryTableOptions {
 }
 ```
 
-### rawReporter
+Output example:
+
+![Text Report Example](../assets/text-report.webp)
+
+### Raw Reporter
 
 Save the results to a JSON file without format The file can be read by `esbench report` and used for `diff` option in config.
 
-### csvReporter
+### CSV Reporter
 
 Export the results to CSV files. Files are saved in the specified directory with the path of the suite filename + `.csv`.
 
@@ -135,13 +139,13 @@ export default defineConfig({
 		htmlReporter({
             directory: "/folder/to/save/files",
             
-            // ...SummaryTableOptions (see textReporter)
+            // ...SummaryTableOptions (see Text Reporter)
         }),
 	],
 });
 ```
 
-### htmlReporter
+### HTML Reporter
 
 Plot the results in interactive chart. It is also available in playground.
 
@@ -161,7 +165,7 @@ export default defineConfig({
 
 The page looks like:
 
-![HTML Report](../assets/html-reporter.webp)
+![HTML Report](../assets/html-report-prev.webp)
 
 - The left is the benchmark suite menu.
 - Middle top is the chart, X-axis is the current variables, Y-axis is metrics. If there are multiple metrics for a case, each will be displayed in different color, and the previous value will be patterned.

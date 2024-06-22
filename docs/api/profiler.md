@@ -150,4 +150,4 @@ Output:
 |   2 |  brotli | 143.06 ms | 91.27 us |  +6882.06% | 38.97 KiB |    -11.32% |  373.88 us |       2.38 us |          +89.84% |
 ```
 
-![HTML report](../assets/html-miltiple-metrics.webp)
+![HTML report](../assets/chart-metrics.webp)
