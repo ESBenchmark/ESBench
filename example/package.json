@@ -12,6 +12,6 @@
 		"playwright": "^1.44.1"
 	},
 	"devDependencies": {
-		"@types/firefox-webext-browser": "^120.0.3"
+		"@types/firefox-webext-browser": "^120.0.4"
 	}
 }
