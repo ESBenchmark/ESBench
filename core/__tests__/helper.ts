@@ -76,7 +76,7 @@ const logMessage = { level: "info", log: "log message" };
 const emptyResult = { paramDef: [], meta: {}, notes: [], scenes: [] };
 const stubError = new Error("Stub Error");
 
-export interface TestExecuteMessages {
+export interface TestExecuteSuccessMessages {
 	logs: ClientMessage[];
 	result: RunSuiteResult & Record<string, any>;
 }
@@ -98,7 +98,7 @@ export interface TestExecuteMessages {
  * @param executor The Executor instance to tested.
  */
 export function executorTester(executor: Executor) {
-	const context = new HostContext({ logLevel: "off" });
+	const context = new HostContext({ logLevel: "off", tempDir: BUILD_OUT_DIR });
 
 	useTempDirectory(BUILD_OUT_DIR);
 	beforeAll(() => executor.start?.(context) as any);
@@ -108,16 +108,15 @@ export function executorTester(executor: Executor) {
 		const task = messageResolver(noop) as unknown as ExecuteOptions;
 		task.file = file;
 		task.root = `__tests__/fixtures/${fixture}`;
-		task.tempDir = BUILD_OUT_DIR;
 		task.pattern = RE_ANY.source;
 
 		const { calls } = vi.spyOn(task, "dispatch").mock;
-		await Promise.all([task.promise, executor.execute(task)]);
+		await Promise.all([(task as any).promise, executor.execute(task)]);
 
 		// Filter out redundant arguments.
 		const result = calls.pop()![0];
 		const logs = calls.map(firstItem);
-		return { logs, result } as TestExecuteMessages;
+		return { logs, result } as TestExecuteSuccessMessages;
 	};
 
 	return {

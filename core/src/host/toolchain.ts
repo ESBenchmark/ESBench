@@ -4,7 +4,7 @@ import { mkdtempSync } from "fs";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import { HostContext } from "./context.js";
-import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
+import { Channel, ClientMessage } from "../connect.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -40,11 +40,6 @@ export type EntryExport = (postMessage: Channel, files: string[], pattern?: stri
 
 export interface ExecuteOptions {
 	/**
-	 * A folder where the executor can save temporal files.
-	 */
-	tempDir: string;
-
-	/**
 	 * Output directory of the build, can be used to resolve imports.
 	 */
 	root: string;
@@ -58,12 +53,6 @@ export interface ExecuteOptions {
 	 * Run benchmark with names matching the Regex pattern.
 	 */
 	pattern?: string;
-
-	/**
-	 * Used to wait runner finish, it will resolve when receive result message,
-	 * and reject when receive error message or `reject` is called.
-	 */
-	promise: Promise<ToolchainResult>;
 
 	/**
 	 * Make execution fail, useful for executions that can't wait to finish.
@@ -134,7 +123,7 @@ export interface BuildResult {
 }
 
 export interface Job {
-	executorName: string;
+	name: string;
 	executor: Executor;
 	builds: BuildResult[];
 }
@@ -270,8 +259,8 @@ export default class JobGenerator {
 
 			// Executors without files to execute will be skipped.
 			if (builds.length) {
-				const executorName = this.t2n.get(executor)!;
-				yield { executorName, executor, builds } as Job;
+				const name = this.t2n.get(executor)!;
+				yield { name, executor, builds } as Job;
 			}
 		}
 	}

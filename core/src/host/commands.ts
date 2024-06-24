@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
-import JobGenerator, { ExecuteOptions } from "./toolchain.js";
+import JobGenerator, { BuildResult, ExecuteOptions, Job } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../index.js";
 import { FilterOptions, HostContext } from "./context.js";
@@ -55,51 +55,8 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	context.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
 
-	for (const { executorName, executor, builds } of jobs) {
-		let builder = "";
-		context.info(`Running suites with executor "${executorName}"`);
-
-		await executor.start?.(context);
-		try {
-			for (const build of builds) {
-				builder = build.name;
-				context.info(`${build.files.length} suites from builder "${builder}"`);
-
-				for (const file of build.files) {
-					const { promise, reject, dispatch } = messageResolver(context.logHandler);
-					const pattern = context.filter.name.source;
-
-					const input: ExecuteOptions = {
-						tempDir,
-						pattern,
-						file,
-						root: build.root,
-						dispatch,
-						reject,
-						promise,
-					};
-
-					const [record] = await Promise.all([
-						input.promise,
-						executor.execute(input),
-					]);
-					(result[record.name!] ??= []).push({
-						...record,
-						builder,
-						executor: executorName,
-					});
-				}
-			}
-		} catch (e) {
-			context.error(`Failed to run suite with (builder=${builder}, executor=${executorName})`);
-			if (e.name !== "RunSuiteError") {
-				throw e;
-			}
-			context.error(`At scene ${e.paramStr}`);
-			throw e.cause;
-		} finally {
-			await executor.close?.(context);
-		}
+	for (const job of jobs) {
+		await runJob(context, job, result);
 	}
 
 	context.info(); // Add an empty line between running & reporting phase.
@@ -125,4 +82,45 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 
 	const timeUsage = performance.now() - startTime;
 	context.info(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
+}
+
+async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
+	const { executor, builds } = job;
+
+	context.info(`Running suites with executor "${job.name}"`);
+	let build: BuildResult;
+
+	await executor.start?.(context);
+	try {
+		for (build of builds) {
+			context.info(`${build.files.length} suites from builder "${build.name}"`);
+
+			for (const file of build.files) {
+				const resolver = messageResolver(context.logHandler);
+				const input = resolver as unknown as ExecuteOptions;
+				input.file = file;
+				input.root = build.root;
+				input.pattern = context.filter.name.source;
+
+				const [record] = await Promise.all([
+					resolver.promise,
+					executor.execute(input),
+				]);
+				(result[record.name!] ??= []).push({
+					...record,
+					executor: job.name,
+					builder: build.name,
+				});
+			}
+		}
+	} catch (e) {
+		context.error(`Failed to run suite with (builder=${build!.name}, executor=${job.name})`);
+		if (e.name !== "RunSuiteError") {
+			throw e;
+		}
+		context.error(`At scene ${e.paramStr}`);
+		throw e.cause;
+	} finally {
+		await executor.close?.(context);
+	}
 }

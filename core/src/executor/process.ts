@@ -9,6 +9,7 @@ import { basename, relative } from "path";
 import { join } from "path/posix";
 import { buildCLI, splitCLI } from "@kaciras/utilities/node";
 import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { HostContext } from "../host/index.js";
 
 type GetCommand = (file: string) => string;
 
@@ -41,6 +42,7 @@ export default class ProcessExecutor implements Executor {
 	protected process!: ChildProcess;
 	protected server!: Server;
 	protected dispatch!: (message: any) => void;
+	protected tempDir!: string;
 
 	/**
 	 * Create new ProcessExecutor with a command line template.
@@ -66,7 +68,8 @@ export default class ProcessExecutor implements Executor {
 		return basename(splitCLI(this.getCommand("<file>"))[0]);
 	}
 
-	start() {
+	start(host: HostContext) {
+		this.tempDir = host.config.tempDir;
 		this.server = createServer((request, response) => {
 			response.end();
 			return json(request).then(this.dispatch);
@@ -83,12 +86,11 @@ export default class ProcessExecutor implements Executor {
 	}
 
 	execute(options: ExecuteOptions) {
-		const { tempDir, dispatch } = options;
+		this.dispatch = options.dispatch;
 		this.process?.kill();
-		this.dispatch = dispatch;
 
 		// No need to make the filename unique because only one executor can run at the same time.
-		const entry = join(tempDir, "main.js");
+		const entry = join(this.tempDir, "main.js");
 		const code = this.createEntry(options);
 		writeFileSync(entry, code);
 
@@ -107,9 +109,10 @@ export default class ProcessExecutor implements Executor {
 	 * @param options Execute options
 	 */
 	protected createEntry(options: ExecuteOptions) {
-		const { tempDir, root, file, pattern } = options;
+		const { root, file, pattern } = options;
+		const { server, tempDir } = this;
 
-		const info = this.server.address() as AddressInfo;
+		const info = server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
 
 		// relative() from path/posix also uses system-depend slash.
