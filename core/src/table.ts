@@ -405,15 +405,24 @@ export function parseFormat(template: string) {
 	throw new Error("Invalid metric format: " + template);
 }
 
-function formatColumn(table: any[][], column: number, template: string, flex: boolean) {
-	const values = table.map(r => r[column]).filter(v => v !== undefined);
+function formatColumn(table: CellValue[][], column: number, template: string, flex: boolean) {
+	const numbers: number[] = [];
+	for (const row of table) {
+		const value = row[column];
+		if (typeof value === "string") {
+			throw new TypeError(`Cannot apply number format to "${value}"`);
+		}
+		if (typeof value === "number") {
+			numbers.push(value);
+		}
+	}
 
 	const { formatter, rawUnit, suffix } = parseFormat(template);
 	let format: FormatFn;
 	if (flex) {
 		format = (value: number) => separateThousand(formatter.formatDiv(value, rawUnit));
 	} else {
-		const fixed = formatter.homogeneous(values, rawUnit);
+		const fixed = formatter.homogeneous(numbers, rawUnit);
 		format = (value: number) => separateThousand(fixed.format(value));
 	}
 

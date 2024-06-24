@@ -250,6 +250,19 @@ it("should format undefined values in the table", () => {
 	]);
 });
 
+it("should throw error when a value is not suitable of the format", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		meta: {
+			bar: { key: "bar", format: "{duration}" },
+		},
+		scenes: [{
+			foo: { bar: "text" },
+		}],
+	}]);
+	expect(() => table.format()).toThrow('Cannot apply number format to "text"');
+});
+
 it("should allow a column has different units", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
