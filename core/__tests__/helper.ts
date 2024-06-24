@@ -7,7 +7,7 @@ import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts"
 import { RunSuiteResult } from "../src/runner.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
-import { ExecuteOptions, Executor, HostContext } from "../src/host/index.ts";
+import { Executor, HostContext, SuiteTask } from "../src/host/index.ts";
 
 // Enforce colored console output on CI.
 chalk.level = 1;
@@ -105,7 +105,7 @@ export function executorTester(executor: Executor) {
 	afterAll(() => executor.close?.(context) as any);
 
 	let execute = async (fixture: string, file = "./suite.js") => {
-		const task = messageResolver(noop) as unknown as ExecuteOptions;
+		const task = messageResolver(noop) as unknown as SuiteTask;
 		task.file = file;
 		task.root = `__tests__/fixtures/${fixture}`;
 		task.pattern = RE_ANY.source;

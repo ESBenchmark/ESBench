@@ -1,7 +1,7 @@
 import { pid } from "process";
 import { join } from "path/posix";
 import { pathToFileURL } from "url";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
 /**
@@ -15,7 +15,7 @@ export default <Executor>{
 		highestPriority(pid);
 	},
 
-	async execute({ root, file, pattern, dispatch }: ExecuteOptions) {
+	async execute({ root, file, pattern, dispatch }: SuiteTask) {
 		const url = pathToFileURL(join(root, "index.js"));
 		const module = await import(url.toString());
 		return module.default(dispatch, file, pattern);

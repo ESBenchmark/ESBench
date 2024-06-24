@@ -38,7 +38,7 @@ export interface Builder {
  */
 export type EntryExport = (postMessage: Channel, files: string[], pattern?: string) => Promise<void>;
 
-export interface ExecuteOptions {
+export interface SuiteTask {
 	/**
 	 * Output directory of the build, can be used to resolve imports.
 	 */
@@ -87,7 +87,7 @@ export interface Executor {
 	 * An execution will complete when ESBenchResult is passed to `options.dispatch`
 	 * and the returned Promise is satisfied (is present).
 	 */
-	execute(task: ExecuteOptions): Awaitable<unknown>;
+	execute(task: SuiteTask): Awaitable<unknown>;
 }
 
 /**

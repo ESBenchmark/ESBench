@@ -8,7 +8,7 @@ import { setPriority } from "os";
 import { basename, relative } from "path";
 import { join } from "path/posix";
 import { buildCLI, splitCLI } from "@kaciras/utilities/node";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/index.js";
 
 type GetCommand = (file: string) => string;
@@ -85,13 +85,13 @@ export default class ProcessExecutor implements Executor {
 		this.server.close();
 	}
 
-	execute(options: ExecuteOptions) {
-		this.dispatch = options.dispatch;
+	execute(task: SuiteTask) {
+		this.dispatch = task.dispatch;
 		this.process?.kill();
 
 		// No need to make the filename unique because only one executor can run at the same time.
 		const entry = join(this.tempDir, "main.js");
-		const code = this.createEntry(options);
+		const code = this.createEntry(task);
 		writeFileSync(entry, code);
 
 		const command = this.getCommand(entry);
@@ -100,16 +100,14 @@ export default class ProcessExecutor implements Executor {
 			env: { ...process.env, ...this.env },
 		});
 
-		return this.postprocess(options);
+		return this.postprocess(task);
 	}
 
 	/**
 	 * Get the code of the entry file that process will execute.
-	 *
-	 * @param options Execute options
 	 */
-	protected createEntry(options: ExecuteOptions) {
-		const { root, file, pattern } = options;
+	protected createEntry(task: SuiteTask) {
+		const { root, file, pattern } = task;
 		const { server, tempDir } = this;
 
 		const info = server.address() as AddressInfo;
@@ -128,13 +126,12 @@ export default class ProcessExecutor implements Executor {
 	/**
 	 * Attach error handler to the process, and set the highest priority.
 	 */
-	protected postprocess(options: ExecuteOptions) {
-		const { reject } = options;
+	protected postprocess(task: SuiteTask) {
 		this.process.on("spawn", () => highestPriority(this.process.pid!));
 		this.process.on("exit", code => {
 			if (code !== 0) {
 				const cmd = buildCLI(...this.process.spawnargs);
-				reject(new Error(`Execute Failed (${code}), Command: ${cmd}`));
+				task.reject(new Error(`Execute Failed (${code}), Command: ${cmd}`));
 			}
 		});
 	}

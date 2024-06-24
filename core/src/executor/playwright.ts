@@ -5,7 +5,7 @@ import { tmpdir } from "os";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { Executor, SuiteTask } from "../host/toolchain.js";
 import { isolationHeaders, transformer } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
@@ -121,8 +121,8 @@ export class PlaywrightExecutor implements Executor {
 		}
 	}
 
-	async executeInPage(page: Page, options: ExecuteOptions, url: string) {
-		const { file, pattern, root, dispatch } = options;
+	async executeInPage(page: Page, task: SuiteTask, url: string) {
+		const { file, pattern, root, dispatch } = task;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
 
 		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
@@ -143,7 +143,7 @@ export class PlaywrightExecutor implements Executor {
 		await Promise.all(this.context.pages().map(p => p.close()));
 	}
 
-	async execute(options: ExecuteOptions) {
+	async execute(options: SuiteTask) {
 		const page = await this.context.newPage();
 		await this.executeInPage(page, options, baseURL);
 	}
@@ -200,12 +200,12 @@ export class WebextExecutor extends PlaywrightExecutor {
 		});
 	}
 
-	async execute(options: ExecuteOptions) {
+	async execute(task: SuiteTask) {
 		const extensionId = await this.findChromiumExtensionId(manifest.name);
 		const baseURL = `chrome-extension://${extensionId}/`;
 
 		const page = await this.context.newPage();
-		await this.executeInPage(page, options, baseURL + "index.html");
+		await this.executeInPage(page, task, baseURL + "index.html");
 	}
 
 	// https://webdriver.io/docs/extension-testing/web-extensions/#test-popup-modal-in-chrome

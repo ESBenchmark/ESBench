@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import * as tsDirectly from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/index.js";
 
 function hasFlag(flag: string) {
@@ -247,7 +247,7 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 export default class WebRemoteExecutor implements Executor {
 
 	private server!: Server;
-	private task?: ExecuteOptions;
+	private task?: SuiteTask;
 
 	private readonly options: WebRemoteExecutorOptions;
 
@@ -283,8 +283,8 @@ export default class WebRemoteExecutor implements Executor {
 		this.server.closeAllConnections();
 	}
 
-	execute(options: ExecuteOptions) {
-		this.task = options;
+	execute(task: SuiteTask) {
+		this.task = task;
 	}
 
 	async handleRequest(request: IncomingMessage, response: ServerResponse) {

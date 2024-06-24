@@ -1,6 +1,6 @@
 export * from "./config.js";
 export { HostContext } from "./context.js";
-export { Builder, Executor, ExecuteOptions, EntryExport } from "./toolchain.js";
+export { Builder, Executor, SuiteTask, EntryExport } from "./toolchain.js";
 export { start, report } from "./commands.js";
 
 export { default as csvReporter } from "../reporter/csv.js";

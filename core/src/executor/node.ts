@@ -1,7 +1,7 @@
 import { fileURLToPath, pathToFileURL } from "url";
 import { join } from "path";
 import { ChildProcess, fork, ForkOptions } from "child_process";
-import { ExecuteOptions, Executor } from "../host/toolchain.js";
+import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
 // Resolve the filename to generated JS for test.
@@ -45,7 +45,7 @@ export default class NodeExecutor implements Executor {
 		}
 	}
 
-	execute({ root, file, pattern, dispatch, reject }: ExecuteOptions) {
+	execute({ root, file, pattern, dispatch, reject }: SuiteTask) {
 		this.process?.kill();
 
 		this.process = fork(__filename, {
