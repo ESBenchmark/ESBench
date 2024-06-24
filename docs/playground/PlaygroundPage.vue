@@ -77,7 +77,7 @@
 			<Notification :item='item' :theme='materialTheme'/>
 		</Notivue>
 
-		<ReportView v-model='showChart' :summaries='results'/>
+		<ReportView v-model='showChart' :results='results'/>
 	</main>
 </template>
 
@@ -201,7 +201,7 @@ async function startBenchmark() {
 
 	try {
 		await executor.value(editor.getValue(), dispatch, promise);
-		const result = await promise;
+		const result = [await promise];
 		webConsole.printTable(result, tableOptions.value);
 		results.push({ name: "playground-suite", result, time: new Date() });
 	} catch (e) {

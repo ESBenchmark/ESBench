@@ -14,7 +14,7 @@ const post = message => {
 
 const doImport = () => import("__FILE__");
 
-runAndSend(post, doImport, ["Playground Suite"])`;
+runAndSend(post, doImport, "Playground Suite")`;
 
 function createSandbox(module: string) {
 	const importMap = JSON.stringify({

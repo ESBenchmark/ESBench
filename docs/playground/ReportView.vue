@@ -6,7 +6,7 @@
 	>
 		<aside :class='$style.menu'>
 			<div
-				v-for='history of summaries'
+				v-for='history of results'
 				:key='history.time.getTime()'
 				:class='[
 					$style.history,
@@ -60,7 +60,7 @@ import { shallowRef, watch } from "vue";
 import SuiteReport from "../../reporter-html/src/SuiteReport.vue";
 
 interface ReportViewProps {
-	summaries: BenchmarkHistory[];
+	results: BenchmarkHistory[];
 }
 
 const props = defineProps<ReportViewProps>();
@@ -68,7 +68,7 @@ const open = defineModel<boolean>({ required: true });
 const self = shallowRef<HTMLDialogElement>();
 const current = shallowRef<BenchmarkHistory>();
 
-watch(props, p => current.value ??= p.summaries[0]);
+watch(props, p => current.value ??= p.results[0]);
 
 function handleCloseClick() {
 	open.value = false;
