@@ -45,6 +45,7 @@ export default defineConfig({
 			{
 				items: [
 					{ text: "Introduction", link: "/guide/introduction" },
+					{ text: "Getting Started", link: "/guide/getting-started" },
 					{ text: "Suites", link: "/guide/suites" },
 					{ text: "Parameterization", link: "/guide/parameterization" },
 					{ text: "Comparison", link: "/guide/comparison" },

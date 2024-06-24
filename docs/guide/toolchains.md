@@ -2,9 +2,11 @@
 
 ESBench is a cross runtime benchmark tool, which means you can run your suite on different runtimes.
 
+Benefit from the plug-in architecture, ESBench supports customize how to run the code via Builder and Executor.
+
 ## Run In Browsers
 
-Benefit from the plug-in architecture, ESBench can use executor to customize how to run the code. Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
+Following example runs the suite on Firefox, Webkit, and Chromium using [Playwright](https://playwright.dev).
 
 First install playwright:
 
@@ -55,6 +57,8 @@ export default defineSuite(scene => {
 ```
 :::
 
+
+
 Because of browser and Node have a different module resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
 
 * Add flag `--experimental-import-meta-resolve` to enable [builtin transformer](#built-in-transformer).
@@ -91,12 +95,12 @@ ESBench has some [Built-in executors](./toolchains#built-in-executors) to help y
 
 ## Built-in Transformer
 
-To enable browsers to run the suite directly, ESBench provides a simple transformer that can:
+To make browsers run the suite directly, ESBench provides a simple transformer that can:
 
 - Resolve imports to absolute path, so that they can be used in browser.
 - Compile TypeScript files to JavaScript.
 
-The transformer uses `import.meta.resolve` to resolve imports, it is currently an experimental feature, you need a flag `--experimental-import-meta-resolve` to enable it.
+The transformer uses `import.meta.resolve` to resolve modules, it is currently an experimental feature, you need a flag `--experimental-import-meta-resolve` to enable it.
 
 Limitations:
 
@@ -149,6 +153,12 @@ export default defineConfig({
 	toolchains: [
 		{
 			include: ["./es/*.js", "./node/*.js"],
+            
+            // Default builders:
+			// builders: [noBuild],
+            
+            // Default executors:
+			// executors: [inProcessExecutor],
 		},
 		{
 			include: ["./es/*.js", "./web/*.js"],
@@ -273,7 +283,7 @@ export default defineConfig({
 });
 ```
 
-##  Executors
+## Built-in Executors
 
 ### inProcessExecutor
 

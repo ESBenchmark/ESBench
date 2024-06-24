@@ -20,8 +20,7 @@ Visit [https://esbench.vercel.app](https://esbench.vercel.app) to get started an
 
 ## Screenshots
 
+![Rich Features & Simple Code](https://github.com/ESBenchmark/ESBench/raw/master/docs/assets/suite-and-config.webp)
 ![Playground](https://github.com/ESBenchmark/ESBench/raw/master/docs/assets/playground.webp)
-
 ![Text Report](https://github.com/ESBenchmark/ESBench/raw/master/docs/assets/text-report.webp)
-
-![HTML Report](https://github.com/ESBenchmark/ESBench/raw/master/docs/assets/hTML-report.webp)
+![HTML Report](https://github.com/ESBenchmark/ESBench/raw/master/docs/assets/html-report-metrics.webp)

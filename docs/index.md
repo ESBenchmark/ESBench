@@ -13,7 +13,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/introduction
+      link: ./guide/getting-started
       
     - theme: alt
       text: Try it online

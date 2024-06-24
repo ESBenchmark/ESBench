@@ -10,10 +10,10 @@ The parameters of the combination can be retrieved via `scene.params`.
 
 ```javascript
 export default defineSuite({
-	params: {
-		size: [0, 1000, 1000_000],
-		exists: [true, false],
-	},
+	params: {// [!code ++]
+		size: [0, 1000, 1000_000],// [!code ++]
+		exists: [true, false],// [!code ++]
+	},// [!code ++]
     /*
      * Will be called 6 times with `scene.params` be each of the:
      * { size: 0, exists: true }

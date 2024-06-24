@@ -9,9 +9,10 @@ When started, ESBench installs [ESM Loader Hooks](https://nodejs.org/docs/latest
 When importing a TS file for the first time, ESBench will detect installed compilers by the steps:
 
 1. If `@swc/core` installed, use [SWC](https://github.com/swc-project/swc).
-2. If `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild) .
-3. If `typescript` installed, use [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
-4. No supported compiler, the import fails.
+2. If `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild).
+3. If `sucrase` installed, use [sucrase](https://github.com/alangpierce/sucrase).
+4. If `typescript` installed, use [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
+5. No supported compiler, the import fails.
 
 ESBench only transforms TS files and does not process other types of imports.
 
