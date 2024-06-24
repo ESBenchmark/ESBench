@@ -48,7 +48,7 @@ export default defineSuite(scene => {
 });
 ```
 
-By default, files match the [micromatch](https://github.com/micromatch/micromatch) pattern `benchmark/**/*.[jt]s?(x)` in CWD are treated as benchmark suites, this behavior can be changed by the [config file](./config).
+ESBench can run multiple suites at once. By default, files match the [micromatch](https://github.com/micromatch/micromatch) pattern `benchmark/**/*.[jt]s?(x)` in CWD are treated as benchmark suites, this behavior can be changed by the [config](./config).
 
 Next, in order to execute the benchmark, add the following section to your `package.json`:
 
@@ -60,14 +60,17 @@ Next, in order to execute the benchmark, add the following section to your `pack
 }
 ```
 
-> [!TIP]
+> [!INFO]
 > To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
 >
 > If you prefer to work with a GUI, we also provide [IDE plugin](./ide-integration).
 > 
 > For integration with ESBench in your code, see [JavaScript API](../api/runner).
 
-Finally, run `pnpm run benchmark` to execute the suite.
+Finally, run `pnpm run benchmark` or `pnpm exec esbench` to execute the suite.
+
+> [!TIP]
+> The `esbench` command runs all matching suites by default, if you want to run a particular file, you can use the `--file <filename>` argument. (e.g. `esbench --file array-sum.js`)
 
 The run will take a while for accurate measurements, during which a lot of logs will be printed. After finishing it will output:
 

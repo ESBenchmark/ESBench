@@ -85,7 +85,7 @@ export default defineSuite({
 		let array = [];
 		
 		// Time of sort depends on the elements order, 
-        // so we must reset the array before.
+        // so we must reset the array before each run.
 		scene.beforeIteration(() => array = template.slice());
 		
 		scene.bench("builtin", () => array.sort((a, b) => a - b));
