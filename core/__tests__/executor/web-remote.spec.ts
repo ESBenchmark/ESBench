@@ -1,7 +1,7 @@
 import { pathToFileURL } from "url";
 import { resolve, sep } from "path";
 import { readFileSync } from "fs";
-import { afterAll, describe, expect, it, MockedFunction, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { chromium } from "playwright-core";
 import { transform } from "ts-directly";
 import WebRemoteExecutor, { transformer } from "../../src/executor/web-remote.ts";
@@ -99,8 +99,12 @@ describe("transformer", () => {
 	});
 
 	it("should compile TS", async () => {
-		(transform as MockedFunction<any>).mockResolvedValue({ source: "foobar" });
 		const path = import.meta.filename;
+		vi.mocked(transform).mockResolvedValue({
+			format: "module",
+			source: "foobar",
+			shortCircuit: true,
+		});
 
 		const code = await transformer.load(path);
 

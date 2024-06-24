@@ -1,9 +1,10 @@
 import { mkdirSync, rmSync } from "fs";
-import { CPSrcObject, noop } from "@kaciras/utilities/browser";
-import { afterAll, afterEach, beforeAll, beforeEach, expect, Mock, vi } from "vitest";
+import { CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 import chalk from "chalk";
 import { BenchmarkSuite } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
+import { RunSuiteResult } from "../src/runner.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor, HostContext } from "../src/host/index.ts";
@@ -72,8 +73,13 @@ function factory<T extends any[]>(f: (...args: T) => unknown) {
 const BUILD_OUT_DIR = ".esbench-tmp";
 
 const logMessage = { level: "info", log: "log message" };
-const emptyResults = { paramDef: [], meta: {}, notes: [], scenes: [] };
+const emptyResult = { paramDef: [], meta: {}, notes: [], scenes: [] };
 const stubError = new Error("Stub Error");
+
+export interface TestExecuteMessages {
+	logs: ClientMessage[];
+	result: RunSuiteResult & Record<string, any>;
+}
 
 /**
  * Utility design to run an Executor, it only calls `start` once to make tests faster.
@@ -100,16 +106,18 @@ export function executorTester(executor: Executor) {
 
 	let execute = async (fixture: string, file = "./suite.js") => {
 		const task = messageResolver(noop) as unknown as ExecuteOptions;
+		task.file = file;
+		task.root = `__tests__/fixtures/${fixture}`;
 		task.tempDir = BUILD_OUT_DIR;
 		task.pattern = RE_ANY.source;
-		task.root = `__tests__/fixtures/${fixture}`;
-		task.file = file;
-		vi.spyOn(task, "dispatch");
 
-		const w = executor.execute(task);
-		await Promise.all([task.promise, w]);
+		const { calls } = vi.spyOn(task, "dispatch").mock;
+		await Promise.all([task.promise, executor.execute(task)]);
 
-		return task.dispatch as Mock<[ClientMessage, ...unknown[]]>;
+		// Filter out redundant arguments.
+		const result = calls.pop()![0];
+		const logs = calls.map(firstItem);
+		return { logs, result } as TestExecuteMessages;
 	};
 
 	return {
@@ -127,11 +135,11 @@ export function executorTester(executor: Executor) {
 		 */
 
 		successCase: factory(async () => {
-			const dispatch = await execute("success-suite");
-			const { calls } = dispatch.mock;
-			expect(calls).toHaveLength(2);
-			expect(calls[0][0]).toStrictEqual(logMessage);
-			expect(calls[1][0]).toStrictEqual(emptyResults);
+			const msg1 = await execute("success-suite");
+			expect(msg1).toStrictEqual({ logs: [logMessage], result: emptyResult });
+
+			const msg2 = await execute("success-suite");
+			expect(msg2).toStrictEqual({ logs: [logMessage], result: emptyResult });
 		}),
 
 		insideError: factory(() => {

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { chromium, firefox, webkit } from "playwright-core";
 import { executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
-import { RunSuiteResult } from "../../src/index.ts";
 
 it.each([
 	[new PlaywrightExecutor(firefox), "firefox"],
@@ -24,16 +23,15 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	it("should forward top level errors", tester.outsideError());
 
 	it("should respond 404 when resource not exists", async () => {
-		const dispatch = await tester.execute("fetch-404");
-		const result = dispatch.mock.calls[0][0] as RunSuiteResult;
+		const { result } = await tester.execute("fetch-404");
 		expect(result.notes[0].text).toBe("Status: 404");
 	});
 
 	// https://caniuse.com/mdn-javascript_statements_import_import_attributes_type_json
 	it.skipIf(type.name() === "firefox")
 	("should support import attributes", async () => {
-		const dispatch = await tester.execute("import-assertion");
-		expect(dispatch.mock.calls[0][0]).toHaveProperty("hello", "world");
+		const { result } = await tester.execute("import-assertion");
+		expect(result).toHaveProperty("hello", "world");
 	});
 });
 
@@ -45,8 +43,7 @@ describe("WebextExecutor", () => {
 	});
 
 	it("should run suites with extension API access", async () => {
-		const dispatch = await tester.execute("webext");
-		const result = dispatch.mock.calls[0][0] as any;
+		const { result } = await tester.execute("webext");
 		expect(result.info).toHaveProperty("active", true);
 	});
 });
