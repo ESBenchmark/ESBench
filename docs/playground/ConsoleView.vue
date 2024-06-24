@@ -51,7 +51,7 @@ function setMeasurerFont(el: HTMLElement) {
 
 function stringLength(s: string) {
 	if (s.startsWith("<span ")) {
-		s = s.slice(29, -7);
+		s = s.slice(28, -7);
 	}
 	s = unescapeHTML(s);
 	return Math.round(ctx.measureText(s).width / dashWidth);
