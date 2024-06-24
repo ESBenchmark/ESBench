@@ -26,10 +26,7 @@ describe("Custom command line", () => {
 	));
 
 	it("should pass arguments and env vars", async () => {
-		const dispatch = await tester.execute({
-			file: "./foo.js",
-			root: "__tests__/fixtures/inspect",
-		});
+		const dispatch = await tester.execute("inspect");
 		const [message] = dispatch.mock.calls[0] as any;
 		expect(message.argv.slice(2)).toStrictEqual(["foo bar"]);
 		expect(message.env).toHaveProperty("BAZ", "qux");

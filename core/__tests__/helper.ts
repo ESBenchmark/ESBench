@@ -98,18 +98,18 @@ export function executorTester(executor: Executor) {
 	beforeAll(() => executor.start?.(context) as any);
 	afterAll(() => executor.close?.(context) as any);
 
-	let execute = async (build: { file: string; root: string }) => {
-		const context = messageResolver(noop) as unknown as ExecuteOptions;
-		context.tempDir = BUILD_OUT_DIR;
-		context.pattern = RE_ANY.source;
-		context.root = build.root;
-		context.file = build.file;
-		vi.spyOn(context, "dispatch");
+	let execute = async (fixture: string, file = "./suite.js") => {
+		const task = messageResolver(noop) as unknown as ExecuteOptions;
+		task.tempDir = BUILD_OUT_DIR;
+		task.pattern = RE_ANY.source;
+		task.root = `__tests__/fixtures/${fixture}`;
+		task.file = file;
+		vi.spyOn(task, "dispatch");
 
-		const w = executor.execute(context);
-		await Promise.all([context.promise, w]);
+		const w = executor.execute(task);
+		await Promise.all([task.promise, w]);
 
-		return context.dispatch as Mock<[ClientMessage, ...unknown[]]>;
+		return task.dispatch as Mock<[ClientMessage, ...unknown[]]>;
 	};
 
 	return {
@@ -127,10 +127,7 @@ export function executorTester(executor: Executor) {
 		 */
 
 		successCase: factory(async () => {
-			const dispatch = await execute({
-				file: "./foo.js",
-				root: "__tests__/fixtures/success-suite",
-			});
+			const dispatch = await execute("success-suite");
 			const { calls } = dispatch.mock;
 			expect(calls).toHaveLength(2);
 			expect(calls[0][0]).toStrictEqual(logMessage);
@@ -138,19 +135,11 @@ export function executorTester(executor: Executor) {
 		}),
 
 		insideError: factory(() => {
-			const promise = execute({
-				file: "./foo.js",
-				root: "__tests__/fixtures/error-inside",
-			});
-			return expect(promise).rejects.toThrow(stubError);
+			return expect(execute("error-inside")).rejects.toThrow(stubError);
 		}),
 
 		outsideError: factory((error = stubError.message) => {
-			const promise = execute({
-				file: "./foo.js",
-				root: "__tests__/fixtures/error-outside",
-			});
-			return expect(promise).rejects.toThrow(error);
+			return expect(execute("error-outside")).rejects.toThrow(error);
 		}),
 	};
 }
