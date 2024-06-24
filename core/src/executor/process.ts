@@ -9,7 +9,7 @@ import { basename, relative } from "path";
 import { join } from "path/posix";
 import { buildCLI, splitCLI } from "@kaciras/utilities/node";
 import { Executor, SuiteTask } from "../host/toolchain.js";
-import { HostContext } from "../host/index.js";
+import { HostContext } from "../host/context.js";
 
 type GetCommand = (file: string) => string;
 

@@ -12,7 +12,7 @@ import * as tsDirectly from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
-import { HostContext } from "../host/index.js";
+import { HostContext } from "../host/context.js";
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);

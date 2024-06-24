@@ -4,8 +4,8 @@ import { Builder, Executor, Nameable, ToolChainItem } from "./toolchain.js";
 import { HostContext, LogLevel } from "./context.js";
 import noBuild from "../builder/default.js";
 import inProcess from "../executor/in-process.js";
+import rawReporter from "../reporter/raw.js";
 import textReporter from "../reporter/text.js";
-import { rawReporter } from "./index.js";
 
 export interface ESBenchConfig {
 	/**

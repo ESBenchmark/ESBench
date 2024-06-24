@@ -3,7 +3,7 @@ import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
 import JobGenerator, { BuildResult, Job } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
-import { ESBenchResult, messageResolver } from "../index.js";
+import { ESBenchResult, messageResolver } from "../connect.js";
 import { FilterOptions, HostContext } from "./context.js";
 
 function loadResults(path: string, throwIfMissing: true): ESBenchResult;
