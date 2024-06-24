@@ -60,7 +60,7 @@ export interface SuiteTask {
 	reject(error: Error): void;
 
 	/**
-	 * Executor should forward messages from suites to this function.
+	 * Executor should forward messages from `EntryExport` to this function.
 	 */
 	dispatch(message: ClientMessage): void;
 }
@@ -82,10 +82,10 @@ export interface Executor {
 	close?(ctx: HostContext): Awaitable<unknown>;
 
 	/**
-	 * This method is called for every build output.
+	 * Run a suite of a builder output.
 	 *
-	 * An execution will complete when ESBenchResult is passed to `options.dispatch`
-	 * and the returned Promise is satisfied (is present).
+	 * An execution will complete when `ESBenchResult` is passed to `task.dispatch`
+	 * and the returned Promise is satisfied (if present).
 	 */
 	execute(task: SuiteTask): Awaitable<unknown>;
 }

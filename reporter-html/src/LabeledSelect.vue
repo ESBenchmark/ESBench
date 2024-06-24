@@ -12,12 +12,12 @@
 	</label>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import SimpleSelect from "./SimpleSelect.vue";
 
 interface LabeledSelectProps {
 	label: string;
-	modelValue: any;
+	modelValue: T;
 	disabled?: boolean;
 }
 

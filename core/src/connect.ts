@@ -52,7 +52,7 @@ export type Channel = (message: ClientMessage) => Awaitable<void>;
  *
  * @param postMessage Function used to transfer the results to the host.
  * @param importer Function to import a suite, normally provided by builder.
- * @param files Paths of suite files.
+ * @param file Path of the suite file to run.
  * @param pattern A Regexp string for filter benchmark cases by name.
  */
 export async function runAndSend(
@@ -80,6 +80,13 @@ export async function runAndSend(
 	}
 }
 
+export interface ClientMessageResolver {
+	dispatch: Channel;
+	promise: Promise<ToolchainResult>;
+	resolve: (value: ToolchainResult) => void;
+	reject: (reason?: Error) => void;
+}
+
 /**
  * A helper to deal with runner messages, forward messages to `dispatch`
  * and then you can wait for the promise to finish runs.
@@ -105,5 +112,5 @@ export function messageResolver(onLog: LogHandler) {
 		}
 	}
 
-	return { promise, resolve, reject, dispatch };
+	return { promise, resolve, reject, dispatch } as ClientMessageResolver;
 }

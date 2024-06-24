@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
-import JobGenerator, { BuildResult, Job, SuiteTask } from "./toolchain.js";
+import JobGenerator, { BuildResult, Job } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../index.js";
 import { FilterOptions, HostContext } from "./context.js";
@@ -97,14 +97,17 @@ async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
 
 			for (const file of build.files) {
 				const resolver = messageResolver(context.logHandler);
-				const task = resolver as unknown as SuiteTask;
-				task.file = file;
-				task.root = build.root;
-				task.pattern = context.filter.name.source;
+
+				const execution = executor.execute({
+					...resolver,
+					file: file,
+					root: build.root,
+					pattern: context.filter.name.source,
+				});
 
 				const [record] = await Promise.all([
 					resolver.promise,
-					executor.execute(task),
+					execution,
 				]);
 				(result[record.name!] ??= []).push({
 					...record,

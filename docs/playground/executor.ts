@@ -1,3 +1,4 @@
+import type { Channel } from "esbench";
 import esbenchClient from "esbench?url"; // Special handing in docs/esbench-runtime.ts
 
 const esbenchURL = new URL(esbenchClient, location.href).toString();
@@ -47,7 +48,7 @@ function createModule(code: string) {
 
 export async function executeIFrame(
 	suiteCode: string,
-	onMessage: any,
+	onMessage: Channel,
 	clientPromise: Promise<unknown>,
 ) {
 	const module = createModule(suiteCode);
@@ -70,7 +71,7 @@ export async function executeIFrame(
 
 export async function executeWorker(
 	suiteCode: string,
-	onMessage: any,
+	onMessage: Channel,
 	clientPromise: Promise<unknown>,
 ) {
 	const module = createModule(suiteCode);

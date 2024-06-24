@@ -16,7 +16,9 @@ export interface CSVReporterOptions extends SummaryTableOptions {
 	directory?: string;
 }
 
-function writeRow(row: any[], out: WriteStream) {
+type Row = SummaryTable["cells"][number];
+
+function writeRow(row: Row, out: WriteStream) {
 	const e = row.length - 1;
 	for (let i = 0; i <= e; i++) {
 		const value = row[i];

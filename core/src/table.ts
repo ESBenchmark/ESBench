@@ -17,6 +17,7 @@ import { ResultBaseline } from "./runner.js";
 import { FlattedResult, Summary } from "./summary.js";
 
 type RatioStyle = "value" | "percentage" | "trend";
+type Outliers = "worst" | "best" | "all";
 
 export interface SummaryTableOptions {
 	/**
@@ -58,7 +59,7 @@ export interface SummaryTableOptions {
 	 *
 	 * @default "all"
 	 */
-	outliers?: false | "worst" | "best" | "all";
+	outliers?: false | Outliers;
 
 	/**
 	 * Using ratioStyle, we can override the style of the diff and the baseline column.
@@ -77,10 +78,10 @@ export interface SummaryTableOptions {
 
 type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
 type Stainer = Record<ANSIColor, (str: string) => string> & {
-	(str: string) : string;
+	(str: string): string;
 };
 
-const noColors = new Proxy<Stainer>(identity as any, { get: identity });
+const noColors = new Proxy(identity as Stainer, { get: identity });
 const kRowNumber = Symbol();
 const kProcessedMetrics = Symbol();
 
@@ -331,7 +332,7 @@ function preprocess(summary: Summary, options: SummaryTableOptions) {
 	}
 }
 
-function removeOutliers(summary: Summary, outliers: any, row: FlattedResult, meta: MetricMeta) {
+function removeOutliers(summary: Summary, outliers: Outliers, row: FlattedResult, meta: MetricMeta) {
 	const before = row[kProcessedMetrics][meta.key];
 
 	const mode = outliers === "all"

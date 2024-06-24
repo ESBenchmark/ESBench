@@ -56,7 +56,7 @@ it("should create a ProfilingContext", async () => {
 });
 
 it("should call lifecycle hooks", async () => {
-	const invocations: any[] = [];
+	const invocations: unknown[] = [];
 
 	const beforeAll = () => invocations.push(beforeAll);
 	const afterAll = () => invocations.push(afterAll);

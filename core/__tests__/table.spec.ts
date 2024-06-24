@@ -1,11 +1,12 @@
 import { expect, it } from "vitest";
-import { MetricAnalysis, SummaryTable } from "../src/index.js";
+import { MetricAnalysis, SummaryTable, ToolchainResult } from "../src/index.js";
 import { resultStub } from "./helper.ts";
 
 it("should fail with invalid metric type", () => {
-	const results: any = [{
+	const results: ToolchainResult[] = [{
 		...resultStub,
 		scenes: [{
+			// @ts-expect-error
 			foo: { time: false },
 		}],
 	}];
@@ -13,7 +14,7 @@ it("should fail with invalid metric type", () => {
 });
 
 it("should fail with invalid format", () => {
-	const results: any = [{
+	const results: ToolchainResult[] = [{
 		...resultStub,
 		meta: {
 			time: {
@@ -102,9 +103,9 @@ it("should allow optional metrics value", () => {
 });
 
 it.each([
-	["percentage", ["0.00%", "+100.00%", "-75.00%"]],
-	["value", ["1.00x", "2.00x", "0.25x"]],
-	["trend", ["100.00%", "200.00%", "25.00%"]],
+	["percentage" as const, ["0.00%", "+100.00%", "-75.00%"]],
+	["value" as const, ["1.00x", "2.00x", "0.25x"]],
+	["trend" as const, ["100.00%", "200.00%", "25.00%"]],
 ])("should apply ratio style: %s", (style, values) => {
 	const table = SummaryTable.from([{
 		...resultStub,
@@ -119,7 +120,7 @@ it.each([
 		}],
 	}], undefined, {
 		stdDev: false,
-		ratioStyle: style as any,
+		ratioStyle: style,
 	});
 	expect(table.cells[1][3]).toBe(values[0]);
 	expect(table.cells[2][3]).toBe(values[1]);

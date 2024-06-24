@@ -1,5 +1,5 @@
 import nodeModule from "module";
-import { afterAll, expect, it, MockedFunction, vi } from "vitest";
+import { afterAll, expect, it, vi } from "vitest";
 import { asyncNoop } from "@kaciras/utilities/node";
 import { report, start } from "../../src/host/commands.js";
 
@@ -13,8 +13,8 @@ vi.mock("module", async importOriginal => {
 });
 vi.mock("../../src/host/commands.js");
 
-const mockStart = (start as MockedFunction<typeof start>).mockImplementation(asyncNoop);
-const mockReport = (report as MockedFunction<typeof report>).mockImplementation(asyncNoop);
+const mockStart = vi.mocked(start).mockImplementation(asyncNoop);
+const mockReport = vi.mocked(report).mockImplementation(asyncNoop);
 
 const argvBackup = process.argv;
 

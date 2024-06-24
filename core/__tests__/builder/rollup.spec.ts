@@ -4,7 +4,7 @@ import { tmpdir } from "os";
 import { pathToFileURL } from "url";
 import { NormalizedInputOptions } from "rollup";
 import { expect, it, vi } from "vitest";
-import { ResolvedConfig } from "vite";
+import { UserConfig } from "vite";
 import { RollupBuilder, ViteBuilder } from "../../src/builder/rollup.ts";
 import { Builder } from "../../src/host/index.ts";
 
@@ -59,7 +59,7 @@ it("should generate loader entry with Vite", async () => {
 });
 
 it("should merge config in Vite", async () => {
-	let options!: ResolvedConfig;
+	let options: UserConfig = {};
 
 	await testBundle(new ViteBuilder({
 		build: {
@@ -69,9 +69,9 @@ it("should merge config in Vite", async () => {
 		},
 		plugins: [{
 			name: "test",
-			config: arg0 => { options = arg0 as any; },
+			config: arg0 => { options = arg0; },
 		}],
 	}));
-	expect(options.configFile).toBe(false);
-	expect(options.build.rollupOptions.input).not.toBe("foo.js");
+	expect(options).toHaveProperty("configFile", false);
+	expect(options.build!.rollupOptions!.input).not.toBe("foo.js");
 });

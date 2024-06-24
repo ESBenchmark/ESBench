@@ -1,5 +1,5 @@
 import { setPriority } from "os";
-import { defineConfig, ExecuteOptions, ProcessExecutor } from "esbench/host";
+import { defineConfig, ProcessExecutor, SuiteTask } from "esbench/host";
 
 /*
  * Measuring the Impact of Process Priority on Performance。
@@ -19,7 +19,7 @@ class LowPriorityExecutor extends ProcessExecutor {
 		return super.name + " (Low)";
 	}
 
-	postprocess(options: ExecuteOptions) {
+	postprocess(options: SuiteTask) {
 		super.postprocess(options);
 		this.process.removeAllListeners("spawn");
 		this.process.on("spawn", () => {

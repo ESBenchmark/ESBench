@@ -86,7 +86,7 @@ import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 
 window.MonacoEnvironment = {
-	getWorker(_: any, label: string) {
+	getWorker(_, label) {
 		switch (label) {
 			case "javascript":
 				return new tsWorker();
@@ -102,7 +102,7 @@ import * as monaco from "monaco-editor/esm/vs/editor/edcore.main.js";
 import { nextTick, onMounted, onUnmounted, shallowReactive, shallowRef, toRaw, watch } from "vue";
 import { useData } from "vitepress";
 import { transformBuffer } from "@kaciras/utilities/browser";
-import { messageResolver, RunSuiteResult } from "esbench";
+import { ClientMessageResolver, messageResolver, RunSuiteResult } from "esbench";
 import { IconChartBar, IconPlayerPlayFilled, IconPlayerStopFilled } from "@tabler/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
 import { Notivue, Notification, push, materialTheme } from "notivue";
@@ -183,7 +183,7 @@ watch(executor, value => {
 	}
 });
 
-let resolver: any;
+let resolver: ClientMessageResolver;
 
 function stopBenchmark() {
 	resolver.reject(new Error("Benchmark cancelled by user."));
