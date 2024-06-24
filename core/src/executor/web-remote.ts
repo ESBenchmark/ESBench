@@ -66,7 +66,7 @@ export const transformer = {
 	/**
 	 * Read the file, and perform necessary transformation if possible.
 	 *
-	 * If the file does not exists, it will throw an Error with the code "ENOENT".
+	 * If the file does not exist, it will throw an Error with the code "ENOENT".
 	 *
 	 * @param path Path of the file.
 	 * @return Transformed data, or undefined if the file does not need to be transformed.
@@ -201,11 +201,11 @@ for (let imported = false; ; sleep(5)) {
 		if (imported) {
 			location.reload();
 		}
-		const { entry, files, pattern } = await response.json();
+		const { entry, file, pattern } = await response.json();
 		const module = await doImport(entry);
 		
 		imported = true;
-		await module.default(postMessage, files, pattern);
+		await module.default(postMessage, file, pattern);
 	} catch {
 		// ESBench finished, still poll for the next run.
 	}
@@ -302,7 +302,7 @@ export default class WebRemoteExecutor implements Executor {
 		if (!this.task) {
 			return response.writeHead(404).end();
 		}
-		const { root, files, pattern, dispatch } = this.task;
+		const { root, file, pattern, dispatch } = this.task;
 
 		if (path === "/_es-bench/message") {
 			const message = await json(request) as ClientMessage;
@@ -318,7 +318,7 @@ export default class WebRemoteExecutor implements Executor {
 			return response.writeHead(204).end();
 		}
 		if (path === "/_es-bench/task") {
-			const body = { entry: "/index.js", files, pattern };
+			const body = { entry: "/index.js", file, pattern };
 			return response.end(JSON.stringify(body));
 		}
 

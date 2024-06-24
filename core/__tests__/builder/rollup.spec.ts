@@ -11,17 +11,17 @@ import { Builder } from "../../src/host/index.ts";
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));
 
 async function testBundle(builder: Builder) {
-	const files = ["./__tests__/fixtures/empty-suite.js"];
-	await builder.build(directory, files);
+	const file = "./__tests__/fixtures/empty-suite.js";
+	await builder.build(directory, [file]);
 
 	const url = pathToFileURL(join(directory, "index.js"));
 	const module = await import(url.toString());
 
 	const postMessage = vi.fn();
-	await module.default(postMessage, files);
+	await module.default(postMessage, file);
 
-	const results = postMessage.mock.calls.at(-1)[0];
-	expect(results[0].meta.foobar).toBeDefined();
+	const result = postMessage.mock.calls.at(-1)[0];
+	expect(result.meta.foobar).toBeDefined();
 
 	return [readFileSync(url, "utf8"), module];
 }

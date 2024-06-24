@@ -1,3 +1,3 @@
-import params12 from "./asset.json" with { type: "json" };
+import jsonResult from "./asset.json" with { type: "json" };
 
-export default postMessage => postMessage([params12]);
+export default postMessage => postMessage(jsonResult);

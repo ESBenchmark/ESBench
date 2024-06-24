@@ -25,10 +25,10 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 
 	it("should respond 404 when resource not exists", async () => {
 		const dispatch = await tester.execute({
-			files: ["./foo.js"],
+			file: "./foo.js",
 			root: "__tests__/fixtures/fetch-404",
 		});
-		const [result] = dispatch.mock.calls[0][0] as RunSuiteResult[];
+		const result = dispatch.mock.calls[0][0] as RunSuiteResult;
 		expect(result.notes[0].text).toBe("Status: 404");
 	});
 
@@ -36,10 +36,10 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	it.skipIf(type.name() === "firefox")
 	("should support import attributes", async () => {
 		const dispatch = await tester.execute({
-			files: ["./foo.js"],
+			file: "./foo.js",
 			root: "__tests__/fixtures/import-assertion",
 		});
-		expect(dispatch.mock.calls[0][0]).toStrictEqual([{ hello: "world" }]);
+		expect(dispatch.mock.calls[0][0]).toHaveProperty("hello", "world");
 	});
 });
 
@@ -52,10 +52,10 @@ describe("WebextExecutor", () => {
 
 	it("should run suites with extension API access", async () => {
 		const dispatch = await tester.execute({
-			files: ["./foo.js"],
+			file: "./foo.js",
 			root: "__tests__/fixtures/webext",
 		});
-		const [result] = dispatch.mock.calls[0][0] as any;
+		const result = dispatch.mock.calls[0][0] as any;
 		expect(result.info).toHaveProperty("active", true);
 	});
 });

@@ -10,6 +10,12 @@ __filename = join(__filename, "../../../lib/executor/node.js");
 
 type NodeExecutorOptions = Pick<ForkOptions, "execPath" | "execArgv" | "env">;
 
+interface WorkerTask {
+	root: string;
+	file: string;
+	pattern: string;
+}
+
 /**
  * Run suites in a new Node process, communicate with the host through IPC channel.
  *
@@ -39,7 +45,7 @@ export default class NodeExecutor implements Executor {
 		}
 	}
 
-	execute({ root, files, pattern, dispatch, reject }: ExecuteOptions) {
+	execute({ root, file, pattern, dispatch, reject }: ExecuteOptions) {
 		this.process?.kill();
 
 		this.process = fork(__filename, {
@@ -54,7 +60,7 @@ export default class NodeExecutor implements Executor {
 		});
 		this.process.on("spawn", () => highestPriority(this.process!.pid!));
 		this.process.on("message", dispatch);
-		this.process.send({ root, pattern, files });
+		this.process.send({ root, pattern, file });
 		this.process.on("exit", code => {
 			if (code !== 0) {
 				const args = JSON.stringify(this.args);
@@ -67,12 +73,12 @@ export default class NodeExecutor implements Executor {
 if (process.env.ES_BENCH_WORKER === "true") {
 	const postMessage = process.send!.bind(process);
 
-	process.once("message", async (message: any) => {
-		const { root, pattern, files } = message;
+	process.once("message", async (message: WorkerTask) => {
+		const { root, file, pattern } = message;
 
 		const module = pathToFileURL(join(root, "index.js"));
 		const client = await import(module.toString());
 
-		await client.default(postMessage, files, pattern);
+		await client.default(postMessage, file, pattern);
 	});
 }

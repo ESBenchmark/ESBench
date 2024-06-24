@@ -48,7 +48,7 @@ const manifest = {
 // Define the function with strings to bypass Vitest transformation.
 const client: any = new AsyncFunction("args", `\
 	const loader = await import("./index.js");
-	return loader.default(_ESBenchPost, args.files, args.pattern);
+	return loader.default(_ESBenchPost, args.file, args.pattern);
 `);
 
 /**
@@ -108,7 +108,7 @@ export class PlaywrightExecutor implements Executor {
 			}
 			const body = await transformer.load(resolved);
 			if (body) {
-				// Transformed JS/TS module import
+				// Transformed JS/TS module module.
 				return route.fulfill({ body, contentType: "text/javascript" });
 			}
 			// No need to transform, send the file.
@@ -122,7 +122,7 @@ export class PlaywrightExecutor implements Executor {
 	}
 
 	async executeInPage(page: Page, options: ExecuteOptions, url: string) {
-		const { files, pattern, root, dispatch } = options;
+		const { file, pattern, root, dispatch } = options;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
 
 		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
@@ -137,7 +137,7 @@ export class PlaywrightExecutor implements Executor {
 		});
 
 		await page.goto(url);
-		await page.evaluate(client, { files, pattern });
+		await page.evaluate(client, { file, pattern });
 
 		await this.context.unrouteAll();
 		await Promise.all(this.context.pages().map(p => p.close()));

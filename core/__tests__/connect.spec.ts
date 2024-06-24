@@ -17,7 +17,7 @@ it("should wait for send the result in runAndSend", async () => {
 	const sending = Promise.resolve();
 	const mock = vi.spyOn(sending, "then");
 
-	await runAndSend(() => sending, mockImporter, ["./test"]);
+	await runAndSend(() => sending, mockImporter, "./test");
 	expect(mock).toHaveBeenCalledOnce();
 });
 
@@ -26,7 +26,7 @@ it("should serialize errors", async () => {
 	const error = new RunSuiteError("Stub", new Error("Cause"));
 	mockedRunSuite.mockRejectedValue(error);
 
-	await runAndSend(postMessage, mockImporter, ["./test"]);
+	await runAndSend(postMessage, mockImporter, "./test");
 
 	expect(postMessage).toBeCalledTimes(2);
 	const [{ e }] = postMessage.mock.calls[1];

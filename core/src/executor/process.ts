@@ -20,7 +20,7 @@ const postMessage = message => fetch(__ADDRESS__, {
 	body: JSON.stringify(message),
 });
 
-runAndSend(postMessage, __FILES__, __PATTERN__);`;
+runAndSend(postMessage, __FILE__, __PATTERN__);`;
 
 export function highestPriority(pid: number) {
 	try {
@@ -107,7 +107,7 @@ export default class ProcessExecutor implements Executor {
 	 * @param options Execute options
 	 */
 	protected createEntry(options: ExecuteOptions) {
-		const { tempDir, root, files, pattern } = options;
+		const { tempDir, root, file, pattern } = options;
 
 		const info = this.server.address() as AddressInfo;
 		const address = `http://localhost:${info.port}`;
@@ -118,7 +118,7 @@ export default class ProcessExecutor implements Executor {
 		return template
 			.replace("__PATTERN__", JSON.stringify(pattern))
 			.replace("__ADDRESS__", JSON.stringify(address))
-			.replace("__FILES__", JSON.stringify(files))
+			.replace("__FILE__", JSON.stringify(file))
 			.replace("__ENTRY__", specifier.replaceAll("\\", "/"));
 	}
 

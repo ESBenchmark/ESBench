@@ -65,31 +65,26 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 				builder = build.name;
 				context.info(`${build.files.length} suites from builder "${builder}"`);
 
-				const { files, root } = build;
-				const { promise, reject, dispatch } = messageResolver(context.logHandler);
-				const pattern = context.filter.name.source;
+				for (const file of build.files) {
+					const { promise, reject, dispatch } = messageResolver(context.logHandler);
+					const pattern = context.filter.name.source;
 
-				const input: ExecuteOptions = {
-					tempDir,
-					pattern,
-					files,
-					root,
-					dispatch,
-					reject,
-					promise,
-				};
-				const [records] = await Promise.all([
-					input.promise,
-					executor.execute(input),
-				]);
+					const input: ExecuteOptions = {
+						tempDir,
+						pattern,
+						file,
+						root: build.root,
+						dispatch,
+						reject,
+						promise,
+					};
 
-				for (let i = 0; i < records.length; i++) {
-					let file = build.files[i];
-					if (file.startsWith("./")) {
-						file = file.slice(2);
-					}
-					(result[file] ??= []).push({
-						...records[i],
+					const [record] = await Promise.all([
+						input.promise,
+						executor.execute(input),
+					]);
+					(result[record.name!] ??= []).push({
+						...record,
 						builder,
 						executor: executorName,
 					});

@@ -7,7 +7,6 @@ import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts"
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
 import { ExecuteOptions, Executor, HostContext } from "../src/host/index.ts";
-import { BuildResult } from "../src/host/toolchain.ts";
 
 // Enforce colored console output on CI.
 chalk.level = 1;
@@ -73,7 +72,7 @@ function factory<T extends any[]>(f: (...args: T) => unknown) {
 const BUILD_OUT_DIR = ".esbench-tmp";
 
 const logMessage = { level: "info", log: "log message" };
-const emptyResults = [{ paramDef: [], meta: {}, notes: [], scenes: [] }];
+const emptyResults = { paramDef: [], meta: {}, notes: [], scenes: [] };
 const stubError = new Error("Stub Error");
 
 /**
@@ -99,12 +98,12 @@ export function executorTester(executor: Executor) {
 	beforeAll(() => executor.start?.(context) as any);
 	afterAll(() => executor.close?.(context) as any);
 
-	let execute = async (build: Omit<BuildResult, "name">) => {
+	let execute = async (build: { file: string; root: string }) => {
 		const context = messageResolver(noop) as unknown as ExecuteOptions;
 		context.tempDir = BUILD_OUT_DIR;
 		context.pattern = RE_ANY.source;
 		context.root = build.root;
-		context.files = build.files;
+		context.file = build.file;
 		vi.spyOn(context, "dispatch");
 
 		const w = executor.execute(context);
@@ -129,7 +128,7 @@ export function executorTester(executor: Executor) {
 
 		successCase: factory(async () => {
 			const dispatch = await execute({
-				files: ["./foo.js"],
+				file: "./foo.js",
 				root: "__tests__/fixtures/success-suite",
 			});
 			const { calls } = dispatch.mock;
@@ -140,7 +139,7 @@ export function executorTester(executor: Executor) {
 
 		insideError: factory(() => {
 			const promise = execute({
-				files: ["./foo.js"],
+				file: "./foo.js",
 				root: "__tests__/fixtures/error-inside",
 			});
 			return expect(promise).rejects.toThrow(stubError);
@@ -148,7 +147,7 @@ export function executorTester(executor: Executor) {
 
 		outsideError: factory((error = stubError.message) => {
 			const promise = execute({
-				files: ["./foo.js"],
+				file: "./foo.js",
 				root: "__tests__/fixtures/error-outside",
 			});
 			return expect(promise).rejects.toThrow(error);

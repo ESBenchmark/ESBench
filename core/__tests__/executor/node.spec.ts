@@ -19,10 +19,10 @@ it("should forward top level errors", tester.outsideError('Node execute Failed (
 
 it("should pass arguments and env vars", async () => {
 	const dispatch = await tester.execute({
-		files: ["./foo.js"],
+		file: "./foo.js",
 		root: "__tests__/fixtures/inspect",
 	});
-	const [message] = dispatch.mock.calls[0][0] as any;
+	const [message] = dispatch.mock.calls[0] as any;
 	expect(message.env).toHaveProperty("BAZ", "qux");
 	expect(message.env).toHaveProperty("NODE_ENV", "test");
 	expect(message.execArgv).toStrictEqual(["--expose_gc"]);

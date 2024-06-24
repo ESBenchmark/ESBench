@@ -15,9 +15,9 @@ export default <Executor>{
 		highestPriority(pid);
 	},
 
-	async execute({ root, files, pattern, dispatch }: ExecuteOptions) {
+	async execute({ root, file, pattern, dispatch }: ExecuteOptions) {
 		const url = pathToFileURL(join(root, "index.js"));
 		const module = await import(url.toString());
-		return module.default(dispatch, files, pattern);
+		return module.default(dispatch, file, pattern);
 	},
 };

@@ -1,5 +1,5 @@
 import { argv, env, execArgv } from "process";
 
 export default function (post) {
-	return post([{ argv, execArgv, env }]);
+	return post({ scenes: [], argv, execArgv, env });
 }

@@ -8,6 +8,7 @@ import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
  * The host side will add some attributes to the result.
  */
 export interface ToolchainResult extends RunSuiteResult {
+	name?: string;
 	builder?: string;
 	executor?: string;
 }
@@ -26,11 +27,11 @@ type LogMessage = { log?: string; level: LogType };
  * Some types of objects that need to be sent to the host.
  *
  * How to detect the type:
- * - Array.isArray(message): it is a RunSuiteResult array.
  * - "e" in message: it's an ErrorMessage.
  * - "level" in message: it's a LogMessage.
+ * - else it is a ToolchainResult.
  */
-export type ClientMessage = RunSuiteResult[] | ErrorMessage | LogMessage;
+export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
 
 /**
  * A function that load benchmark suites. Provided by builders.
@@ -57,22 +58,23 @@ export type Channel = (message: ClientMessage) => Awaitable<void>;
 export async function runAndSend(
 	postMessage: Channel,
 	importer: Importer,
-	files: string[],
+	file: string,
 	pattern?: string,
 ) {
 	const option: RunSuiteOption = {
 		log: (log, level) => postMessage({ level, log }),
 		pattern: pattern ? new RegExp(pattern) : undefined,
 	};
-
-	const results: RunSuiteResult[] = [];
 	try {
-		for (const file of files) {
-			postMessage({ level: "info", log: `\nSuite: ${file}` });
-			const mod = await importer(file);
-			results.push(await runSuite(mod.default, option));
+		const { default: suite } = await importer(file);
+		if (file.startsWith("./")) {
+			file = file.slice(2);
 		}
-		return postMessage(results);
+		postMessage({ level: "info", log: `\nSuite: ${file}` });
+		const result = await runSuite(suite, option) as ToolchainResult;
+
+		result.name = file;
+		return postMessage(result);
 	} catch (e) {
 		return postMessage({ e: serializeError(e) });
 	}
@@ -85,16 +87,16 @@ export async function runAndSend(
  * @param onLog function to handle log messages.
  */
 export function messageResolver(onLog: LogHandler) {
-	let resolve!: (value: ToolchainResult[]) => void;
+	let resolve!: (value: ToolchainResult) => void;
 	let reject!: (reason?: Error) => void;
 
-	const promise = new Promise<ToolchainResult[]>((s, j) => {
+	const promise = new Promise<ToolchainResult>((s, j) => {
 		resolve = s;
 		reject = j;
 	});
 
 	function dispatch(message: ClientMessage) {
-		if (Array.isArray(message)) {
+		if ("scenes" in message) {
 			resolve(message);
 		} else if ("e" in message) {
 			reject(deserializeError(message.e));

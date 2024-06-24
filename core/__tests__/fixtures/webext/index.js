@@ -3,5 +3,5 @@ if (globalThis.browser === undefined) {
 }
 export default async function (post) {
 	const info = await browser.tabs.getCurrent();
-	await post([{ paramDef: [], meta: {}, notes: [], scenes: [], info }]);
+	await post({ paramDef: [], meta: {}, notes: [], scenes: [], info });
 }

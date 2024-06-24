@@ -4,7 +4,7 @@ import { mkdtempSync } from "fs";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import { HostContext } from "./context.js";
-import { Channel } from "../connect.js";
+import { Channel, ClientMessage, ToolchainResult } from "../connect.js";
 
 /*
  * Version should not be included in the suggested name, reasons:
@@ -38,6 +38,44 @@ export interface Builder {
  */
 export type EntryExport = (postMessage: Channel, files: string[], pattern?: string) => Promise<void>;
 
+export interface ExecuteOptions {
+	/**
+	 * A folder where the executor can save temporal files.
+	 */
+	tempDir: string;
+
+	/**
+	 * Output directory of the build, can be used to resolve imports.
+	 */
+	root: string;
+
+	/**
+	 * Path (relative to cwd) of the suite file to run.
+	 */
+	file: string;
+
+	/**
+	 * Run benchmark with names matching the Regex pattern.
+	 */
+	pattern?: string;
+
+	/**
+	 * Used to wait runner finish, it will resolve when receive result message,
+	 * and reject when receive error message or `reject` is called.
+	 */
+	promise: Promise<ToolchainResult>;
+
+	/**
+	 * Make execution fail, useful for executions that can't wait to finish.
+	 */
+	reject(error: Error): void;
+
+	/**
+	 * Executor should forward messages from suites to this function.
+	 */
+	dispatch(message: ClientMessage): void;
+}
+
 export interface Executor {
 	/**
 	 * Suggest a name for the executor, it will be used if no name specified from config.
@@ -60,7 +98,7 @@ export interface Executor {
 	 * An execution will complete when ESBenchResult is passed to `options.dispatch`
 	 * and the returned Promise is satisfied (is present).
 	 */
-	execute(build: BuildResult, ctx: HostContext): Awaitable<unknown>;
+	execute(task: ExecuteOptions): Awaitable<unknown>;
 }
 
 /**

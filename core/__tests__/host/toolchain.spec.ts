@@ -1,6 +1,7 @@
 import { join, resolve } from "path";
 import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
+import { noop } from "@kaciras/utilities/browser";
 import { expect, it, vi } from "vitest";
 import inProcess from "../../src/executor/in-process.ts";
 import { ViteBuilder } from "../../src/builder/rollup.ts";
@@ -8,7 +9,6 @@ import { FilterOptions, HostContext } from "../../src/host/context.ts";
 import { noBuild } from "../../src/host/index.ts";
 import JobGenerator, { ToolChainItem } from "../../src/host/toolchain.ts";
 import { useTempDirectory } from "../helper.ts";
-import { noop } from "@kaciras/utilities/browser";
 
 const tempDir = mkdtempSync(join(tmpdir(), "esbench-"));
 
