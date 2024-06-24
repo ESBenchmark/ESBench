@@ -4,7 +4,7 @@ import * as https from "https";
 import { json } from "stream/consumers";
 import { once } from "events";
 import { createReadStream, readFileSync } from "fs";
-import { join, resolve } from "path";
+import { extname, join, resolve } from "path";
 import { AddressInfo } from "net";
 import { env, execArgv } from "process";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -158,6 +158,12 @@ export const transformer = {
 	},
 };
 
+const moduleMime: Record<string, string | undefined> = {
+	css: "text/css",
+	js: "text/javascript",
+	json: "application/json",
+};
+
 const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -290,6 +296,7 @@ export default class WebRemoteExecutor implements Executor {
 	async handleRequest(request: IncomingMessage, response: ServerResponse) {
 		const [path] = request.url!.split("?", 2);
 
+		// Page and the loader code.
 		switch (path) {
 			case "/":
 				return response.writeHead(200, isolationHeaders).end(html);
@@ -302,8 +309,8 @@ export default class WebRemoteExecutor implements Executor {
 		if (!this.task) {
 			return response.writeHead(404).end();
 		}
-		const { root, file, pattern, dispatch } = this.task;
 
+		const { root, file, pattern, dispatch } = this.task;
 		if (path === "/_es-bench/message") {
 			const message = await json(request) as ClientMessage;
 			if ("e" in message) {
@@ -317,23 +324,26 @@ export default class WebRemoteExecutor implements Executor {
 			}
 			return response.writeHead(204).end();
 		}
+
 		if (path === "/_es-bench/task") {
 			const body = { entry: "/index.js", file, pattern };
 			return response.end(JSON.stringify(body));
 		}
 
-		const resolved = transformer.parse(root, path);
-		if (!resolved) {
+		// Non-import request or resolving disabled, just send the file.
+		const parsed = transformer.parse(root, path);
+		if (!parsed) {
 			return this.sendFile(join(root, path), response);
 		}
 
+		// The module may need to be transformed.
 		try {
-			const body = await transformer.load(resolved);
+			const body = await transformer.load(parsed);
 			if (body) {
 				const headers = { "Content-Type": "text/javascript" };
 				return response.writeHead(200, headers).end(body);
 			} else {
-				return this.sendFile(resolved, response);
+				return this.sendFile(parsed, response);
 			}
 		} catch (e) {
 			if (e.code !== "ENOENT") {
@@ -347,8 +357,9 @@ export default class WebRemoteExecutor implements Executor {
 		const stream = createReadStream(fullPath);
 		stream.on("open", () => {
 			const headers: http.OutgoingHttpHeaders = {};
-			if (fullPath.endsWith("js")) {
-				headers["Content-Type"] = "text/javascript";
+			const mime = moduleMime[extname(fullPath).slice(1)];
+			if (mime) {
+				headers["Content-Type"] = mime;
 			}
 			stream.pipe(response.writeHead(200, headers));
 		});

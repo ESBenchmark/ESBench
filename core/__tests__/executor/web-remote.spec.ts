@@ -167,4 +167,6 @@ describe("WebRemoteExecutor", async () => {
 	it("should forward errors from runAndSend()", tester.insideError());
 
 	it("should forward top level errors", tester.outsideError());
+
+	it("should support import attributes", tester.importJSON());
 });

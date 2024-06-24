@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync } from "fs";
-import { CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
+import { Awaitable, CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 import chalk from "chalk";
 import { BenchmarkSuite } from "../src/suite.ts";
@@ -7,7 +7,7 @@ import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts"
 import { RunSuiteResult } from "../src/runner.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
 import { RE_ANY } from "../src/utils.ts";
-import { Executor, HostContext, SuiteTask } from "../src/host/index.ts";
+import { Executor, HostContext } from "../src/host/index.ts";
 
 // Enforce colored console output on CI.
 chalk.level = 1;
@@ -101,17 +101,21 @@ export function executorTester(executor: Executor) {
 	const context = new HostContext({ logLevel: "off", tempDir: BUILD_OUT_DIR });
 
 	useTempDirectory(BUILD_OUT_DIR);
-	beforeAll(() => executor.start?.(context) as any);
-	afterAll(() => executor.close?.(context) as any);
+	beforeAll(() => executor.start?.(context) as Awaitable<void>);
+	afterAll(() => executor.close?.(context) as Awaitable<void>);
 
 	let execute = async (fixture: string, file = "./suite.js") => {
-		const task = messageResolver(noop) as unknown as SuiteTask;
-		task.file = file;
-		task.root = `__tests__/fixtures/${fixture}`;
-		task.pattern = RE_ANY.source;
+		const resolver = messageResolver(noop);
+		const { calls } = vi.spyOn(resolver, "dispatch").mock;
 
-		const { calls } = vi.spyOn(task, "dispatch").mock;
-		await Promise.all([(task as any).promise, executor.execute(task)]);
+		const execution = executor.execute({
+			...resolver,
+			file: file,
+			root: `__tests__/fixtures/${fixture}`,
+			pattern: RE_ANY.source,
+		});
+
+		await Promise.all([resolver.promise, execution]);
 
 		// Filter out redundant arguments.
 		const result = calls.pop()![0];
@@ -139,6 +143,11 @@ export function executorTester(executor: Executor) {
 
 			const msg2 = await execute("success-suite");
 			expect(msg2).toStrictEqual({ logs: [logMessage], result: emptyResult });
+		}),
+
+		importJSON: factory(async () => {
+			const msg = await execute("import-assertion");
+			expect(msg.result).toHaveProperty("hello", "world");
 		}),
 
 		insideError: factory(() => {

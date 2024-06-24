@@ -28,11 +28,7 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	});
 
 	// https://caniuse.com/mdn-javascript_statements_import_import_attributes_type_json
-	it.skipIf(type.name() === "firefox")
-	("should support import attributes", async () => {
-		const { result } = await tester.execute("import-assertion");
-		expect(result).toHaveProperty("hello", "world");
-	});
+	it.skipIf(type.name() === "firefox")("should support import attributes", tester.importJSON());
 });
 
 describe("WebextExecutor", () => {
