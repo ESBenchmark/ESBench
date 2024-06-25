@@ -31,7 +31,7 @@ export default defineSuite({
 	},// [!code ++]
 	setup(scene) {
 		const { length } = scene.params;
-		const template = Array.from({ length }, () => Math.random());
+		const template = Array.from({ length }, Math.random);
 		let array = [];
 
 		scene.beforeIteration(() => array = template.slice());

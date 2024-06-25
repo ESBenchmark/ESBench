@@ -1,7 +1,7 @@
 import { defineSuite, runSuite, SummaryTable } from "esbench";
 
 const suite = defineSuite(scene => {
-	const values = Array.from({ length: 1000 }, () => Math.random());
+	const values = Array.from({ length: 1000 }, Math.random);
 	scene.bench("reduce", () => values.reduce((v, s) => s + v));
 });
 

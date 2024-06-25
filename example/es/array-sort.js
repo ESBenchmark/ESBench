@@ -81,7 +81,7 @@ export default defineSuite({
 	},
 	setup(scene) {
 		const { length, order } = scene.params;
-		const template = Array.from({ length }, () => Math.random());
+		const template = Array.from({ length }, Math.random);
 
 		switch (order) {
 			case "asc":

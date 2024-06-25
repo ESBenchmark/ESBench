@@ -78,18 +78,16 @@ export default defineSuite(async scene => {
 Sometimes we want to write some logic which should be executed before or after a benchmark, but we don't want to measure it.
 
 ```javascript
-export default defineSuite({
-	setup(scene) {
-		// Generate numbers to sort.
-		const template = Array.from({ length: 1000 }, () => Math.random());
-		let array = [];
-		
-		// Time of sort depends on the elements order, 
-        // so we must reset the array before each run.
-		scene.beforeIteration(() => array = template.slice());
-		
-		scene.bench("builtin", () => array.sort((a, b) => a - b));
-	},
+export default defineSuite(scene => {
+	// Generate numbers to sort.
+	const template = Array.from({ length: 1000 }, Math.random);
+	let array = [];
+	
+	// Time of sort depends on the elements order, 
+    // so we must reset the array before each run.
+	scene.beforeIteration(() => array = template.slice());
+	
+	scene.bench("builtin", () => array.sort((a, b) => a - b));
 });
 ```
 
