@@ -13,7 +13,7 @@ function removeDefineSuite(code: string, body: any[], exports: any) {
 	code = removeRange(code, end - 1, end);
 	code = removeRange(code, callee.start, callee.end + 1);
 
-	return body.filter(n => n.type === "ImportDeclaration")
+	return body.filter(n => n.type === "ImportDeclaration" && n.source.value === "esbench")
 		.reverse()
 		.reduce((c, n) => removeRange(c, n.start, n.end), code);
 }

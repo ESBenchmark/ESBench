@@ -37,6 +37,9 @@ import("../../example/es/setTimeout-throttling.js", {
 import("../../example/es/deep-clone.js", {
 	with: { name: "Deep clone serializable object" },
 });
+import("../../example/es/import-http-module.js", {
+	with: { name: "Import modules with HTTP" },
+});
 
 import("../../example/web/query-selector.js", {
 	with: { name: "Attribute selector vs class selector" },
