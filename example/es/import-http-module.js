@@ -1,23 +1,32 @@
 import { defineSuite } from "esbench";
+import { cartesianArray } from "https://www.unpkg.com/@kaciras/utilities@1.0.1/lib/browser.js";
 import { CXProduct } from "https://www.unpkg.com/cxproduct@2.1.4/index.js?module";
 import bigCartesian from "https://www.unpkg.com/big-cartesian@6.0.0/build/src/main.js";
-import { cartesianArray } from "https://www.unpkg.com/@kaciras/utilities@1.0.0/lib/browser.js";
+import fastCartesian from "https://www.unpkg.com/fast-cartesian@7.0.0/build/src/main.js";
+import fastCP from "https://www.unpkg.com/fast-cartesian-product@2.0.1/dist/index.mjs";
+import PowerCP from "https://www.unpkg.com/power-cartesian-product@0.0.6/dist/index.mjs";
 
 function drain(generator) {
 	for (const _ of generator) /* No-op */;
 }
 
-const arr4 = [1, 2, 3, 4];
+const arr4 = [1, 2];
 
 export default defineSuite({
+	baseline: { type: "Name", value: "@kaciras/utilities" },
 	params: {
-		dimensions: [2, 10],
+		dimensions: [2, 20],
 	},
 	setup(scene) {
 		const src = Array.from({ length: scene.params.dimensions }, () => arr4);
 
-		scene.bench("cxproduct", () => drain(new CXProduct(src).asGenerator()));
 		scene.bench("big-cartesian", () => drain(bigCartesian(src)));
+		scene.bench("power-cartesian-product", () => drain(new PowerCP(src)));
 		scene.bench("@kaciras/utilities", () => drain(cartesianArray(src)));
+		scene.bench("cxproduct", () => drain(new CXProduct(src).asGenerator()));
+
+		// These return array faster than return generator, but takes more RAM.
+		scene.bench("fast-cartesian", () => fastCartesian(src));
+		scene.bench("fast-cartesian-product", () => fastCP(src));
 	},
 });

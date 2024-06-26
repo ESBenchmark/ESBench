@@ -24,12 +24,15 @@ export default defineSuite({
 			}
 			return array;
 		});
+
 		scene.bench("map", () => {
 			return Array.from({ length }, addOne);
 		});
+
 		scene.bench("without", () => {
 			return fill([], length);
 		});
+
 		scene.bench("with", () => {
 			return fill(new Array(length), length);
 		});
