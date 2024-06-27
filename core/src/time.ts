@@ -69,12 +69,6 @@ function createIterator(factor: number, case_: BenchCase): Iterator {
 	}
 }
 
-function timeDetail(time: number, count: number) {
-	const total = durationFmt.formatDiv(time, "ms");
-	const mean = durationFmt.formatDiv(time / count, "ms");
-	return `${count} operations, ${total}, ${mean}/op`;
-}
-
 export interface TimingOptions {
 	/**
 	 * How many target iterations should be performed. The value must >= 1.
@@ -140,6 +134,9 @@ export class ExecutionTimeMeasurement {
 	private readonly ctx: ProfilingContext;
 	private readonly benchCase: BenchCase;
 	private readonly options: Required<TimingOptions>;
+
+	private stage?: string;
+	private stageRuns = 0;
 
 	constructor(ctx: ProfilingContext, case_: BenchCase, options?: TimingOptions) {
 		this.ctx = ctx;
@@ -263,7 +260,7 @@ export class ExecutionTimeMeasurement {
 		while (count < Number.MAX_SAFE_INTEGER) {
 			const n = Math.round(count / iterator.calls);
 			const time = await iterator.iterate(n);
-			await this.ctx.info(`Pilot: ${timeDetail(time, n)}`);
+			await this.logStageRun("Pilot", time, n * iterator.calls);
 
 			if (time === 0) {
 				count *= 8;
@@ -299,7 +296,7 @@ export class ExecutionTimeMeasurement {
 
 		for (let i = 0; i < warmup; i++) {
 			const time = await iterate(count);
-			await ctx.info(`${name} Warmup ${i}: ${timeDetail(time, n)}`);
+			await this.logStageRun(`${name} Warmup`, time, n);
 		}
 
 		await ctx.info();
@@ -307,10 +304,21 @@ export class ExecutionTimeMeasurement {
 		for (let i = 0; i < samples; i++) {
 			const time = await iterate(count);
 			timeUsageList[i] = time / n;
-			await ctx.info(`${name} ${i}: ${timeDetail(time, n)}`);
+			await this.logStageRun(name, time, n);
 		}
 
 		return timeUsageList.sort((a, b) => a - b);
+	}
+
+	private logStageRun(name: string, timeMS: number, ops: number) {
+		if (this.stage !== name) {
+			this.stage = name;
+			this.stageRuns = 0;
+		}
+		const total = durationFmt.formatDiv(timeMS, "ms");
+		const mean = durationFmt.formatDiv(timeMS / ops, "ms");
+		const i = (this.stageRuns++).toString().padStart(2);
+		return this.ctx.info(`${name} ${i}: ${ops} operations, ${total}, ${mean}/op`);
 	}
 }
 
