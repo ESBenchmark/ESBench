@@ -1,8 +1,12 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { BenchmarkSuite, Profiler, ProfilingContext } from "../src/index.ts";
+import { NormalizedSuite, Profiler, ProfilingContext } from "../src/index.ts";
 
-const emptySuite = { setup() {} };
+const emptySuite = {
+	params: {},
+	paramNames: [],
+	setup() {},
+};
 
 it("should not allow run twice", async () => {
 	const context = new ProfilingContext(emptySuite, [], {});
@@ -11,16 +15,9 @@ it("should not allow run twice", async () => {
 });
 
 it("should initialize properties", () => {
-	const suite: BenchmarkSuite = {
-		params: {
-			foo: ["hello", "world", "!"],
-			bar: [11, 22],
-		},
-		setup() {},
-	};
-	const context = new ProfilingContext(suite, [], {});
+	const context = new ProfilingContext(emptySuite, [], {});
 
-	expect(context.suite).toBe(suite);
+	expect(context.suite).toBe(emptySuite);
 	expect(context.profilers).toHaveLength(0);
 	expect(context.pattern.source).toBe("(?:)");
 	expect(context.logHandler).toBeTypeOf("function");
@@ -42,7 +39,8 @@ it("should call profiler & scene hooks", async () => {
 			invocations.push(["onFinish"]);
 		},
 	};
-	const suite: BenchmarkSuite = {
+	const suite: NormalizedSuite = {
+		paramNames: [["param", ["11", "22"]]],
 		params: { param: [11, 22] },
 		setup(scene) {
 			invocations.push(["setup"]);
@@ -77,8 +75,9 @@ it("should filter workloads with pattern", async () => {
 	const profiler: Profiler = {
 		onCase: (_, c) => c.invoke(),
 	};
-	const suite: BenchmarkSuite = {
-		params: { param: [11, 22] },
+	const suite: NormalizedSuite = {
+		params: {},
+		paramNames: [],
 		setup(scene) {
 			scene.bench("test foo", foo);
 			scene.bench("bar test", bar);

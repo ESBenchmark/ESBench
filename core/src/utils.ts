@@ -1,5 +1,5 @@
 import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
-import { HookFn } from "./suite.js";
+import { HookFn, ParamsDef } from "./suite.js";
 
 export const kWorkingParams = Symbol();
 
@@ -37,30 +37,43 @@ export function toDisplayName(v: unknown) {
 	}
 }
 
-export function checkParams(params: CPSrcObject) {
-	const entries = Object.entries(params);
+function *getFromIter(values: Iterable<unknown>) {
+	for (const value of values) yield [value, value];
+}
+
+function getFromObject(values: Record<string, unknown>) {
+	return Object.entries(values);
+}
+
+export function checkParams(params: ParamsDef) {
+	const names = Object.entries(params);
+	const cpSrc: CPSrcObject = {};
 	const set = new Set<string>();
 
 	if (Object.getOwnPropertySymbols(params).length) {
 		throw new Error("Only string keys are allowed in param");
 	}
 
-	for (let i = 0; i < entries.length; i++) {
-		const [key, values] = entries[i];
+	for (let i = 0; i < names.length; i++) {
+		const [key, values] = names[i];
 		if (BUILTIN_VARS.includes(key)) {
 			throw new Error(`'${key}' is a builtin variable`);
 		}
 		const current: string[] = [];
+		const valueArr = cpSrc[key] = [] as unknown[];
 		set.clear();
-		entries[i][1] = current;
+		names[i][1] = current;
 
-		for (const v of values) {
-			const name = toDisplayName(v);
-			if (set.has(name)) {
-				throw new Error(`Parameter display name conflict (${key}: ${name})`);
+		const iter = Symbol.iterator in values ? getFromIter(values) : getFromObject(values);
+
+		for (const [name, value] of iter) {
+			valueArr.push(value);
+			const display = toDisplayName(name);
+			if (set.has(display)) {
+				throw new Error(`Parameter display name conflict (${key}: ${display})`);
 			}
-			set.add(name);
-			current.push(name);
+			set.add(display);
+			current.push(display);
 		}
 
 		if (current.length === 0) {
@@ -68,7 +81,7 @@ export function checkParams(params: CPSrcObject) {
 		}
 	}
 
-	return entries as Array<[string, string[]]>;
+	return [cpSrc, names as Array<[string, string[]]>] as const;
 }
 
 export function runFns(hooks: HookFn[]) {

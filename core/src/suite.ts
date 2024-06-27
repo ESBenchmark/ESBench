@@ -1,5 +1,5 @@
-import { Awaitable, CartesianObjectCell, CPSrcObject } from "@kaciras/utilities/browser";
-import { RE_ANY, runFns } from "./utils.js";
+import { Awaitable, CPSrcObject, ItemOfIterable } from "@kaciras/utilities/browser";
+import { checkParams, RE_ANY, runFns } from "./utils.js";
 import { Profiler } from "./profiling.js";
 import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
@@ -162,14 +162,21 @@ export type BaselineOptions = {
 	value: unknown;
 }
 
-type Empty = Record<string, undefined[]>;
-type ParamsAny = Record<string, any[]>;
+export type ParamsDef = Record<string, Iterable<unknown> | Record<string, unknown>>;
 
-export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
+type SceneParams<T extends ParamsDef> = {
+	-readonly [K in Exclude<keyof T, symbol>]: T[K] extends Iterable<unknown>
+		? ItemOfIterable<T[K]> : T[K][keyof T[K]]
+};
+
+type Empty = Record<string, undefined[]>;
+type ParamsAny = Record<string, any[] | Record<string, any>>;
+
+export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	/**
 	 * Setup each scene, add your benchmark cases.
 	 */
-	setup: (scene: Scene<CartesianObjectCell<T>>) => Awaitable<void>;
+	setup: (scene: Scene<SceneParams<T>>) => Awaitable<void>;
 
 	/**
 	 * Runs a function before running the suite.
@@ -202,7 +209,7 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	 *
 	 * Additional checks can be configured in the options.
 	 */
-	validate?: ValidateOptions<CartesianObjectCell<T>>;
+	validate?: ValidateOptions<SceneParams<T>>;
 
 	/**
 	 * you can specify set of values. As a result, you will get results for each combination of params values.
@@ -226,11 +233,41 @@ export interface BenchmarkSuite<T extends CPSrcObject = ParamsAny> {
 	baseline?: BaselineOptions;
 }
 
-export type UserSuite<T extends CPSrcObject = ParamsAny> = BenchmarkSuite<T> | BenchmarkSuite<Empty>["setup"];
+export type UserSuite<T extends ParamsDef = ParamsAny> = BenchmarkSuite<T> | BenchmarkSuite<Empty>["setup"];
 
 /**
  * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.
  */
-export function defineSuite<const T extends CPSrcObject = Empty>(suite: UserSuite<T>) {
+export function defineSuite<const T extends ParamsDef = Empty>(suite: UserSuite<T>) {
 	return suite;
+}
+
+export type NormalizedSuite = Omit<BenchmarkSuite, "timing" | "params"> & {
+	params: CPSrcObject;
+	paramNames: Array<[string, string[]]>;
+
+	// Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
+	timing?: TimeProfilerOptions;
+}
+
+export function normalizeSuite(input: UserSuite): NormalizedSuite {
+	if (typeof input === "function") {
+		return { params: {}, paramNames: [], timing: {}, setup: input };
+	}
+	const [params, paramNames] = checkParams(input.params ?? {});
+
+	let timing: TimeProfilerOptions | undefined;
+	switch (input.timing) {
+		case true:
+		case undefined:
+			timing = {};
+			break;
+		case false:
+			timing = undefined;
+			break;
+		default:
+			timing = input.timing;
+	}
+
+	return { ...input, params, paramNames, timing };
 }

@@ -28,12 +28,19 @@ describe("checkParams", () => {
 	});
 
 	it("should return entries array", () => {
-		const paramDef = checkParams({
-			foo: ["text"],
+		const [src, defs] = checkParams({
+			foo: {
+				text: "A",
+				bool: true,
+			},
 			bar: [11, 22, 33],
 		});
-		expect(paramDef).toStrictEqual([
-			["foo", ["text"]],
+		expect(src).toStrictEqual({
+			foo: ["A", true],
+			bar: [11, 22, 33],
+		});
+		expect(defs).toStrictEqual([
+			["foo", ["text", "bool"]],
 			["bar", ["11", "22", "33"]],
 		]);
 	});

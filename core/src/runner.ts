@@ -1,9 +1,9 @@
 import { CPSrcObject } from "@kaciras/utilities/browser";
 import { serializeError } from "serialize-error";
-import { BaselineOptions, BenchCase, BenchmarkSuite, Scene, UserSuite } from "./suite.js";
+import { BaselineOptions, BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { BUILTIN_VARS, checkParams, kWorkingParams, toDisplayName } from "./utils.js";
+import { BUILTIN_VARS, kWorkingParams, toDisplayName } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 
 class DefaultEventLogger implements Profiler {
@@ -13,18 +13,17 @@ class DefaultEventLogger implements Profiler {
 
 	async onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
-		const sceneCount = Object.values<unknown[][]>(ctx.suite.params ?? {})
-			.reduce((s, v) => s * v.length, 1);
+		const sceneCount = ctx.suite.paramNames.reduce((s, v) => s * v.length, 1);
 
 		const i = ++this.sceneIndex;
 		this.caseOfScene = 0;
 
 		let paramsText = "no parameters defined.";
-		if (ctx.suite.params) {
+		if (ctx.suite.paramNames.length !== 0) {
 			paramsText = `params: \n${JSON.stringify(scene.params)}`;
 		}
 		return caseCount === 0
-			? ctx.warn(`\nNo case found from scene #${i}, ${paramsText}`)
+			? ctx.info(`\nNo case found from scene #${i}, ${paramsText}`)
 			: ctx.info(`\nScene #${i} of ${sceneCount}, ${caseCount} cases, ${paramsText}`);
 	}
 
@@ -109,19 +108,15 @@ export interface RunSuiteOption {
 	pattern?: RegExp;
 }
 
-function toSuiteOptions(input: UserSuite): BenchmarkSuite {
-	return typeof input === "function" ? { setup: input } : input;
-}
-
-function resolveProfilers(suite: BenchmarkSuite) {
+function resolveProfilers(suite: NormalizedSuite) {
 	const { timing, validate } = suite;
 
 	const resolved: any = [new DefaultEventLogger()];
 	if (validate) {
 		resolved.push(new ExecutionValidator(validate));
 	}
-	if (timing !== false) {
-		resolved.push(new TimeProfiler(timing === true ? {} : timing));
+	if (timing) {
+		resolved.push(new TimeProfiler(timing));
 	}
 	if (suite.profilers) {
 		resolved.push(...suite.profilers);
@@ -129,33 +124,36 @@ function resolveProfilers(suite: BenchmarkSuite) {
 	return resolved.filter(Boolean) as Profiler[];
 }
 
-function checkBaseline(baseline: BaselineOptions, params: CPSrcObject) {
+function checkBaseline(baseline: BaselineOptions, params: CPSrcObject, defs: any[]) {
 	const { type, value } = baseline;
 	if (BUILTIN_VARS.includes(type)) {
 		return;
 	}
 	const values = params[type];
-	if (values && Array.prototype.includes.call(values, value)) {
-		baseline.value = toDisplayName(value);
+	if (!values) {
+		throw new Error(`Baseline (type=${type}) does not in params`);
+	}
+	const i = Array.prototype.indexOf.call(values, value);
+	if (i !== -1) {
+		baseline.value = defs.find(e => e[0] === type)![1][i];
 	} else {
-		throw new Error(`Baseline (${type}=${value}) does not in params`);
+		throw new Error(`Baseline value (${value}) does not in params[${type}}`);
 	}
 }
 
 /**
  * Run a benchmark suite. Any exception that occur within this function is wrapped with `RunSuiteError`.
  */
-export async function runSuite(suite: UserSuite, options: RunSuiteOption = {}) {
-	suite = toSuiteOptions(suite);
-	const { beforeAll, afterAll, params = {}, baseline } = suite;
+export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {}) {
+	const suite = normalizeSuite(userSuite);
+	const { beforeAll, afterAll, params = {}, baseline, paramNames: paramDef } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
 		const profilers = resolveProfilers(suite);
 		if (baseline) {
-			checkBaseline(baseline, params);
+			checkBaseline(baseline, params, paramDef);
 		}
-		const paramDef = checkParams(params);
 
 		context = new ProfilingContext(suite, profilers, options);
 		await beforeAll?.();

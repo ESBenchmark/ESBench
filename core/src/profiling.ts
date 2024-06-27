@@ -1,7 +1,7 @@
 import { Awaitable, cartesianObject } from "@kaciras/utilities/browser";
 import { LogLevel } from "./host/context.js";
 import { RunSuiteOption } from "./runner.js";
-import { BenchCase, BenchmarkSuite, Scene } from "./suite.js";
+import { BenchCase, NormalizedSuite, Scene } from "./suite.js";
 import { kWorkingParams, RE_ANY, runFns } from "./utils.js";
 
 export type LogType = Exclude<LogLevel, "off">;
@@ -122,7 +122,7 @@ export class ProfilingContext {
 	 */
 	readonly meta: Record<string, MetricMeta> = {};
 
-	readonly suite: BenchmarkSuite;
+	readonly suite: NormalizedSuite;
 	readonly profilers: Profiler[];
 	readonly pattern: RegExp;
 	readonly logHandler: LogHandler;
@@ -132,7 +132,7 @@ export class ProfilingContext {
 
 	[kWorkingParams]?: object;
 
-	constructor(suite: BenchmarkSuite, profilers: Profiler[], options: RunSuiteOption) {
+	constructor(suite: NormalizedSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
 		this.profilers = profilers;
 		this.pattern = options.pattern ?? RE_ANY;

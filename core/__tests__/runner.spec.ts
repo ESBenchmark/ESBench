@@ -1,4 +1,5 @@
 import { expect, it, Mock, vi } from "vitest";
+import { noop } from "@kaciras/utilities/node";
 import { runSuite, RunSuiteError } from "../src/runner.ts";
 import { defineSuite } from "../src/suite.ts";
 import { ProfilingContext } from "../src/profiling.ts";
@@ -13,7 +14,7 @@ vi.mock("./../src/profiling.ts", async importOriginal => {
 });
 
 const contextFactory = ProfilingContext as Mock;
-const emptySuite = defineSuite({ setup() {} });
+const emptySuite = defineSuite({ setup: noop });
 
 it("should return the result", async () => {
 	contextFactory.mockReturnValue({
@@ -24,6 +25,10 @@ it("should return the result", async () => {
 	});
 	const result = await runSuite({
 		params: {
+			m: {
+				foo: "A",
+				bar: "B",
+			},
 			n: [10, 100, 1000],
 		},
 		baseline: {
@@ -33,6 +38,7 @@ it("should return the result", async () => {
 		setup() {},
 	});
 	expect(result.paramDef).toStrictEqual([
+		["m", ["foo", "bar"]],
 		["n", ["10", "100", "1000"]],
 	]);
 	expect(result.meta.time).toBeTypeOf("object");
@@ -49,7 +55,12 @@ it("should create a ProfilingContext", async () => {
 	await runSuite(emptySuite, options);
 
 	const [suite, profilers, opts] = contextFactory.mock.calls[0];
-	expect(suite).toBe(emptySuite);
+	expect(suite).toStrictEqual({
+		setup: noop,
+		params: {},
+		timing: {},
+		paramNames: [],
+	});
 	expect(opts).toBe(options);
 	expect(profilers).toHaveLength(2);
 	expect(contextFactory).toHaveBeenCalledOnce();
@@ -99,8 +110,8 @@ it("should port params if the error threw from scene", async () => {
 
 it.each([
 	[{ type: "bar", value: 11 }],
-	[{ type: "foo", value: 11 }],
-])("should check parameter baseline %#", async (baseline) => {
+	[{ type: "foo", value: 22 }],
+])("should check parameter baseline %#", async baseline => {
 	const promise = runSuite({
 		setup() {},
 		baseline,
