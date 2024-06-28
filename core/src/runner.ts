@@ -1,5 +1,5 @@
 import { serializeError } from "serialize-error";
-import { BaselineOptions, BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
+import { BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { BUILTIN_VARS, kWorkingParams, toDisplayName } from "./utils.js";
@@ -123,23 +123,29 @@ function resolveProfilers(suite: NormalizedSuite) {
 	return resolved.filter(Boolean) as Profiler[];
 }
 
-function checkBaseline(baseline: BaselineOptions, suite: NormalizedSuite) {
-	const { params, paramNames } = suite;
+function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
+	if (!baseline) {
+		return;
+	}
 	const { type, value } = baseline;
 
 	if (BUILTIN_VARS.includes(type)) {
-		return;
+		if (typeof value !== "string") {
+			throw new Error(`Value of baseline (${type}) must be a string`);
+		}
+		return baseline as ResultBaseline;
 	}
+
 	const i = params.findIndex(e => e[0] === type);
 	if (i === -1) {
-		throw new Error(`Baseline (type=${type}) does not in params`);
+		throw new Error(`Baseline (${type}) does not in params`);
 	}
+
 	const k = params[i][1].indexOf(value);
 	if (k !== -1) {
-		baseline.value = paramNames[i][1][k];
-	} else {
-		throw new Error(`Baseline value (${value}) does not in params[${type}}`);
+		return { type, value: paramNames[i][1][k] };
 	}
+	throw new Error(`Baseline value (${value}) does not in params[${type}}`);
 }
 
 /**
@@ -147,14 +153,12 @@ function checkBaseline(baseline: BaselineOptions, suite: NormalizedSuite) {
  */
 export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {}) {
 	const suite = normalizeSuite(userSuite);
-	const { beforeAll, afterAll, baseline, paramNames: paramDef } = suite;
+	const { beforeAll, afterAll, paramNames: paramDef } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
+		const baseline = convertBaseline(suite);
 		const profilers = resolveProfilers(suite);
-		if (baseline) {
-			checkBaseline(baseline, suite);
-		}
 
 		context = new ProfilingContext(suite, profilers, options);
 		await beforeAll?.();

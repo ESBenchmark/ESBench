@@ -109,8 +109,9 @@ it("should port params if the error threw from scene", async () => {
 });
 
 it.each([
-	[{ type: "bar", value: 11 }],
+	[{ type: "Name", value: 11 }],
 	[{ type: "foo", value: 22 }],
+	[{ type: "bar", value: 11 }],
 ])("should check parameter baseline %#", async baseline => {
 	const promise = runSuite({
 		setup() {},
