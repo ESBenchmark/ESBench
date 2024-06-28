@@ -1,5 +1,5 @@
-import { Awaitable, CPSrcObject, ItemOfIterable } from "@kaciras/utilities/browser";
-import { checkParams, RE_ANY, runFns } from "./utils.js";
+import { Awaitable, ItemOfIterable } from "@kaciras/utilities/browser";
+import { checkParams, Entries, RE_ANY, runFns } from "./utils.js";
 import { Profiler } from "./profiling.js";
 import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
@@ -243,8 +243,8 @@ export function defineSuite<const T extends ParamsDef = Empty>(suite: UserSuite<
 }
 
 export type NormalizedSuite = Omit<BenchmarkSuite, "timing" | "params"> & {
-	params: CPSrcObject;
-	paramNames: Array<[string, string[]]>;
+	params: Entries;
+	paramNames: Entries<string>;
 
 	// Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
 	timing?: TimeProfilerOptions;
@@ -252,7 +252,7 @@ export type NormalizedSuite = Omit<BenchmarkSuite, "timing" | "params"> & {
 
 export function normalizeSuite(input: UserSuite): NormalizedSuite {
 	if (typeof input === "function") {
-		return { params: {}, paramNames: [], timing: {}, setup: input };
+		return { params: [], paramNames: [], timing: {}, setup: input };
 	}
 	const [params, paramNames] = checkParams(input.params ?? {});
 

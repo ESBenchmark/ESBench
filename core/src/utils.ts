@@ -1,4 +1,4 @@
-import { CPSrcObject, ellipsis } from "@kaciras/utilities/browser";
+import { ellipsis } from "@kaciras/utilities/browser";
 import { HookFn, ParamsDef } from "./suite.js";
 
 export const kWorkingParams = Symbol();
@@ -37,6 +37,8 @@ export function toDisplayName(v: unknown) {
 	}
 }
 
+export type Entries<T = unknown> = Array<[string, T[]]>;
+
 function *getFromIter(values: Iterable<unknown>) {
 	for (const value of values) yield [value, value];
 }
@@ -47,7 +49,7 @@ function getFromObject(values: Record<string, unknown>) {
 
 export function checkParams(params: ParamsDef) {
 	const names = Object.entries(params);
-	const cpSrc: CPSrcObject = {};
+	const cpSrc: Entries = new Array(names.length);
 	const set = new Set<string>();
 
 	if (Object.getOwnPropertySymbols(params).length) {
@@ -60,9 +62,10 @@ export function checkParams(params: ParamsDef) {
 			throw new Error(`'${key}' is a builtin variable`);
 		}
 		const current: string[] = [];
-		const valueArr = cpSrc[key] = [] as unknown[];
+		const valueArr: unknown[]= [];
 		set.clear();
 		names[i][1] = current;
+		cpSrc[i] = [key, valueArr];
 
 		const iter = Symbol.iterator in values ? getFromIter(values) : getFromObject(values);
 
@@ -81,7 +84,7 @@ export function checkParams(params: ParamsDef) {
 		}
 	}
 
-	return [cpSrc, names as Array<[string, string[]]>] as const;
+	return [cpSrc, names as Entries<string>] as const;
 }
 
 export function runFns(hooks: HookFn[]) {

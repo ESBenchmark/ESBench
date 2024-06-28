@@ -57,7 +57,7 @@ it("should create a ProfilingContext", async () => {
 	const [suite, profilers, opts] = contextFactory.mock.calls[0];
 	expect(suite).toStrictEqual({
 		setup: noop,
-		params: {},
+		params: [],
 		timing: {},
 		paramNames: [],
 	});

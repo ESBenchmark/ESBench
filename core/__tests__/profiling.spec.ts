@@ -3,7 +3,7 @@ import { noop } from "@kaciras/utilities/browser";
 import { NormalizedSuite, Profiler, ProfilingContext } from "../src/index.ts";
 
 const emptySuite = {
-	params: {},
+	params: [],
 	paramNames: [],
 	setup() {},
 };
@@ -41,7 +41,7 @@ it("should call profiler & scene hooks", async () => {
 	};
 	const suite: NormalizedSuite = {
 		paramNames: [["param", ["11", "22"]]],
-		params: { param: [11, 22] },
+		params: [["param", [11, 22]]],
 		setup(scene) {
 			invocations.push(["setup"]);
 			scene.bench("foo", noop);
@@ -76,7 +76,7 @@ it("should filter workloads with pattern", async () => {
 		onCase: (_, c) => c.invoke(),
 	};
 	const suite: NormalizedSuite = {
-		params: {},
+		params: [],
 		paramNames: [],
 		setup(scene) {
 			scene.bench("test foo", foo);

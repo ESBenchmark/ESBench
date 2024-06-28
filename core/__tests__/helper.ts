@@ -2,7 +2,7 @@ import { mkdirSync, rmSync } from "fs";
 import { Awaitable, CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 import chalk from "chalk";
-import { BenchmarkSuite } from "../src/suite.ts";
+import { BenchmarkSuite, normalizeSuite } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
 import { RunSuiteResult } from "../src/runner.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
@@ -56,10 +56,10 @@ export function useTempDirectory(path: string) {
 }
 
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
-	const normalized: BenchmarkSuite = {
+	const normalized = normalizeSuite({
 		setup: scene => scene.bench("Test", noop),
 		...suite,
-	};
+	});
 	const runOptions = { log: noop };
 	const context = new ProfilingContext(normalized, profilers, runOptions);
 	return context.run().then(() => context);

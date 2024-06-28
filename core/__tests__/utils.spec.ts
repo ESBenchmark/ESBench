@@ -35,10 +35,10 @@ describe("checkParams", () => {
 			},
 			bar: [11, 22, 33],
 		});
-		expect(src).toStrictEqual({
-			foo: ["A", true],
-			bar: [11, 22, 33],
-		});
+		expect(src).toStrictEqual([
+			["foo", ["A", true]],
+			["bar", [11, 22, 33]],
+		]);
 		expect(defs).toStrictEqual([
 			["foo", ["text", "bool"]],
 			["bar", ["11", "22", "33"]],

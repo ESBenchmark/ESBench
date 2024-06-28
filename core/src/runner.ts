@@ -1,4 +1,3 @@
-import { CPSrcObject } from "@kaciras/utilities/browser";
 import { serializeError } from "serialize-error";
 import { BaselineOptions, BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
@@ -124,18 +123,20 @@ function resolveProfilers(suite: NormalizedSuite) {
 	return resolved.filter(Boolean) as Profiler[];
 }
 
-function checkBaseline(baseline: BaselineOptions, params: CPSrcObject, defs: any[]) {
+function checkBaseline(baseline: BaselineOptions, suite: NormalizedSuite) {
+	const { params, paramNames } = suite;
 	const { type, value } = baseline;
+
 	if (BUILTIN_VARS.includes(type)) {
 		return;
 	}
-	const values = params[type];
-	if (!values) {
+	const i = params.findIndex(e => e[0] === type);
+	if (i === -1) {
 		throw new Error(`Baseline (type=${type}) does not in params`);
 	}
-	const i = Array.prototype.indexOf.call(values, value);
-	if (i !== -1) {
-		baseline.value = defs.find(e => e[0] === type)![1][i];
+	const k = params[i][1].indexOf(value);
+	if (k !== -1) {
+		baseline.value = paramNames[i][1][k];
 	} else {
 		throw new Error(`Baseline value (${value}) does not in params[${type}}`);
 	}
@@ -146,13 +147,13 @@ function checkBaseline(baseline: BaselineOptions, params: CPSrcObject, defs: any
  */
 export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {}) {
 	const suite = normalizeSuite(userSuite);
-	const { beforeAll, afterAll, params = {}, baseline, paramNames: paramDef } = suite;
+	const { beforeAll, afterAll, baseline, paramNames: paramDef } = suite;
 
 	let context: ProfilingContext | undefined = undefined;
 	try {
 		const profilers = resolveProfilers(suite);
 		if (baseline) {
-			checkBaseline(baseline, params, paramDef);
+			checkBaseline(baseline, suite);
 		}
 
 		context = new ProfilingContext(suite, profilers, options);
