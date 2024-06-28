@@ -1,5 +1,5 @@
-import { ellipsis } from "@kaciras/utilities/browser";
-import { HookFn, ParamsDef } from "./suite.js";
+import { ellipsis, MultiMap } from "@kaciras/utilities/browser";
+import { HookFn } from "./suite.js";
 
 export const kWorkingParams = Symbol();
 
@@ -10,7 +10,7 @@ export const BUILTIN_VARS = ["Name", "Builder", "Executor"];
 const NAME_LENGTH = 16;
 
 /**
- * Convert the value to a short (length <= 16) display string.
+ * Convert the value to short (length <= 16) string.
  */
 export function toDisplayName(v: unknown) {
 	if (Array.isArray(v)) {
@@ -35,56 +35,6 @@ export function toDisplayName(v: unknown) {
 		default:
 			return ellipsis("" + v, NAME_LENGTH);
 	}
-}
-
-export type Entries<T = unknown> = Array<[string, T[]]>;
-
-function *getFromIter(values: Iterable<unknown>) {
-	for (const value of values) yield [value, value];
-}
-
-function getFromObject(values: Record<string, unknown>) {
-	return Object.entries(values);
-}
-
-export function checkParams(params: ParamsDef) {
-	const names = Object.entries(params);
-	const cpSrc: Entries = new Array(names.length);
-	const set = new Set<string>();
-
-	if (Object.getOwnPropertySymbols(params).length) {
-		throw new Error("Only string keys are allowed in param");
-	}
-
-	for (let i = 0; i < names.length; i++) {
-		const [key, values] = names[i];
-		if (BUILTIN_VARS.includes(key)) {
-			throw new Error(`'${key}' is a builtin variable`);
-		}
-		const current: string[] = [];
-		const valueArr: unknown[]= [];
-		set.clear();
-		names[i][1] = current;
-		cpSrc[i] = [key, valueArr];
-
-		const iter = Symbol.iterator in values ? getFromIter(values) : getFromObject(values);
-
-		for (const [name, value] of iter) {
-			valueArr.push(value);
-			const display = toDisplayName(name);
-			if (set.has(display)) {
-				throw new Error(`Parameter display name conflict (${key}: ${display})`);
-			}
-			set.add(display);
-			current.push(display);
-		}
-
-		if (current.length === 0) {
-			throw new Error(`Suite parameter "${key}" must have a value`);
-		}
-	}
-
-	return [cpSrc, names as Entries<string>] as const;
 }
 
 export function runFns(hooks: HookFn[]) {

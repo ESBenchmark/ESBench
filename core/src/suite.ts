@@ -1,8 +1,8 @@
 import { Awaitable, ItemOfIterable } from "@kaciras/utilities/browser";
-import { checkParams, Entries, RE_ANY, runFns } from "./utils.js";
 import { Profiler } from "./profiling.js";
 import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
+import { BUILTIN_VARS, RE_ANY, runFns, toDisplayName } from "./utils.js";
 
 export type HookFn = () => Awaitable<unknown>;
 
@@ -148,7 +148,7 @@ export class Scene<P = any> {
 	}
 }
 
-export type BaselineOptions = {
+export interface BaselineOptions {
 	/**
 	 * Type of the baseline variable, can be one of:
 	 * - "Name", "Builder", "Executor"
@@ -236,25 +236,82 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 export type UserSuite<T extends ParamsDef = ParamsAny> = BenchmarkSuite<T> | BenchmarkSuite<Empty>["setup"];
 
 /**
- * Type helper to mark the object as an ESBench suite. IDE plugins require it to find benchmark cases.
+ * Type helper to mark the object as an ESBench suite.
+ * IDE plugins also require it to find benchmark cases.
  */
-export function defineSuite<const T extends ParamsDef = Empty>(suite: UserSuite<T>) {
-	return suite;
-}
+export const defineSuite = <const T extends ParamsDef = Empty>(suite: UserSuite<T>) => suite;
+
+export type Entries<T = unknown> = Array<[string, T[]]>;
 
 export type NormalizedSuite = Omit<BenchmarkSuite, "timing" | "params"> & {
 	params: Entries;
+
+	/**
+	 * Entries of params, with each param values converted to short names.
+	 */
 	paramNames: Entries<string>;
 
-	// Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
+	/**
+	 *  Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
+	 */
 	timing?: TimeProfilerOptions;
+}
+
+function* getFromIter(values: Iterable<unknown>) {
+	for (const value of values) yield [value, value];
+}
+
+function getFromObject(values: Record<string, unknown>) {
+	return Object.entries(values);
+}
+
+export function resolveParams(params: ParamsDef) {
+	const names = Object.entries(params);
+	const cpSrc: Entries = new Array(names.length);
+	const set = new Set<string>();
+
+	if (Object.getOwnPropertySymbols(params).length) {
+		throw new Error("Only string keys are allowed in param");
+	}
+
+	for (let i = 0; i < names.length; i++) {
+		const [key, values] = names[i];
+		if (BUILTIN_VARS.includes(key)) {
+			throw new Error(`'${key}' is a builtin variable`);
+		}
+		const current: string[] = [];
+		const valueArr: unknown[] = [];
+		set.clear();
+		names[i][1] = current;
+		cpSrc[i] = [key, valueArr];
+
+		const iter = Symbol.iterator in values
+			? getFromIter(values)
+			: getFromObject(values);
+
+		for (const [name, value] of iter) {
+			valueArr.push(value);
+			const display = toDisplayName(name);
+			if (set.has(display)) {
+				throw new Error(`Parameter display name conflict (${key}: ${display})`);
+			}
+			set.add(display);
+			current.push(display);
+		}
+
+		if (current.length === 0) {
+			throw new Error(`Suite parameter "${key}" must have a value`);
+		}
+	}
+
+	return [cpSrc, names as Entries<string>] as const;
 }
 
 export function normalizeSuite(input: UserSuite): NormalizedSuite {
 	if (typeof input === "function") {
 		return { params: [], paramNames: [], timing: {}, setup: input };
 	}
-	const [params, paramNames] = checkParams(input.params ?? {});
+	const [params, paramNames] = resolveParams(input.params ?? {});
 
 	let timing: TimeProfilerOptions | undefined;
 	switch (input.timing) {

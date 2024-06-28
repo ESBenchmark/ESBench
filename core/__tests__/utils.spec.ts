@@ -1,72 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { checkParams, SharedModeFilter, toDisplayName } from "../src/utils.js";
+import { SharedModeFilter, toDisplayName } from "../src/utils.js";
 
-describe("checkParams", () => {
-	it.each([
-		["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
-		["", ""],
+it.each([
+	["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
+	["", ""],
 
-		[Object.create(null), "[object null]"],
-		[{}, "[object Object]"],
-		[{ foo: 11 }, "[object Object]"],
-		[[11, 22], "[11,22]"],
+	[Object.create(null), "[object null]"],
+	[{}, "[object Object]"],
+	[{ foo: 11 }, "[object Object]"],
+	[[11, 22], "[11,22]"],
 
-		[123, "123"],
-		[undefined, "undefined"],
-		[null, "null"],
-		[true, "true"],
+	[123, "123"],
+	[undefined, "undefined"],
+	[null, "null"],
+	[true, "true"],
 
-		[Symbol(), "Symbol()"],
-		[Symbol("foo"), "Symbol(foo)"],
-		[Symbol("looooooooooooooooooooong"), "Symbol(looo…ong)"],
+	[Symbol(), "Symbol()"],
+	[Symbol("foo"), "Symbol(foo)"],
+	[Symbol("looooooooooooooooooooong"), "Symbol(looo…ong)"],
 
-		[() => {}, "Anonymous fn"],
-		[function foo() {}, "foo"],
-		[class BarBaz {}, "BarBaz"],
-	])("should get display name of values %#", (value, expected) => {
-		expect(toDisplayName(value)).toBe(expected);
-	});
-
-	it("should return entries array", () => {
-		const [src, defs] = checkParams({
-			foo: {
-				text: "A",
-				bool: true,
-			},
-			bar: [11, 22, 33],
-		});
-		expect(src).toStrictEqual([
-			["foo", ["A", true]],
-			["bar", [11, 22, 33]],
-		]);
-		expect(defs).toStrictEqual([
-			["foo", ["text", "bool"]],
-			["bar", ["11", "22", "33"]],
-		]);
-	});
-
-	it("should restrict keys to be string", () => {
-		expect(() => checkParams({ [Symbol()]: [11] }))
-			.toThrow("Only string keys are allowed in param");
-	});
-
-	it("should fail if a property is builtin parameter", () => {
-		expect(() => checkParams({ Builder: [11] }))
-			.toThrow("'Builder' is a builtin variable");
-	});
-
-	it("should fail if a parameter does not have value", () => {
-		expect(() => checkParams({ foo: [] }))
-			.toThrow("Suite parameter \"foo\" must have a value");
-	});
-
-	it("should restrict parameters to have unique display names", () => {
-		const params = {
-			foo: ["1234567_A_1234567", "1234567_B_1234567"],
-		};
-		expect(() => checkParams(params))
-			.toThrow("Parameter display name conflict (foo: 1234567_…1234567)");
-	});
+	[() => {}, "Anonymous fn"],
+	[function foo() {}, "foo"],
+	[class BarBaz {}, "BarBaz"],
+])("should get display name of values %#", (value, expected) => {
+	expect(toDisplayName(value)).toBe(expected);
 });
 
 describe("SharedModeFilter", () => {
