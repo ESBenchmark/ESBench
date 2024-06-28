@@ -1,10 +1,10 @@
-import { AsyncFunction, noop } from "@kaciras/utilities/browser";
+import { AsyncFunction, asyncNoop, noop } from "@kaciras/utilities/browser";
 import { defineSuite } from "esbench";
 
 export function unroll(factor: number, isAsync: boolean) {
 	const [call, FunctionType] = isAsync
-		? ["await f()", AsyncFunction]
-		: ["f()", Function];
+		? ["await this()", AsyncFunction]
+		: ["this()", Function];
 
 	const body = `\
 		const start = performance.now();
@@ -13,7 +13,7 @@ export function unroll(factor: number, isAsync: boolean) {
 		}
 		return performance.now() - start;
 	`;
-	return new FunctionType("f", "count", body);
+	return new FunctionType("count", body);
 }
 
 function gcd(a: number, b: number): number {
@@ -46,8 +46,8 @@ export default defineSuite({
 	},
 	setup(scene) {
 		const { factor } = scene.params;
-		const fn1 = unroll(factor, false).bind(null, noop);
-		const fn2 = unroll(factor, true).bind(null, async () => {});
+		const fn1 = unroll(factor, false).bind(noop);
+		const fn2 = unroll(factor, true).bind(asyncNoop);
 		const calls = iterations / factor;
 
 		scene.bench("sync", () => fn1(calls));

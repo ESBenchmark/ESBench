@@ -54,12 +54,10 @@ const decompressProfiler: Profiler = {
 		const zipped = await case_.invoke();
 
 		// Reuse the options of TimeProfiler.
-		let options = ctx.suite.timing;
-		if (options === false) {
-			return;
-		}
-		if (options === true) {
-			options = undefined;
+		const options = ctx.suite.timing;
+
+		if (!options) {
+			return; // Measurement of time is disabled.
 		}
 
 		/*
@@ -72,8 +70,8 @@ const decompressProfiler: Profiler = {
 		 * ExecutionTimeMeasurement can be used for accurately measure
 		 * the execution time of a benchmark case.
 		 */
-		const measurer = new ExecutionTimeMeasurement(ctx, newCase, options);
-		metrics.decompress = await measurer.run();
+		const measurement = new ExecutionTimeMeasurement(ctx, newCase, options);
+		metrics.decompress = await measurement.run();
 	},
 };
 

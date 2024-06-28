@@ -12,6 +12,7 @@ function drain(generator) {
 
 const arr4 = [1, 2];
 
+// Run this suite in Node need a flag: --experimental-network-imports
 export default defineSuite({
 	baseline: { type: "Name", value: "@kaciras/utilities" },
 	params: {
@@ -20,12 +21,12 @@ export default defineSuite({
 	setup(scene) {
 		const src = Array.from({ length: scene.params.dimensions }, () => arr4);
 
+		scene.bench("@kaciras/utilities", () => drain(cartesianArray(src)));
 		scene.bench("big-cartesian", () => drain(bigCartesian(src)));
 		scene.bench("power-cartesian-product", () => drain(new PowerCP(src)));
-		scene.bench("@kaciras/utilities", () => drain(cartesianArray(src)));
 		scene.bench("cxproduct", () => drain(new CXProduct(src).asGenerator()));
 
-		// These return array faster than return generator, but takes more RAM.
+		// These return array faster than return generator, but cost more RAM.
 		scene.bench("fast-cartesian", () => fastCartesian(src));
 		scene.bench("fast-cartesian-product", () => fastCP(src));
 	},

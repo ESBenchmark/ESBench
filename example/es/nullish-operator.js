@@ -8,6 +8,6 @@ const e = 11;
 const f = 22;
 
 export default defineSuite(scene => {
-	scene.bench("??", () => a ?? b ?? c ?? d ?? e ?? f);
-	scene.bench("||", () => a || b || c || d || e || f);
+	scene.bench("??", () => a ?? a ?? b ?? b ?? c ?? d ?? e ?? f);
+	scene.bench("||", () => a || a || b || b || c || d || e || f);
 });

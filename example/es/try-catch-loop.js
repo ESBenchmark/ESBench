@@ -1,9 +1,11 @@
 import { defineSuite } from "esbench";
 
+const loops = 1000;
+
 export default defineSuite(scene => {
 	scene.bench("inside", () => {
 		let sum = 0;
-		for (let i = 0; i < 1000; i++) {
+		for (let i = 0; i < loops; i++) {
 			try {
 				sum += i;
 			} catch (e) {
@@ -16,7 +18,7 @@ export default defineSuite(scene => {
 	scene.bench("outside", () => {
 		try {
 			let sum = 0;
-			for (let i = 0; i < 1000; i++) {
+			for (let i = 0; i < loops; i++) {
 				sum += i;
 			}
 			return sum;
