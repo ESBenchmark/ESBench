@@ -134,3 +134,24 @@ export class SharedModeFilter {
 		return filtered;
 	}
 }
+
+export function indexOf<T>(iter: Iterable<T>, v: T) {
+	let i = 0;
+	for (const x of iter) {
+		if (x === v)
+			return i;
+		i += 1;
+	}
+	return -1;
+}
+
+function groupByPolyfill<K, T>(items: Iterable<T>, keySelector: (e: T) => K) {
+	const grouped = new MultiMap<K, T>();
+	for (const item of items) {
+		grouped.add(keySelector(item), item);
+	}
+	return grouped as Map<K, T[]>;
+}
+
+// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
+export const groupBy: typeof groupByPolyfill = Map.groupBy ?? groupByPolyfill;

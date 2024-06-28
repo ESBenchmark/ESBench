@@ -1,7 +1,8 @@
-import { cartesianObject, firstItem, MultiMap } from "@kaciras/utilities/browser";
+import { cartesianObject } from "@kaciras/utilities/browser";
 import { ResultBaseline } from "./runner.js";
 import { MetricMeta, Metrics } from "./profiling.js";
 import { ToolchainResult } from "./connect.js";
+import { groupBy, indexOf } from "./utils.js";
 
 const kMetrics = Symbol("metrics");
 const kIndex = Symbol("index");
@@ -23,27 +24,6 @@ export interface ResolvedNote {
 	type: "info" | "warn";
 	text: string;
 	case?: FlattedResult;
-}
-
-function groupByPolyfill<T>(items: Iterable<T>, callbackFn: (e: T) => any) {
-	const group = new MultiMap<string, T>();
-	for (const element of items) {
-		group.add(callbackFn(element), element);
-	}
-	return group;
-}
-
-// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
-const groupBy: typeof groupByPolyfill = (Map as any).groupBy ?? groupByPolyfill;
-
-function indexOf<T>(iter: Iterable<T>, v: T) {
-	let i = 0;
-	for (const x of iter) {
-		if (x === v)
-			return i;
-		i += 1;
-	}
-	return -1;
 }
 
 export class Summary {
@@ -248,10 +228,8 @@ export class Summary {
 			throw new Error(`${variable} is not in variables`);
 		}
 		const w = this.getWeight(variable);
-
-		const copy = { ...constants };
-		copy[variable] = firstItem(values)!;
-		const base = this.getIndex(copy);
+		const c = w * indexOf(values, constants[variable]);
+		const base = this.getIndex(constants) - c;
 
 		return Array.from(values, (_, i) => this.table[base + w * i]);
 	}
