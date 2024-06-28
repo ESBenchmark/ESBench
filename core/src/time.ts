@@ -1,4 +1,4 @@
-import { AsyncFunction, asyncNoop, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
+import { asyncNoop, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
 import { medianSorted } from "simple-statistics";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
@@ -10,23 +10,30 @@ interface Iterator {
 	iterate: (count: number) => Awaitable<number>;
 }
 
-function unroll(factor: number, isAsync: boolean) {
-	const [call, FunctionType] = isAsync
-		? ["await f()", AsyncFunction]
-		: ["f()", Function];
+const callCode = () => "this()";
 
-	const body = `\
+// See examples/self/loop-unrolling.ts for the validity of unrolling.
+function unroll(length: number) {
+	const calls = Array.from({ length }).map(callCode);
+	return new Function("count", `\
 		const start = performance.now();
 		while (count--) {
-			${new Array(factor).fill(call).join("\n")}
+			${calls.join("\n")}
 		}
 		return performance.now() - start;
-	`;
-	return new FunctionType("f", "count", body);
+	`);
 }
 
 function createIterator(factor: number, case_: BenchCase): Iterator {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
+
+	async function asyncNoHooks(count: number) {
+		const start = performance.now();
+		while (count--) {
+			await fn();
+		}
+		return performance.now() - start;
+	}
 
 	async function syncWithHooks(count: number) {
 		let timeUsage = 0;
@@ -61,11 +68,10 @@ function createIterator(factor: number, case_: BenchCase): Iterator {
 			calls: 1,
 			iterate: isAsync ? asyncWithHooks : syncWithHooks,
 		};
+	} else if (isAsync) {
+		return { calls: 1, iterate: asyncNoHooks };
 	} else {
-		return {
-			calls: factor,
-			iterate: unroll(factor, isAsync).bind(null, fn),
-		};
+		return { calls: factor, iterate: unroll(factor).bind(fn) };
 	}
 }
 
@@ -315,10 +321,11 @@ export class ExecutionTimeMeasurement {
 			this.stage = name;
 			this.stageRuns = 0;
 		}
-		const total = durationFmt.formatDiv(timeMS, "ms");
 		const mean = durationFmt.formatDiv(timeMS / ops, "ms");
+		const t = durationFmt.formatDiv(timeMS, "ms");
 		const i = (this.stageRuns++).toString().padStart(2);
-		return this.ctx.info(`${name} ${i}: ${ops} operations, ${total}, ${mean}/op`);
+
+		return this.ctx.info(`${name} ${i}: ${ops} operations, ${t}, ${mean}/op`);
 	}
 }
 
