@@ -1,14 +1,11 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/node";
-import { PartialSuite, runProfilers, spin } from "./helper.js";
+import { emptySuite, PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions } from "../src/time.js";
 import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
 
-// Does not work!
-// const mockMeasureRun = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
-
 function newContext() {
-	return new ProfilingContext({ setup: noop }, [], { log: noop });
+	return new ProfilingContext(emptySuite, [], { log: noop });
 }
 
 function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
@@ -91,8 +88,8 @@ it("should support specify number of iterations", async () => {
 });
 
 it.each([
-	// [0.1, "165ms", 1650, 16],
-	// [1, "100ms", 100, 1],
+	[0.1, "165ms", 1650, 16],
+	[1, "100ms", 100, 1],
 	[42, "100ms", 2, 1],
 ])("should estimate iterations %#", async (s, t, i, c) => {
 	const scene = new Scene({});

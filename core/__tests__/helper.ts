@@ -55,6 +55,12 @@ export function useTempDirectory(path: string) {
 	});
 }
 
+export const emptySuite = {
+	setup: noop,
+	params: [],
+	paramNames: [],
+};
+
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
 	const normalized = normalizeSuite({
 		setup: scene => scene.bench("Test", noop),

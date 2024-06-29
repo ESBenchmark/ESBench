@@ -196,7 +196,7 @@ export class ProfilingContext {
 	 * A ProfilingContext instance can only be run once.
 	 */
 	async run() {
-		const { hasRun, suite: { params = {} } } = this;
+		const { hasRun, suite: { params } } = this;
 		if (hasRun) {
 			throw new Error("A ProfilingContext can only be run once.");
 		}

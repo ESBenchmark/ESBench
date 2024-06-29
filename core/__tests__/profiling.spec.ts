@@ -1,12 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
 import { NormalizedSuite, Profiler, ProfilingContext } from "../src/index.ts";
-
-const emptySuite = {
-	params: [],
-	paramNames: [],
-	setup() {},
-};
+import { emptySuite } from "./helper.ts";
 
 it("should not allow run twice", async () => {
 	const context = new ProfilingContext(emptySuite, [], {});
