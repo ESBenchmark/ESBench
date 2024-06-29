@@ -76,23 +76,26 @@ export default <Plugin>{
 		if (!id.endsWith("/demo-suites.ts")) {
 			return;
 		}
+		this.addWatchFile(id);
+
 		const imports = this.parse(code).body.slice(1);
 		const exports = [];
-		for (const { expression } of imports as any) {
+		for (const { expression } of imports as any[]) {
 			const file = expression.source.value;
-			const name = expression.options
-				.properties[0].value
-				.properties[0].value.value;
+			const importAttrs = expression.options.properties[0].value;
 
 			const r = await this.resolve(file, id);
 			const suite = readFileSync(r.id, "utf8");
 			this.addWatchFile(r.id);
 
 			const info = getInfo.call(this, suite);
+			for (const { key, value } of importAttrs.properties) {
+				info[key.name] = value.value;
+			}
 			exports.push(info);
-			info.name = name;
 			info.path = categoryRE.exec(file)[1];
 		}
+
 		return "export default " + JSON.stringify(exports);
 	},
 };

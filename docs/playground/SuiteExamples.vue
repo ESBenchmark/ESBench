@@ -10,7 +10,10 @@
 			:class='$style.suite'
 			:href='"/playground?demo=" + suite.path'
 		>
-			{{ suite.name }}
+			<span>{{ suite.name }}</span>
+
+			{{ suite.description }}
+
 			<span :class='$style.attrs'>
 				{{ suite.params }} params,
 				{{ suite.cases }} cases
@@ -34,21 +37,33 @@ import suites from "./demo-suites.ts";
 .cards {
 	display: grid;
 	gap: 20px;
-	grid-template-columns: repeat(auto-fill, 20em);
+	grid-template-columns: repeat(auto-fit, minmax(18em, 1fr));
 }
 
 .suite {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+
 	padding: 15px;
 	border-radius: 6px;
 	background: var(--vp-c-bg-alt);
 
-	color: inherit !important;
+	color: var(--vp-c-text-2) !important;
+	font-weight: initial !important;
 	text-decoration: none !important;
+
+	& > span:first-child {
+		display: block;
+		font-size: 1.125em;
+		font-weight: 600;
+		color: var(--vp-c-text-1);
+	}
 }
 
 .attrs {
-	display: block;
+	align-self: flex-end;
+	margin-top: auto;
 	font-size: 0.875em;
-	color: var(--vp-c-text-2);
 }
 </style>
