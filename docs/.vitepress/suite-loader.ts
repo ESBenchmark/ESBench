@@ -3,7 +3,7 @@ import { Plugin, Rollup } from "vite";
 import { traverse } from "estraverse";
 
 /**
- * Remove all static imports and the defineSuite() call.
+ * Remove the import of `esbench` and the defineSuite() wrapper.
  * Since WebWorker does not support import map, we cannot use imports in the suite.
  *
  * https://github.com/WICG/import-maps/issues/2
@@ -23,11 +23,14 @@ function removeRange(str: string, start: number, end: number) {
 }
 
 function countParams(count: number, property: any) {
-	const { type, elements } = property.value;
+	const { type, elements, properties } = property.value;
 	if (type === "ArrayExpression") {
 		return count + elements.length;
 	}
-	throw new TypeError("params of demo suite must be an array literal");
+	if (type === "ObjectExpression") {
+		return count + properties.length;
+	}
+	throw new TypeError("suite params must be literal of array or object");
 }
 
 function getInfo(this: Rollup.PluginContext, code: string) {
@@ -50,6 +53,7 @@ function getInfo(this: Rollup.PluginContext, code: string) {
 
 	const [suite] = exports.declaration.arguments;
 	if (suite.type === "ObjectExpression") {
+		// Object-style suite.
 		for (const { key, value } of suite.properties) {
 			if (key.name === "params") {
 				params = value.properties.reduce(countParams, 0);
@@ -58,6 +62,7 @@ function getInfo(this: Rollup.PluginContext, code: string) {
 			}
 		}
 	} else {
+		// Function-style suite.
 		traverse(suite.body, { enter: visitCase });
 	}
 
@@ -78,24 +83,27 @@ export default <Plugin>{
 		}
 		this.addWatchFile(id);
 
+		// Skip `export default []` and the rest are imports.
 		const imports = this.parse(code).body.slice(1);
-		const exports = [];
+		const suiteInfo = [];
 		for (const { expression } of imports as any[]) {
 			const file = expression.source.value;
-			const importAttrs = expression.options.properties[0].value;
 
 			const r = await this.resolve(file, id);
 			const suite = readFileSync(r.id, "utf8");
 			this.addWatchFile(r.id);
 
 			const info = getInfo.call(this, suite);
-			for (const { key, value } of importAttrs.properties) {
-				info[key.name] = value.value;
-			}
-			exports.push(info);
+			suiteInfo.push(info);
 			info.path = categoryRE.exec(file)[1];
+
+			// Copy import attributes to suite info.
+			const attrs = expression.options.properties[0].value;
+			for (const p of attrs.properties) {
+				info[p.key.name] = p.value.value;
+			}
 		}
 
-		return "export default " + JSON.stringify(exports);
+		return "export default " + JSON.stringify(suiteInfo);
 	},
 };
