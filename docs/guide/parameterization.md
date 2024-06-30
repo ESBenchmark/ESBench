@@ -109,7 +109,7 @@ export default defineSuite({
 });
 ```
 
-## Avoiding Conflicts
+## Object-style Params
 
 For better reading, ESBench stores your parameter as a short string in the result and checks for duplicates. ESBench does not allow two values in a parameter to have same short representation.
 
@@ -119,7 +119,7 @@ export default defineSuite({
 	params: {
 		// Both represent as "[object Object]"
 		config: [
-			{ output: { format: "es" }, minify: true },
+			{ output: { format: "es" } },
 			{ output: { format: "cjs" } },
         ],
 		// Both represent as "looooooo…ooooong"
@@ -132,20 +132,44 @@ export default defineSuite({
 });
 ```
 
-To solve this problem, we recommend giving complex and long parameters readable names, then retrieving their values in the `setup` function.
+To solve this problem, we recommend to use object-style definitions:
 
 ```javascript
-const config1 = { output: { format: "es" }, minify: true };
+export default defineSuite({
+	params: {
+		config: {
+			"ES": { output: { format: "es" } },
+			"CJS": { output: { format: "cjs" } },
+		},
+		text: {
+			"Text A": "looooooooooooo_A_oooooooooooong",
+			"Text B": "looooooooooooo_B_oooooooooooong",
+		},
+	},
+    setup(scene) { 
+		const { config, text } = scene.params;
+    },
+});
+```
+
+With object-style definitions, you can specify the name and value of parameter separately, the object's key will be displayed in reports, and the value is passed to `scene.params`.
+
+The two styles can be mixed, with some parameters defined in objects and others using arrays.
+
+Another solution is giving complex and long parameters readable names, then retrieving their values in the `setup` function.
+
+```javascript
+const config1 = { output: { format: "es" }  };
 const config2 = { output: { format: "cjs" } };
 
 export default defineSuite({
 	params: {
-		config: ["ES + Minify", "CJS"],
+		config: ["ES", "CJS"],
 		text: ["Text A", "Text B"],
 	},
     setup(scene) {
-		const config = scene.params.config === "CJS" 
-            ? config2 : config1;
+		const config = scene.params.config === "ES" 
+            ? config1 : config2;
 		
 		const text = scene.params.text === "Text A" 
             ? "looooooooooooo_A_oooooooooooong" 
