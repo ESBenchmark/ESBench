@@ -28,7 +28,7 @@ export default <Plugin>{
 				write: false,
 				rollupOptions: {
 					preserveEntrySignatures: "exports-only",
-					input: "../core/src/index.ts",
+					input: "../core/lib/index.js",
 				},
 			},
 		});

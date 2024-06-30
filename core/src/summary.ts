@@ -8,7 +8,6 @@ const kMetrics = Symbol("metrics");
 const kIndex = Symbol("index");
 
 export type FlattedResult = Record<string, string> & {
-
 	// Retrieved by `Summary.getMetrics()`.
 	[kMetrics]: Metrics;
 
@@ -81,8 +80,8 @@ export class Summary {
 		this.sort([...rest, name]);
 	}
 
-	private addResult(toolchain: ToolchainResult) {
-		const { executor, builder, paramDef, scenes, notes } = toolchain;
+	private addResult(result: ToolchainResult) {
+		const { executor, builder, paramDef, scenes, notes } = result;
 		const offset = this.results.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 
@@ -96,14 +95,18 @@ export class Summary {
 			this.addToVar(key, ...values);
 		}
 
-		for (const [k, v] of Object.entries(toolchain.meta)) {
+		for (const [k, v] of Object.entries(result.meta)) {
 			this.meta.set(k, v);
 		}
 
 		for (const scene of scenes) {
 			const params = iter.next().value;
 			for (const [name, metrics] of Object.entries(scene)) {
-				const flatted = {
+				/*
+				 * Access a variable should always check it is in `vars` before, if exists
+				 * in `vars` but the value is undefined, that means the result in broken.
+				 */
+				const flatted: any = {
 					Name: name,
 					Executor: executor,
 					Builder: builder,
