@@ -1,4 +1,4 @@
-import type { BrowserContext, BrowserType, LaunchOptions, Page, Route } from "playwright-core";
+import type { BrowserContext, BrowserType, LaunchOptions, Route } from "playwright-core";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -6,7 +6,8 @@ import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
-import { isolationHeaders, transformer } from "./web-remote.js";
+import { transformer } from "./transform.js";
+import { isolationHeaders } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
@@ -29,6 +30,7 @@ const manifest = {
 	cross_origin_opener_policy: {
 		value: "same-origin",
 	},
+	// Ugly! Is there any string to declare all permissions?
 	permissions: [
 		"activeTab", "alarms", "audio", "background", "bookmarks", "browsingData", "certificateProvider",
 		"clipboardRead", "clipboardWrite", "contentSettings", "contextMenus", "cookies", "debugger",
@@ -95,6 +97,10 @@ export class PlaywrightExecutor implements Executor {
 		await this.context.browser()?.close();
 	}
 
+	execute(options: SuiteTask) {
+		return this.executeInPage(options, baseURL);
+	}
+
 	async serve(root: string, path: string, route: Route) {
 		if (path === "/") {
 			return route.fulfill(pageHTML);
@@ -121,9 +127,10 @@ export class PlaywrightExecutor implements Executor {
 		}
 	}
 
-	async executeInPage(page: Page, task: SuiteTask, url: string) {
+	async executeInPage(task: SuiteTask, url: string) {
 		const { file, pattern, root, dispatch } = task;
 		const [origin] = /^[^:/?#]+:(\/\/)?[^/?#]+/.exec(url)!;
+		const page = await this.context.newPage();
 
 		await page.exposeFunction("_ESBenchPost", (message: ClientMessage) => {
 			if ("e" in message) {
@@ -141,11 +148,6 @@ export class PlaywrightExecutor implements Executor {
 
 		await this.context.unrouteAll();
 		await Promise.all(this.context.pages().map(p => p.close()));
-	}
-
-	async execute(options: SuiteTask) {
-		const page = await this.context.newPage();
-		await this.executeInPage(page, options, baseURL);
 	}
 }
 
@@ -203,9 +205,7 @@ export class WebextExecutor extends PlaywrightExecutor {
 	async execute(task: SuiteTask) {
 		const extensionId = await this.findChromiumExtensionId(manifest.name);
 		const baseURL = `chrome-extension://${extensionId}/`;
-
-		const page = await this.context.newPage();
-		await this.executeInPage(page, task, baseURL + "index.html");
+		return this.executeInPage(task, baseURL + "index.html");
 	}
 
 	// https://webdriver.io/docs/extension-testing/web-extensions/#test-popup-modal-in-chrome
