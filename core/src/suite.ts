@@ -244,15 +244,44 @@ export const defineSuite = <const T extends ParamsDef = Empty>(suite: UserSuite<
 export type Entries<T = unknown> = Array<[string, T[]]>;
 
 export type NormalizedSuite = Omit<BenchmarkSuite, "timing" | "params"> & {
+	/**
+	 * Entries of params, for generating Cartesian product to create scenes.
+	 *
+	 * @example
+	 * // The params of user suite:
+	 * const symbol = Symbol("desc");
+	 * const input = {
+	 *     foo: { bool: true, text: "baz" },
+	 *     bar: [11, null, symbol],
+	 * }
+	 * // The params of NormalizedSuite:
+	 * const params = [
+	 *     ["foo", [true, "baz"]],
+	 *     ["bar", [11, null, symbol]],
+	 * ]
+	 */
 	params: Entries;
 
 	/**
-	 * Entries of params, with each param values converted to short names.
+	 * Parallel array of `params`, with each value replaced by its display name.
+	 *
+	 * @example
+	 * // The params of user suite:
+	 * const symbol = Symbol("desc");
+	 * const input = {
+	 *     foo: { bool: true, text: "baz" },
+	 *     bar: [11, null, symbol],
+	 * }
+	 * // The paramNames:
+	 * const params = [
+	 *     ["foo", ["bool", "text"]],
+	 *     ["bar", ["11", "null", "Symbol(desc)"]],
+	 * ]
 	 */
 	paramNames: Entries<string>;
 
 	/**
-	 *  Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
+	 * Unlike `BenchmarkSuite`, the undefined means TimeProfiler disabled.
 	 */
 	timing?: TimeProfilerOptions;
 }
@@ -266,45 +295,44 @@ function getFromObject(values: Record<string, unknown>) {
 }
 
 export function resolveParams(params: ParamsDef) {
-	const names = Object.entries(params);
-	const cpSrc: Entries = new Array(names.length);
-	const set = new Set<string>();
+	const nameEntries = Object.entries(params);
+	const valueEntries: Entries = new Array(nameEntries.length);
 
 	if (Object.getOwnPropertySymbols(params).length) {
 		throw new Error("Only string keys are allowed in param");
 	}
 
-	for (let i = 0; i < names.length; i++) {
-		const [key, values] = names[i];
+	for (let i = 0; i < nameEntries.length; i++) {
+		const [key, valueDefs] = nameEntries[i];
+
 		if (BUILTIN_VARS.includes(key)) {
 			throw new Error(`'${key}' is a builtin variable`);
 		}
-		const current: string[] = [];
-		const valueArr: unknown[] = [];
-		set.clear();
-		names[i][1] = current;
-		cpSrc[i] = [key, valueArr];
+		const names = new Set<string>();
+		const values: unknown[] = [];
 
-		const iter = Symbol.iterator in values
-			? getFromIter(values)
-			: getFromObject(values);
+		const iter = Symbol.iterator in valueDefs
+			? getFromIter(valueDefs)
+			: getFromObject(valueDefs);
 
 		for (const [name, value] of iter) {
-			valueArr.push(value);
 			const display = toDisplayName(name);
-			if (set.has(display)) {
+			if (names.has(display)) {
 				throw new Error(`Parameter display name conflict (${key}: ${display})`);
 			}
-			set.add(display);
-			current.push(display);
+			names.add(display);
+			values.push(value);
 		}
 
-		if (current.length === 0) {
+		nameEntries[i][1] = [...names];
+		valueEntries[i] = [key, values];
+
+		if (names.size === 0) {
 			throw new Error(`Suite parameter "${key}" must have a value`);
 		}
 	}
 
-	return [cpSrc, names as Entries<string>] as const;
+	return [valueEntries, nameEntries as Entries<string>] as const;
 }
 
 export function normalizeSuite(input: UserSuite): NormalizedSuite {

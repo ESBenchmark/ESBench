@@ -24,6 +24,19 @@ function unroll(length: number) {
 	`);
 }
 
+/*
+ * Another idea is treat iteration hooks as overhead, run them with an empty benchmark,
+ * then subtract the time from result.
+ * but this cannot handle some cases. for example, consider the code:
+ *
+ * let data = null;
+ * scene.bench("foo", () => data = create());
+ * scene.afterIteration(() => {
+ *     if (data) heavyCleanup(data);
+ * });
+ *
+ * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
+ */
 function createIterator(factor: number, case_: BenchCase): Iterator {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 
@@ -130,8 +143,8 @@ export interface TimingOptions {
  * const profiler = {
  *     async onCase(ctx, case_, metrics) {
  *         const measurement = new ExecutionTimeMeasurement(ctx, case_);
- * 		   const samples = await measurement.run();
- * 		   ctx.info(`Samples: [${samples.join(", ")}]`);
+ *         const samples = await measurement.run();
+ *         ctx.info(`Samples: [${samples.join(", ")}]`);
  *     },
  * }
  */
@@ -204,19 +217,6 @@ export class ExecutionTimeMeasurement {
 		return time;
 	}
 
-	/*
-	 * Another idea is treat iteration hooks as overhead, run them with an empty benchmark,
-	 * then subtract the time from result.
-	 * but this cannot handle some cases. for example, consider the code:
-	 *
-	 * let data = null;
-	 * scene.bench("foo", () => data = create());
-	 * scene.afterIteration(() => {
-	 *     if (data) heavyCleanup(data);
-	 * });
-	 *
-	 * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
-	 */
 	async subtractOverhead(iterations: number, time: number[]) {
 		const { benchCase, ctx } = this;
 		const overheads = await this.measureOverhead(iterations);

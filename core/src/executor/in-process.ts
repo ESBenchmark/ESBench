@@ -17,7 +17,7 @@ export default <Executor>{
 
 	async execute({ root, file, pattern, dispatch }: SuiteTask) {
 		const url = pathToFileURL(join(root, "index.js"));
-		const module = await import(url.toString());
+		const module = await import(url.href);
 		return module.default(dispatch, file, pattern);
 	},
 };

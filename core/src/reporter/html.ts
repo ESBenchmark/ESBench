@@ -30,7 +30,7 @@ export default function (file = "reports/benchmark.html"): Reporter {
 		mkdirSync(dirname(file), { recursive: true });
 		writeFileSync(file, html);
 
-		const url = pathToFileURL(file).toString();
-		context.info("HTML report can be found at: " + url);
+		const { href } = pathToFileURL(file);
+		context.info("HTML report can be found at: " + href);
 	};
 }

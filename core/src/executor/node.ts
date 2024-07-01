@@ -77,7 +77,7 @@ if (process.env.ES_BENCH_WORKER === "true") {
 		const { root, file, pattern } = message;
 
 		const module = pathToFileURL(join(root, "index.js"));
-		const client = await import(module.toString());
+		const client = await import(module.href);
 
 		await client.default(postMessage, file, pattern);
 	});

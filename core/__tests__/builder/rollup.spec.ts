@@ -15,13 +15,13 @@ async function testBundle(builder: Builder) {
 	await builder.build(directory, [file]);
 
 	const url = pathToFileURL(join(directory, "index.js"));
-	const module = await import(url.toString());
+	const module = await import(url.href);
 
 	const postMessage = vi.fn();
 	await module.default(postMessage, file);
 
 	const result = postMessage.mock.calls.at(-1)[0];
-	expect(result.meta.foobar).toBeDefined();
+	expect(result.meta.foobar).toBeTypeOf("object");
 
 	return [readFileSync(url, "utf8"), module];
 }

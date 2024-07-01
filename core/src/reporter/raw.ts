@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { Reporter } from "../host/config.js";
 
-export const DEFAULT_NAME = "reports/benchmark.json";
+const DEFAULT_NAME = "reports/benchmark.json";
 
 /**
  * Save the result object as a JSON file.
@@ -20,6 +20,7 @@ export const DEFAULT_NAME = "reports/benchmark.json";
  * });
  *
  * @param name The pattern to use for naming result file.
+ * 			   Default is "reports/benchmark.json"
  */
 export default function (name = DEFAULT_NAME): Reporter {
 	const zoneOffset = new Date().getTimezoneOffset() * 60_000;

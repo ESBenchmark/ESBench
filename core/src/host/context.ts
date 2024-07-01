@@ -10,7 +10,7 @@ export type LogLevel = keyof typeof logLevelPriority;
 
 const colors = [chalk.cyan, chalk, chalk.yellow, chalk.redBright];
 
-export function resolveRE(pattern?: string | RegExp) {
+function resolveRE(pattern?: string | RegExp) {
 	if (!pattern) {
 		return RE_ANY;
 	}
