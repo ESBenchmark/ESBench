@@ -1,25 +1,32 @@
 import { serializeError } from "serialize-error";
+import { cartesianObject } from "@kaciras/utilities/browser";
 import { BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { BUILTIN_VARS, kWorkingParams, toDisplayName } from "./utils.js";
+import { attrx, BUILTIN_VARS, kWorkingParams, toDisplayName } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 
 class DefaultEventLogger implements Profiler {
 
+	private paramNamesIter!: Iterator<unknown>;
 	private sceneIndex = 0;
 	private caseOfScene = 0;
 
+	onStart(ctx: ProfilingContext) {
+		this.paramNamesIter = cartesianObject(ctx.suite.paramNames);
+	}
+
 	async onScene(ctx: ProfilingContext, scene: Scene) {
 		const caseCount = scene.cases.length;
-		const sceneCount = ctx.suite.paramNames.reduce((s, v) => s * v.length, 1);
+		const sceneCount = ctx.suite.params.reduce((s, v) => s * v.length, 1);
 
 		const i = ++this.sceneIndex;
 		this.caseOfScene = 0;
 
-		let paramsText = "no parameters defined.";
-		if (ctx.suite.paramNames.length !== 0) {
-			paramsText = `params: \n${JSON.stringify(scene.params)}`;
+		let paramsText = "no parameters.";
+		if (ctx.suite.params.length !== 0) {
+			const { value } = this.paramNamesIter.next();
+			paramsText = `params: \n${JSON.stringify(value)}`;
 		}
 		return caseCount === 0
 			? ctx.info(`\nNo case found from scene #${i}, ${paramsText}`)
@@ -29,8 +36,11 @@ class DefaultEventLogger implements Profiler {
 	onCase(ctx: ProfilingContext, case_: BenchCase) {
 		const { name, isAsync, beforeHooks, afterHooks } = case_;
 		const hooks = beforeHooks.length + afterHooks.length > 0;
-		const i = ++this.caseOfScene;
-		return ctx.info(`\nCase #${i}: ${name} (Async=${isAsync}, InvocationHooks=${hooks})`);
+		const attrs = attrx([
+			isAsync ? "Async" : "Sync",
+			hooks && "HasHooks",
+		]);
+		return ctx.info(`\nCase #${++this.caseOfScene}: "${name}"${attrs}`);
 	}
 }
 

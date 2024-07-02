@@ -1,5 +1,6 @@
 import { alwaysTrue, noop } from "@kaciras/utilities/browser";
 import { BenchCase, Scene } from "./suite.js";
+import { attrx } from "./utils.js";
 import { Profiler, ProfilingContext } from "./profiling.js";
 
 type EqualityFn = (a: any, b: any) => boolean;
@@ -82,8 +83,7 @@ export class ExecutionValidator implements Profiler {
 			this.isEqual !== alwaysTrue && "Equality",
 			this.check !== noop && "ReturnValue",
 		];
-		const attrs = details.filter(Boolean).join(", ");
-		await ctx.info(`Validating benchmarks (${attrs})...`);
+		await ctx.info(`Validating benchmarks${attrx(details)}...`);
 
 		const validator = new PreValidateProfiler(this.check, this.isEqual);
 		await ctx.newWorkflow([validator]).run();

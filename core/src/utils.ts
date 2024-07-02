@@ -41,6 +41,11 @@ export function runFns(hooks: HookFn[]) {
 	return Promise.all(hooks.map(hook => hook()));
 }
 
+export function attrx(input: Array<string | false>) {
+	const string = input.filter(Boolean).join(", ");
+	return string.length === 0 ? "" : ` [${string}]`;
+}
+
 export class SharedModeFilter {
 
 	readonly index: number;
