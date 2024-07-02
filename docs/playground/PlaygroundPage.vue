@@ -180,6 +180,9 @@ watch(executor, value => {
 	consoleView.value!.clear();
 	if (value === executeIFrame) {
 		consoleView.value!.appendLog("Execute in iframe allows DOM operations, but the page may be unresponsive until it finishes.", "yellowBright");
+		if (navigator.userAgent.includes("Gecko/")) {
+			consoleView.value!.appendLog("\nFirefox may have a memory leak when running DOM-related benchmarks.", "yellowBright");
+		}
 	}
 });
 
