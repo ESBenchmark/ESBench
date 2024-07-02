@@ -1,26 +1,21 @@
 import { defineSuite } from "esbench";
 
+/**
+ * What is the overhead of the generator?
+ */
 export default defineSuite(scene => {
 	const length = 1000;
-	const template = Array.from({ length }, (_, i) => i);
+	const template = new Array(length);
 
 	function* g() {
-		for (const t of template) yield t + 1;
+		for (const t of template) yield t;
 	}
 
-	const add1 = v => v + 1;
-
-	scene.bench("from", () => {
-		return Array.from(template, add1);
+	scene.bench("Generator", () => {
+		for (const _ of g()) {}
 	});
 
 	scene.bench("Loop", () => {
-		let array = [];
-		for (const t of template) {
-			array.push(t + 1);
-		}
-		return array;
+		for (const _ of template) {}
 	});
-
-	scene.bench("Generator", () => Array.from(g()));
 });

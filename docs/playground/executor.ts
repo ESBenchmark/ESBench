@@ -1,7 +1,7 @@
 import type { Channel } from "esbench";
 import esbenchClient from "esbench?url"; // Special handing in docs/esbench-runtime.ts
 
-const esbenchURL = new URL(esbenchClient, location.href).toString();
+const esbenchURL = new URL(esbenchClient, location.href).href;
 
 const template = `\
 import { runAndSend } from "esbench";

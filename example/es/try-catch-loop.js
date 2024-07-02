@@ -1,6 +1,6 @@
 import { defineSuite } from "esbench";
 
-const loops = 1000;
+const loops = 1e5;
 
 export default defineSuite(scene => {
 	scene.bench("inside", () => {

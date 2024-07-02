@@ -1,18 +1,11 @@
 import { defineSuite } from "esbench";
 
-const addOne = (_, i) => i + 1;
-
-function fill(array, length) {
-	for (let i = 0; i < length; i++) {
-		array[i] = i + 1;
-	}
-	return array;
-}
+const useIndex = (_, i) => i;
 
 export default defineSuite({
 	baseline: { type: "Name", value: "with" },
 	params: {
-		length: [1, 1000],
+		length: [10, 10000],
 	},
 	setup(scene) {
 		const { length } = scene.params;
@@ -25,16 +18,24 @@ export default defineSuite({
 			return array;
 		});
 
-		scene.bench("map", () => {
-			return Array.from({ length }, addOne);
+		scene.bench("with", () => {
+			const array = new Array(length);
+			for (let i = 0; i < length; i++) {
+				array[i] = i;
+			}
+			return array;
 		});
 
 		scene.bench("without", () => {
-			return fill([], length);
+			const array = [];
+			for (let i = 0; i < length; i++) {
+				array[i] = i;
+			}
+			return array;
 		});
 
-		scene.bench("with", () => {
-			return fill(new Array(length), length);
+		scene.bench("map", () => {
+			return Array.from({ length }, useIndex);
 		});
 	},
 });

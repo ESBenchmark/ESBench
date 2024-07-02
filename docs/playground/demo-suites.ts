@@ -25,8 +25,14 @@ import("../../example/es/array-sort.js", {
 });
 import("../../example/es/import-http-module.js", {
 	with: {
-		name: "Import modules from HTTP",
-		description: "How to import 3rd packages in playground",
+		name: "Cartesian Product libraries",
+		description: "How to import npm packages in playground",
+	},
+});
+import("../../example/es/url-canParse.js", {
+	with: {
+		name: "URL.canParse",
+		description: "How much faster is it than try-catch?",
 	},
 });
 import("../../example/es/setTimeout-throttling.js", {
@@ -36,7 +42,10 @@ import("../../example/es/decode-base64.js", {
 	with: { name: "Decode base64 string" },
 });
 import("../../example/es/string-join.js", {
-	with: { name: "Combine strings" },
+	with: {
+		name: "Combine strings",
+		description: "Is using + to concatenate strings bad?",
+	},
 });
 import("../../example/es/try-catch-loop.js", {
 	with: {
@@ -58,7 +67,7 @@ import("../../example/es/array-sum.js", {
 });
 
 import("../../example/web/query-selector.js", {
-	with: { name: "Attribute selector vs class selector" },
+	with: { name: "CSS Selector: attribute vs class" },
 });
 import("../../example/web/replace-children.js", {
 	with: { name: "replaceChildren vs append" },
