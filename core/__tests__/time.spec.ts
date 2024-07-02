@@ -170,3 +170,16 @@ it("should measure time as throughput", async () => {
 	expect(throughput).toBeLessThan(1005);
 	expect(throughput).toBeGreaterThan(985);
 });
+
+it("should set small throughput value", async () => {
+	const result = await measureTime({
+		throughput: "ms",
+		iterations: 10,
+	}, {
+		setup: scene => scene.bench("Test", () => spin(10)),
+	});
+
+	const metrics = result.scenes[0].Test;
+	const [throughput] = metrics.throughput as number[];
+	expect(throughput).toBeCloseTo(0.1, 2);
+});
