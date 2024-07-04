@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { runSuite, RunSuiteError } from "../src/runner.ts";
+import { runSuite } from "../src/runner.ts";
 import { runAndSend } from "../src/index.ts";
 
 vi.mock("./../src/runner.ts", async importOriginal => {
@@ -22,7 +22,7 @@ it("should wait for send the result in runAndSend", async () => {
 
 it("should serialize errors", async () => {
 	const postMessage = vi.fn();
-	const error = new RunSuiteError("Stub", new Error("Cause"));
+	const error = new TypeError("Stub", { cause: new Error("Cause") });
 	vi.mocked(runSuite).mockRejectedValue(error);
 
 	await runAndSend(postMessage, mockImporter, "./test");

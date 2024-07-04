@@ -1,6 +1,6 @@
 import { expect, it, Mock, vi } from "vitest";
 import { noop } from "@kaciras/utilities/node";
-import { runSuite, RunSuiteError } from "../src/runner.ts";
+import { runSuite } from "../src/runner.ts";
 import { defineSuite } from "../src/suite.ts";
 import { ProfilingContext } from "../src/profiling.ts";
 import { ExecutionValidator } from "../src/validate.ts";
@@ -83,42 +83,17 @@ it("should call lifecycle hooks", async () => {
 	expect(invocations).toStrictEqual([beforeAll, run, afterAll]);
 });
 
-it("should wrap exception with RunSuiteError", () => {
-	const cause = new Error("Stub Error");
-	const expected = new RunSuiteError("Error occurred when running suite.", cause);
-
-	contextFactory.mockReturnValue({
-		run: async () => { throw cause; },
-	});
-
-	return expect(runSuite(emptySuite)).rejects.toThrow(expected);
-});
-
-it("should port params if the error threw from scene", async () => {
-	const promise = runSuite({
-		params: {
-			foo: [11],
-			bar: [22, 33],
-		},
-		setup() {
-			throw new Error("test");
-		},
-	});
-	await expect(promise).rejects.toThrow(RunSuiteError);
-	await expect(promise).rejects.toHaveProperty("params", { foo: 11, bar: 22 });
-});
-
 it.each([
-	[{ type: "Name", value: 11 }],
-	[{ type: "foo", value: 22 }],
-	[{ type: "bar", value: 11 }],
-])("should check parameter baseline %#", async baseline => {
+	[{ type: "Name", value: 11 }, "Value of baseline (Name) must be a string"],
+	[{ type: "foo", value: 22 }, "Baseline (foo) does not in params"],
+	[{ type: "bar", value: 11 }, "Baseline value (11) does not in params[bar]"],
+])("should check parameter baseline %#", async (baseline, error) => {
 	const promise = runSuite({
 		setup() {},
 		baseline,
 		params: { bar: [22, 33] },
 	});
-	await expect(promise).rejects.toThrow(RunSuiteError);
+	await expect(promise).rejects.toThrow(error);
 });
 
 it("should not check baseline that uses variable outside client", async () => {

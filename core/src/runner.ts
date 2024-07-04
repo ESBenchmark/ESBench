@@ -1,9 +1,8 @@
-import { serializeError } from "serialize-error";
 import { cartesianObject } from "@kaciras/utilities/browser";
 import { BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { attrx, BUILTIN_VARS, kWorkingParams, toDisplayName } from "./utils.js";
+import { attrx, BUILTIN_VARS } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 
 class DefaultEventLogger implements Profiler {
@@ -43,50 +42,6 @@ class DefaultEventLogger implements Profiler {
 		return ctx.info(`\nCase #${++this.caseOfScene}: "${name}"${attrs}`);
 	}
 }
-
-/**
- * Wrap the original error and provide more information.
- * The original error can be retrieved by the cause property.
- */
-export class RunSuiteError extends Error {
-	/**
-	 * The params property of the scene that threw the error.
-	 *
-	 * This property is not serializable, it will be undefined in the host side.
-	 */
-	readonly params?: object;
-
-	/** JSON represent of the params */
-	readonly paramStr?: string;
-
-	constructor(message?: string, cause?: Error, params?: object, ps?: string) {
-		super(message, { cause });
-		this.params = params;
-		this.paramStr = ps;
-		this.cause = cause; // For compatibility.
-	}
-
-	// noinspection JSUnusedGlobalSymbols; Used by serializeError()
-	toJSON() {
-		const { name, stack, message, paramStr } = this;
-		return {
-			name, stack, message, paramStr,
-			cause: serializeError(this.cause),
-		};
-	}
-
-	static fromScene(params: object, cause: Error) {
-		const p: Record<string, string> = {};
-		for (const [k, v] of Object.entries(params)) {
-			p[k] = toDisplayName(v);
-		}
-		const s = JSON.stringify(p);
-		const message = "Error occurred in scene " + s;
-		return new RunSuiteError(message, cause, params, s);
-	}
-}
-
-RunSuiteError.prototype.name = "RunSuiteError";
 
 /**
  * `baseline` option of the suite, with `value` transformed to short string.
@@ -155,32 +110,23 @@ function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
 	if (k !== -1) {
 		return { type, value: paramNames[i][1][k] };
 	}
-	throw new Error(`Baseline value (${value}) does not in params[${type}}`);
+	throw new Error(`Baseline value (${value}) does not in params[${type}]`);
 }
 
 /**
- * Run a benchmark suite. Any exception that occur within this function is wrapped with `RunSuiteError`.
+ * Run a benchmark suite.
  */
 export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {}) {
 	const suite = normalizeSuite(userSuite);
 	const { beforeAll, afterAll, paramNames: paramDef } = suite;
 
-	let context: ProfilingContext | undefined = undefined;
-	try {
-		const baseline = convertBaseline(suite);
-		const profilers = resolveProfilers(suite);
+	const baseline = convertBaseline(suite);
+	const profilers = resolveProfilers(suite);
 
-		context = new ProfilingContext(suite, profilers, options);
-		await beforeAll?.();
-		await context.run().finally(afterAll);
+	const context = new ProfilingContext(suite, profilers, options);
+	await beforeAll?.();
+	await context.run().finally(afterAll);
 
-		const { scenes, notes, meta } = context;
-		return { notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
-	} catch (e) {
-		const wp = context?.[kWorkingParams];
-		if (wp) {
-			throw RunSuiteError.fromScene(wp, e);
-		}
-		throw new RunSuiteError("Error occurred when running suite.", e);
-	}
+	const { scenes, notes, meta } = context;
+	return { notes, meta, baseline, paramDef, scenes } as RunSuiteResult;
 }

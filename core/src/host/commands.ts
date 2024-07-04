@@ -116,13 +116,6 @@ async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
 				});
 			}
 		}
-	} catch (e) {
-		context.error(`Failed to run suite with (builder=${build!.name}, executor=${job.name})`);
-		if (e.name !== "RunSuiteError") {
-			throw e;
-		}
-		context.error(`At scene ${e.paramStr}`);
-		throw e.cause;
 	} finally {
 		await executor.close?.(context);
 	}

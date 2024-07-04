@@ -1,8 +1,6 @@
 import { ellipsis, MultiMap } from "@kaciras/utilities/browser";
 import { HookFn } from "./suite.js";
 
-export const kWorkingParams = Symbol();
-
 export const RE_ANY = new RegExp("");
 
 export const BUILTIN_VARS = ["Name", "Builder", "Executor"];

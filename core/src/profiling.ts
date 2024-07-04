@@ -2,7 +2,7 @@ import { Awaitable, cartesianObject } from "@kaciras/utilities/browser";
 import { LogLevel } from "./host/context.js";
 import { RunSuiteOption } from "./runner.js";
 import { BenchCase, NormalizedSuite, Scene } from "./suite.js";
-import { kWorkingParams, RE_ANY, runFns } from "./utils.js";
+import { RE_ANY, runFns } from "./utils.js";
 
 export type LogType = Exclude<LogLevel, "off">;
 
@@ -130,8 +130,6 @@ export class ProfilingContext {
 	private hasRun = false;
 	private caseIndex = 0;
 
-	[kWorkingParams]?: object;
-
 	constructor(suite: NormalizedSuite, profilers: Profiler[], options: RunSuiteOption) {
 		this.suite = suite;
 		this.profilers = profilers;
@@ -204,9 +202,7 @@ export class ProfilingContext {
 
 		await this.runHooks("onStart");
 		for (const comb of cartesianObject(params)) {
-			this[kWorkingParams] = comb;
 			await this.runScene(comb);
-			this[kWorkingParams] = undefined;
 		}
 		return this.runHooks("onFinish");
 	}
