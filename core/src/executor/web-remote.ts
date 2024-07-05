@@ -199,9 +199,6 @@ export default class WebRemoteExecutor implements Executor {
 				return this.sendFile(parsed, response);
 			}
 		} catch (e) {
-			if (e.code !== "ENOENT") {
-				throw e;
-			}
 			return response.writeHead(404).end(e.message);
 		}
 	}

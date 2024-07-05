@@ -13,7 +13,7 @@ import { isolationHeaders } from "./web-remote.js";
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
-export const pageHTML = {
+export const blankPageResponse = {
 	headers: isolationHeaders,
 	contentType: "text/html",
 	body: "<html><head></head><body></body></html>",
@@ -103,7 +103,7 @@ export class PlaywrightExecutor implements Executor {
 
 	async serve(root: string, path: string, route: Route) {
 		if (path === "/") {
-			return route.fulfill(pageHTML);
+			return route.fulfill(blankPageResponse);
 		}
 
 		const resolved = transformer.parse(root, path);
@@ -120,9 +120,6 @@ export class PlaywrightExecutor implements Executor {
 			// No need to transform, send the file.
 			return await route.fulfill({ path: resolved });
 		} catch (e) {
-			if (e.code !== "ENOENT") {
-				throw e;
-			}
 			return route.fulfill({ status: 404, body: e.message });
 		}
 	}
@@ -190,7 +187,7 @@ export class WebextExecutor extends PlaywrightExecutor {
 		const dataDir = this.dataDir ??= mkdtempSync(join(tmpdir(), "browser-"));
 
 		writeFileSync(join(dataDir, "manifest.json"), JSON.stringify(manifest));
-		writeFileSync(join(dataDir, "index.html"), pageHTML.body);
+		writeFileSync(join(dataDir, "index.html"), blankPageResponse.body);
 
 		this.context = await this.type.launchPersistentContext(dataDir, {
 			headless: false,
