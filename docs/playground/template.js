@@ -14,10 +14,11 @@ export default {
 	},
 	setup(scene) {
 		scene.bench("case 1", () => {
-
+			// Your code here...
+			
 		});
 
-		// More cases
+		// For async workload:
 		// scene.benchAsync("case 2", async () => {});
 	},
 };

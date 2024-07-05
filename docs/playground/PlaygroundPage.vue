@@ -269,6 +269,11 @@ onMounted(async () => {
 		minimap: { enabled: false },
 		theme: vpData.isDark.value ? "vs-dark" : "vs",
 	});
+
+	if (value === suiteTemplate) {
+		editor.focus();
+		editor.setSelection(new monaco.Range(18, 4, 18, 4));
+	}
 });
 </script>
 
