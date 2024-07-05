@@ -2,11 +2,12 @@ import { createWriteStream } from "fs";
 import { stdout } from "process";
 import { Writable } from "stream";
 import { once } from "events";
-import chalk, { Chalk } from "chalk";
 import stringLength from "string-width";
+import chalk, { Chalk } from "chalk";
 import { ESBenchResult } from "../connect.js";
 import { Reporter } from "../host/config.js";
-import { FormatOptions, SummaryTable, SummaryTableOptions } from "../table.js";
+import { SummaryTable, SummaryTableOptions } from "../table.js";
+import { FormatOptions } from "../format.js";
 
 export interface TextReporterOptions extends SummaryTableOptions, FormatOptions {
 	/**

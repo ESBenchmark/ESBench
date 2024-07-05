@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/browser";
-import { NormalizedSuite, Profiler, ProfilingContext } from "../src/index.ts";
+import { BenchCase, NormalizedSuite, Profiler, ProfilingContext, Scene } from "../src/index.ts";
 import { emptySuite } from "./helper.ts";
 
 it("should not allow run twice", async () => {
@@ -83,4 +83,35 @@ it("should filter workloads with pattern", async () => {
 
 	expect(foo).toHaveBeenCalled();
 	expect(bar).not.toHaveBeenCalled();
+});
+
+it("should write logs to logHandler", () => {
+	const log = vi.fn();
+	const context = new ProfilingContext(emptySuite, [], { log });
+
+	context.info("A info message");
+	context.warn("A warning message");
+
+	expect(context.notes).toHaveLength(0);
+	expect(log).toHaveBeenCalledTimes(2);
+	expect(log).toHaveBeenNthCalledWith(1, "A info message", "info");
+	expect(log).toHaveBeenNthCalledWith(2, "A warning message", "warn");
+});
+
+it("should save and log notes", () => {
+	const case_ = new BenchCase(new Scene({}), "test", noop, false);
+	case_.id = 8964;
+	const log = vi.fn();
+	const context = new ProfilingContext(emptySuite, [], { log });
+
+	context.note("info", "A info message");
+	context.note("warn", "A warning message", case_);
+
+	expect(log).toHaveBeenNthCalledWith(1, "A info message", "info");
+	expect(log).toHaveBeenNthCalledWith(2, "A warning message", "warn");
+
+	expect(context.notes).toStrictEqual([
+		{ type: "info", text: "A info message", caseId: undefined },
+		{ type: "warn", text: "A warning message", caseId: 8964 },
+	]);
 });

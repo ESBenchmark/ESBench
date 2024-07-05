@@ -1,4 +1,4 @@
-import { afterAll, it } from "vitest";
+import { afterAll, expect, it } from "vitest";
 import { chromium } from "playwright-core";
 import WebRemoteExecutor from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
@@ -20,6 +20,10 @@ tester.execute = async build => {
 		await page.close();
 	}
 };
+
+it("should suggest a name", () => {
+	expect(new WebRemoteExecutor().name).toBe("web remote");
+});
 
 it("should transfer messages", tester.successCase());
 
