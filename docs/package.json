@@ -7,8 +7,8 @@
 		"preview": "vitepress preview"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^1.0.1",
-		"@tabler/icons-vue": "^3.7.0",
+		"@kaciras/utilities": "^1.0.2",
+		"@tabler/icons-vue": "^3.9.0",
 		"@vueuse/core": "^10.11.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.50.0",

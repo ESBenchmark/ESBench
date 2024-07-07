@@ -30,7 +30,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^1.0.1",
+		"@kaciras/utilities": "^1.0.2",
 		"chalk": "^5.3.0",
 		"es-module-lexer": "^1.5.4",
 		"fast-glob": "^3.3.2",
