@@ -10,7 +10,7 @@ function drain(generator) {
 	for (const _ of generator) /* No-op */;
 }
 
-const arr4 = [1, 2];
+const arr2 = [1, 2];
 
 // Run this suite in Node need a flag: --experimental-network-imports
 export default defineSuite({
@@ -19,7 +19,7 @@ export default defineSuite({
 		dimensions: [2, 20],
 	},
 	setup(scene) {
-		const src = Array.from({ length: scene.params.dimensions }, () => arr4);
+		const src = Array.from({ length: scene.params.dimensions }, () => arr2);
 
 		scene.bench("@kaciras/utilities", () => drain(cartesianArray(src)));
 		scene.bench("big-cartesian", () => drain(bigCartesian(src)));

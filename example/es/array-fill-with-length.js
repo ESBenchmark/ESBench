@@ -5,7 +5,7 @@ const useIndex = (_, i) => i;
 export default defineSuite({
 	baseline: { type: "Name", value: "with" },
 	params: {
-		length: [10, 10000],
+		length: [10, 10_000],
 	},
 	setup(scene) {
 		const { length } = scene.params;
@@ -13,7 +13,7 @@ export default defineSuite({
 		scene.bench("push", () => {
 			const array = [];
 			for (let i = 0; i < length; i++) {
-				array.push(i + 1);
+				array.push(i);
 			}
 			return array;
 		});
