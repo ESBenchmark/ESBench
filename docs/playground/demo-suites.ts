@@ -60,7 +60,10 @@ import("../../example/es/array-set-includes.js", {
 	with: { name: "Array.includes vs Set.has" },
 });
 import("../../example/es/array-fill-with-length.js", {
-	with: { name: "Fill array with size vs without size" },
+	with: {
+		name: "Fill array with size vs without size",
+		description: "Does initial size makes array faster?",
+	},
 });
 import("../../example/es/array-sum.js", {
 	with: { name: "Sum using for-loop vs Array.reduce" },

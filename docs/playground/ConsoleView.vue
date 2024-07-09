@@ -31,8 +31,8 @@ const colors: Record<string, string> = {
 	yellowBright: "#E5BF00",
 
 	// Log level colors
+	warn: "#E5BF00",
 	error: "#F0524F",
-	warning: "#E5BF00",
 };
 
 /**
@@ -130,13 +130,17 @@ function printTable(result: RunSuiteResult[], options: PrintTableOptions) {
 	}
 
 	if (table.hints.length > 0) {
-		appendLog("Hints:");
-		for (const note of table.hints) appendLog(note);
+		appendLog("Hints:", "cyan");
+		for (const note of table.hints) {
+			appendLog(note, "cyan");
+		}
 	}
 
 	if (table.warnings.length > 0) {
-		appendLog("Warnings:");
-		for (const note of table.warnings) appendLog(note);
+		appendLog("Warnings:", "yellowBright");
+		for (const note of table.warnings) {
+			appendLog(note, "yellowBright");
+		}
 	}
 }
 
