@@ -26,7 +26,7 @@ Chart.register(BarWithErrorBarsController, BarController, Tooltip, CategoryScale
 import { mean } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
-import { FlattedResult, MetricMeta, parseFormat, Summary } from "esbench";
+import { FlattedResult, createFormatter, Summary, FixedFormatter, MetricMeta } from "esbench";
 import { TooltipItem } from "chart.js";
 import { UseDataFilterReturn } from "./useDataFilter.ts";
 import { diagonalPattern } from "./utils.ts";
@@ -69,13 +69,14 @@ function getDataPoint(name: string, result?: FlattedResult) {
 }
 
 function scale(meta: MetricMeta, points: ChartDataPoint[]) {
-	if (!meta.format) {
-		return { unit: "", format: String };
+	const formatter = createFormatter(meta.format);
+	if (!formatter.fixed) {
+		return formatter as Partial<FixedFormatter>;
 	}
-	const yValues = points.map(p => p.y);
-	const { formatter, rawUnit, suffix } = parseFormat(meta.format);
-	const { scale, unit, sep } = formatter.homogeneous(yValues, rawUnit);
+	const values = points.map(p => p.y);
+	const fixedFormatter = formatter.fixed(values);
 
+	const { scale } = fixedFormatter;
 	for (const point of points) {
 		point.y *= scale;
 		if (point.yMin) {
@@ -85,13 +86,12 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 			point.yMax *= scale;
 		}
 	}
-	return { unit: unit + suffix, sep };
+	return fixedFormatter as Partial<FixedFormatter>;
 }
 
 const chartConfig = computed(() => {
 	const { summary, previous, filter: { matches, xAxis } } = props;
 
-	const labels = [...summary.vars.get(xAxis.value)!];
 	const datasets = [];
 	const scales: Record<string, any> = {};
 
@@ -100,21 +100,22 @@ const chartConfig = computed(() => {
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
 		const yAxisID = `y-${name}`;
 
-		const cv = matches.value.map(v => getDataPoint(name, v));
-		let pv: typeof cv = [];
+		const cPoints = matches.value.map(v => getDataPoint(name, v));
+		let pPoints: typeof cPoints = [];
 
 		if (meta.analysis && previous.meta.get(name)) {
-			pv = matches.value.map(v => getDataPoint(name, v && previous.find(v)));
+			pPoints = matches.value.map(v => getDataPoint(name, v && previous.find(v)));
 		}
 
-		const { unit, sep } = scale(meta, [...cv, ...pv].filter(Boolean));
+		const points = [...cPoints, ...pPoints].filter(Boolean);
+		const formatter = scale(meta, points);
 
-		if (pv.length !== 0) {
+		if (pPoints.length !== 0) {
 			datasets.push({
 				label: `${name}-prev`,
 				yAxisID,
-				suffix: sep + unit,
-				data: pv,
+				formatter,
+				data: pPoints,
 				backgroundColor: diagonalPattern(color),
 			});
 		}
@@ -122,21 +123,26 @@ const chartConfig = computed(() => {
 		datasets.push({
 			label: name,
 			yAxisID,
-			suffix: sep + unit,
-			data: cv,
+			formatter,
+			data: cPoints,
 			backgroundColor: color,
 		});
 
+		const { unit } = formatter;
 		scales[yAxisID] = {
-			title: { display: true, text: `${name} (${unit})` },
+			title: {
+				display: true,
+				text: unit ? `${name} (${unit})` : name,
+			},
 		};
 	}
 
+	const labels = [...summary.vars.get(xAxis.value)!];
 	return { data: { labels, datasets }, scales };
 });
 
 function customTooltip(item: TooltipItem<"barWithErrorBars">) {
-	const { label, suffix, data } = item.dataset as any;
+	const { label, formatter, data } = item.dataset as any;
 	const point = data[item.dataIndex] as IErrorBarXYDataPoint;
 
 	if (!point) {
@@ -144,7 +150,7 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	}
 
 	const { y, yMin, yMax } = point;
-	const base = `${label}: ${y.toFixed(2)}${suffix}`;
+	const base = `${label}: ${y.toFixed(2)} ${formatter.unit}`;
 	if (typeof yMin !== "number" || typeof yMax !== "number") {
 		return base;
 	}

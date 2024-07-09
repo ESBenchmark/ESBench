@@ -3,12 +3,13 @@ import {
 	dataSizeIEC,
 	decimalPrefix,
 	durationFmt,
+	FixedUnitFormatter,
 	identity,
 	separateThousand,
 	UnitConvertor,
 } from "@kaciras/utilities/browser";
 import { markdownTable } from "markdown-table";
-import { SummaryTable } from "./table.js";
+import { CellValue, SummaryTable } from "./table.js";
 
 export interface FormatOptions {
 	/**
@@ -54,52 +55,120 @@ const noColor = new Proxy(identity as Stainer, { get: identity });
 
 const formatRE = /^\{(\w+)(?:\.(\w+))?}/;
 
-type FormatFn = (value: any) => string;
-
-const formatters: Record<string, UnitConvertor> = {
+const unitConvertors: Record<string, UnitConvertor> = {
 	number: decimalPrefix,
 	duration: durationFmt,
 	dataSize: dataSizeIEC,
 };
 
-export function parseFormat(template: string) {
-	const match = formatRE.exec(template);
-	if (match) {
-		const [p, type, rawUnit] = match;
-		return {
-			formatter: formatters[type],
-			rawUnit,
-			suffix: template.slice(p.length),
-		};
-	}
-	throw new Error("Invalid metric format: " + template);
+export interface MetricFormatter {
+	format(value: CellValue): string;
+
+	fixed?(values: CellValue[]): FixedFormatter;
 }
 
-function formatColumn(table: SummaryTable["cells"], column: number, template: string, flex: boolean) {
-	const numbers: number[] = [];
-	for (const row of table) {
-		const value = row[column];
-		if (typeof value === "string") {
-			throw new TypeError(`Cannot apply number format to "${value}"`);
-		}
-		if (typeof value === "number") {
-			numbers.push(value);
-		}
+export interface FixedFormatter {
+	unit: string;
+	scale: number;
+
+	format(value: CellValue): string;
+}
+
+class CommonUnitFormatter implements MetricFormatter {
+
+	readonly convertor: UnitConvertor;
+	readonly rawUnit: string;
+	readonly suffix: string;
+
+	constructor(rawUnit: string, suffix: string, convertor: UnitConvertor) {
+		this.rawUnit = rawUnit;
+		this.suffix = suffix;
+		this.convertor = convertor;
 	}
 
-	const { formatter, rawUnit, suffix } = parseFormat(template);
-	let format: FormatFn;
-	if (flex) {
-		format = (value: number) => separateThousand(formatter.formatDiv(value, rawUnit));
-	} else {
-		const fixed = formatter.homogeneous(numbers, rawUnit);
-		format = (value: number) => separateThousand(fixed.format(value));
+	fixed(values: CellValue[]) {
+		const { convertor, rawUnit, suffix } = this;
+		const numbers: number[] = [];
+
+		for (const value of values) {
+			switch (typeof value) {
+				case "string":
+					throw new TypeError(`Cannot apply number format to "${value}"`);
+				case "number":
+					numbers.push(value);
+			}
+		}
+		const fixed = convertor.homogeneous(numbers, rawUnit);
+		return new CommonUnitFixed(fixed, suffix);
 	}
 
-	for (const row of table) {
-		const value = row[column];
-		row[column] = value === undefined ? "" : format(value) + suffix;
+	format(value: CellValue) {
+		const { convertor, rawUnit, suffix } = this;
+		switch (typeof value) {
+			case "string":
+				throw new TypeError(`Cannot apply number format to "${value}"`);
+			case "undefined":
+				return "";
+		}
+		const string = convertor.formatDiv(value, rawUnit);
+		return separateThousand(string) + suffix;
 	}
+}
+
+class CommonUnitFixed implements FixedFormatter {
+
+	readonly convertor: FixedUnitFormatter;
+	readonly suffix: string;
+
+	constructor(convertor: FixedUnitFormatter, suffix: string) {
+		this.convertor = convertor;
+		this.suffix = suffix;
+	}
+
+	get scale() {
+		return this.convertor.scale;
+	}
+
+	get unit() {
+		return this.convertor.unit + this.suffix;
+	}
+
+	format(value: CellValue) {
+		switch (typeof value) {
+			case "string":
+				throw new TypeError(`Cannot apply number format to "${value}"`);
+			case "undefined":
+				return "";
+		}
+		const string = this.convertor.format(value as number);
+		return separateThousand(string) + this.suffix;
+	}
+}
+
+const stringFormatter: FixedFormatter & MetricFormatter = {
+	scale: 1,
+	unit: "",
+	fixed: () => stringFormatter,
+	format: value => value ? value.toString() : "",
+};
+
+export function createFormatter(template?: string): MetricFormatter {
+	if (!template) {
+		return stringFormatter;
+	}
+	const match = formatRE.exec(template);
+	if (!match) {
+		throw new Error(`Invalid metric format: ${template}`);
+	}
+
+	const [{ length }, type, rawUnit] = match;
+	const convertor = unitConvertors[type];
+	if (!convertor) {
+		throw new Error(`Metric type: "${type}" does not have convertor`);
+	}
+
+	const suffix = template.slice(length);
+	return new CommonUnitFormatter(rawUnit, suffix, convertor);
 }
 
 function toMarkdown(this: string[][], stringLength: any) {
@@ -116,22 +185,26 @@ export default function format(input: SummaryTable, options: FormatOptions = {})
 		return x ? stainer[x](value) : stainer(value);
 	}
 
+	// Apply colors to the header.
 	for (let i = 0; i < formats.length; i++) {
 		const v = cells[0][i];
 		table[0].push(applyStyle(v, 0, i));
 	}
 
+	// The empty row should have same length with the table.
 	const separator = new Array(formats.length);
+
 	let offset = 1;
 	for (const e of groupEnds) {
 		const copy = cells.slice(offset, e).map(r => r.slice());
 
 		for (let i = 0; i < formats.length; i++) {
-			if (formats[i]) {
-				formatColumn(copy, i, formats[i]!, flexUnit);
+			let formatter = createFormatter(formats[i]);
+			if (!flexUnit && formatter.fixed) {
+				formatter = formatter.fixed(copy.map(r => r[i]));
 			}
 			for (let j = 0; j < copy.length; j++) {
-				const v = copy[j][i];
+				const v = formatter.format(copy[j][i]);
 				copy[j][i] = applyStyle(v, offset + j, i);
 			}
 		}

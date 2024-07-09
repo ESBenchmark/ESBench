@@ -93,7 +93,8 @@ function styleRatio(v: number, style: RatioStyle, meta: MetricMeta): ColoredValu
 	}
 }
 
-type CellValue = string | number | undefined;
+export type CellValue = string | number | undefined;
+
 type CellColor = ANSIColor | null;
 type ColoredValue = CellValue | [CellValue, ANSIColor | null];
 
