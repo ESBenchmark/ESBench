@@ -42,10 +42,6 @@ const selected = defineModel();
 
 	font: inherit;
 	background: none;
-
-	&:not(:disabled) {
-        cursor: pointer;
-	}
 }
 
 .icon {

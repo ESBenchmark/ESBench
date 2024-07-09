@@ -55,7 +55,7 @@
 import { computed } from "vue";
 import { ResolvedNote, Summary, type ToolchainResult } from "esbench";
 import { IconAlertTriangleFilled, IconInfoCircleFilled } from "@tabler/icons-vue";
-import useDataFilter from "./useDataFilter.ts";
+import { useDataFilter } from "./utils.ts";
 import LabeledSelect from "./LabeledSelect.vue";
 import ChartSection from "./ChartSection.vue";
 

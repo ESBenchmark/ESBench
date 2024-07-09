@@ -23,13 +23,12 @@ Chart.register(BarWithErrorBarsController, BarController, Tooltip, CategoryScale
 </script>
 
 <script setup lang="ts">
-import { mean } from "simple-statistics";
 import { computed, onMounted, shallowRef, watch } from "vue";
 import { BarWithErrorBarsChart, IErrorBarXYDataPoint } from "chartjs-chart-error-bars";
+import { mean } from "simple-statistics";
 import { FlattedResult, createFormatter, Summary, FixedFormatter, MetricMeta } from "esbench";
 import { TooltipItem } from "chart.js";
-import { UseDataFilterReturn } from "./useDataFilter.ts";
-import { diagonalPattern } from "./utils.ts";
+import { UseDataFilterReturn, diagonalPattern } from "./utils.ts";
 
 interface ChartDataPoint {
 	y: number;
@@ -68,6 +67,16 @@ function getDataPoint(name: string, result?: FlattedResult) {
 	};
 }
 
+function getPreviousPoints(meta: MetricMeta) {
+	const { previous, filter: { matches } } = props;
+	const { key } = meta;
+
+	if (!previous.meta.get(key)) {
+		return [];
+	}
+	return matches.value.map(v => getDataPoint(key, v && previous.find(v)));
+}
+
 function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 	const formatter = createFormatter(meta.format);
 	if (!formatter.fixed) {
@@ -90,43 +99,44 @@ function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 }
 
 const chartConfig = computed(() => {
-	const { summary, previous, filter: { matches, xAxis } } = props;
+	const { summary, filter: { matches, xAxis } } = props;
 
 	const datasets = [];
 	const scales: Record<string, any> = {};
 
 	let i = 0;
 	for (const [name, meta] of summary.meta) {
+		// Non-comparable values should not be plotted on the chart.
+		if (!meta.analysis) {
+			continue;
+		}
 		const color = CHART_COLORS[(i++) % CHART_COLORS.length];
 		const yAxisID = `y-${name}`;
 
 		const cPoints = matches.value.map(v => getDataPoint(name, v));
-		let pPoints: typeof cPoints = [];
-
-		if (meta.analysis && previous.meta.get(name)) {
-			pPoints = matches.value.map(v => getDataPoint(name, v && previous.find(v)));
-		}
-
+		const pPoints = getPreviousPoints(meta);
 		const points = [...cPoints, ...pPoints].filter(Boolean);
-		const formatter = scale(meta, points);
 
-		if (pPoints.length !== 0) {
-			datasets.push({
-				label: `${name}-prev`,
-				yAxisID,
-				formatter,
-				data: pPoints,
-				backgroundColor: diagonalPattern(color),
-			});
-		}
+		const formatter = scale(meta, points);
 
 		datasets.push({
 			label: name,
+			data: cPoints,
 			yAxisID,
 			formatter,
-			data: cPoints,
 			backgroundColor: color,
 		});
+
+		if (pPoints.length !== 0) {
+			const pat = diagonalPattern(color);
+			datasets.push({
+				label: `${name}-prev`,
+				data: pPoints,
+				yAxisID,
+				formatter,
+				backgroundColor: pat,
+			});
+		}
 
 		const { unit } = formatter;
 		scales[yAxisID] = {
