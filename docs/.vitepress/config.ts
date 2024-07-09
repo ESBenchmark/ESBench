@@ -20,7 +20,7 @@ const customHeaders = {
 
 export default defineConfig({
 	title: "ESBench",
-	description: "Modern JavaScript Benchmarking Tool",
+	description: "Modern JavaScript Benchmarking Library",
 	cleanUrls: true,
 	vite: {
 		plugins: [customHeaders, suiteInfoLoader, esbenchRuntime],

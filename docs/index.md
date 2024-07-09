@@ -2,6 +2,8 @@
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
+titleTemplate: Modern JavaScript Benchmarking Library
+
 hero:
   name: ESBench
   text: Modern JavaScript Benchmarking Tool
