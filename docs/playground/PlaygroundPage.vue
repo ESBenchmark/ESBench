@@ -256,9 +256,12 @@ onMounted(async () => {
 			push.error({ message: "Failed to restore from shared link, See console for the error." });
 		}
 	} else if (demo) {
-		const { code, path } = demos.find(i => i.path === demo)!;
-		value = code;
-		executor.value = path.startsWith("web")
+		const info = demos.find(i => i.path === demo);
+		if (!info) {
+			return push.error({ message: `Demo "${demo}" does not exist` });
+		}
+		value = info.code;
+		executor.value = info.path.startsWith("web")
 			? executeIFrame : executeWorker;
 	}
 
