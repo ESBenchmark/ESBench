@@ -14,6 +14,8 @@ ESBench is a modern JavaScript benchmarking tool.
 
 ### Cross Runtime
 
+![Runtimes](../assets/runtimes.webp)
+
 One difference between JavaScript and other languages is that it has no official interpreter. Browsers, Node, and the new Deno and bun are all possible target platforms, and the performance of the code on different platforms is a worthwhile question.
 
 **ESBench aims to run your benchmarks on various runtimes** and let you know comprehensive and reliable results. help you choose the best environment for scaling your application.

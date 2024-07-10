@@ -4,19 +4,18 @@ TypeScript is a first-class citizen of ESBench, ESBench's APIs are fully typed, 
 
 ## Supported Compilers
 
-When started, ESBench installs [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) to transform TS files.
+ESBench uses [ts-directly](https://github.com/Kaciras/ts-directly) to transform TS files, When importing a TS file for the first time, it will detect installed compiler, supports:
 
-When importing a TS file for the first time, ESBench will detect installed compilers by the steps:
+- [SWC](https://github.com/swc-project/swc).
+- [esbuild](https://github.com/evanw/esbuild).
+- [sucrase](https://github.com/alangpierce/sucrase).
+- [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 
-1. If `@swc/core` installed, use [SWC](https://github.com/swc-project/swc).
-2. If `esbuild` installed, use [esbuild](https://github.com/evanw/esbuild).
-3. If `sucrase` installed, use [sucrase](https://github.com/alangpierce/sucrase).
-4. If `typescript` installed, use [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
-5. No supported compiler, the import fails.
+These are listed in the peerDependencies and marked as optional, so compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used. In the vast majority of cases where projects using TypeScript have `typescript` installed, this feature comes out-of-box.
+
+If no supported compiler found, the import fails.
 
 ESBench only transforms TS files and does not process other types of imports.
-
-In the vast majority of cases where projects using TypeScript have `typescript` installed, this feature comes out-of-box.
 
 ## Run With TypeScript
 

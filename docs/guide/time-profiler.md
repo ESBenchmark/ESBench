@@ -1,6 +1,6 @@
 # Time Profiler
 
-By default, ESBench only measure execution time of the benchmark cases, This is done by a module `TimeProfiler`, it can be configured by `timing` property of the suite:
+By default, ESBench only measure execution time of the benchmark cases, This is done by `TimeProfiler`, it can be configured by `timing` property of the suite:
 
 ```javascript
 export default defineSuite({
@@ -9,7 +9,7 @@ export default defineSuite({
 });
 ```
 
-The default value is `true`, which equals to `{}`, setting `timing: false` disables TimeProfiler.
+The default value is `true`, which equals to `{}`, setting `timing: false` disables `TimeProfiler`.
 
 Type of the options:
 
@@ -70,4 +70,12 @@ export interface TimingOptions {
 
 The `iterations` can be a string in format `number`+`unit`, available units are `ns`, `us`, `ms`, `s`, `m`, `h`, `d`.
 
-To speed up the measurement, you can turn down the values of `warmup`, `samples`, `iterations`, and set `evaluateOverhead` to false, but be aware that this may reduce the accuracy of the results.
+## Speed & Accuracy
+
+For more reliable results, you should avoid doing other operations while running benchmarks. If a process occupies system resources while running a case, the running time for that use case may increase.
+
+`TimeProfiler` uses a lot of calls to avoid noise, this will take longer, you can adjust some options to speed it up, **but be aware that this may reduce the precision of the results.**
+
+* Smaller `iterations`: `100ms` is about 10x faster than `1s`, and use a number can skip the pilot stage.
+* Turning down `sample` and `warnup` can also reduce the number of times a function is called.
+* Set `evaluateOverhead` to `false` disables the overhead stage, which takes some time if the running time of the workload is close to the empty function.
