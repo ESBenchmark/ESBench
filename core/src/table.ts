@@ -58,9 +58,9 @@ export interface SummaryTableOptions {
 	 * @example
 	 *            "percentage"      "trend"       "value"
 	 *    time   | time.ratio | | time.ratio | | time.ratio |
-	 * 117.26 us |      0.00% | |    100.00% | |      1.00x | (baseline)
 	 * 274.14 us |   +133.79% | |    233.79% | |      2.34x |
 	 *  19.82 us |    -83.10% | |     16.90% | |      0.17x |
+	 * 117.26 us |   baseline | |   baseline | |   baseline |
 	 *
 	 * @default "percentage“
 	 */
@@ -74,28 +74,29 @@ function getMetrics(item: FlattedResult) {
 	return item[kProcessedMetrics] as Metrics;
 }
 
-function styleRatio(v: number, style: RatioStyle, meta: MetricMeta): ColoredValue {
-	if (!Number.isFinite(v)) {
-		return ["N/A", "blackBright"];
-	}
-	const color: ANSIColor | null = v === 1
-		? null : (v < 1 === meta.lowerIsBetter)
-			? "green" : "red";
+function styleRatio(v: number, p: number, style: RatioStyle, meta: MetricMeta): ColoredValue {
+	let text: string;
+	let x = v / p;
 
-	switch (style) {
-		case "trend":
-			return [`${(v * 100).toFixed(2)}%`, color];
-		case "value":
-			return [`${v.toFixed(2)}x`, color];
-		case "percentage":
-			v = (v - 1) * 100;
-			return [v > 0 ? `+${v.toFixed(2)}%` : `${v.toFixed(2)}%`, color];
+	if (p === 0) {
+		// Cannot divide by 0 to calculate the ratio, but it is still comparable.
+		text = v === 0 ? "equal" : v > p ? "greater" : "less";
+	} else if (style === "trend") {
+		text = `${(x * 100).toFixed(2)}%`;
+	} else if (style === "value") {
+		text = `${x.toFixed(2)}x`;
+	} else {
+		x = (x - 1) * 100;
+		text = x > 0 ? `+${x.toFixed(2)}%` : `${x.toFixed(2)}%`;
 	}
+
+	return [text, v === p ? null : (v < p === meta.lowerIsBetter) ? "green" : "red"];
 }
 
 export type CellValue = string | number | undefined;
 
 type CellColor = ANSIColor | null;
+
 type ColoredValue = CellValue | [CellValue, ANSIColor | null];
 
 interface ColumnFactory {
@@ -238,10 +239,7 @@ class BaselineColumn implements ColumnFactory {
 
 	private toNumber(data: FlattedResult) {
 		const metric = getMetrics(data)[this.meta.key];
-		if (Array.isArray(metric)) {
-			return mean(metric);
-		}
-		return typeof metric === "number" ? metric : 0;
+		return Array.isArray(metric) ? mean(metric) : metric as number;
 	}
 
 	prepare(cases: Iterable<FlattedResult>) {
@@ -254,10 +252,15 @@ class BaselineColumn implements ColumnFactory {
 	}
 
 	getValue(data: FlattedResult) {
-		const { ratio1, meta } = this;
-
-		const ratio = this.toNumber(data) / ratio1;
-		return styleRatio(ratio, this.style, meta);
+		const { variable, value, ratio1, meta, style } = this;
+		if (data[variable] === value) {
+			return "baseline";
+		}
+		const v = this.toNumber(data);
+		if (v === undefined || ratio1 === undefined) {
+			return;
+		}
+		return styleRatio(v, ratio1, style, meta);
 	}
 }
 
@@ -293,7 +296,7 @@ class DifferenceColumn implements ColumnFactory {
 		if (p === undefined || c === undefined) {
 			return;
 		}
-		return styleRatio(c / p, this.style, this.meta);
+		return styleRatio(c, p, this.style, this.meta);
 	}
 }
 

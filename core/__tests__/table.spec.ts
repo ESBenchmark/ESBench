@@ -97,15 +97,15 @@ it("should allow optional metrics value", () => {
 	});
 	expect(table.cells).toStrictEqual([
 		["No.", "Name", "time", "time.SD", "time.ratio"],
-		["0", "foo", undefined, undefined, "N/A"],
-		["1", "bar", 1.75, 0.4330127018922193, "N/A"],
+		["0", "foo", undefined, undefined, "baseline"],
+		["1", "bar", 1.75, 0.4330127018922193, undefined],
 	]);
 });
 
 it.each([
-	["percentage" as const, ["0.00%", "+100.00%", "-75.00%"]],
-	["value" as const, ["1.00x", "2.00x", "0.25x"]],
-	["trend" as const, ["100.00%", "200.00%", "25.00%"]],
+	["percentage" as const, ["baseline", "+100.00%", "-75.00%"]],
+	["value" as const, ["baseline", "2.00x", "0.25x"]],
+	["trend" as const, ["baseline", "200.00%", "25.00%"]],
 ])("should apply ratio style: %s", (style, values) => {
 	const table = SummaryTable.from([{
 		...resultStub,
