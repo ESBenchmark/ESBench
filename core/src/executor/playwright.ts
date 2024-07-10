@@ -7,14 +7,14 @@ import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { transformer } from "./transform.js";
-import { isolationHeaders } from "./web-remote.js";
+import { htmlEntryHeaders } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
 const baseURL = "http://localhost/";
 
 // noinspection HtmlRequiredLangAttribute,HtmlRequiredTitleElement
 export const blankPageResponse = {
-	headers: isolationHeaders,
+	headers: htmlEntryHeaders,
 	contentType: "text/html",
 	body: "<html><head></head><body></body></html>",
 };

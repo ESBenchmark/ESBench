@@ -28,7 +28,8 @@ const html = `<!DOCTYPE html>
 </html>`;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#security_requirements
-export const isolationHeaders = {
+export const htmlEntryHeaders = {
+	"Content-Type": "text/html",
 	"Cross-Origin-Opener-Policy": "same-origin",
 	"Cross-Origin-Embedder-Policy": "require-corp",
 };
@@ -152,7 +153,7 @@ export default class WebRemoteExecutor implements Executor {
 		// Page and the loader code.
 		switch (path) {
 			case "/":
-				return response.writeHead(200, isolationHeaders).end(html);
+				return response.writeHead(200, htmlEntryHeaders).end(html);
 			case "/_es-bench/loader.js":
 				return response
 					.writeHead(200, { "Content-Type": "text/javascript" })
