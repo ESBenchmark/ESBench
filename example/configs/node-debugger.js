@@ -1,4 +1,4 @@
-import * as readline from "readline";
+import { createInterface } from "readline";
 import { defineConfig, ProcessExecutor } from "esbench/host";
 import CDP from "chrome-remote-interface";
 
@@ -23,6 +23,18 @@ class NodeDebugExecutor extends ProcessExecutor {
 		return this.attach ? "debug-attach" : "debug";
 	}
 
+	close() {
+		super.close();
+
+		if (this.readline) {
+			// Defensive checks for possible changes to inspect output.
+			if (!this.attached) {
+				throw new Error("Debugger attached failed");
+			}
+			this.readline.close();
+		}
+	}
+
 	async postprocess(options) {
 		if (this.attach) {
 			this.attachDebugger();
@@ -31,14 +43,17 @@ class NodeDebugExecutor extends ProcessExecutor {
 	}
 
 	attachDebugger() {
-		const rl = readline.createInterface(this.process.stderr);
-		rl.on("line", async line => {
+		this.readline = createInterface(this.process.stderr);
+
+		this.readline.on("line", async line => {
 			if (line.endsWith("failed: address already in use")) {
 				console.error("Inspect failed: address already in use");
 				process.exit(3);
 			}
 			if (line.startsWith("Debugger listening on ")) {
-				rl.close();
+				this.readline.close();
+				this.attached = true;
+
 				const client = await CDP({ port: 33333 });
 				await client.Runtime.runIfWaitingForDebugger();
 				this.process.on("exit", () => client.close());
