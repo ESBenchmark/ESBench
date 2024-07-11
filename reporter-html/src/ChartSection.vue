@@ -78,6 +78,13 @@ function getPreviousPoints(meta: MetricMeta) {
 	return matches.value.map(v => getDataPoint(key, v && previous.find(v)));
 }
 
+/**
+ * Lookup the formatter for the type of metric, and attempts to
+ * scale data points to the appropriate units.
+ *
+ * Return a `FixedFormatter` if the formatter support scale values,
+ * otherwise it is a `MetricFormatter` instance.
+ */
 function scale(meta: MetricMeta, points: ChartDataPoint[]) {
 	const formatter = createFormatter(meta.format);
 	if (!formatter.fixed) {
@@ -157,11 +164,15 @@ function customTooltip(item: TooltipItem<"barWithErrorBars">) {
 	const point = data[item.dataIndex] as IErrorBarXYDataPoint;
 
 	if (!point) {
-		return console.log("No Point");
+		return console.log("No point for tooltip?");
+	}
+	const { y, yMin, yMax } = point;
+
+	let base = `${label}: ${y.toFixed(2)}`;
+	if (formatter.unit) {
+		base += " " + formatter.unit;
 	}
 
-	const { y, yMin, yMax } = point;
-	const base = `${label}: ${y.toFixed(2)} ${formatter.unit}`;
 	if (typeof yMin !== "number" || typeof yMax !== "number") {
 		return base;
 	}

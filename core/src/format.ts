@@ -45,7 +45,7 @@ export interface FormattedTable extends Array<string[]> {
 	toMarkdown(stringLength?: (s: string) => number): string;
 }
 
-export type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">
+export type ANSIColor = Exclude<ForegroundColorName, "gray" | "grey">;
 
 type Stainer = Record<ANSIColor, (str: string) => string> & {
 	(str: string): string;
@@ -62,9 +62,11 @@ const unitConvertors: Record<string, UnitConvertor> = {
 };
 
 export interface MetricFormatter {
-	format(value: CellValue): string;
+	unit?: string;
 
 	fixed?(values: CellValue[]): FixedFormatter;
+
+	format(value: CellValue): string;
 }
 
 export interface FixedFormatter {
@@ -77,17 +79,21 @@ export interface FixedFormatter {
 class CommonUnitFormatter implements MetricFormatter {
 
 	readonly convertor: UnitConvertor;
-	readonly rawUnit: string;
+	readonly unit: string;
 	readonly suffix: string;
 
-	constructor(rawUnit: string, suffix: string, convertor: UnitConvertor) {
-		this.rawUnit = rawUnit;
+	constructor(unit: string, suffix: string, convertor: UnitConvertor) {
+		if (unit === undefined) {
+			this.unit = convertor.units[0];
+		} else {
+			this.unit = unit;
+		}
 		this.suffix = suffix;
 		this.convertor = convertor;
 	}
 
 	fixed(values: CellValue[]) {
-		const { convertor, rawUnit, suffix } = this;
+		const { convertor, unit, suffix } = this;
 		const numbers: number[] = [];
 
 		for (const value of values) {
@@ -98,19 +104,19 @@ class CommonUnitFormatter implements MetricFormatter {
 					numbers.push(value);
 			}
 		}
-		const fixed = convertor.homogeneous(numbers, rawUnit);
+		const fixed = convertor.homogeneous(numbers, unit);
 		return new CommonUnitFixed(fixed, suffix);
 	}
 
 	format(value: CellValue) {
-		const { convertor, rawUnit, suffix } = this;
+		const { convertor, unit, suffix } = this;
 		switch (typeof value) {
 			case "string":
 				throw new TypeError(`Cannot apply number format to "${value}"`);
 			case "undefined":
 				return "";
 		}
-		const string = convertor.formatDiv(value, rawUnit);
+		const string = convertor.formatDiv(value, unit);
 		return separateThousand(string) + suffix;
 	}
 }
