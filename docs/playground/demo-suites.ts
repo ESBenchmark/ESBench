@@ -7,14 +7,14 @@ export interface SuiteInfo {
 	params: number;
 }
 
-// This file will be transformed by .vitepress/suite-loader.ts
+// This file will be processed by .vitepress/suite-loader.ts
 export default [] as SuiteInfo[];
 
-// Import syntax is used to leverage IDE's intellisense.
+// Use import syntax to leverage IDE's intellisense.
 import("../../example/es/nullish-operator.js", {
 	with: {
 		name: "?? vs ||",
-		description: "A simplest suite example",
+		description: "A simplest suite",
 	},
 });
 import("../../example/es/array-sort.js", {
@@ -36,10 +36,16 @@ import("../../example/es/url-canParse.js", {
 	},
 });
 import("../../example/es/setTimeout-throttling.js", {
-	with: { name: "setTimeout Throttling" },
+	with: {
+		name: "setTimeout Throttling",
+		description: "Find the minimum interval of setTimeout",
+	},
 });
-import("../../example/es/decode-base64.js", {
-	with: { name: "Decode base64 string" },
+import("../../example/es/object-iteration.js", {
+	with: {
+		name: "Iterate object entries",
+		description: "How well the engine optimizes object literals?",
+	},
 });
 import("../../example/es/string-join.js", {
 	with: {
@@ -57,7 +63,10 @@ import("../../example/es/deep-clone.js", {
 	with: { name: "Deep clone serializable object" },
 });
 import("../../example/es/array-set-includes.js", {
-	with: { name: "Array.includes vs Set.has" },
+	with: {
+		name: "Array.includes vs Set.has",
+		description: "How much faster is querying a collection than an array?",
+	},
 });
 import("../../example/es/array-fill-with-length.js", {
 	with: {
@@ -66,7 +75,10 @@ import("../../example/es/array-fill-with-length.js", {
 	},
 });
 import("../../example/es/array-sum.js", {
-	with: { name: "Sum using for-loop vs Array.reduce" },
+	with: {
+		name: "Sum using for-loop vs Array.reduce",
+		description: "Do for-of and Array.reduce() have performance overheads?",
+	},
 });
 
 import("../../example/web/query-selector.js", {
