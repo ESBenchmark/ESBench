@@ -2,8 +2,9 @@ import { env, execArgv } from "process";
 import { join, resolve } from "path";
 import { readFileSync } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
-import * as tsDirectly from "ts-directly";
+import * as tsdx from "ts-directly";
 import * as importParser from "es-module-lexer";
+import { Awaitable } from "@kaciras/utilities/node";
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
@@ -22,6 +23,23 @@ function parseJSCStack(line: string) {
 	return [line.slice(0, i), line.slice(i + 1)];
 }
 
+interface TransformAdapter {
+
+	compileTS(code: string, filename: string): Awaitable<string>;
+
+	resolve(specifier: string, parent: string): string;
+}
+
+const nodeAdapter: TransformAdapter = {
+	async compileTS(code: string, filename: string) {
+		return (await tsdx.transform(code, filename, "module")).source;
+	},
+	resolve(specifier: string, parent: string) {
+		// Require `--experimental-import-meta-resolve`
+		return fileURLToPath(import.meta.resolve(specifier, parent));
+	},
+};
+
 /**
  * ESBench's builtin module transformer, used for processing files to make them
  * executable in browser. it performs:
@@ -33,8 +51,8 @@ function parseJSCStack(line: string) {
  * To enable the transformer in Node, you need a flag `--experimental-import-meta-resolve`.
  */
 export const transformer = {
-	// Bun has `Bun.resolveSync`, but it's not compatibility with playwright.
-	enabled: hasFlag("--experimental-import-meta-resolve"),
+
+	adapter: hasFlag("--experimental-import-meta-resolve") ? nodeAdapter : null,
 
 	/**
 	 * Get the file path of the import, or undefined if resolving is
@@ -44,7 +62,7 @@ export const transformer = {
 	 * @param path The pathname of the request.
 	 */
 	parse(root: string, path: string) {
-		if (!this.enabled) {
+		if (!this.adapter) {
 			return;
 		}
 		if (path.startsWith("/@fs/")) {
@@ -69,14 +87,9 @@ export const transformer = {
 		let code = readFileSync(path, "utf8");
 
 		if (/tsx?$/.test(path)) {
-			code = (await tsDirectly.transform(code, path, "module")).source;
+			code = await this.adapter!.compileTS(code, path);
 		}
 		return this.transformImports(code, path);
-	},
-
-	// Require `--experimental-import-meta-resolve`
-	resolve(specifier: string, parent: string) {
-		return fileURLToPath(import.meta.resolve(specifier, parent));
 	},
 
 	// NOTE: Breaks the source map.
@@ -90,7 +103,7 @@ export const transformer = {
 			if (!n) {
 				continue;
 			}
-			let path = this.resolve(n, importer);
+			let path = this.adapter!.resolve(n, importer);
 			path = `/@fs/${path.replaceAll("\\", "/")}`;
 
 			const trim = t === 2 ? 1 : 0;
@@ -127,7 +140,7 @@ export const transformer = {
 			if (pos.startsWith(origin)) {
 				pos = pos.slice(origin.length + 1);
 
-				if (this.enabled && pos.startsWith("@fs/")) {
+				if (this.adapter && pos.startsWith("@fs/")) {
 					pos = pos.slice(4);
 				} else {
 					pos = resolve(root, pos);

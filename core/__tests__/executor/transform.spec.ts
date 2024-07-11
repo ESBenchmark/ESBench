@@ -2,10 +2,12 @@ import { pathToFileURL } from "url";
 import { resolve, sep } from "path";
 import { readFileSync } from "fs";
 import { describe, expect, it, vi } from "vitest";
-import { transform } from "ts-directly";
 import { transformer } from "../../src/executor/transform.ts";
 
-vi.mock("ts-directly");
+const mockAdapter = {
+	compileTS: vi.fn(() => "foobar"),
+	resolve: vi.fn(() => "foobar.js"),
+};
 
 const importerURL = pathToFileURL("module.js").href;
 
@@ -66,7 +68,7 @@ it.each(stacks)("should convert error stack of $type", input => {
 
 it("should resolve transformed import paths in error stack", () => {
 	const instance = Object.create(transformer);
-	instance.enabled = true;
+	instance.adapter = mockAdapter;
 
 	const error = {
 		message: "the message",
@@ -80,7 +82,7 @@ it("should resolve transformed import paths in error stack", () => {
 
 describe("transformer", () => {
 	const instance = Object.create(transformer) as typeof transformer;
-	instance.enabled = true;
+	instance.adapter = mockAdapter;
 
 	it("should not parse imports if transform disabled", () => {
 		expect(transformer.parse("root", "/index.js")).toBeUndefined();
@@ -98,22 +100,13 @@ describe("transformer", () => {
 
 	it("should compile TS", async () => {
 		const path = import.meta.filename;
-		vi.mocked(transform).mockResolvedValue({
-			format: "module",
-			source: "foobar",
-			shortCircuit: true,
-		});
-
-		const code = await transformer.load(path);
+		const code = await instance.load(path);
 
 		expect(code).toBe("foobar");
-		expect(transform).toHaveBeenCalledWith(readFileSync(path, "utf8"), path, "module");
+		expect(mockAdapter.compileTS).toHaveBeenCalledWith(readFileSync(path, "utf8"), path);
 	});
 
 	it("should replace imports", () => {
-		const mock = vi.spyOn(instance, "resolve");
-		mock.mockReturnValue("foobar.js");
-
 		const code = `\
 			import x from "./x.js";
 			const y = import(window.main);
@@ -126,8 +119,8 @@ describe("transformer", () => {
 			const y = import(window.main);
 			const z = import("/@fs/foobar.js");
 		`);
-		expect(mock).toHaveBeenNthCalledWith(1, "y", importerURL);
-		expect(mock).toHaveBeenNthCalledWith(2, "./x.js", importerURL);
+		expect(mockAdapter.resolve).toHaveBeenNthCalledWith(1, "y", importerURL);
+		expect(mockAdapter.resolve).toHaveBeenNthCalledWith(2, "./x.js", importerURL);
 	});
 
 	it("should throw ENOENT when file not found", async () => {
