@@ -54,17 +54,18 @@ function getDataPoint(name: string, result?: FlattedResult) {
 	}
 	const value = Summary.getMetrics(result)[name];
 	switch (typeof value) {
-		case "undefined":
-		case "string":
-			return { y: 0 };
 		case "number":
 			return { y: value };
+		case "undefined":
+			return { y: 0 };
+		case "object":
+			return {
+				y: mean(value),
+				yMin: Math.min(...value),
+				yMax: Math.max(...value),
+			};
 	}
-	return {
-		y: mean(value),
-		yMin: Math.min(...value),
-		yMax: Math.max(...value),
-	};
+	throw new TypeError("Cannot draw string to chart");
 }
 
 function getPreviousPoints(meta: MetricMeta) {
