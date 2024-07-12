@@ -103,6 +103,8 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 
 /**
  * Benchmark on any device that has HTTP access to the machine!
+ *
+ * @see https://esbench.vercel.app/guide/toolchains#webremoteexecutor
  */
 export default class WebRemoteExecutor implements Executor {
 

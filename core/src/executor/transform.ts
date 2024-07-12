@@ -42,16 +42,18 @@ const nodeAdapter: TransformAdapter = {
 
 /**
  * ESBench's builtin module transformer, used for processing files to make them
- * executable in browser. it performs:
+ * executable in browser, it performs:
  *
  * - Compile TS code to JS code.
  * - Resolve file imports to absolute path.
  *
  * This transformer can work with builders.
- * To enable the transformer in Node, you need a flag `--experimental-import-meta-resolve`.
+ *
+ * @see https://esbench.vercel.app/guide/toolchains#built-in-transformer
  */
 export const transformer = {
 
+	// null means transformation disabled.
 	adapter: hasFlag("--experimental-import-meta-resolve") ? nodeAdapter : null,
 
 	/**
@@ -94,7 +96,6 @@ export const transformer = {
 
 	// NOTE: Breaks the source map.
 	transformImports(code: string, filename: string) {
-		// Currently `import.meta.resolve` does not work well with URL parent.
 		const importer = pathToFileURL(filename).href;
 		const [imports] = importParser.parse(code);
 

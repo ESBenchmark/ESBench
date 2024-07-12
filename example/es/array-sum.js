@@ -1,8 +1,9 @@
 import { defineSuite } from "esbench";
 
 export default defineSuite({
+	baseline: { type: "Name", value: "For-index" },
 	params: {
-		length: [1, 1000],
+		length: [1, 10_000],
 	},
 	setup(scene) {
 		const { length } = scene.params;

@@ -61,13 +61,12 @@ export interface RunSuiteResult {
 
 export interface RunSuiteOption {
 	/**
-	 * A function that intercepts log messages.
-	 * If not supplied, logs are printed to the console.
+	 * A function that intercepts log messages. If not supplied, logs are printed to the console.
 	 */
 	log?: LogHandler;
 
 	/**
-	 * Run benchmark with names matching the Regex pattern.
+	 * Run benchmark cases with names matching the Regex pattern.
 	 */
 	pattern?: RegExp;
 }
@@ -115,6 +114,8 @@ function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
 
 /**
  * Run a benchmark suite.
+ *
+ * @see https://esbench.vercel.app/api/runner
  */
 export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {}) {
 	const suite = normalizeSuite(userSuite);

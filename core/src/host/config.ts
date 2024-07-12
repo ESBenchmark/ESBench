@@ -10,6 +10,8 @@ import textReporter from "../reporter/text.js";
 export interface ESBenchConfig {
 	/**
 	 * Which files will be run as benchmark suites uses which toolchains.
+	 *
+	 * @see https://esbench.vercel.app/guide/toolchains
 	 */
 	toolchains?: ToolchainOptions[];
 

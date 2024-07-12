@@ -225,6 +225,12 @@ export class Summary {
 		return this.table[this.getIndex(variables)];
 	}
 
+	/**
+	 * Lists the results of all the values of a variable when other variables have the specified values.
+	 *
+	 * @param constants Control variables.
+	 * @param variable Name of the changed variable.
+	 */
 	findAll(constants: Record<string, string>, variable: string) {
 		const values = this.vars.get(variable);
 		if (!values) {

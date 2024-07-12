@@ -1,7 +1,7 @@
 import { defineSuite } from "esbench";
 
 /**
- *
+ * Any performance difference between clear and create to reset a list?
  */
 export default defineSuite({
 	params: {

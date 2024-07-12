@@ -46,6 +46,8 @@ export class BenchCase {
 
 	/**
 	 * Call the workload and each iteration hook once.
+	 *
+	 * The returned value is always awaited even if `isAsync` is false.
 	 */
 	async invoke(): Promise<any> {
 		await runFns(this.beforeHooks);
@@ -200,6 +202,7 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	 * true is equivalent to not specifying the option and will always choose the default value.
 	 *
 	 * @default true
+	 * @see https://esbench.vercel.app/guide/time-profiler
 	 */
 	timing?: boolean | TimeProfilerOptions;
 
@@ -208,14 +211,20 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	 * If set, all scenes and their cases will be run once to ensure no exceptions.
 	 *
 	 * Additional checks can be configured in the options.
+	 *
+	 * @see https://esbench.vercel.app/guide/validation
 	 */
 	validate?: ValidateOptions<SceneParams<T>>;
 
 	/**
-	 * you can specify set of values. As a result, you will get results for each combination of params values.
+	 * you can specify set of values. As a result, you will get results
+	 * for each combination of params values.
+	 *
 	 * If not specified, or it is an empty object, the suite will have one scene with empty params.
 	 *
 	 * The keys for the suite parameters must be the same under all toolchains.
+	 *
+	 * @see https://esbench.vercel.app/guide/parameterization
 	 */
 	params?: T;
 
@@ -223,12 +232,14 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	 * Mark a variable as a baseline to scale your results.
 	 *
 	 * @example
-	 * // The result with baseline: { type: "Name", value: "map" }
+	 * // The result with baseline: { type: "Name", value: "For-index" }
 	 * | No. |         Name |      time | time.ratio |
 	 * | --: | -----------: | --------: | ---------: |
-	 * |   0 |    For-index |  11.39 us |      1.00x |
+	 * |   0 |    For-index |  11.39 us |   baseline |
 	 * |   1 |       For-of |  27.36 us |      2.40x |
 	 * |   2 | Array.reduce |   1.99 us |      0.17x |
+	 *
+	 * @see https://esbench.vercel.app/guide/comparison#baseline
 	 */
 	baseline?: BaselineOptions;
 }

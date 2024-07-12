@@ -10,7 +10,7 @@ const result = await runSuite(suite);
 // Convert the result to a table.
 const summaryTable = SummaryTable.from([result]);
 
-// Format and print the table.
+// Format and print the table as Markdown.
 console.log("\n" + summaryTable.format().toMarkdown());
 
 // Print additional information.

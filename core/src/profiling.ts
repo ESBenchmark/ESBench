@@ -20,6 +20,9 @@ const consoleLogHandler: LogHandler = (message = "", level) => console[level](me
  */
 export type Metrics = Record<string, number | number[] | string | undefined>;
 
+/**
+ * Bench cases in the scene with their metrics.
+ */
 export type SceneResult = Record<string, Metrics>;
 
 export enum MetricAnalysis {
@@ -50,8 +53,8 @@ export interface MetricMeta {
 	key: string;
 
 	/**
-	 * Specific the format when this metric displayed as text.
-	 * This option is ignored if the value is a string.
+	 * Specific the format when this metric displayed as text (numeric metric only).
+	 * If not defined, the value will be converted using `.toString`.
 	 *
 	 * @example
 	 * "{duration.ms}" // The metric is millisecond and should be formatted as duration.
@@ -60,7 +63,7 @@ export interface MetricMeta {
 	format?: string;
 
 	/**
-	 * Control which metrics can be derived from this.
+	 * Control which metrics can be derived from this (numeric metric only).
 	 *
 	 * @default MetricAnalysis.None
 	 */

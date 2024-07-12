@@ -55,7 +55,6 @@ const client: any = new AsyncFunction("args", `\
 
 /**
  * Run suites on browser with Playwright driver.
- * Requires "playwright-core" or "playwright" installed.
  *
  * ESBench does not download browsers by default, you may need to specific
  * `executablePath` or run `npx playwright install`.

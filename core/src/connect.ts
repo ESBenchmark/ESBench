@@ -27,9 +27,9 @@ type LogMessage = { log?: string; level: LogType };
  * Some types of objects that need to be sent to the host.
  *
  * How to detect the type:
+ * - "scenes" in message: it's a ToolchainResult.
  * - "e" in message: it's an ErrorMessage.
  * - "level" in message: it's a LogMessage.
- * - else it is a ToolchainResult.
  */
 export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
 

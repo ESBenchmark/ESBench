@@ -8,7 +8,7 @@
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.2",
 		"chrome-remote-interface": "^0.33.2",
-		"esbench": "workspace:^",
+		"esbench": "workspace:*",
 		"playwright": "^1.45.0"
 	},
 	"devDependencies": {

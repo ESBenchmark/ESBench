@@ -1,7 +1,6 @@
 import {
 	defineConfig,
 	inProcessExecutor,
-	ProcessExecutor,
 	PlaywrightExecutor,
 	rawReporter,
 	textReporter,
@@ -47,7 +46,8 @@ export default defineConfig({
 
 			// More JS runtimes, you need install them manually.
 			// new ProcessExecutor("bun"),
-			// TODO: https://github.com/denoland/deno/issues/18192
+
+			// TODO: Could not find package.json with name 'esbench' in workspace.
 			// new ProcessExecutor("deno run --allow-net"),
 		],
 	}, {
