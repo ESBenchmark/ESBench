@@ -15,6 +15,7 @@ chalk.level = 1;
 export type PartialSuite<T extends CPSrcObject = any> = Partial<BenchmarkSuite<T>>;
 
 export const resultStub: ToolchainResult = {
+	name: "suite.js",
 	paramDef: [],
 	notes: [],
 	meta: {

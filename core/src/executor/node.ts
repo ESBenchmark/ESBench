@@ -5,8 +5,7 @@ import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
 // Resolve the filename to generated JS for test.
-let __filename = fileURLToPath(import.meta.url);
-__filename = join(__filename, "../../../lib/executor/node.js");
+const __filename = join(fileURLToPath(import.meta.url), "../../../lib/executor/node.js");
 
 type NodeExecutorOptions = Pick<ForkOptions, "execPath" | "execArgv" | "env">;
 

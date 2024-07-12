@@ -1,6 +1,12 @@
 import { expect, it } from "vitest";
 import { SummaryTable } from "../src/table.ts";
 import { resultStub } from "./helper.ts";
+import { createFormatter } from "../src/format.ts";
+
+it("should throw error if no formatter found for the template", () => {
+	expect(() => createFormatter("{INVALID}"))
+		.toThrow('Metric type: "INVALID" does not have convertor');
+});
 
 it("should format undefined values in the table", () => {
 	const table = SummaryTable.from([{
