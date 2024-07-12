@@ -257,12 +257,13 @@ onMounted(async () => {
 		}
 	} else if (demo) {
 		const info = demos.find(i => i.path === demo);
-		if (!info) {
-			return push.error({ message: `Demo "${demo}" does not exist` });
+		if (info) {
+			value = info.code;
+			executor.value = info.path.startsWith("web")
+				? executeIFrame : executeWorker;
+		} else {
+			push.error({ message: `Demo "${demo}" does not exist` });
 		}
-		value = info.code;
-		executor.value = info.path.startsWith("web")
-			? executeIFrame : executeWorker;
 	}
 
 	editor = monaco.editor.create(editorEl.value!, {
@@ -348,7 +349,7 @@ onMounted(async () => {
 
 .start {
 	composes: toolButton;
-	background: #07b00a;
+	background: #08a813;
 }
 
 .stop {

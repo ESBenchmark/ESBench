@@ -19,8 +19,9 @@
 		:prev='previous'
 	/>
 
-	<main v-else>
-		<h1 :class='$style.error'>Suite Not Found</h1>
+	<main v-else :class='$style.error'>
+		<h1>Suite Not Found</h1>
+		"{{ initName }}" does not exist in the results.
 	</main>
 </template>
 
@@ -77,8 +78,8 @@ body {
 }
 
 .nav {
-    width: 320px;
-    background: #f6f6f7;
+	width: 320px;
+	background: #f6f6f7;
 	overflow-y: scroll;
 
 	& > h1 {
@@ -87,27 +88,32 @@ body {
 }
 
 .report {
-    flex: 1;
-    margin-left: 20px;
+	flex: 1;
+	margin-left: 20px;
 }
 
 .link {
-    display: block;
+	display: block;
 	padding: 6px 20px;
-    text-decoration: none;
-    color: inherit;
+	text-decoration: none;
+	color: inherit;
 	transition: background-color 0.15s;
 
 	&:hover, :focus-visible {
-		background: rgba(0,0,0,0.05);
+		background: rgba(0, 0, 0, 0.05);
 	}
 }
 
 .active {
-    color: #0077ff;
+	color: #0077ff;
 }
 
 .error {
-    color: #ef4848;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	color: #e34349;
 }
 </style>
