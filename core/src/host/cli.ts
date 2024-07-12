@@ -48,7 +48,8 @@ const program = yargs(hideBin(process.argv))
 			description: "Log level (debug | info | warn | error | off)",
 		},
 		tag: {
-			type: "array",
+			type: "string",
+			array: true,
 			description: "Add variables to the results",
 		},
 		file: {
@@ -83,10 +84,10 @@ const program = yargs(hideBin(process.argv))
 			cfgObj.logLevel = logLevel;
 		}
 
-		cfgObj.tags ??= {};
-		for (const item of tag as string[]) {
-			const [k, v] = item.split(":", 2);
-			cfgObj.tags[k] = v;
+		if (tag) {
+			cfgObj.tags ??= {};
+			tag.map(i => i.split(":", 2))
+				.forEach(([k, v]) => cfgObj.tags[k] = v);
 		}
 
 		return start(cfgObj, filter);
