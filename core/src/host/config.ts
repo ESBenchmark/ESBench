@@ -45,6 +45,12 @@ export interface ESBenchConfig {
 	diff?: string | null;
 
 	/**
+	 * Defines a set of labels that will be added as variables to the
+	 * results of all suites, effective only for the start command.
+	 */
+	tags?: Record<string, string>;
+
+	/**
 	 * Configure reporters for processing benchmark results.
 	 *
 	 * @default [

@@ -11,6 +11,7 @@ export interface ToolchainResult extends RunSuiteResult {
 	name?: string;
 	builder?: string;
 	executor?: string;
+	tags?: Record<string, string>;
 }
 
 /**

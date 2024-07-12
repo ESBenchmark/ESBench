@@ -113,6 +113,7 @@ async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
 					...record,
 					executor: job.name,
 					builder: build.name,
+					tags: context.config.tags,
 				});
 			}
 		}

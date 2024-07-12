@@ -15,6 +15,15 @@ describe("constructor", () => {
 		const summary = new Summary(result);
 		expect(summary.notes[0].case).toBe(summary.results[0]);
 	});
+
+	it("should add tags to variables", () => {
+		const summary = new Summary([{
+			...result[0],
+			tags: { foo: "bar" },
+		}]);
+		expect(summary.vars.get("foo")).toStrictEqual(new Set(["bar"]));
+		expect(summary.results[0]).toHaveProperty("foo", "bar");
+	});
 });
 
 describe("sort", () => {

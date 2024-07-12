@@ -47,6 +47,10 @@ const program = yargs(hideBin(process.argv))
 			type: "string",
 			description: "Log level (debug | info | warn | error | off)",
 		},
+		tag: {
+			type: "array",
+			description: "Add variables to the results",
+		},
 		file: {
 			type: "string",
 			description: "Run only suites that contains the value in their paths",
@@ -68,15 +72,23 @@ const program = yargs(hideBin(process.argv))
 			description: "Execute suites in a specified shard",
 		},
 	}, async args => {
-		const { config, logLevel, ...filter } = args;
+		const { config, logLevel, tag, ...filter } = args;
 		if (args.loader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		let cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
 		cfgObj ??= {};
+
 		if (logLevel) {
 			cfgObj.logLevel = logLevel;
 		}
+
+		cfgObj.tags ??= {};
+		for (const item of tag as string[]) {
+			const [k, v] = item.split(":", 2);
+			cfgObj.tags[k] = v;
+		}
+
 		return start(cfgObj, filter);
 	});
 

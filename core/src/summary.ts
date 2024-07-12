@@ -81,7 +81,7 @@ export class Summary {
 	}
 
 	private addResult(result: ToolchainResult) {
-		const { executor, builder, paramDef, scenes, notes } = result;
+		const { executor, builder, paramDef, scenes, notes, tags = {} } = result;
 		const offset = this.results.length;
 		const iter = cartesianObject(paramDef)[Symbol.iterator]();
 
@@ -93,6 +93,9 @@ export class Summary {
 		}
 		for (const [key, values] of paramDef) {
 			this.addToVar(key, ...values);
+		}
+		for (const [key, value] of Object.entries(tags)) {
+			this.addToVar(key, value);
 		}
 
 		for (const [k, v] of Object.entries(result.meta)) {
@@ -111,6 +114,7 @@ export class Summary {
 					Executor: executor,
 					Builder: builder,
 					...params,
+					...tags,
 					[kMetrics]: metrics,
 				};
 				this.results.push(flatted);
