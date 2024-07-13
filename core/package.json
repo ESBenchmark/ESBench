@@ -42,7 +42,7 @@
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {
-		"@types/picomatch": "^2.3.4",
+		"@types/picomatch": "^3.0.0",
 		"@types/yargs": "^17.0.32",
 		"playwright-core": "^1.45.0"
 	},

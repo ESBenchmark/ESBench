@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.2",
-		"@tabler/icons-vue": "^3.9.0",
+		"@tabler/icons-vue": "^3.10.0",
 		"@vueuse/core": "^10.11.0",
 		"chart.js": "^4.4.3",
 		"chartjs-chart-error-bars": "^4.4.1",
