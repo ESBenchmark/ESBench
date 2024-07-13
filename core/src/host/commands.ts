@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, rmSync } from "fs";
 import { performance } from "perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
+import glob from "fast-glob";
 import JobGenerator, { BuildResult, Job } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver } from "../connect.js";
@@ -18,8 +19,9 @@ function loadResults(path: string, throwIfMissing: boolean) {
 	}
 }
 
-export async function report(config: ESBenchConfig, files: string[]) {
+export async function report(config: ESBenchConfig, patterns: string[]) {
 	const context = new HostContext(config);
+	const files = glob.sync(patterns);
 
 	const { reporters, diff } = context.config;
 	const result = loadResults(files[0], true);

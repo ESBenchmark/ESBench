@@ -3,7 +3,7 @@ import { noop } from "@kaciras/utilities/node";
 import { report, start } from "../../src/host/commands.ts";
 import JobGenerator from "../../src/host/toolchain.ts";
 import { resultStub } from "../helper.ts";
-import result1And2 from "../fixtures/merge-1+2.json" with { type: " json" };
+import result1And2 from "../fixtures/merged-1+2.json" with { type: " json" };
 import { HostContext } from "../../src/host/index.ts";
 
 it("should merge results", async () => {
@@ -12,8 +12,7 @@ it("should merge results", async () => {
 	await report({
 		reporters: [mockReporter],
 	}, [
-		"__tests__/fixtures/merge-1.json",
-		"__tests__/fixtures/merge-2.json",
+		"__tests__/fixtures/merge-*.json",
 	]);
 
 	const { calls } = mockReporter.mock;
