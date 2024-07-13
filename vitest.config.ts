@@ -13,6 +13,7 @@ export default defineConfig({
 				singleThread: true,
 			},
 		},
+		pool: "threads",
 		coverage: {
 			reporter: ["lcovonly"],
 			provider: "v8",
