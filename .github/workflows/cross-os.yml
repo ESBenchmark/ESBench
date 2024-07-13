@@ -1,0 +1,59 @@
+name: Cross OS Example
+
+on: [push]
+
+jobs:
+  run:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: true
+
+      - run: pnpm run build
+
+      - run: pnpm exec esbench --file node/read-file.ts
+        working-directory: example
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.os }}
+          path: example/reports/benchmark.json
+
+  report:
+    runs-on: ubuntu-latest
+    needs: run
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: true
+
+      - run: pnpm run build
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: example/reports
+          pattern: result-*
+
+      - run: pnpm exec esbench report reports/result-*.json
+        working-directory: example
