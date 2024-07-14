@@ -19,19 +19,19 @@ const program = yargs(hideBin(process.argv))
 			description: "Enable builtin TypeScript loader hooks",
 			default: true,
 		},
-		files: {
+		patterns: {
 			type: "string",
 			description: "Glob patterns for files to load",
 			array: true,
 			demandOption: true,
 		},
 	}, async args => {
-		const { config, files } = args;
+		const { config, patterns } = args;
 		if (args.loader) {
 			nodeModule.register?.("ts-directly", import.meta.url);
 		}
 		const cfgObj = await importCWD(config, [DEFAULT_CONFIG_FILE]);
-		return report(cfgObj ?? {}, files);
+		return report(cfgObj ?? {}, patterns);
 	})
 	.command("*", "Run benchmark", {
 		config: {

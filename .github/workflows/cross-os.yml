@@ -29,7 +29,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: result-${{ matrix.os }}
+          name: result-${{ matrix.os }}.json
           path: example/reports/benchmark.json
 
   report:
