@@ -54,6 +54,7 @@ jobs:
         with:
           path: example/reports
           pattern: result-*
+          merge-multiple: true
 
-      - run: node ../core/lib/host/cli.js report reports/result-*.json
+      - run: node ../core/lib/host/cli.js report reports/*.json
         working-directory: example
