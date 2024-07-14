@@ -23,6 +23,10 @@ export async function report(config: ESBenchConfig, patterns: string[]) {
 	const context = new HostContext(config);
 	const files = glob.sync(patterns);
 
+	if (files.length === 0) {
+		throw new Error("No file match the glob patterns.");
+	}
+
 	const { reporters, diff } = context.config;
 	const result = loadResults(files[0], true);
 
@@ -52,7 +56,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const jobs = await JobGenerator.generate(context);
 
 	if (jobs.length === 0) {
-		return context.warn("\nNo files match the includes, please check your config.");
+		return context.warn("\nNo file match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	context.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
