@@ -24,7 +24,7 @@ jobs:
 
       - run: pnpm run build
 
-      - run: pnpm exec esbench --file node/read-file.ts
+      - run: node ../core/lib/host/cli.js --file node/read-file.ts
         working-directory: example
 
       - uses: actions/upload-artifact@v4
@@ -55,5 +55,5 @@ jobs:
           path: example/reports
           pattern: result-*
 
-      - run: pnpm exec esbench report reports/result-*.json
+      - run: node ../core/lib/host/cli.js report reports/result-*.json
         working-directory: example
