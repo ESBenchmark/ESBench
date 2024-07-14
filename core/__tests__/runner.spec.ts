@@ -85,7 +85,7 @@ it("should call lifecycle hooks", async () => {
 
 it.each([
 	[{ type: "Name", value: 11 }, "Value of baseline (Name) must be a string"],
-	[{ type: "foo", value: 22 }, "Baseline (foo) does not in params"],
+	[{ type: "tag", value: 22 }, "Value of the host-side variable (tag) must be a string"],
 	[{ type: "bar", value: 11 }, "Baseline value (11) does not in params[bar]"],
 ])("should check parameter baseline %#", async (baseline, error) => {
 	const promise = runSuite({

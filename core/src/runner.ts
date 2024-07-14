@@ -102,7 +102,11 @@ function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
 
 	const i = params.findIndex(e => e[0] === type);
 	if (i === -1) {
-		throw new Error(`Baseline (${type}) does not in params`);
+		// Maybe a tag, we cannot known the name in the runner.
+		if (typeof value === "string") {
+			return baseline as ResultBaseline;
+		}
+		throw new Error(`Value of the host-side variable (${type}) must be a string`);
 	}
 
 	const k = params[i][1].indexOf(value);
