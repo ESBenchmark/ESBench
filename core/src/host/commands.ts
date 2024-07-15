@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, rmSync } from "fs";
-import { performance } from "perf_hooks";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { performance } from "node:perf_hooks";
 import { durationFmt } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import JobGenerator, { BuildResult, Job } from "./toolchain.js";

@@ -1,5 +1,5 @@
-import { readFileSync } from "fs";
-import { brotliCompressSync, brotliDecompressSync, deflateSync, gzipSync, inflateSync, unzipSync } from "zlib";
+import { readFileSync } from "node:fs";
+import { brotliCompressSync, brotliDecompressSync, deflateSync, gzipSync, inflateSync, unzipSync } from "node:zlib";
 import { defineSuite, ExecutionTimeMeasurement, MetricAnalysis, Profiler } from "esbench";
 
 const data = readFileSync("../pnpm-lock.yaml");

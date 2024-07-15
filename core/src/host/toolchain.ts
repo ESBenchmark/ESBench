@@ -1,6 +1,6 @@
-import { cwd } from "process";
-import { basename, join, relative } from "path";
-import { mkdtempSync } from "fs";
+import { cwd } from "node:process";
+import { basename, join, relative } from "node:path";
+import { mkdtempSync } from "node:fs";
 import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import { HostContext } from "./context.js";

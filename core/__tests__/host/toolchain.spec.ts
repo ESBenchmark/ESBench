@@ -1,6 +1,6 @@
-import { join, resolve } from "path";
-import { mkdtempSync } from "fs";
-import { tmpdir } from "os";
+import { join, resolve } from "node:path";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { noop } from "@kaciras/utilities/browser";
 import { expect, it, vi } from "vitest";
 import inProcess from "../../src/executor/in-process.ts";

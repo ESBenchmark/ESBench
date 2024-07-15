@@ -1,4 +1,4 @@
-import nodeModule from "module";
+import nodeModule from "node:module";
 import { importCWD } from "@kaciras/utilities/node";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";

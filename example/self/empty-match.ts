@@ -1,4 +1,4 @@
-import { randomFillSync } from "crypto";
+import { randomFillSync } from "node:crypto";
 import { defineSuite } from "esbench";
 
 const re = new RegExp("");

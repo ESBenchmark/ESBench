@@ -1,6 +1,6 @@
-import { mkdtempSync, readFileSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { expect, it } from "vitest";
 import reporter from "../../src/reporter/html.ts";
 import { resultStub } from "../helper.ts";

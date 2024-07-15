@@ -1,6 +1,6 @@
-import { pathToFileURL } from "url";
-import { resolve, sep } from "path";
-import { readFileSync } from "fs";
+import { pathToFileURL } from "node:url";
+import { resolve, sep } from "node:path";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { transformer } from "../../src/executor/transform.ts";
 

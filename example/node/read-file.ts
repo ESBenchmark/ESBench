@@ -1,5 +1,5 @@
-import { readFileSync } from "fs";
-import { readFile } from "fs/promises";
+import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { defineSuite } from "esbench";
 
 const filename = "../pnpm-lock.yaml";

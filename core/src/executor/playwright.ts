@@ -1,7 +1,7 @@
 import type { BrowserContext, BrowserType, LaunchOptions, Route } from "playwright-core";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";

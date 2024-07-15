@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from "fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { Awaitable, CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 import chalk from "chalk";

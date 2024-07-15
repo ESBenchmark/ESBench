@@ -1,6 +1,6 @@
-import { fileURLToPath, pathToFileURL } from "url";
-import { dirname, join } from "path";
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { Reporter } from "../host/config.js";
 import { ESBenchResult } from "../connect.js";
 

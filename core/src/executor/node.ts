@@ -1,6 +1,6 @@
-import { fileURLToPath, pathToFileURL } from "url";
-import { join } from "path";
-import { ChildProcess, fork, ForkOptions } from "child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { join } from "node:path";
+import { ChildProcess, fork, ForkOptions } from "node:child_process";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 

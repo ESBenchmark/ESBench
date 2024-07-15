@@ -1,7 +1,7 @@
-import { env, execArgv } from "process";
-import { join, resolve } from "path";
-import { readFileSync } from "fs";
-import { fileURLToPath, pathToFileURL } from "url";
+import { env, execArgv } from "node:process";
+import { join, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import * as tsdx from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { Awaitable } from "@kaciras/utilities/node";

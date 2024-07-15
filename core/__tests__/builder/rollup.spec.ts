@@ -1,7 +1,7 @@
-import { mkdtempSync, readFileSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
-import { pathToFileURL } from "url";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
 import { NormalizedInputOptions } from "rollup";
 import { expect, it, vi } from "vitest";
 import { UserConfig } from "vite";

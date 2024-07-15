@@ -1,7 +1,7 @@
-import { createWriteStream } from "fs";
-import { stdout } from "process";
-import { Writable } from "stream";
-import { once } from "events";
+import { createWriteStream } from "node:fs";
+import { stdout } from "node:process";
+import { Writable } from "node:stream";
+import { once } from "node:events";
 import stringLength from "string-width";
 import chalk, { Chalk } from "chalk";
 import { ESBenchResult } from "../connect.js";

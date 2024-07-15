@@ -1,4 +1,4 @@
-import { setPriority } from "os";
+import { setPriority } from "node:os";
 import { defineConfig, ProcessExecutor, SuiteTask } from "esbench/host";
 
 /*

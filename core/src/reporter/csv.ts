@@ -1,7 +1,7 @@
-import { createWriteStream, mkdirSync, WriteStream } from "fs";
-import { finished } from "stream";
-import { promisify } from "util";
-import { dirname } from "path";
+import { createWriteStream, mkdirSync, WriteStream } from "node:fs";
+import { finished } from "node:stream";
+import { promisify } from "node:util";
+import { dirname } from "node:path";
 import { Reporter } from "../host/config.js";
 import { SummaryTable, SummaryTableOptions } from "../table.js";
 

@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 import { afterAll, expect, it, vi } from "vitest";
 import { chromium } from "playwright-core";
 import WebRemoteExecutor from "../../src/executor/web-remote.ts";

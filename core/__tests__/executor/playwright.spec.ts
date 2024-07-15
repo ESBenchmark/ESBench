@@ -1,8 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { chromium, firefox, webkit } from "playwright-core";
 import { executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
-import { readFileSync } from "fs";
 import { transformer } from "../../src/executor/transform.ts";
 
 it.each([

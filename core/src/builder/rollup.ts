@@ -1,7 +1,7 @@
 import type { RollupOptions } from "rollup";
 import type { InlineConfig, Plugin } from "vite";
-import { isBuiltin } from "module";
-import { resolve } from "path";
+import { isBuiltin } from "node:module";
+import { resolve } from "node:path";
 import { simpleLoader } from "./default.js";
 import { Builder } from "../host/toolchain.js";
 

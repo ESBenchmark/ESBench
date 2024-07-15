@@ -1,4 +1,4 @@
-import { createInterface } from "readline";
+import { createInterface } from "node:readline";
 import { defineConfig, ProcessExecutor } from "esbench/host";
 import CDP from "chrome-remote-interface";
 

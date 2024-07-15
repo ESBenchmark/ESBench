@@ -1,4 +1,4 @@
-import nodeModule from "module";
+import nodeModule from "node:module";
 import { asyncNoop, importCWD } from "@kaciras/utilities/node";
 import { afterAll, expect, it, vi } from "vitest";
 import { report, start } from "../../src/host/commands.js";

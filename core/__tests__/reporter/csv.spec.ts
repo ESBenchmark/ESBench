@@ -1,6 +1,6 @@
-import { mkdtempSync, readdirSync, readFileSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
+import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { expect, it } from "vitest";
 import { HostContext } from "../../src/host/context.ts";
 import csvReporter from "../../src/reporter/csv.ts";

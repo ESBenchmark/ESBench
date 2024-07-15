@@ -1,6 +1,6 @@
-import { pid } from "process";
-import { join } from "path/posix";
-import { pathToFileURL } from "url";
+import { join } from "node:path/posix";
+import { pathToFileURL } from "node:url";
+import { pid } from "node:process";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
