@@ -34,6 +34,22 @@ describe("SharedModeFilter", () => {
 		expect(() => SharedModeFilter.parse(option)).toThrow();
 	});
 
+	it("should always return true from roll() if option is 1/1", () => {
+		const filter = SharedModeFilter.parse();
+		expect(filter.roll()).toBe(true);
+		expect(filter.roll()).toBe(true);
+		expect(filter.roll()).toBe(true);
+	});
+
+	it("should roll", () => {
+		const filter = new SharedModeFilter(1, 3);
+		for (let i = 0; i < 2; i++) {
+			expect(filter.roll()).toBe(false);
+			expect(filter.roll()).toBe(true);
+			expect(filter.roll()).toBe(false);
+		}
+	});
+
 	it("should parse the string", () => {
 		const filter = SharedModeFilter.parse("1/4");
 		expect(filter.index).toBe(0);

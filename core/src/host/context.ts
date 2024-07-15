@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { LogHandler } from "../profiling.js";
 import { ESBenchConfig, normalizeConfig, NormalizedConfig } from "./config.js";
 import { ESBenchResult } from "../connect.js";
-import { RE_ANY } from "../utils.js";
+import { RE_ANY, SharedModeFilter } from "../utils.js";
 
 export const logLevelPriority = { debug: 0, info: 1, warn: 2, error: 3, off: 4 };
 
@@ -30,6 +30,7 @@ export interface NormalizedFilterOptions {
 	name: RegExp;
 	builder: RegExp;
 	executor: RegExp;
+	shared: SharedModeFilter;
 }
 
 export class HostContext {
@@ -47,6 +48,7 @@ export class HostContext {
 			executor: resolveRE(filter.executor),
 			file: filter.file,
 			name: resolveRE(filter.name),
+			shared: SharedModeFilter.parse(filter.shared),
 		};
 
 		const priority = logLevelPriority[this.config.logLevel];

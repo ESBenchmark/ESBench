@@ -220,8 +220,11 @@ export default class JobGenerator {
 
 			const files = [];
 			for (const file of dedupe) {
-				if (file.includes(part))
+				if (!file.includes(part))
+					continue;
+				if (filter.shared.roll()) {
 					files.push(file);
+				}
 			}
 			if (files.length === 0) {
 				continue;

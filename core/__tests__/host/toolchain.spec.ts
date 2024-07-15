@@ -200,24 +200,48 @@ it("should only execute files in the build", async () => {
 	]);
 });
 
-// it("should filter files by shared", async () => {
-// 	const builderA = { name: "A", build: vi.fn() };
-// 	const builderB = { name: "B", build: vi.fn() };
-//
-// 	const jobs = await testBuild({ shared: "1/2" }, {
-// 		include: ["./__tests__/fixtures/*-inside/*"],
-// 		builders: [builderA],
-// 		executors: [inProcess],
-// 	}, {
-// 		include: ["./__tests__/fixtures/*-outside/*"],
-// 		builders: [builderB],
-// 		executors: [inProcess],
-// 	});
-//
-// 	expect(jobs).toHaveLength(1);
-// 	expect(jobs[0].builds[0].name).toBe("A");
-// 	expect(jobs[0].builds[0].files).toHaveLength(1);
-// });
+it("should filter files by shared 1/2", async () => {
+	const builderA = { name: "A", build: vi.fn() };
+	const builderB = { name: "B", build: vi.fn() };
+
+	const [{ builds }] = await testBuild({ shared: "1/2" }, {
+		include: ["./__tests__/fixtures/error-*/*"],
+		builders: [builderA],
+		executors: [inProcess],
+	}, {
+		include: ["./__tests__/fixtures/success-*/*"],
+		builders: [builderB],
+		executors: [inProcess],
+	});
+
+	expect(builds).toHaveLength(1);
+	expect(builds[0].files).toStrictEqual([
+		"./__tests__/fixtures/error-outside/index.js",
+	]);
+});
+
+it("should filter files by shared 2/2", async () => {
+	const builderA = { name: "A", build: vi.fn() };
+	const builderB = { name: "B", build: vi.fn() };
+
+	const [{ builds }] = await testBuild({ shared: "2/2" }, {
+		include: ["./__tests__/fixtures/error-*/*"],
+		builders: [builderA],
+		executors: [inProcess],
+	}, {
+		include: ["./__tests__/fixtures/success-*/*"],
+		builders: [builderB],
+		executors: [inProcess],
+	});
+
+	expect(builds).toHaveLength(2);
+	expect(builds[0].files).toStrictEqual([
+		"./__tests__/fixtures/error-inside/index.js",
+	]);
+	expect(builds[1].files).toStrictEqual([
+		"./__tests__/fixtures/success-suite/index.js",
+	]);
+});
 
 it("should dedupe builders with same executor", async () => {
 	const jobs = await testBuild({}, {

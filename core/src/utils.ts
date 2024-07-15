@@ -49,17 +49,18 @@ export class SharedModeFilter {
 	readonly index: number;
 	readonly count: number;
 
-	private state = 0;
+	private state: number;
 
 	constructor(index: number, count: number) {
 		this.count = count;
 		this.index = index;
+		this.state = index;
 
-		if (index >= count) {
-			throw new Error("Shared count can't be less than the index");
-		}
 		if (index < 0) {
 			throw new Error("Shared index must be a positive number");
+		}
+		if (index >= count) {
+			throw new Error("Shared count can't be less than the index");
 		}
 	}
 
@@ -73,18 +74,22 @@ export class SharedModeFilter {
 	}
 
 	select<T>(array: T[]) {
-		const { state, index, count } = this;
+		const { state, count } = this;
 		if (count === 1) {
 			return array;
 		}
-		const s = array.length;
+		const l = array.length;
 		const filtered = [];
-		let i = index + state;
-		for (; i < s; i += count) {
-			filtered.push(array[i]);
+		let k = state;
+		for (; k < l; k += count) {
+			filtered.push(array[k]);
 		}
-		this.state = (i - s) % count;
+		this.state = (k - l) % count;
 		return filtered;
+	}
+
+	roll() {
+		return (this.state = (this.state + 1) % this.count) === 0;
 	}
 }
 

@@ -388,7 +388,7 @@ export class SummaryTable {
 				// Variable names should be consistent and cannot be filtered,
 				const values = summary.vars.get(type);
 				if (!values) {
-					throw new Error(`${type} is not in variables`);
+					throw new Error(`Baseline (${type}) is not in variables`);
 				}
 
 				if (values.has(value)) {
