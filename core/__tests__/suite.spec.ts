@@ -3,15 +3,32 @@ import { noop } from "@kaciras/utilities/node";
 import { BenchCase, normalizeSuite, resolveParams, Scene } from "../src/suite.ts";
 
 describe("Scene", () => {
-	it("should reject blank case name", () => {
-		const scene = new Scene(null);
-		expect(() => scene.bench("\t \n", vi.fn())).toThrow();
-	});
-
 	it("should reject duplicated case name", () => {
 		const scene = new Scene(null);
-		scene.bench("Foo", vi.fn());
-		expect(() => scene.bench("Foo", vi.fn())).toThrow();
+		scene.bench("Foo", noop);
+		expect(() => scene.bench("Foo", noop)).toThrow();
+	});
+
+	it.each([
+		"\t \n",
+		" foo",
+		"bar ",
+		" baz ",
+		"",
+	])("should reject invalid case name %s", name => {
+		const scene = new Scene(null);
+		expect(() => scene.bench(name, noop)).toThrow();
+	});
+
+	it("should add cases", () => {
+		const scene = new Scene(null);
+		scene.bench("", noop);
+		scene.benchAsync("async", noop);
+
+		expect(scene.cases).toHaveLength(2);
+		expect(scene.cases[0].name).toBe("");
+		expect(scene.cases[1].isAsync).toBe(true);
+		expect(scene.cases[1].fn).toBe(noop);
 	});
 });
 

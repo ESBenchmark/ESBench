@@ -138,8 +138,12 @@ export class Scene<P = any> {
 	 * Related benchmark: example/es/async-return-promise.js
 	 */
 	private add(name: string, fn: Workload, isAsync: boolean) {
-		if (/^\s*$/.test(name)) {
+		const { length } = name.trim();
+		if (length === 0) {
 			throw new Error("Case name cannot be blank.");
+		}
+		if (length !== name.length) {
+			throw new Error("Case name cannot have leading or trailing spaces.");
 		}
 		if (this.cases.some(c => c.name === name)) {
 			throw new Error(`Case "${name}" already exists.`);
