@@ -1,4 +1,4 @@
-name: Cross OS Example
+name: Sharding Example
 
 on: [push]
 
@@ -9,7 +9,7 @@ jobs:
         index: [ 1, 2, 3 ]
         total: [ 3 ]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
