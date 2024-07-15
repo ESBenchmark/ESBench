@@ -20,7 +20,7 @@ async function testBundle(builder: Builder) {
 	const postMessage = vi.fn();
 	await module.default(postMessage, file);
 
-	const result = postMessage.mock.calls.at(-1)[0];
+	const result = postMessage.mock.calls.at(-1)![0];
 	expect(result.meta.foobar).toBeTypeOf("object");
 
 	return [readFileSync(url, "utf8"), module];

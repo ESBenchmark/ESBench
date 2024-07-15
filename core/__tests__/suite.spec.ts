@@ -22,11 +22,11 @@ describe("Scene", () => {
 
 	it("should add cases", () => {
 		const scene = new Scene(null);
-		scene.bench("", noop);
-		scene.benchAsync("async", noop);
+		scene.bench("foo", noop);
+		scene.benchAsync("bar", noop);
 
 		expect(scene.cases).toHaveLength(2);
-		expect(scene.cases[0].name).toBe("");
+		expect(scene.cases[0].name).toBe("foo");
 		expect(scene.cases[1].isAsync).toBe(true);
 		expect(scene.cases[1].fn).toBe(noop);
 	});
