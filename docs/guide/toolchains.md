@@ -132,7 +132,53 @@ export default defineConfig({
 
 Then you can just run `esbench` without flags, as imports are already transformed by the builder. 
 
-See also [built-in builders](./toolchains#built-in-builders).
+**Builders are not just allow browsers to run code, they also can be the target for benchmarking.** One scenario is when you want to know how different build configurations affect the performance of the output code:
+
+::: code-group
+```javascript [esbench.config.js]
+import { defineConfig, ViteBuilder } from "esbench/host";
+
+// Compare native `for await` and esbuild's polyfill code.
+export default defineConfig({
+	toolchains: [{
+		builders: [
+			{
+				name: "modern",
+				use: new ViteBuilder({ build: { target: "esnext" } }),
+			},
+			{
+				name: "transpile",
+				use: new ViteBuilder({ build: { target: "es6" } }),
+			},
+		],
+	}],
+});
+```
+```javascript [transpile.js]
+import { defineSuite } from "esbench";
+
+const consume = () => {};
+
+export default defineSuite(scene => {
+	const values = Array.from({ length: 100 }, (_, i) => i);
+
+	scene.benchAsync("async iter", async () => {
+		for await (const v of values) consume(v);
+	});
+});
+```
+:::
+
+As expected, the translated code is slower than the native:
+
+```text
+| No. |   Builder |     time |  time.SD |
+| --: | --------: | -------: | -------: |
+|   0 |    modern |  9.47 us | 14.13 ns |
+|   1 | transpile | 14.34 us | 88.22 ns |
+```
+
+For more built-in builders, see [built-in builders](./toolchains#built-in-builders).
 
 ## Multiple Toolchains
 

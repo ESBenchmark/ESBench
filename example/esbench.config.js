@@ -58,5 +58,17 @@ export default defineConfig({
 		include: ["./webext/*.js"],
 		builders: [viteBuilder],
 		executors: [new WebextExecutor(chromium)],
+	}, {
+		include: ["./misc/transpile.js"],
+		builders: [
+			{
+				name: "modern",
+				use: new ViteBuilder({ build: { target: "esnext" } }),
+			},
+			{
+				name: "transpile",
+				use: new ViteBuilder({ build: { target: "es6" } }),
+			},
+		],
 	}],
 });
