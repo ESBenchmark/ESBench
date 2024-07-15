@@ -18,6 +18,7 @@ Options:
 | `--name <regex>`     | Run benchmark with names matching the Regex pattern (string)                                    |
 | `--builder <regex>`  | Run only suites built with the specified builder which name matching the Regex pattern (string) |
 | `--executor <regex>` | Run benchmarks using only the executor which name matching the Regex pattern (string)           |
+| `--shared <shared>`  | The test suite shard to execute in a format of `<index>/<count>` (string)                       |
 
 ```shell
 # Run all suites
@@ -52,7 +53,8 @@ Although ESBench has a built-in toolchains and parameters as variables, this is 
 
 The GitHub Actions example to show how to run benchmarks on different OS and merge the results into the single table:
 
-```yaml
+::: code-group
+```yaml [.github/workflows/cross-os.yml]
 name: Cross OS Example
 
 on: [push]
@@ -117,5 +119,101 @@ jobs:
       # Use the report command to collect all results
       - run: pnpm exec esbench report reports/**/*.json
 ```
+```javascript [file-read.js]
+import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { defineSuite } from "esbench";
+
+const filename = "pnpm-lock.yaml";
+
+export default defineSuite({
+	baseline: {
+		type: "os",
+		value: "ubuntu-latest"
+	},
+	setup(scene){
+		scene.bench("sync", () => readFileSync(filename));
+		scene.benchAsync("async", () => readFile(filename));
+	}
+});
+```
+:::
 
 ![Report](../assets/cross-os-report.webp)
+
+### Sharding
+
+When you have a lot of suites, benchmarking can take very long time, and one way to speed things up is to use multiple machines to run them simultaneously.
+
+By using `--shared` argument, ESBench splits suites into multiple different runs, for example `--shared 1/3`  split the suite into three shards, each running one third of the suites.
+
+GitHub action example:
+
+```yaml
+name: Sharding Example
+
+on: [push]
+
+jobs:
+  run:
+    # Schedule 3 instances to run benchmark
+    strategy:
+      matrix:
+        index: [1, 2, 3]
+        total: [3]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Initialize repository
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+          run_install: true
+
+      # Use `--shared` to make ESBench run partial of suites.
+      - run: pnpm exec esbench --shared ${{ matrix.index }}/${{ matrix.total }}
+
+      # Upload the result file to Actions Artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.index }}.json
+
+          # This is the default output path of Raw Reporter.
+          path: node_modules/.esbench/result.json
+
+  # Start a Job to generate the report.
+  report:
+    runs-on: ubuntu-latest
+
+    # Should run after all the benchmarks finished.
+    needs: run
+
+    steps:
+      # Initialize repository
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          run_install: true
+
+      # Download result files from Actions Artifacts.
+      # Filename is like:
+      #   reports/result-${{ matrix.os }}/result.json
+      - uses: actions/download-artifact@v4
+        with:
+          path: reports
+          pattern: result-*
+
+      # Use the report command to collect all results
+      - run: pnpm exec esbench report reports/**/*.json
+```
+
+`--shared` works at the suite level, which means that benchmark cases inside a suite cannot be split. If the number of use cases within the suite varies too much, they will be distributed unevenly, causing some instances to run longer than others.
