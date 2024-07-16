@@ -218,4 +218,4 @@ jobs:
       - run: pnpm exec esbench report reports/**/*.json
 ```
 
-`--shared` works at the suite level, which means that benchmark cases inside a suite cannot be split. If the number of use cases within the suite varies too much, they will be distributed unevenly, causing some instances to run longer than others.
+`--shared` works at the suite level, which means benchmark cases inside a suite cannot be split. If the number of use cases within the suite varies too much, they will be distributed unevenly, causing some instances to run longer than others.

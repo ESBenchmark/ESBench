@@ -20,7 +20,7 @@ ESBench requires Node >= 18.19.0
 
 ## Writing Benchmarks
 
-For example, we will write a simple benchmark suite that compares the time it takes to calculate the sum of numbers using for-loop and `Array.reduce`.
+Compare the time for sum of numbers using for-loop and `Array.reduce`:
 
 ```javascript
 // benchmark/array-sum.js

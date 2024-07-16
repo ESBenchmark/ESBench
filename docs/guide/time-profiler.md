@@ -80,4 +80,4 @@ For more reliable results, you should avoid doing other operations while running
 * Turning down `sample` and `warnup` can also reduce the number of times a function is called.
 * Set `evaluateOverhead` to `false` disables the overhead stage, which takes some time if the running time of the workload is close to the empty function.
 
-Another solution for improve performance is [sharding with multiple machines](./cli#sharding)
+Another solution for speed up benchmarking is [sharding with multiple machines](./cli#sharding).

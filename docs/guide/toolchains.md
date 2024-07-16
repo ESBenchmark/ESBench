@@ -95,7 +95,7 @@ ESBench has some [Built-in executors](./toolchains#built-in-executors) to help y
 
 ## Built-in Transformer
 
-To make browsers run the suite directly, ESBench provides a simple transformer that can:
+To make browsers run the suite without install extra dependencies, ESBench provides a simple transformer that can:
 
 - Resolve imports to absolute path, so that they can be used in browser.
 - Compile TypeScript files to JavaScript.
@@ -113,7 +113,7 @@ Limitations:
 ESBench allows you to add a build step for suites, it is useful when:
 
 * The code must be built before it can be run, e.g. contains `import "style.css"`.
-* You want to know the performance of the built code.
+* The platform does not support Node resolving.
 
 ```javascript
 import { defineConfig, ViteBuilder, PlaywrightExecutor } from "esbench/host";
@@ -132,7 +132,7 @@ export default defineConfig({
 
 Then you can just run `esbench` without flags, as imports are already transformed by the builder. 
 
-**Builders are not just allow browsers to run code, they also can be the target for benchmarking.** One scenario is when you want to know how different build configurations affect the performance of the output code:
+**Builders are not just allow browsers to run code, they also can be the target for benchmarking.** One scenario is when you want to know how build configurations affect the performance of the output code:
 
 ::: code-group
 ```javascript [esbench.config.js]

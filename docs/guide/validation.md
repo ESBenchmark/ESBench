@@ -11,7 +11,7 @@ export default defineSuite({
 });
 ```
 
-There are also `check` and `equality` options to perform additional checks.
+There are also `check` and `equality` options to perform additional checks. The `check` function accepts the return value of each case and scene parameters, you can throw an error if the value is incorrect.
 
 ```javascript
 export default defineSuite({
@@ -40,6 +40,8 @@ export default defineSuite({
 	},
 });
 ```
+
+The `equality` function can be used to ensure the return values of all cases are equal within the same scene.
 
 ```javascript
 export default defineSuite({
