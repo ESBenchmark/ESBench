@@ -1,7 +1,7 @@
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./profiling.js";
-import { BUILTIN_VARS } from "./utils.js";
+import { BUILTIN_VARS, variablesToString } from "./utils.js";
 import { ToolchainResult } from "./connect.js";
 import { ResultBaseline } from "./runner.js";
 import { FlattedResult, Summary } from "./summary.js";
@@ -388,9 +388,11 @@ export class SummaryTable {
 				// Variable names should be consistent and cannot be filtered,
 				const values = summary.vars.get(type);
 				if (!values) {
-					throw new Error(`Baseline (${type}) is not in variables`);
+					const vs = variablesToString(summary.vars);
+					throw new Error(`Baseline (${type}) is not in variables:\n${vs}`);
 				}
 
+				// When using filters, the value may not in the results.
 				if (values.has(value)) {
 					columnDefs.push(new BaselineColumn(meta, baseline, ratioStyle));
 				} else {

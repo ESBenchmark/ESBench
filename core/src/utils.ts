@@ -44,6 +44,20 @@ export function attrx(input: Array<string | false>) {
 	return string.length === 0 ? "" : ` [${string}]`;
 }
 
+export function variablesToString(vars: Iterable<[string, Iterable<string>]>) {
+	let s = "";
+	for (const [name, values] of vars) {
+		s += `- ${name}: [`;
+		for (const v of values) {
+			s += v;
+			s += ", ";
+		}
+		s = s.slice(0, -2);
+		s += "]\n";
+	}
+	return s.slice(0, -1);
+}
+
 export class SharedModeFilter {
 
 	readonly index: number;

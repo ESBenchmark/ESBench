@@ -218,6 +218,19 @@ it("should remove best outliers", () => {
 	]);
 });
 
+it("should throw error if the baseline type does not exists", () => {
+	const results: ToolchainResult[] = [{
+		...resultStub,
+		tags: { os: "win" },
+		baseline: {
+			type: "zzz",
+			value: "foo",
+		},
+	}];
+	expect(() => SummaryTable.from(results))
+		.toThrow("Baseline (zzz) is not in variables:\n- Name: [foo, bar]\n- os: [win]");
+});
+
 it("should warn if the value of baseline does not in the table", () => {
 	const table = SummaryTable.from([{
 		...resultStub,
@@ -225,11 +238,6 @@ it("should warn if the value of baseline does not in the table", () => {
 			type: "Name",
 			value: "XX",
 		},
-		scenes: [{
-			A: { time: [4] },
-			B: { time: [8] },
-			C: { time: [1] },
-		}],
 	}]);
 	expect(table.cells[0]).toHaveLength(4);
 	expect(table.warnings).toStrictEqual(["Baseline { Name: XX } does not in the results."]);
