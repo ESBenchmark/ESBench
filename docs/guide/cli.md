@@ -53,6 +53,8 @@ Although ESBench has a built-in toolchains and parameters as variables, this is 
 
 The GitHub Actions example to show how to run benchmarks on different OS and merge the results into the single table:
 
+[Full repository on GitHub](https://github.com/ESBenchmark/ci-examples/tree/master)
+
 ::: code-group
 ```yaml [.github/workflows/cross-os.yml]
 name: Cross OS Example
@@ -147,7 +149,7 @@ When you have a lot of suites, benchmarking can take very long time, and one way
 
 By using `--shared` argument, ESBench splits suites into multiple different runs, for example `--shared 1/3`  split the suite into three shards, each running one third of the suites.
 
-GitHub action example:
+GitHub action example ([repository](https://github.com/ESBenchmark/ci-examples/tree/sharding)):
 
 ```yaml
 name: Sharding Example

@@ -41,12 +41,15 @@ export interface ESBenchConfig {
 	 * If it is defined, the difference between the current result will be displayed on the report.
 	 *
 	 * @default "node_modules/.esbench/result.json"
+	 * @see https://esbench.vercel.app/guide/comparison#previous-runs
 	 */
 	diff?: string | null;
 
 	/**
 	 * Defines a set of labels that will be added as variables to the
 	 * results of all suites, effective only for the start command.
+	 *
+	 * @see https://esbench.vercel.app/guide/cli#cross-os-benchmark
 	 */
 	tags?: Record<string, string>;
 
@@ -57,6 +60,7 @@ export interface ESBenchConfig {
 	 *     textReporter(),
 	 *     rawReporter("node_modules/.esbench/result.json")
 	 * ]
+	 * @see https://esbench.vercel.app/guide/reporters#reporters
 	 */
 	reporters?: Reporter[];
 }

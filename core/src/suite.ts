@@ -119,10 +119,26 @@ export class Scene<P = any> {
 		this.teardownHooks.push(fn);
 	}
 
+	/**
+	 * Add a benchmark case to the scene, and consider an execution complete when `fn` returns.
+	 *
+	 * For asynchronous function, you may need to use `benchAsync` instead.
+	 *
+	 * @param name Name of the case
+	 * @param fn The workload function
+	 */
 	bench(name: string, fn: Workload) {
 		this.add(name, fn, false);
 	}
 
+	/**
+	 * Add a benchmark case to the scene. If `fn` returns a Promise, it will be awaited.
+	 *
+	 * For synchronized function `bench` should be used to avoid the overhead of `await`.
+	 *
+	 * @param name Name of the case
+	 * @param fn The workload function
+	 */
 	benchAsync(name: string, fn: Workload) {
 		this.add(name, fn, true);
 	}

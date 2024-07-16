@@ -44,18 +44,24 @@ export function attrx(input: Array<string | false>) {
 	return string.length === 0 ? "" : ` [${string}]`;
 }
 
+/*
+ * Does not use `JSON.stringify` because it cannot add
+ * spaces after bracket and colon (not pretty enough).
+ *
+ * No escaping, but variables that could be confused are
+ * user-defined, so it's not a problem.
+ */
 export function variablesToString(vars: Iterable<[string, Iterable<string>]>) {
-	let s = "";
-	for (const [name, values] of vars) {
-		s += `- ${name}: [`;
-		for (const v of values) {
-			s += v;
-			s += ", ";
+	let result = "";
+	for (const [n, l] of vars) {
+		result += `- ${n}: [`;
+		for (const v of l) {
+			result += v;
+			result += ", ";
 		}
-		s = s.slice(0, -2);
-		s += "]\n";
+		result = result.slice(0, -2) + "]\n";
 	}
-	return s.slice(0, -1);
+	return result.slice(0, -1);
 }
 
 export class SharedModeFilter {

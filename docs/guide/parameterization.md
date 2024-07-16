@@ -67,6 +67,7 @@ ESBench identifies each benchmark case using a set of properties called variable
 * `Name`: the names of benchmark cases.
 * `Builder` & `Executor`: the names of tools used to build and execute the suite, see [Toolchains](./toolchains) for more details.
 * Properties defined in suite's `params` option.
+* Custom tags from config and CLI arguments.
 
 In the above example, the variables with their possible values is:
 
