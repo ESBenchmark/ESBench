@@ -2,7 +2,7 @@ import { cartesianObject } from "@kaciras/utilities/browser";
 import { BenchCase, NormalizedSuite, normalizeSuite, Scene, UserSuite } from "./suite.js";
 import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
-import { attrx, BUILTIN_VARS, variablesToString } from "./utils.js";
+import { attrx, variablesToString } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 
 class DefaultEventLogger implements Profiler {
@@ -92,13 +92,6 @@ function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
 		return;
 	}
 	const { type, value } = baseline;
-
-	if (BUILTIN_VARS.includes(type)) {
-		if (typeof value !== "string") {
-			throw new Error(`Value of the host-side variable (${type}) must be a string`);
-		}
-		return baseline as ResultBaseline;
-	}
 
 	const i = params.findIndex(e => e[0] === type);
 	if (i === -1) {
