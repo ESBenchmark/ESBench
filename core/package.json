@@ -44,7 +44,7 @@
 	"devDependencies": {
 		"@types/picomatch": "^3.0.0",
 		"@types/yargs": "^17.0.32",
-		"playwright-core": "^1.45.0"
+		"playwright-core": "^1.45.2"
 	},
 	"peerDependencies": {
 		"rollup": "^4.17.2",
