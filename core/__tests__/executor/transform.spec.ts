@@ -6,10 +6,11 @@ import { transformer } from "../../src/executor/transform.ts";
 
 const mockAdapter = {
 	compileTS: vi.fn(() => "foobar"),
-	resolve: vi.fn(() => "foobar.js"),
+	resolve: vi.fn(),
 };
 
 const importerURL = pathToFileURL("module.js").href;
+const importerPath = resolve("module.js").replaceAll("\\", "/");
 
 const lines = (...args: string[]) => args.join("\n");
 
@@ -98,6 +99,10 @@ describe("transformer", () => {
 		expect(instance.parse("root", path)).toBe(expected);
 	});
 
+	it("should throw error when parse a unresolvable path", () => {
+		expect(() => instance.parse("root", "/@unresolvable?s=foo&p=bar")).toThrow();
+	});
+
 	it("should compile TS", async () => {
 		const path = import.meta.filename;
 		const code = await instance.load(path);
@@ -106,21 +111,30 @@ describe("transformer", () => {
 		expect(mockAdapter.compileTS).toHaveBeenCalledWith(readFileSync(path, "utf8"), path);
 	});
 
-	it("should replace imports", () => {
+	it("should resolve imports", () => {
 		const code = `\
 			import x from "./x.js";
 			const y = import(window.main);
 			const z = import("y");
 		`;
-		const output = instance.transformImports(code, "module.js");
+		instance.transformImports(code, "module.js");
 
-		expect(output).toBe(`\
-			import x from "/@fs/foobar.js";
-			const y = import(window.main);
-			const z = import("/@fs/foobar.js");
-		`);
 		expect(mockAdapter.resolve).toHaveBeenNthCalledWith(1, "y", importerURL);
 		expect(mockAdapter.resolve).toHaveBeenNthCalledWith(2, "./x.js", importerURL);
+	});
+
+	it.each([
+		[undefined, "/@unresolvable?s=dummy.js&p=module.js"],
+		[importerURL, "/@fs/" + importerPath],
+		["https://example.com", "https://example.com"],
+		["node:fs", "node:fs"],
+	])("should replace import specifier %#", (resolved, specifier) => {
+		mockAdapter.resolve.mockReturnValue(resolved);
+		const code = `import x from "dummy.js"`;
+
+		const output = instance.transformImports(code, "module.js");
+
+		expect(output).toBe(`import x from "${specifier}"`);
 	});
 
 	it("should throw ENOENT when file not found", async () => {

@@ -52,9 +52,9 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 		return tester.successCase()();
 	});
 
-	it("should handle error thrown from transformer", () => {
+	it.each(["parse", "load"] as const)("should handle error thrown from transformer.%s", method => {
 		vi.spyOn(transformer, "parse").mockReturnValue("/@fs/foo.ts");
-		vi.spyOn(transformer, "load").mockRejectedValue(new RangeError("Test Error"));
+		vi.spyOn(transformer, method).mockRejectedValue(new Error("Stub Error"));
 
 		return expect(tester.execute("MOCK_ROOT")).rejects.toThrow(/* Different in each browser */);
 	});

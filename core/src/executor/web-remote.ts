@@ -187,14 +187,13 @@ export default class WebRemoteExecutor implements Executor {
 			return response.end(JSON.stringify(body));
 		}
 
-		// Non-import request or resolving disabled, just send the file.
-		const parsed = transformer.parse(root, path);
-		if (!parsed) {
-			return this.sendFile(join(root, path), response);
-		}
-
-		// The module may need to be transformed.
 		try {
+			const parsed = transformer.parse(root, path);
+			if (!parsed) {
+				// Non-import request or resolving disabled.
+				return this.sendFile(join(root, path), response);
+			}
+			// The module may need to be transformed.
 			const body = await transformer.load(parsed);
 			if (body) {
 				const headers = { "Content-Type": "text/javascript" };

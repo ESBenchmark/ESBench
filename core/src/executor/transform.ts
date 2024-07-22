@@ -27,7 +27,18 @@ interface TransformAdapter {
 
 	compileTS(code: string, filename: string): Awaitable<string>;
 
-	resolve(specifier: string, parent: string): string;
+	/**
+	 * Provides a module-relative resolution function scoped to each module.
+	 *
+	 * Unlike Vite, if an import in the module fails to resolve, the module can still be loaded.
+	 * ESBench always throw an error when reading a file that doesn't exist, not when resolving it.
+	 * This allows the user to write the suite more freely and catch related errors.
+	 *
+	 * @param specifier The module specifier to resolve relative to `parent`.
+	 * @param parent The absolute parent module URL to resolve from.
+	 * @return A URL string for the resolved module, or undefined if the resolve failed.
+	 */
+	resolve(specifier: string, parent: string): string | undefined;
 }
 
 const nodeAdapter: TransformAdapter = {
@@ -36,7 +47,11 @@ const nodeAdapter: TransformAdapter = {
 	},
 	resolve(specifier: string, parent: string) {
 		// Require `--experimental-import-meta-resolve`
-		return fileURLToPath(import.meta.resolve(specifier, parent));
+		try {
+			return import.meta.resolve(specifier, parent);
+		} catch {
+			return undefined;
+		}
 	},
 };
 
@@ -69,8 +84,13 @@ export const transformer = {
 		}
 		if (path.startsWith("/@fs/")) {
 			return path.slice(5);
-		} else if (path === "/index.js") {
+		}
+		if (path === "/index.js") {
 			return join(root, path);
+		}
+		if (path.startsWith("/@unresolvable?")) {
+			const params = new URLSearchParams(path.slice(15));
+			throw new Error(`Cannot find '${params.get("s")}' imported from ${params.get("p")}`);
 		}
 	},
 
@@ -105,7 +125,13 @@ export const transformer = {
 				continue;
 			}
 			let path = this.adapter!.resolve(n, importer);
-			path = `/@fs/${path.replaceAll("\\", "/")}`;
+
+			if (!path) {
+				path = `/@unresolvable?s=${n}&p=${filename}`;
+			} else if (path.startsWith("file:")) {
+				path = fileURLToPath(path);
+				path = `/@fs/${path.replaceAll("\\", "/")}`;
+			}
 
 			const trim = t === 2 ? 1 : 0;
 			code = code.slice(0, s + trim) + path + code.slice(e - trim);
