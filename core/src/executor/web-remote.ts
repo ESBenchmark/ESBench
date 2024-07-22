@@ -15,6 +15,7 @@ const moduleMime: Record<string, string | undefined> = {
 	css: "text/css",
 	js: "text/javascript",
 	json: "application/json",
+	wasm: "application/wasm",
 };
 
 const html = `<!DOCTYPE html>
