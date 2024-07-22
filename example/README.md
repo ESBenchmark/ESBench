@@ -10,5 +10,5 @@ It is recommended to run one suite at a time using `--file` parameter, as it can
 
 ```shell
 cd example
-pnpm exec esbench --filer <filename.js>
+pnpm exec esbench --file <filename.js>
 ```

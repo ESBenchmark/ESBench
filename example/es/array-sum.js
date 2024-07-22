@@ -1,5 +1,8 @@
 import { defineSuite } from "esbench";
 
+/**
+ * Do for-of and Array.reduce() have performance overheads?
+ */
 export default defineSuite({
 	baseline: { type: "Name", value: "For-index" },
 	params: {

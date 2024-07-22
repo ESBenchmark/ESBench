@@ -9,5 +9,5 @@ export default defineSuite(scene => {
 	scene.bench("read-bytes", () => JSON.parse(readFileSync(filename) as any));
 
 	// TODO: clear module cache
-	scene.benchAsync("import", () => import(moduleId, { with: { type: "json" } }));
+	// scene.benchAsync("import", () => import(moduleId, { with: { type: "json" } }));
 });

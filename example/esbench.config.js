@@ -17,9 +17,6 @@ const browserExecutors = [
 	new PlaywrightExecutor(chromium),
 ];
 
-/*
- * For more configuration examples, see ./configs
- */
 export default defineConfig({
 	reporters: [
 		textReporter(),
@@ -44,11 +41,8 @@ export default defineConfig({
 			// Measure performance of suites on browsers.
 			// ...browserExecutors,
 
-			// More JS runtimes, you need install them manually.
+			// More JS runtimes, you need to install them.
 			// new ProcessExecutor("bun"),
-
-			// TODO: Could not find package.json with name 'esbench' in workspace.
-			// new ProcessExecutor("deno run --allow-net"),
 		],
 	}, {
 		include: ["./web/*.js"],
