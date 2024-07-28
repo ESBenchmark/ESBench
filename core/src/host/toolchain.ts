@@ -78,6 +78,9 @@ export interface Executor {
 
 	/**
 	 * Called only once after all suites execution finished, or an error occurred during the execution.
+	 *
+	 * If an implementation uses exclusive global resources, it should return a Promise
+	 * for asynchronous operations so that ESBench can wait for resources to be released.
 	 */
 	close?(ctx: HostContext): Awaitable<unknown>;
 

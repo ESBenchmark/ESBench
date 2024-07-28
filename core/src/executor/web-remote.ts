@@ -142,8 +142,11 @@ export default class WebRemoteExecutor implements Executor {
 	}
 
 	close() {
-		this.server.close();
-		this.server.closeAllConnections();
+		return new Promise((resolve, reject) => {
+			this.server.on("close", resolve);
+			this.server.close(reject);
+			this.server.closeAllConnections();
+		});
 	}
 
 	execute(task: SuiteTask) {
