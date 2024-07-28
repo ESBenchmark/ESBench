@@ -53,6 +53,7 @@ export default defineConfig({
 		builders: [viteBuilder],
 		executors: [new WebextExecutor(chromium)],
 	}, {
+		// Build the suite with different config, see their impact on performance.
 		include: ["./misc/transpile.js"],
 		builders: [
 			{

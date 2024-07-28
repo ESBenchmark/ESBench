@@ -23,15 +23,13 @@ class NodeDebugExecutor extends ProcessExecutor {
 		return this.attach ? "debug-attach" : "debug";
 	}
 
-	close() {
-		super.close();
+	async close() {
+		this.readline?.close();
+		await super.close();
 
-		if (this.readline) {
-			// Defensive checks for possible changes to inspect output.
-			if (!this.attached) {
-				throw new Error("Debugger attached failed");
-			}
-			this.readline.close();
+		// Defensive checks for possible changes to inspect output.
+		if (this.attach && !this.attached) {
+			throw new Error("Debugger attached failed");
 		}
 	}
 

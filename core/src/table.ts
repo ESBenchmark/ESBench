@@ -344,6 +344,9 @@ export class SummaryTable {
 	readonly groupEnds: number[] = [];
 	readonly colors: CellColor[][] = [];
 
+	/**
+	 * Content of the table, the first row is header.
+	 */
 	readonly cells: CellValue[][] = [];
 
 	readonly hints: string[] = [];

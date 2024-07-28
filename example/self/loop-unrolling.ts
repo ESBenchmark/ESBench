@@ -3,13 +3,13 @@ import { defineSuite } from "esbench";
 
 export function unroll(factor: number, isAsync: boolean) {
 	const [call, FunctionType] = isAsync
-		? ["await this()", AsyncFunction]
-		: ["this()", Function];
+		? ["await this()\n", AsyncFunction]
+		: ["this()\n", Function];
 
 	const body = `\
 		const start = performance.now();
 		while (count--) {
-			${new Array(factor).fill(call).join("\n")}
+			${call.repeat(factor)}
 		}
 		return performance.now() - start;
 	`;

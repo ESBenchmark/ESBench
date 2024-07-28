@@ -10,15 +10,12 @@ interface Iterator {
 	iterate: (count: number) => Awaitable<number>;
 }
 
-const callCode = () => "this()";
-
 // See examples/self/loop-unrolling.ts for the validity of unrolling.
 function unroll(length: number) {
-	const calls = Array.from({ length }).map(callCode);
 	return new Function("count", `\
 		const start = performance.now();
 		while (count--) {
-			${calls.join("\n")}
+			${"this()\n".repeat(length)}
 		}
 		return performance.now() - start;
 	`);

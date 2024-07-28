@@ -6,6 +6,14 @@ import * as tsdx from "ts-directly";
 import * as importParser from "es-module-lexer";
 import { Awaitable, silentCall } from "@kaciras/utilities/node";
 
+/**
+ * See if the specified Node feature flag is enabled. Note that this function requires
+ * argv and NODE_OPTIONS not be modified after startup.
+ *
+ * Node has an internal implementation, and does not export it.
+ *
+ * @see https://github.com/nodejs/node/blob/20aff2b6ff2ab5525e6e523aba86ab622a9329d0/lib/internal/options.js#L44
+ */
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
 }
@@ -32,7 +40,7 @@ interface TransformAdapter {
 	 *
 	 * Unlike Vite, if an import in the module fails to resolve, the module can still be loaded.
 	 * ESBench always throw an error when reading a file that doesn't exist, not when resolving it.
-	 * This allows the user to write the suite more freely and catch related errors.
+	 * This allows the user to write the suite more flexibility and catch related errors.
 	 *
 	 * @param specifier The module specifier to resolve relative to `parent`.
 	 * @param parent The absolute parent module URL to resolve from.
@@ -58,7 +66,28 @@ const nodeAdapter: TransformAdapter = {
  * - Compile TS code to JS code.
  * - Resolve file imports to absolute path.
  *
- * This transformer can work with builders.
+ * This transformer should work with builders.
+ *
+ * @example
+ * try {
+ *     const parsed = transformer.parse(root, path);
+ *     if (!parsed) {
+ *         // Non-import request or resolving disabled.
+ *         return sendFile(join(root, path));
+ *     }
+ *     const body = await transformer.load(parsed);
+ *     if (body) {
+ *         // Transformed JS module.
+ *         const headers = { "Content-Type": "text/javascript" };
+ *         return new Response(body, { headers });
+ *     } else {
+ *         // No transform needed, just send the file.
+ *         return sendFile(parsed);
+ *     }
+ * } catch (e) {
+ *     // Resolve failed, or cannot read the file.
+ *     return new Response(e.message, { status: 404 });
+ * }
  *
  * @see https://esbench.vercel.app/guide/toolchains#built-in-transformer
  */
@@ -70,6 +99,9 @@ export const transformer = {
 	/**
 	 * Get the file path of the import, or undefined if resolving is
 	 * disabled or the request is not created by import statement.
+	 *
+	 * If a module specifier is invalid, it will be converted to
+	 * `/@unresolvable?s=<specifier>&p=<importer>`, parsing it will throw an error.
 	 *
 	 * @param root The root folder of the page.
 	 * @param path The pathname of the request.
