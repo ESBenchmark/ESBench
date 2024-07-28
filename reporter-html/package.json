@@ -6,18 +6,18 @@
 		"build": "vite build"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^1.0.2",
+		"@kaciras/utilities": "^1.0.3",
 		"@tabler/icons-vue": "^3.11.0",
 		"@vueuse/core": "^10.11.0",
 		"chart.js": "^4.4.3",
 		"chartjs-chart-error-bars": "^4.4.1",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.33"
+		"vue": "^3.4.34"
 	},
 	"devDependencies": {
-		"@vitejs/plugin-vue": "^5.0.5",
-		"vite": "^5.3.4",
+		"@vitejs/plugin-vue": "^5.1.1",
+		"vite": "^5.3.5",
 		"vite-plugin-singlefile": "^2.0.2"
 	}
 }

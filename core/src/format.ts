@@ -3,7 +3,7 @@ import {
 	dataSizeIEC,
 	decimalPrefix,
 	durationFmt,
-	FixedUnitFormatter,
+	HomogeneousUC,
 	identity,
 	separateThousand,
 	UnitConvertor,
@@ -123,10 +123,10 @@ class CommonUnitFormatter implements MetricFormatter {
 
 class CommonUnitFixed implements FixedFormatter {
 
-	readonly convertor: FixedUnitFormatter;
+	readonly convertor: HomogeneousUC;
 	readonly suffix: string;
 
-	constructor(convertor: FixedUnitFormatter, suffix: string) {
+	constructor(convertor: HomogeneousUC, suffix: string) {
 		this.convertor = convertor;
 		this.suffix = suffix;
 	}

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as tsdx from "ts-directly";
 import * as importParser from "es-module-lexer";
-import { Awaitable } from "@kaciras/utilities/node";
+import { Awaitable, silentCall } from "@kaciras/utilities/node";
 
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
@@ -47,11 +47,7 @@ const nodeAdapter: TransformAdapter = {
 	},
 	resolve(specifier: string, parent: string) {
 		// Require `--experimental-import-meta-resolve`
-		try {
-			return import.meta.resolve(specifier, parent);
-		} catch {
-			return undefined;
-		}
+		return silentCall(import.meta.resolve, specifier, parent);
 	},
 };
 
