@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { AsyncFunction } from "@kaciras/utilities/node";
-import * as importParser from "es-module-lexer";
 import { ClientMessage } from "../connect.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { transformer } from "./transform.js";
@@ -87,7 +86,6 @@ export class PlaywrightExecutor implements Executor {
 
 	async start() {
 		const browser = await this.type.launch(this.options);
-		await importParser.init;
 		this.context = await browser.newContext();
 	}
 

@@ -107,6 +107,7 @@ export const transformer = {
 		if (/tsx?$/.test(path)) {
 			code = await this.adapter!.compileTS(code, path);
 		}
+		await importParser.init;
 		return this.transformImports(code, path);
 	},
 
