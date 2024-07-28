@@ -29,6 +29,14 @@ function runESBenchCLI(...args: string[]) {
 	return import("../../src/host/cli.js");
 }
 
+it("should reject unknown options", async () => {
+	const exit = vi.spyOn(process, "exit").mockReturnThis();
+	await runESBenchCLI("--foo");
+
+	expect(exit).toHaveBeenCalledWith(1);
+	expect(mockStart).not.toHaveBeenCalled();
+});
+
 it("should pass empty object if no config found", async () => {
 	await runESBenchCLI();
 

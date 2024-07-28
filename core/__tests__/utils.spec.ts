@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SharedModeFilter, toDisplayName } from "../src/utils.js";
+import { groupByPolyfill, SharedModeFilter, toDisplayName } from "../src/utils.js";
 
 it.each([
 	["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
@@ -74,4 +74,24 @@ describe("SharedModeFilter", () => {
 		expect(filter.select([11, 22])).toHaveLength(0);
 		expect(filter.select([11, 22])).toHaveLength(1);
 	});
+});
+
+it("should polyfill Map.groupBy", () => {
+	const inventory = [
+		{ name: "asparagus", type: "vegetables", quantity: 9 },
+		{ name: "bananas", type: "fruit", quantity: 5 },
+		{ name: "goat", type: "meat", quantity: 23 },
+		{ name: "cherries", type: "fruit", quantity: 12 },
+		{ name: "fish", type: "meat", quantity: 22 },
+	];
+	const restock = { restock: true };
+	const sufficient = { restock: false };
+
+	const result = groupByPolyfill(inventory, ({ quantity }) =>
+		quantity < 6 ? restock : sufficient,
+	);
+	expect(result.get(sufficient)).toHaveLength(4);
+	expect(result.get(restock)).toStrictEqual([
+		{ name: "bananas", type: "fruit", quantity: 5 },
+	]);
 });

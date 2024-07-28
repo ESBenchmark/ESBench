@@ -123,7 +123,7 @@ export function indexOf<T>(iter: Iterable<T>, v: T) {
 	return -1;
 }
 
-function groupByPolyfill<K, T>(items: Iterable<T>, keySelector: (e: T) => K) {
+export function groupByPolyfill<K, T>(items: Iterable<T>, keySelector: (e: T) => K) {
 	const grouped = new MultiMap<K, T>();
 	for (const item of items) {
 		grouped.add(keySelector(item), item);

@@ -4,6 +4,7 @@ import { chromium } from "playwright-core";
 import WebRemoteExecutor from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
 import { transformer } from "../../src/executor/transform.ts";
+import { HostContext } from "../../src/host/index.ts";
 
 const tester = executorTester(new WebRemoteExecutor());
 
@@ -25,6 +26,17 @@ tester.execute = async build => {
 
 it("should suggest a name", () => {
 	expect(new WebRemoteExecutor().name).toBe("web remote");
+});
+
+it("should display listening port", async () => {
+	const mockContext = new HostContext({});
+	mockContext.info = vi.fn();
+
+	const instance = new WebRemoteExecutor({ host: "::1", port: 39654 });
+	await instance.start(mockContext);
+	await instance.close();
+
+	expect(mockContext.info).toHaveBeenCalledWith("[WebRemoteExecutor] Waiting for connection to: http://[::1]:39654");
 });
 
 it("should transfer messages", tester.successCase());

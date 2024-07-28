@@ -138,7 +138,7 @@ export default class WebRemoteExecutor implements Executor {
 		await once(this.server, "listening");
 
 		const url = resolveUrl(this.server, this.options);
-		ctx.info("[WebManuallyExecutor] Waiting for connection to: " + url);
+		ctx.info("[WebRemoteExecutor] Waiting for connection to: " + url);
 	}
 
 	close() {

@@ -127,6 +127,30 @@ it.each([
 	expect(table.cells[3][3]).toBe(values[2]);
 });
 
+it("should show greater or less if the baseline value is 0", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		baseline: {
+			type: "Name",
+			value: "A",
+		},
+		scenes: [{
+			A: { time: [0] },
+			B: { time: [-11] },
+			C: { time: [11] },
+		}],
+	}], undefined, {
+		stdDev: false,
+	});
+
+	expect(table.colors[2][3]).toBe("green");
+	expect(table.colors[3][3]).toBe("red");
+
+	expect(table.cells[1][3]).toBe("baseline");
+	expect(table.cells[2][3]).toBe("less");
+	expect(table.cells[3][3]).toBe("greater");
+});
+
 it("should calculate ratio with previous", () => {
 	const table = SummaryTable.from([{
 		...resultStub,

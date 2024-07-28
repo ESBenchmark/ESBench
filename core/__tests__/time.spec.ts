@@ -69,7 +69,7 @@ it("should support specify number of samples", async () => {
 		warmup: 3,
 		samples: 22,
 	}, {
-		setup: scene => scene.bench("Test", fn),
+		setup: scene => scene.benchAsync("Test", fn),
 	});
 	expect(fn).toHaveBeenCalledTimes(25);
 	expect(result.scenes[0].Test.time).toHaveLength(22);

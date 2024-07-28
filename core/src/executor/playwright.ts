@@ -217,6 +217,7 @@ export class WebextExecutor extends PlaywrightExecutor {
 		} finally {
 			await page.close();
 		}
+		/* v8 ignore next 1 -- @preserve */
 		throw new Error("Can't find the extension: " + manifest.name);
 	}
 }
