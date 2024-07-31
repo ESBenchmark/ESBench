@@ -49,22 +49,22 @@ async function executeBenchmarks({ entry, file, pattern }) {
 	try {
 		const module = await import(entry);
 		imported = true;
-		await module.default(postMessage, file, pattern);
+		return module.default(postMessage, file, pattern);
 	} catch (e) {
 		const { name, message, stack } = e;
 		return postMessage({ e: { name, message, stack } });
 	}
 }
 
-for (; ; sleep(5)) {
+for (; ;) {
 	try {
 		const response = await fetch("./_es-bench/task");
 		if (!response.ok) {
-			continue;
+			continue; // Server is switching task.
 		}
 		/*
-		 * If ESBench quits, the page doesn't exist, and refreshing
-		 * won't re-enter the page, so we must delay to the next request.
+		 * If ESBench quits, the page doesn't exist, and refreshing won't
+		 * re-enter the page, so we must wait for the next request.
 		 */
 		if (imported) {
 			// Refresh the page to reset globals.
@@ -72,7 +72,7 @@ for (; ; sleep(5)) {
 		}
 		await executeBenchmarks(await response.json());
 	} catch {
-		// ESBench finished, still poll for the next run.
+		await sleep(5000); // ESBench quits, reduce polling frequency.
 	}
 }`;
 
