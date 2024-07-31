@@ -45,6 +45,10 @@ it("should forward errors from runAndSend()", tester.insideError());
 
 it("should forward top level errors", tester.outsideError());
 
+it("should throw error if the entry is invalid", () => {
+	return expect(tester.execute("no-export")).rejects.toThrow();
+});
+
 it("should support import attributes", tester.importJSON());
 
 it("should transform modules with builtin transformer", async () => {

@@ -43,30 +43,34 @@ const postMessage = message => fetch("/_es-bench/message", {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function doImport(path) {
+let imported = false
+
+async function executeBenchmarks({ entry, file, pattern }) {
 	try {
-		return await import(path);
+		const module = await import(entry);
+		imported = true;
+		await module.default(postMessage, file, pattern);
 	} catch (e) {
 		const { name, message, stack } = e;
 		return postMessage({ e: { name, message, stack } });
 	}
 }
 
-for (let imported = false; ; sleep(5)) {
+for (; ; sleep(5)) {
 	try {
 		const response = await fetch("./_es-bench/task");
 		if (!response.ok) {
 			continue;
 		}
-		// Refresh the page to clear module cache.
+		/*
+		 * If ESBench quits, the page doesn't exist, and refreshing
+		 * won't re-enter the page, so we must delay to the next request.
+		 */
 		if (imported) {
+			// Refresh the page to reset globals.
 			location.reload();
 		}
-		const { entry, file, pattern } = await response.json();
-		const module = await doImport(entry);
-		
-		imported = true;
-		await module.default(postMessage, file, pattern);
+		await executeBenchmarks(await response.json());
 	} catch {
 		// ESBench finished, still poll for the next run.
 	}

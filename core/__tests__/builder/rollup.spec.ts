@@ -11,7 +11,7 @@ import { Builder } from "../../src/host/index.ts";
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));
 
 async function testBundle(builder: Builder) {
-	const file = "./__tests__/fixtures/empty-suite.js";
+	const file = "./__tests__/fixtures/no-case.js";
 	await builder.build(directory, [file]);
 
 	const url = pathToFileURL(join(directory, "index.js"));
