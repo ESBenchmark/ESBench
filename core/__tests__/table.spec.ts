@@ -102,6 +102,21 @@ it("should allow optional metrics value", () => {
 	]);
 });
 
+it("should display all variables if showSingle=true", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		tags: { tag1: "22" },
+		paramDef: [["param1", ["11"]]],
+	}], undefined, {
+		showSingle: true,
+	});
+	expect(table.cells).toStrictEqual([
+		["No.", "Name", "param1", "tag1", "time", "time.SD"],
+		["0", "foo", "11", "22", 0.75, 0.4330127018922193],
+		["1", "bar", "11", "22", 1.75, 0.4330127018922193],
+	]);
+});
+
 it.each([
 	["percentage" as const, ["baseline", "+100.00%", "-75.00%"]],
 	["value" as const, ["baseline", "2.00x", "0.25x"]],
@@ -149,6 +164,20 @@ it("should show greater or less if the baseline value is 0", () => {
 	expect(table.cells[1][3]).toBe("baseline");
 	expect(table.cells[2][3]).toBe("less");
 	expect(table.cells[3][3]).toBe("greater");
+});
+
+it("should skip ratios if the baseline case is not exists", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		paramDef: [["param1", ["11", "22"]]],
+		baseline: { type: "param1", value: "22" },
+	}]);
+	expect(table.warnings).toHaveLength(0);
+	expect(table.cells).toStrictEqual([
+		["No.", "Name", "param1", "time", "time.SD", "time.ratio"],
+		["0", "foo", "11", 0.75, 0.4330127018922193, undefined],
+		["1", "bar", "11", 1.75, 0.4330127018922193, undefined],
+	]);
 });
 
 it("should calculate ratio with previous", () => {

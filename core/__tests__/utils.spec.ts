@@ -22,7 +22,7 @@ it.each([
 	[() => {}, "Anonymous fn"],
 	[function foo() {}, "foo"],
 	[class BarBaz {}, "BarBaz"],
-])("should get display name %#", (value, expected) => {
+])("should convert param to short name %#", (value, expected) => {
 	expect(toDisplayName(value)).toBe(expected);
 });
 

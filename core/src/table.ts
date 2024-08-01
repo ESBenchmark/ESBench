@@ -219,7 +219,7 @@ class BaselineColumn implements ColumnFactory {
 	private readonly value: string;
 	private readonly style: RatioStyle;
 
-	private ratio1 = 0;
+	private ratio1?: number;
 
 	constructor(meta: MetricMeta, baseline: ResultBaseline, style: RatioStyle) {
 		this.meta = meta;
