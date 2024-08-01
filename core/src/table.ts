@@ -1,7 +1,7 @@
 import { mean, quantileSorted, standardDeviation } from "simple-statistics";
 import { TukeyOutlierDetector } from "./math.js";
 import { MetricAnalysis, MetricMeta, Metrics } from "./profiling.js";
-import { BUILTIN_VARS, variablesToString } from "./utils.js";
+import { variablesToString } from "./utils.js";
 import { ToolchainResult } from "./connect.js";
 import { ResultBaseline } from "./runner.js";
 import { FlattedResult, Summary } from "./summary.js";
@@ -124,19 +124,14 @@ class RowNumberColumn implements ColumnFactory {
 
 class VariableColumn implements ColumnFactory {
 
-	readonly name: ColoredValue;
-
-	private readonly key: string;
+	readonly name: string;
 
 	constructor(key: string) {
-		this.name = this.key = key;
-		if (!BUILTIN_VARS.includes(this.key)) {
-			this.name = [this.name, "magentaBright"];
-		}
+		this.name = key;
 	}
 
 	getValue(data: FlattedResult) {
-		return data[this.key];
+		return data[this.name];
 	}
 }
 
