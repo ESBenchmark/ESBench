@@ -180,6 +180,26 @@ it("should skip ratios if the baseline case is not exists", () => {
 	]);
 });
 
+it("should reset baseline for each group", () => {
+	const table = SummaryTable.from([{
+		...resultStub,
+		paramDef: [["param1", ["11", "22"]]],
+		baseline: { type: "Name", value: "foo" },
+		scenes: [{
+			foo: { time: [0, 1, 1, 1] },
+			bar: { time: [1, 2, 2, 2] },
+		}, {
+			bar: { time: [1, 2, 2, 2] },
+		}],
+	}]);
+	expect(table.cells).toStrictEqual([
+		["No.", "Name", "param1", "time", "time.SD", "time.ratio"],
+		["0", "foo", "11", 0.75, 0.4330127018922193, "baseline"],
+		["1", "bar", "11", 1.75, 0.4330127018922193, "+133.33%"],
+		["2", "bar", "22", 1.75, 0.4330127018922193, undefined],
+	]);
+});
+
 it("should calculate ratio with previous", () => {
 	const table = SummaryTable.from([{
 		...resultStub,

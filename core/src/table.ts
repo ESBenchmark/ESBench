@@ -237,13 +237,10 @@ class BaselineColumn implements ColumnFactory {
 		return Array.isArray(metric) ? mean(metric) : metric as number;
 	}
 
-	prepare(cases: Iterable<FlattedResult>) {
+	prepare(cases: FlattedResult[]) {
 		const { variable, value } = this;
-		for (const row of cases) {
-			if (row[variable] === value) {
-				return this.ratio1 = this.toNumber(row);
-			}
-		}
+		const row = cases.find(i => i[variable] === value);
+		this.ratio1 = row && this.toNumber(row);
 	}
 
 	getValue(data: FlattedResult) {
