@@ -13,10 +13,10 @@
 		"chartjs-chart-error-bars": "^4.4.1",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.3",
-		"vue": "^3.4.34"
+		"vue": "^3.4.35"
 	},
 	"devDependencies": {
-		"@vitejs/plugin-vue": "^5.1.1",
+		"@vitejs/plugin-vue": "^5.1.2",
 		"vite": "^5.3.5",
 		"vite-plugin-singlefile": "^2.0.2"
 	}
