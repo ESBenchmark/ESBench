@@ -11,7 +11,7 @@ export default [...core, ...typescript, ...vueTs,
 	},
 	{
 		rules: {
-			"kaciras/import-group-sort": "warn",
+			"kaciras/import-specifier-order": "warn",
 			"kaciras/import-node-prefix": "error",
 		},
 	},
