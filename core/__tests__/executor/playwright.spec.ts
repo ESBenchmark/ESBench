@@ -3,7 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { chromium, firefox, webkit } from "playwright-core";
 import { executorTester } from "../helper.ts";
 import { PlaywrightExecutor, WebextExecutor } from "../../src/executor/playwright.ts";
-import { transformer } from "../../src/executor/transform.ts";
+import { createPathMapper, transformer } from "../../src/executor/transform.ts";
+
+vi.mock("../../src/executor/transform.ts");
+
+const resolveAsset = vi.fn(() => undefined as any);
+vi.mocked(createPathMapper).mockReturnValue(resolveAsset);
 
 it.each([
 	[new PlaywrightExecutor(firefox), "firefox"],
@@ -14,18 +19,25 @@ it.each([
 	expect(executor.name).toBe(name);
 });
 
+it("should create a path mapper", () => {
+	const assets = { foo: "bar" };
+	new PlaywrightExecutor(firefox, { assets });
+	expect(createPathMapper).toHaveBeenCalledWith(assets);
+});
+
 describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	const tester = executorTester(new PlaywrightExecutor(type));
 
 	// Browser launches slowly on CI.
-	it("should transfer messages", { timeout: 75000 }, tester.successCase());
+	it("should transfer messages", { timeout: 7500 }, tester.successCase());
 
 	it("should forward errors from runAndSend()", tester.insideError());
 
 	it("should forward top level errors", tester.outsideError());
 
 	it("should respond 404 when resource not exists", async () => {
-		expect(await tester.execute("fetch")).toHaveProperty("status", 404);
+		const { result } = await tester.execute("fetch");
+		expect(result).toHaveProperty("status", 404);
 	});
 
 	// https://caniuse.com/mdn-javascript_statements_import_import_attributes_type_json
@@ -56,6 +68,16 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 		vi.spyOn(transformer, method).mockRejectedValue(new Error("Stub Error"));
 
 		return expect(tester.execute("MOCK_ROOT")).rejects.toThrow(/* Different in each browser */);
+	});
+
+	it("should route requests with assets map", async () => {
+		resolveAsset.mockReturnValueOnce(undefined); // index.js
+		resolveAsset.mockReturnValue("__tests__/fixtures/fetch/file1.txt");
+
+		const { result } = await tester.execute("fetch", "/foo/bar.txt");
+		expect(result.status).toBe(200);
+		expect(result.text).toBe("This is file 1\n");
+		expect(resolveAsset).toHaveBeenCalledWith("/foo/bar.txt");
 	});
 });
 

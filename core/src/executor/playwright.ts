@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { AsyncFunction } from "@kaciras/utilities/node";
 import { ClientMessage } from "../connect.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
-import { transformer } from "./transform.js";
+import { createPathMapper, MapPath, transformer } from "./transform.js";
 import { htmlEntryHeaders } from "./web-remote.js";
 
 // Code may not work well on about:blank, so we use localhost.
@@ -52,6 +52,33 @@ const client: any = new AsyncFunction("args", `\
 	return loader.default(_ESBenchPost, args.file, args.pattern);
 `);
 
+export interface PlaywrightOptions extends LaunchOptions {
+	/**
+	 * Define a map of files that can be accessed by web pages. By default,
+	 * only files in the build output dir of the current task can be sent to the page.
+	 *
+	 * If the suite needs to use files that does not copied to the out dir,
+	 * and cannot be resolved by the builtin transformer, you should add them to assets.
+	 *
+	 * When a request is received, the server will see if the prefix of the path of
+	 * the URL matches one of the keys of `assets`, and if it does, replace the prefix
+	 * with the corresponding value, which is then used as the path to the file.
+	 *
+	 * If multiple prefix matches, the longest takes precedence.
+	 * if there is no match, send the file from build output directory.
+	 *
+	 * @example
+	 * // Request "/foo*" will be resolved to path "<cwd>/test/fixtures*"
+	 * new WebRemoteExecutor({
+	 *     assets: { "/foo": "test/fixtures" }
+	 * });
+	 *
+	 * // In the suite, we can fetch the file "<cwd>/test/fixtures/data.json".
+	 * fetch("/foo/data.json");
+	 */
+	assets?: Record<string, string>;
+}
+
 /**
  * Run suites on browser with Playwright driver.
  *
@@ -70,14 +97,17 @@ const client: any = new AsyncFunction("args", `\
  */
 export class PlaywrightExecutor implements Executor {
 
+	private readonly resolveAsset: MapPath;
+
 	readonly type: BrowserType;
 	readonly options?: LaunchOptions;
 
 	context!: BrowserContext;
 
-	constructor(type: BrowserType, options?: LaunchOptions) {
+	constructor(type: BrowserType, options?: PlaywrightOptions) {
 		this.type = type;
 		this.options = options;
+		this.resolveAsset = createPathMapper(options?.assets);
 	}
 
 	get name() {
@@ -102,12 +132,12 @@ export class PlaywrightExecutor implements Executor {
 		if (path === "/") {
 			return route.fulfill(blankPageResponse);
 		}
-
 		try {
 			const resolved = transformer.parse(root, path);
 			if (!resolved) {
 				// Non-import request or resolving disabled.
-				return await route.fulfill({ path: join(root, path) });
+				path = this.resolveAsset(path) ?? join(root, path);
+				return await route.fulfill({ path });
 			}
 			const body = await transformer.load(resolved);
 			if (body) {
