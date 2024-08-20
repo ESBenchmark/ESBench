@@ -25,8 +25,7 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	it("should forward top level errors", tester.outsideError());
 
 	it("should respond 404 when resource not exists", async () => {
-		const { result } = await tester.execute("fetch-404");
-		expect(result.notes[0].text).toBe("Status: 404");
+		expect(await tester.execute("fetch")).toHaveProperty("status", 404);
 	});
 
 	// https://caniuse.com/mdn-javascript_statements_import_import_attributes_type_json

@@ -6,7 +6,11 @@ import { executorTester } from "../helper.ts";
 import { transformer } from "../../src/executor/transform.ts";
 import { HostContext } from "../../src/host/index.ts";
 
-const tester = executorTester(new WebRemoteExecutor());
+const tester = executorTester(new WebRemoteExecutor({
+	assets: {
+		"/foo": "__tests__/fixtures/fetch",
+	},
+}));
 
 const browser = await chromium.launch();
 const context = await browser.newContext();
@@ -14,11 +18,11 @@ const context = await browser.newContext();
 afterAll(() => browser.close());
 
 const baseExecute = tester.execute;
-tester.execute = async build => {
+tester.execute = async (...args) => {
 	const page = await context.newPage();
 	try {
 		await page.goto("http://localhost:14715");
-		return await baseExecute(build);
+		return await baseExecute(...args);
 	} finally {
 		await page.close();
 	}
@@ -76,4 +80,10 @@ it.each(["parse", "load"] as const)("should handle error thrown from transformer
 	vi.spyOn(transformer, method).mockRejectedValue(new Error("Stub Error"));
 
 	return expect(tester.execute("MOCK_ROOT")).rejects.toThrow(/* Different in each browser */);
+});
+
+it("should route requests with assets map", async () => {
+	const { result } = await tester.execute("fetch", "/foo/file1.txt");
+	expect(result.status).toBe(200);
+	expect(result.text).toBe("This is file 1\n");
 });

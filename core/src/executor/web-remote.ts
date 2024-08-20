@@ -6,6 +6,7 @@ import { once } from "node:events";
 import { createReadStream } from "node:fs";
 import { extname, join } from "node:path";
 import { AddressInfo } from "node:net";
+import { noop } from "@kaciras/utilities/node";
 import { ClientMessage } from "../connect.js";
 import { transformer } from "./transform.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
@@ -92,6 +93,22 @@ function resolveUrl(server: Server, options: WebRemoteExecutorOptions) {
 	return `${protocol}://${hostname}:${info.port}`;
 }
 
+function createPathMapper(map?: Record<string, string>) {
+	if (!map) {
+		return noop;
+	}
+	const entries = Object.entries(map);
+	entries.sort((a,b)=> b[0].length - a[0].length);
+
+	return (path: string) => {
+		for (const [prefix, folder] of entries) {
+			if (path.startsWith(prefix)) {
+				return folder + path.slice(prefix.length);
+			}
+		}
+	};
+}
+
 interface WebRemoteExecutorOptions extends https.ServerOptions {
 	/**
 	 * The host parameter of `Server.listen`.
@@ -104,6 +121,31 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 	 * @default 14715
 	 */
 	port?: number;
+
+	/**
+	 * Define a map of files that can be accessed by web pages. By default,
+	 * only files in the build output dir of the current task can be sent to the page.
+	 *
+	 * If the suite needs to use files that does not copied to the out dir,
+	 * and cannot be resolved by the builtin transformer, you should add them to assets.
+	 *
+	 * When a request is received, the server will see if the prefix of the path of
+	 * the URL matches one of the keys of `assets`, and if it does, replace the prefix
+	 * with the corresponding value, which is then used as the path to the file.
+	 *
+	 * If multiple prefix matches, the longest takes precedence.
+	 * if there is no match, send the file from build output directory.
+	 *
+	 * @example
+	 * // Request "/foo*" will be resolved to path "<cwd>/test/fixtures*"
+	 * new WebRemoteExecutor({
+	 *     assets: { "/foo": "test/fixtures" }
+	 * });
+	 *
+	 * // In the suite, fetch the file "<cwd>/test/fixtures/data.json".
+	 * fetch("/foo/data.json");
+	 */
+	assets?: Record<string, string>;
 }
 
 /**
@@ -113,10 +155,11 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
  */
 export default class WebRemoteExecutor implements Executor {
 
+	private readonly options: WebRemoteExecutorOptions;
+	private readonly resolveAsset: (path: string) => string | void;
+
 	private server!: Server;
 	private task?: SuiteTask;
-
-	private readonly options: WebRemoteExecutorOptions;
 
 	/**
 	 * Create a new WebRemoteExecutor instance, if `options.key`
@@ -124,6 +167,7 @@ export default class WebRemoteExecutor implements Executor {
 	 */
 	constructor(options: WebRemoteExecutorOptions = {}) {
 		this.options = options;
+		this.resolveAsset = createPathMapper(options.assets);
 	}
 
 	get name() {
@@ -198,7 +242,8 @@ export default class WebRemoteExecutor implements Executor {
 			const parsed = transformer.parse(root, path);
 			if (!parsed) {
 				// Non-import request or resolving disabled.
-				return this.sendFile(join(root, path), response);
+				const file = this.resolveAsset(path) ?? join(root, path);
+				return this.sendFile(file, response);
 			}
 			// The module may need to be transformed.
 			const body = await transformer.load(parsed);
