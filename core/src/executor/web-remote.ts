@@ -6,9 +6,8 @@ import { once } from "node:events";
 import { createReadStream } from "node:fs";
 import { extname, join } from "node:path";
 import { AddressInfo } from "node:net";
-import { noop } from "@kaciras/utilities/node";
 import { ClientMessage } from "../connect.js";
-import { transformer } from "./transform.js";
+import { createPathMapper, MapPath, transformer } from "./transform.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/context.js";
 
@@ -93,22 +92,6 @@ function resolveUrl(server: Server, options: WebRemoteExecutorOptions) {
 	return `${protocol}://${hostname}:${info.port}`;
 }
 
-function createPathMapper(map?: Record<string, string>) {
-	if (!map) {
-		return noop;
-	}
-	const entries = Object.entries(map);
-	entries.sort((a,b)=> b[0].length - a[0].length);
-
-	return (path: string) => {
-		for (const [prefix, folder] of entries) {
-			if (path.startsWith(prefix)) {
-				return folder + path.slice(prefix.length);
-			}
-		}
-	};
-}
-
 interface WebRemoteExecutorOptions extends https.ServerOptions {
 	/**
 	 * The host parameter of `Server.listen`.
@@ -142,7 +125,7 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 	 *     assets: { "/foo": "test/fixtures" }
 	 * });
 	 *
-	 * // In the suite, fetch the file "<cwd>/test/fixtures/data.json".
+	 * // In the suite, we can fetch the file "<cwd>/test/fixtures/data.json".
 	 * fetch("/foo/data.json");
 	 */
 	assets?: Record<string, string>;
@@ -156,7 +139,7 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 export default class WebRemoteExecutor implements Executor {
 
 	private readonly options: WebRemoteExecutorOptions;
-	private readonly resolveAsset: (path: string) => string | void;
+	private readonly resolveAsset: MapPath;
 
 	private server!: Server;
 	private task?: SuiteTask;

@@ -3,14 +3,15 @@ import { afterAll, expect, it, vi } from "vitest";
 import { chromium } from "playwright-core";
 import WebRemoteExecutor from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
-import { transformer } from "../../src/executor/transform.ts";
+import { createPathMapper, transformer } from "../../src/executor/transform.ts";
 import { HostContext } from "../../src/host/index.ts";
 
-const tester = executorTester(new WebRemoteExecutor({
-	assets: {
-		"/foo": "__tests__/fixtures/fetch",
-	},
-}));
+vi.mock("../../src/executor/transform.ts");
+
+const resolveAsset = vi.fn(() => undefined as any);
+vi.mocked(createPathMapper).mockReturnValue(resolveAsset);
+
+const tester = executorTester(new WebRemoteExecutor());
 
 const browser = await chromium.launch();
 const context = await browser.newContext();
@@ -30,6 +31,12 @@ tester.execute = async (...args) => {
 
 it("should suggest a name", () => {
 	expect(new WebRemoteExecutor().name).toBe("web remote");
+});
+
+it("should create a path mapper", () => {
+	const assets = { foo: "bar" };
+	new WebRemoteExecutor({ assets });
+	expect(createPathMapper).toHaveBeenCalledWith(assets);
 });
 
 it("should display listening port", async () => {
@@ -83,7 +90,11 @@ it.each(["parse", "load"] as const)("should handle error thrown from transformer
 });
 
 it("should route requests with assets map", async () => {
-	const { result } = await tester.execute("fetch", "/foo/file1.txt");
+	resolveAsset.mockReturnValueOnce(undefined); // index.js
+	resolveAsset.mockReturnValue("__tests__/fixtures/fetch/file1.txt");
+
+	const { result } = await tester.execute("fetch", "/foo/bar.txt");
 	expect(result.status).toBe(200);
 	expect(result.text).toBe("This is file 1\n");
+	expect(resolveAsset).toHaveBeenCalledWith("/foo/bar.txt");
 });

@@ -2,7 +2,7 @@ import { pathToFileURL } from "node:url";
 import { resolve, sep } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { transformer } from "../../src/executor/transform.ts";
+import { createPathMapper, transformer } from "../../src/executor/transform.ts";
 
 const mockAdapter = {
 	compileTS: vi.fn(() => "foobar"),
@@ -146,4 +146,21 @@ describe("transformer", () => {
 	it("should not load non-JS files", () => {
 		return expect(instance.load("./foo.wasm")).resolves.toBeUndefined();
 	});
+});
+
+it.each([
+	[undefined, undefined],
+	[{}, undefined],
+	[{ zzz: "/11" }, undefined],
+	[{ "/foo": "/11" }, "/11/bar.txt"],
+	[
+		{
+			"/foo": "/11",
+			"/foo/bar": "/22/qux",
+		},
+		"/22/qux.txt",
+	],
+])("should map the path %#", (map, expected) => {
+	const resolve = createPathMapper(map);
+	expect(resolve("/foo/bar.txt")).toBe(expected);
 });

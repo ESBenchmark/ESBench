@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as tsdx from "ts-directly";
 import * as importParser from "es-module-lexer";
-import { Awaitable, silentCall } from "@kaciras/utilities/node";
+import { Awaitable, noop, silentCall } from "@kaciras/utilities/node";
 
 /**
  * See if the specified Node feature flag is enabled. Note that this function requires
@@ -16,6 +16,24 @@ import { Awaitable, silentCall } from "@kaciras/utilities/node";
  */
 function hasFlag(flag: string) {
 	return execArgv.includes(flag) || env.NODE_OPTIONS?.includes(flag);
+}
+
+export type MapPath = (path: string) => string | void;
+
+export function createPathMapper(map?: Record<string, string>) {
+	if (!map) {
+		return noop as MapPath;
+	}
+	const entries = Object.entries(map);
+	entries.sort((a,b)=> b[0].length - a[0].length);
+
+	return (path: string) => {
+		for (const [prefix, folder] of entries) {
+			if (path.startsWith(prefix)) {
+				return folder + path.slice(prefix.length);
+			}
+		}
+	};
 }
 
 function parseV8Stack(line: string) {
