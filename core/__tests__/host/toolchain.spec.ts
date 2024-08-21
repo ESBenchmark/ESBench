@@ -27,7 +27,7 @@ it("should throw error if a tool have more than 1 names", () => {
 	const generator = create();
 	const item = {
 		executors: [inProcess],
-		include: ["test"],
+		include: ["./__tests__/fixtures/*"],
 		builders: [
 			{ name: "foo", use: noBuild },
 			{ name: "bar", use: noBuild },
@@ -40,7 +40,7 @@ it("should throw error if a name used for more than 1 tools", () => {
 	const generator = create();
 	const item = {
 		executors: [inProcess],
-		include: ["test"],
+		include: ["./__tests__/fixtures/*"],
 		builders: [
 			{ name: "foo", use: new ViteBuilder() },
 			{ name: "foo", use: noBuild },
@@ -53,7 +53,7 @@ it("should throw error if a tool has invalid name", () => {
 	const generator = create();
 	const item = {
 		executors: [inProcess],
-		include: ["a"],
+		include: ["./__tests__/fixtures/*"],
 		builders: [{ name: "", use: noBuild }],
 	};
 	expect(() => generator.add(item)).toThrow("Tool name must be a non-blank string");
@@ -68,12 +68,13 @@ it("should allow a tool used in different toolchain", () => {
 it("should skip build if no file matching", async () => {
 	const build = vi.fn();
 
-	await testBuild({ file: "src" }, {
-		include: ["./__tests__/fixtures/**/*"],
+	const jobs = await testBuild({ file: "NOT_EXISTS" }, {
+		include: ["./__tests__/fixtures/*"],
 		executors: [inProcess],
 		builders: [{ name: "test", build }],
 	});
 
+	expect(jobs).toHaveLength(0);
 	expect(build).not.toHaveBeenCalled();
 });
 
@@ -81,7 +82,7 @@ it("should filter files to build", async () => {
 	const build = vi.fn();
 
 	await testBuild({ file: "error-inside" }, {
-		include: ["./__tests__/fixtures/**/*"],
+		include: ["./__tests__/fixtures/*/*"],
 		executors: [inProcess],
 		builders: [{ name: "test", build }],
 	});
@@ -92,13 +93,21 @@ it("should filter files to build", async () => {
 	expect(files).toStrictEqual(["./__tests__/fixtures/error-inside/index.js"]);
 });
 
-it("should skip builder that has no file matched", () => {
-	const building = testBuild({ file: "src" }, {
-		include: ["./__tests__/fixtures/**/*"],
-		builders: [noBuild],
+it("should filter toolchain item by file", () => {
+	const generator = create({ file: "NOT_EXISTS" });
+	generator.add({
 		executors: [inProcess],
+		include: ["./__tests__/fixtures/*"],
+		builders: [
+			{ name: "foo", use: noBuild },
+			{ name: "bar", use: noBuild },
+		],
 	});
-	return expect(building).resolves.toHaveLength(0);
+	generator.add({
+		builders: [noBuild],
+		include: ["zzz"],
+		executors: [inProcess, inProcess],
+	});
 });
 
 it("should ignore builder that name does not match the regexp", async () => {
@@ -120,7 +129,7 @@ it("should skip executor that has no file matched", async () => {
 	const executorStub = { name: "test", execute: vi.fn() };
 
 	const jobs = await testBuild({}, {
-		include: ["./__tests__/fixtures/**/*"],
+		include: ["./__tests__/fixtures/*/*"],
 		builders: [noBuild],
 		executors: [inProcess],
 	}, {
@@ -241,6 +250,21 @@ it("should filter files by shared 2/2", async () => {
 	expect(builds[1].files).toStrictEqual([
 		"./__tests__/fixtures/success-suite/index.js",
 	]);
+});
+
+it("should filter toolchain item by shared", async () => {
+	const builderA = { name: "A", build: vi.fn() };
+
+	await testBuild({ shared: "1/2" }, {
+		include: ["./__tests__/fixtures/fetch/*.js"],
+		builders: [builderA],
+		executors: [inProcess],
+	}, {
+		include: ["./__tests__/fixtures/inspect/*.js"],
+		// Filtered out, so dedupe tool does not fail the build.
+		builders: [noBuild, noBuild],
+		executors: [inProcess, inProcess],
+	});
 });
 
 it("should dedupe builders with same executor", async () => {

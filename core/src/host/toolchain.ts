@@ -1,7 +1,7 @@
 import { cwd } from "node:process";
 import { basename, join, relative } from "node:path";
 import { mkdtempSync } from "node:fs";
-import { Awaitable, MultiMap, UniqueMultiMap } from "@kaciras/utilities/node";
+import { Awaitable, UniqueMultiMap } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import { HostContext } from "./context.js";
 import { Channel, ClientMessage } from "../connect.js";
@@ -137,25 +137,11 @@ export function toSpecifier(path: string, parent: string) {
 	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
-interface Patterns {
-	include: string[];
-	exclude: string[];
-	matches?: string[];
-}
-
-function globInto(set: Set<string>, patterns: Patterns) {
-	const { include, exclude } = patterns;
-	patterns.matches ??= glob.sync(include, {
-		ignore: exclude,
-	});
-	for (const file of patterns.matches) set.add(file);
-}
-
 export default class JobGenerator {
 
 	private readonly t2n = new Map<Builder | Executor, string>();
-	private readonly bPatterns = new MultiMap<Builder, Patterns>();
-	private readonly ePatterns = new MultiMap<Executor, Patterns>();
+	private readonly bFiles = new UniqueMultiMap<Builder, string>();
+	private readonly eFiles = new UniqueMultiMap<Executor, string>();
 	private readonly e2b = new UniqueMultiMap<Executor, Builder>();
 	private readonly bOutput = new Map<Builder, BuildResult>();
 
@@ -177,62 +163,48 @@ export default class JobGenerator {
 		return Array.from(generator.getJobs());
 	}
 
-	add(toolchain: ToolChainItem) {
-		const { exclude = [], include, builders, executors } = toolchain;
-		const { filter } = this.context;
+	add(item: ToolChainItem) {
+		const { builder: builderRE, executor: executorRE, shared, file } = this.context.filter;
 
-		const builderRE = filter.builder;
-		const executorRE = filter.executor;
-		const workingDir = cwd();
+		const found = this.scanSuiteFiles(item);
+		const part = file ? relative(cwd(), file).replaceAll("\\", "/") : "";
 
-		const ue = executors
+		const files = [];
+		for (const file of found) {
+			if (!file.includes(part))
+				continue;
+			if (shared.roll()) {
+				files.push(file);
+			}
+		}
+		if (files.length === 0) {
+			return; // No file matches, skip this item.
+		}
+
+		const ue = item.executors
 			.filter(executor => executorRE.test(executor.name))
 			.map(this.unwrap.bind(this, "execute"));
 
-		// Ensure glob patterns is relative and starts with ./ or ../
-		const patterns = {
-			include: include.map(i => toSpecifier(i, workingDir)),
-			exclude: exclude.map(i => toSpecifier(i, workingDir)),
-		};
-
 		for (const executor of ue) {
-			this.ePatterns.add(executor, patterns);
+			this.eFiles.add(executor, ...files);
 		}
-		for (const builder of builders) {
+		for (const builder of item.builders) {
 			if (!builderRE.test(builder.name)) {
 				continue;
 			}
 			const builderUsed = this.unwrap("build", builder);
 			this.e2b.distribute(ue, builderUsed);
-			this.bPatterns.add(builderUsed, patterns);
+			this.bFiles.add(builderUsed, ...files);
 		}
 	}
 
 	async build() {
-		const { context, bPatterns, bOutput, t2n } = this;
-		const { config: { tempDir }, filter } = context;
+		const { context, bFiles, bOutput, t2n } = this;
+		const { config: { tempDir } } = context;
+		context.info(`Building suites with ${bFiles.size} builders [tempDir=${tempDir}]...`);
 
-		const part = filter.file ? relative(cwd(), filter.file).replaceAll("\\", "/") : "";
-		context.info(`Building suites with ${bPatterns.size} builders [tempDir=${tempDir}]...`);
-
-		for (const [builder, include] of bPatterns) {
-			const dedupe = new Set<string>();
-			for (const patterns of include) {
-				globInto(dedupe, patterns);
-			}
-
-			const files = [];
-			for (const file of dedupe) {
-				if (!file.includes(part))
-					continue;
-				if (filter.shared.roll()) {
-					files.push(file);
-				}
-			}
-			if (files.length === 0) {
-				continue;
-			}
-
+		for (const [builder, set] of bFiles) {
+			const files = Array.from(set);
 			const root = mkdtempSync(join(tempDir, "build-"));
 			const name = t2n.get(builder)!;
 			context.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
@@ -244,12 +216,8 @@ export default class JobGenerator {
 
 	* getJobs() {
 		for (const [executor, builders] of this.e2b) {
-			const dedupe = new Set<string>();
+			const dedupe = this.eFiles.get(executor)!;
 			const builds = [];
-
-			for (const patterns of this.ePatterns.get(executor)!) {
-				globInto(dedupe, patterns);
-			}
 
 			// Only add builds that have files match the executor's glob pattern.
 			for (const name of builders) {
@@ -269,6 +237,17 @@ export default class JobGenerator {
 				yield { name, executor, builds } as Job;
 			}
 		}
+	}
+
+	private scanSuiteFiles(item: ToolChainItem) {
+		let { exclude = [], include } = item;
+		const workingDir = cwd();
+
+		// Ensure glob patterns is relative and starts with ./ or ../
+		include = include.map(i => toSpecifier(i, workingDir));
+		exclude = exclude.map(i => toSpecifier(i, workingDir));
+
+		return glob.sync(include, { ignore: exclude });
 	}
 
 	private unwrap(keyMethod: string, tool: Nameable<any>) {
