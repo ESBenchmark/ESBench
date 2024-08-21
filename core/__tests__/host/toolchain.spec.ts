@@ -59,13 +59,16 @@ it("should throw error if a name used for more than 1 tools", () => {
 });
 
 it("should throw error if a tool has invalid name", () => {
-	const generator = create();
-	const item = {
+	const generator = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [{ name: "", use: noBuild }],
-	};
-	expect(() => generator.add(item)).toThrow("Tool name must be a non-blank string");
+	});
+	const lines = [
+		"Tool name must be a non-blank string",
+		"└─ toolchains[0].builders[0]",
+	];
+	return expect(generator).rejects.toThrow(lines.join("\n"));
 });
 
 it("should allow a tool used in different toolchain", () => {

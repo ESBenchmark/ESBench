@@ -172,29 +172,18 @@ export default class JobGenerator {
 	}
 
 	add(item: ToolChainItem, index = -1) {
-		const { builder: builderRE, executor: executorRE, shared, file } = this.context.filter;
+		const { builder: builderRE, executor: executorRE } = this.context.filter;
 
-		const found = this.scanSuiteFiles(item);
-		const part = file ? relative(cwd(), file).replaceAll("\\", "/") : "";
-
-		const files = [];
-		for (const file of found) {
-			if (!file.includes(part)) {
-				continue;
-			}
-			if (shared.roll()) {
-				files.push(file);
-			}
-		}
+		const files = this.scanSuiteFiles(item);
 		if (files.length === 0) {
 			return; // No file matches, skip this item.
 		}
 
-		const ue = item.executors
+		const eEntries = item.executors
 			.filter(executor => executorRE.test(executor.name))
 			.map(this.normalize.bind(this, index, this.eSet));
 
-		for (const executor of ue) {
+		for (const executor of eEntries) {
 			files.forEach(Set.prototype.add, executor.fileSet);
 		}
 		for (let i = 0; i < item.builders.length; i++) {
@@ -203,7 +192,7 @@ export default class JobGenerator {
 				continue;
 			}
 			const builderUsed = this.normalize(index, this.bSet, builder, i);
-			this.e2b.distribute(ue, builderUsed.tool);
+			this.e2b.distribute(eEntries, builderUsed.tool);
 			files.forEach(Set.prototype.add, builderUsed.fileSet);
 		}
 	}
@@ -225,16 +214,13 @@ export default class JobGenerator {
 	}
 
 	* getJobs() {
-		for (const [et, builders] of this.e2b) {
-			const { fileSet, tool: executor, name } = et;
+		for (const [entry, builders] of this.e2b) {
+			const { tool: executor, name, fileSet } = entry;
 			const builds = [];
 
 			// Only add builds that have files match the executor's glob pattern.
 			for (const builder of builders) {
 				const output = this.bOutput.get(builder)!;
-				if (!output) {
-					continue;
-				}
 				const files = output.files.filter(f => fileSet.has(f));
 				if (files.length) {
 					builds.push({ ...output, files });
@@ -248,30 +234,36 @@ export default class JobGenerator {
 		}
 	}
 
-	private scanSuiteFiles(item: ToolChainItem) {
-		let { exclude = [], include } = item;
+	private scanSuiteFiles({ exclude = [], include }: ToolChainItem) {
+		const { shared, file } = this.context.filter;
 		const workingDir = cwd();
 
 		// Ensure glob patterns is relative and starts with ./ or ../
 		include = include.map(i => toSpecifier(i, workingDir));
 		exclude = exclude.map(i => toSpecifier(i, workingDir));
 
-		return glob.sync(include, { ignore: exclude });
+		const part = file ? relative(cwd(), file).replaceAll("\\", "/") : "";
+
+		return glob.sync(include, { ignore: exclude })
+			.filter(i => i.includes(part) && shared.roll());
 	}
 
 	private normalize(i: number, set: Map<any, any>, nameable: Nameable<any>, j: number) {
 		const { name } = nameable;
+		const [keyMethod, type] = set === this.bSet
+			? ["build", "builders"]
+			: ["execute", "executors"];
+
 		if (/^\s*$/.test(name)) {
-			throw new Error("Tool name must be a non-blank string");
+			const loc = getLocation(type, i, j);
+			throw new Error("Tool name must be a non-blank string\n└─ " + loc);
 		}
-		const keyMethod = set === this.bSet ? "build" : "execute";
-		const type = this.bSet ? "builders" : "executors";
 
 		const tool = keyMethod in nameable ? nameable : (nameable as any).use;
 
 		for (const [t, e] of set) {
 			if (t !== tool && e.name === name) {
-				throw new Error(dedupeMessage(e, i, j, type, "Each tool must have a unique name: " + name));
+				conflict(type, "Each tool must have a unique name: " + name, i, j, e);
 			}
 		}
 
@@ -283,13 +275,17 @@ export default class JobGenerator {
 		if (exist.name === name) {
 			return exist;
 		} else {
-			throw new Error(dedupeMessage(exist, i, j, type, `A tool can only have one name (${exist.name} vs ${name})`));
+			conflict(type, `A tool can only have one name (${exist.name} vs ${name})`, i, j, exist);
 		}
 	}
 }
 
-function dedupeMessage(prev: ToolEntry<any>, i: number, j: number, type: string, message: string) {
-	const item1 = `toolchains[${prev.chainIndex}].${type}[${prev.listIndex}]`;
-	const item2 = `toolchains[${i}].${type}[${j}]`;
-	return `${message}\n├─ ${item1}\n└─ ${item2}`;
+function getLocation(type: string, i: number, j: number) {
+	return `toolchains[${i}].${type}[${j}]`;
+}
+
+function conflict(type: string, message: string, i: number, j: number, prev: any) {
+	message += "\n├─ ";
+	message += getLocation(type, prev.chainIndex, prev.listIndex);
+	throw new Error(message + "\n└─ " + getLocation(type, i, j));
 }
