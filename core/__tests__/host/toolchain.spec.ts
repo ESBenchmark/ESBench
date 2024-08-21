@@ -24,29 +24,38 @@ function testBuild(filter: FilterOptions, ...toolchains: ToolChainItem[]) {
 }
 
 it("should throw error if a tool have more than 1 names", () => {
-	const generator = create();
-	const item = {
+	const generator = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [
 			{ name: "foo", use: noBuild },
 			{ name: "bar", use: noBuild },
 		],
-	};
-	expect(() => generator.add(item)).toThrow("A tool can only have one name (foo vs bar)");
+	});
+	// JS does not support strip indent for multiline string :(
+	const lines = [
+		"A tool can only have one name (foo vs bar)",
+		"├─ toolchains[0].builders[0]",
+		"└─ toolchains[0].builders[1]",
+	];
+	return expect(generator).rejects.toThrow(lines.join("\n"));
 });
 
 it("should throw error if a name used for more than 1 tools", () => {
-	const generator = create();
-	const item = {
+	const generator = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [
 			{ name: "foo", use: new ViteBuilder() },
 			{ name: "foo", use: noBuild },
 		],
-	};
-	expect(() => generator.add(item)).toThrow("Each tool must have a unique name: foo");
+	});
+	const lines = [
+		"Each tool must have a unique name: foo",
+		"├─ toolchains[0].builders[0]",
+		"└─ toolchains[0].builders[1]",
+	];
+	return expect(generator).rejects.toThrow(lines.join("\n"));
 });
 
 it("should throw error if a tool has invalid name", () => {

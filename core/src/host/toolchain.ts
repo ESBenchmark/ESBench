@@ -138,6 +138,8 @@ export function toSpecifier(path: string, parent: string) {
 }
 
 interface ToolEntry<T> {
+	chainIndex: number;
+	listIndex: number;
 	name: string;
 	tool: T;
 	fileSet: Set<string>;
@@ -161,14 +163,15 @@ export default class JobGenerator {
 	 */
 	static async generate(context: HostContext) {
 		const generator = new JobGenerator(context);
-		for (const toolchain of context.config.toolchains) {
-			generator.add(toolchain);
+		const { toolchains } = context.config;
+		for (let i = 0; i < toolchains.length; i++) {
+			generator.add(toolchains[i], i);
 		}
 		await generator.build();
 		return Array.from(generator.getJobs());
 	}
 
-	add(item: ToolChainItem) {
+	add(item: ToolChainItem, index = -1) {
 		const { builder: builderRE, executor: executorRE, shared, file } = this.context.filter;
 
 		const found = this.scanSuiteFiles(item);
@@ -189,16 +192,17 @@ export default class JobGenerator {
 
 		const ue = item.executors
 			.filter(executor => executorRE.test(executor.name))
-			.map(this.unwrap.bind(this, "execute"));
+			.map(this.normalize.bind(this, index, this.eSet));
 
 		for (const executor of ue) {
 			files.forEach(Set.prototype.add, executor.fileSet);
 		}
-		for (const builder of item.builders) {
+		for (let i = 0; i < item.builders.length; i++) {
+			const builder = item.builders[i];
 			if (!builderRE.test(builder.name)) {
 				continue;
 			}
-			const builderUsed = this.unwrap("build", builder);
+			const builderUsed = this.normalize(index, this.bSet, builder, i);
 			this.e2b.distribute(ue, builderUsed.tool);
 			files.forEach(Set.prototype.add, builderUsed.fileSet);
 		}
@@ -255,31 +259,37 @@ export default class JobGenerator {
 		return glob.sync(include, { ignore: exclude });
 	}
 
-	private unwrap(keyMethod: string, tool: Nameable<any>) {
-		const { name } = tool;
+	private normalize(i: number, set: Map<any, any>, nameable: Nameable<any>, j: number) {
+		const { name } = nameable;
 		if (/^\s*$/.test(name)) {
 			throw new Error("Tool name must be a non-blank string");
 		}
-		if (!(keyMethod in tool)) {
-			tool = tool.use;
-		}
-		const set = keyMethod === "build" ? this.bSet : this.eSet;
+		const keyMethod = set === this.bSet ? "build" : "execute";
+		const type = this.bSet ? "builders" : "executors";
 
-		for (const [t, n] of set) {
-			if (t !== tool && n.name === name) {
-				throw new Error("Each tool must have a unique name: " + name);
+		const tool = keyMethod in nameable ? nameable : (nameable as any).use;
+
+		for (const [t, e] of set) {
+			if (t !== tool && e.name === name) {
+				throw new Error(dedupeMessage(e, i, j, type, "Each tool must have a unique name: " + name));
 			}
 		}
 
-		const exist = set.get(tool);
+		let exist = set.get(tool);
 		if (!exist) {
-			const data = { name, tool, fileSet: new Set<string>() };
-			set.set(tool, data);
-			return data;
-		} else if (exist.name === name) {
+			set.set(tool, exist = { name, tool, fileSet: new Set<string>(), chainIndex: i, listIndex: j });
+		}
+
+		if (exist.name === name) {
 			return exist;
 		} else {
-			throw new Error(`A tool can only have one name (${exist.name} vs ${name})`);
+			throw new Error(dedupeMessage(exist, i, j, type, `A tool can only have one name (${exist.name} vs ${name})`));
 		}
 	}
+}
+
+function dedupeMessage(prev: ToolEntry<any>, i: number, j: number, type: string, message: string) {
+	const item1 = `toolchains[${prev.chainIndex}].${type}[${prev.listIndex}]`;
+	const item2 = `toolchains[${i}].${type}[${j}]`;
+	return `${message}\n├─ ${item1}\n└─ ${item2}`;
 }
