@@ -137,12 +137,17 @@ export function toSpecifier(path: string, parent: string) {
 	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
+interface ToolEntry<T> {
+	name: string;
+	tool: T;
+	fileSet: Set<string>;
+}
+
 export default class JobGenerator {
 
-	private readonly t2n = new Map<Builder | Executor, string>();
-	private readonly bFiles = new UniqueMultiMap<Builder, string>();
-	private readonly eFiles = new UniqueMultiMap<Executor, string>();
-	private readonly e2b = new UniqueMultiMap<Executor, Builder>();
+	private readonly eSet = new Map<Executor, ToolEntry<Executor>>();
+	private readonly bSet = new Map<Builder, ToolEntry<Builder>>();
+	private readonly e2b = new UniqueMultiMap<ToolEntry<Executor>, Builder>();
 	private readonly bOutput = new Map<Builder, BuildResult>();
 
 	private readonly context: HostContext;
@@ -171,8 +176,9 @@ export default class JobGenerator {
 
 		const files = [];
 		for (const file of found) {
-			if (!file.includes(part))
+			if (!file.includes(part)) {
 				continue;
+			}
 			if (shared.roll()) {
 				files.push(file);
 			}
@@ -186,46 +192,46 @@ export default class JobGenerator {
 			.map(this.unwrap.bind(this, "execute"));
 
 		for (const executor of ue) {
-			this.eFiles.add(executor, ...files);
+			files.forEach(Set.prototype.add, executor.fileSet);
 		}
 		for (const builder of item.builders) {
 			if (!builderRE.test(builder.name)) {
 				continue;
 			}
 			const builderUsed = this.unwrap("build", builder);
-			this.e2b.distribute(ue, builderUsed);
-			this.bFiles.add(builderUsed, ...files);
+			this.e2b.distribute(ue, builderUsed.tool);
+			files.forEach(Set.prototype.add, builderUsed.fileSet);
 		}
 	}
 
 	async build() {
-		const { context, bFiles, bOutput, t2n } = this;
+		const { context, bOutput, bSet } = this;
 		const { config: { tempDir } } = context;
-		context.info(`Building suites with ${bFiles.size} builders [tempDir=${tempDir}]...`);
+		context.info(`Building suites with ${bSet.size} builders [tempDir=${tempDir}]...`);
 
-		for (const [builder, set] of bFiles) {
-			const files = Array.from(set);
+		for (const dt of bSet.values()) {
+			const files = Array.from(dt.fileSet);
 			const root = mkdtempSync(join(tempDir, "build-"));
-			const name = t2n.get(builder)!;
+			const name = dt.name;
 			context.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
 
-			await builder.build(root, files);
-			bOutput.set(builder, { name, root, files });
+			await dt.tool.build(root, files);
+			bOutput.set(dt.tool, { name, root, files });
 		}
 	}
 
 	* getJobs() {
-		for (const [executor, builders] of this.e2b) {
-			const dedupe = this.eFiles.get(executor)!;
+		for (const [et, builders] of this.e2b) {
+			const { fileSet, tool: executor, name } = et;
 			const builds = [];
 
 			// Only add builds that have files match the executor's glob pattern.
-			for (const name of builders) {
-				const output = this.bOutput.get(name)!;
+			for (const builder of builders) {
+				const output = this.bOutput.get(builder)!;
 				if (!output) {
 					continue;
 				}
-				const files = output.files.filter(f => dedupe.has(f));
+				const files = output.files.filter(f => fileSet.has(f));
 				if (files.length) {
 					builds.push({ ...output, files });
 				}
@@ -233,7 +239,6 @@ export default class JobGenerator {
 
 			// Executors without files to execute will be skipped.
 			if (builds.length) {
-				const name = this.t2n.get(executor)!;
 				yield { name, executor, builds } as Job;
 			}
 		}
@@ -258,24 +263,23 @@ export default class JobGenerator {
 		if (!(keyMethod in tool)) {
 			tool = tool.use;
 		}
+		const set = keyMethod === "build" ? this.bSet : this.eSet;
 
-		for (const [t, n] of this.t2n) {
-			if (!(keyMethod in t)) {
-				continue; // Allow builder to have the same name with executor.
-			}
-			if (t !== tool && n === name) {
+		for (const [t, n] of set) {
+			if (t !== tool && n.name === name) {
 				throw new Error("Each tool must have a unique name: " + name);
 			}
 		}
 
-		const exist = this.t2n.get(tool);
-		if (exist === name) {
-			return tool;
-		} else if (!exist) {
-			this.t2n.set(tool, name);
-			return tool;
+		const exist = set.get(tool);
+		if (!exist) {
+			const data = { name, tool, fileSet: new Set<string>() };
+			set.set(tool, data);
+			return data;
+		} else if (exist.name === name) {
+			return exist;
 		} else {
-			throw new Error(`A tool can only have one name (${exist} vs ${name})`);
+			throw new Error(`A tool can only have one name (${exist.name} vs ${name})`);
 		}
 	}
 }
