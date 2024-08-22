@@ -1,10 +1,10 @@
-import { defineConfig } from "vitepress";
+import { defineConfig, Plugin } from "vitepress";
 import suiteInfoLoader from "./suite-loader.js";
 import esbenchRuntime from "./esbench-runtime.js";
 
 // The site should be deployed to a platform that supports these headers.
 // https://github.com/vuejs/vitepress/issues/2195
-const customHeaders = {
+const customHeaders: Plugin = {
 	name: "context-isolation-headers",
 
 	middleware(_, res, next) {
@@ -39,7 +39,7 @@ export default defineConfig({
 		},
 		nav: [
 			{ text: "Guide", link: "/guide/introduction" },
-			{ text: "API", link: "/api/runner" },
+			{ text: "API", link: "/api/architecture" },
 			{ text: "Playground", link: "/playground" },
 		],
 		sidebar: {
@@ -63,7 +63,9 @@ export default defineConfig({
 			}],
 			api: [{
 				items: [
-					{ text: "Runner API", link: "/api/runner" },
+					{ text: "Architecture", link: "/api/architecture" },
+					{ text: "Runner API", link: "/api/runner-api" },
+					{ text: "Plugins", link: "/api/plugins" },
 					{ text: "Custom Profilers", link: "/api/profiler" },
 				],
 			}],

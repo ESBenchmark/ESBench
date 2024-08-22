@@ -137,20 +137,25 @@ export function toSpecifier(path: string, parent: string) {
 	return /\.\.?\//.test(path) ? path : "./" + path;
 }
 
-interface ToolEntry<T> {
+interface ExecutorEntry {
 	chainIndex: number;
 	listIndex: number;
 	name: string;
-	tool: T;
+	tool: Executor;
 	fileSet: Set<string>;
+}
+
+interface BuilderEntry extends Omit<ExecutorEntry, "tool"> {
+	tool: Builder;
+	output: BuildResult;
 }
 
 export default class JobGenerator {
 
-	private readonly eSet = new Map<Executor, ToolEntry<Executor>>();
-	private readonly bSet = new Map<Builder, ToolEntry<Builder>>();
-	private readonly e2b = new UniqueMultiMap<ToolEntry<Executor>, Builder>();
-	private readonly bOutput = new Map<Builder, BuildResult>();
+	private readonly eSet = new Map<Executor, ExecutorEntry>();
+	private readonly bSet = new Map<Builder, BuilderEntry>();
+
+	private readonly e2b = new UniqueMultiMap<ExecutorEntry, BuilderEntry>();
 
 	private readonly context: HostContext;
 
@@ -192,24 +197,24 @@ export default class JobGenerator {
 				continue;
 			}
 			const builderUsed = this.normalize(index, this.bSet, builder, i);
-			this.e2b.distribute(eEntries, builderUsed.tool);
+			this.e2b.distribute(eEntries, builderUsed);
 			files.forEach(Set.prototype.add, builderUsed.fileSet);
 		}
 	}
 
 	async build() {
-		const { context, bOutput, bSet } = this;
+		const { context, bSet } = this;
 		const { config: { tempDir } } = context;
 		context.info(`Building suites with ${bSet.size} builders [tempDir=${tempDir}]...`);
 
-		for (const dt of bSet.values()) {
-			const files = Array.from(dt.fileSet);
+		for (const entry of bSet.values()) {
 			const root = mkdtempSync(join(tempDir, "build-"));
-			const name = dt.name;
+			const { name, fileSet, tool } = entry;
+			const files = Array.from(fileSet);
 			context.debug(`├─ ${name} [${basename(root)}]: ${files.length} suites.`);
 
-			await dt.tool.build(root, files);
-			bOutput.set(dt.tool, { name, root, files });
+			await tool.build(root, files);
+			entry.output = { name, root, files };
 		}
 	}
 
@@ -219,8 +224,7 @@ export default class JobGenerator {
 			const builds = [];
 
 			// Only add builds that have files match the executor's glob pattern.
-			for (const builder of builders) {
-				const output = this.bOutput.get(builder)!;
+			for (const { output } of builders) {
 				const files = output.files.filter(f => fileSet.has(f));
 				if (files.length) {
 					builds.push({ ...output, files });
@@ -248,6 +252,12 @@ export default class JobGenerator {
 			.filter(i => i.includes(part) && shared.roll());
 	}
 
+	/*
+	 * Since TypeScript does not yet support generic inference of `Function.bind`,
+	 * we use `Map<any, any>` for now.
+	 *
+	 * https://github.com/microsoft/TypeScript/issues/54707
+	 */
 	private normalize(i: number, set: Map<any, any>, nameable: Nameable<any>, j: number) {
 		const { name } = nameable;
 		const [keyMethod, type] = set === this.bSet
@@ -263,19 +273,25 @@ export default class JobGenerator {
 
 		for (const [t, e] of set) {
 			if (t !== tool && e.name === name) {
-				conflict(type, "Each tool must have a unique name: " + name, i, j, e);
+				throw conflict(type, "Each tool must have a unique name: " + name, i, j, e);
 			}
 		}
 
 		let exist = set.get(tool);
 		if (!exist) {
-			set.set(tool, exist = { name, tool, fileSet: new Set<string>(), chainIndex: i, listIndex: j });
+			set.set(tool, exist = {
+				name,
+				tool,
+				chainIndex: i,
+				listIndex: j,
+				fileSet: new Set<string>(),
+			});
 		}
 
 		if (exist.name === name) {
 			return exist;
 		} else {
-			conflict(type, `A tool can only have one name (${exist.name} vs ${name})`, i, j, exist);
+			throw conflict(type, `A tool can only have one name (${exist.name} vs ${name})`, i, j, exist);
 		}
 	}
 }
@@ -287,5 +303,5 @@ function getLocation(type: string, i: number, j: number) {
 function conflict(type: string, message: string, i: number, j: number, prev: any) {
 	message += "\n├─ ";
 	message += getLocation(type, prev.chainIndex, prev.listIndex);
-	throw new Error(message + "\n└─ " + getLocation(type, i, j));
+	return new Error(message + "\n└─ " + getLocation(type, i, j));
 }

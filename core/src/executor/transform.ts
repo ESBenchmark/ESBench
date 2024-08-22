@@ -25,7 +25,7 @@ export function createPathMapper(map?: Record<string, string>) {
 		return noop as MapPath;
 	}
 	const entries = Object.entries(map);
-	entries.sort((a,b)=> b[0].length - a[0].length);
+	entries.sort((a, b) => b[0].length - a[0].length);
 
 	return (path: string) => {
 		for (const [prefix, folder] of entries) {

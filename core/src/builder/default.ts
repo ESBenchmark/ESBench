@@ -10,8 +10,8 @@ const suites = {__IMPORTS__\n};
 
 const doImport = file => suites[file]();
 
-export default function (post, files, pattern) {
-	return runAndSend(post, doImport, files, pattern);
+export default function (post, file, pattern) {
+	return runAndSend(post, doImport, file, pattern);
 }`;
 
 /**

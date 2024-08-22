@@ -14,6 +14,11 @@ const tempDir = mkdtempSync(join(tmpdir(), "esbench-"));
 
 useTempDirectory(tempDir);
 
+// JS does not support strip indent for multiline string :(
+function assertRejectMessage(promise: Promise<any>, lines: string[]) {
+	return expect(promise).rejects.toThrow(lines.join("\n"));
+}
+
 function create(filter?: FilterOptions) {
 	return new JobGenerator(new HostContext({ logLevel: "off", tempDir }, filter));
 }
@@ -24,7 +29,7 @@ function testBuild(filter: FilterOptions, ...toolchains: ToolChainItem[]) {
 }
 
 it("should throw error if a tool have more than 1 names", () => {
-	const generator = testBuild({}, {
+	const promise = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [
@@ -32,17 +37,15 @@ it("should throw error if a tool have more than 1 names", () => {
 			{ name: "bar", use: noBuild },
 		],
 	});
-	// JS does not support strip indent for multiline string :(
-	const lines = [
+	return assertRejectMessage(promise, [
 		"A tool can only have one name (foo vs bar)",
 		"├─ toolchains[0].builders[0]",
 		"└─ toolchains[0].builders[1]",
-	];
-	return expect(generator).rejects.toThrow(lines.join("\n"));
+	]);
 });
 
 it("should throw error if a name used for more than 1 tools", () => {
-	const generator = testBuild({}, {
+	const promise = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [
@@ -50,25 +53,23 @@ it("should throw error if a name used for more than 1 tools", () => {
 			{ name: "foo", use: noBuild },
 		],
 	});
-	const lines = [
+	return assertRejectMessage(promise, [
 		"Each tool must have a unique name: foo",
 		"├─ toolchains[0].builders[0]",
 		"└─ toolchains[0].builders[1]",
-	];
-	return expect(generator).rejects.toThrow(lines.join("\n"));
+	]);
 });
 
 it("should throw error if a tool has invalid name", () => {
-	const generator = testBuild({}, {
+	const promise = testBuild({}, {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [{ name: "", use: noBuild }],
 	});
-	const lines = [
+	return assertRejectMessage(promise, [
 		"Tool name must be a non-blank string",
 		"└─ toolchains[0].builders[0]",
-	];
-	return expect(generator).rejects.toThrow(lines.join("\n"));
+	]);
 });
 
 it("should allow a tool used in different toolchain", () => {

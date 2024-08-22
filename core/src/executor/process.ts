@@ -26,7 +26,7 @@ runAndSend(postMessage, __FILE__, __PATTERN__);`;
 export function highestPriority(pid: number) {
 	try {
 		setPriority(pid, -20);
-	} catch (e) {
+	} catch {
 		// Access may be denied on some systems.
 	}
 }
