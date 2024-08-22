@@ -8,7 +8,7 @@ export { default as textReporter } from "../reporter/text.js";
 export { default as rawReporter } from "../reporter/raw.js";
 export { default as htmlReporter } from "../reporter/html.js";
 
-export * from "../builder/rollup.js";
+export * from "../builder/rollup-like.js";
 export { default as noBuild } from "../builder/default.js";
 
 export { default as inProcessExecutor } from "../executor/in-process.js";

@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { NormalizedInputOptions } from "rollup";
 import { expect, it, vi } from "vitest";
 import { UserConfig } from "vite";
-import { RollupBuilder, ViteBuilder } from "../../src/builder/rollup.ts";
+import { RollupBuilder, ViteBuilder } from "../../src/builder/rollup-like.ts";
 import { Builder } from "../../src/host/index.ts";
 
 const directory = mkdtempSync(join(tmpdir(), "esbench-"));

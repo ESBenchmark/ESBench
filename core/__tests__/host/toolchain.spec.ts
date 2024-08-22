@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { noop } from "@kaciras/utilities/browser";
 import { expect, it, vi } from "vitest";
 import inProcess from "../../src/executor/in-process.ts";
-import { ViteBuilder } from "../../src/builder/rollup.ts";
 import { FilterOptions, HostContext } from "../../src/host/context.ts";
 import { noBuild } from "../../src/host/index.ts";
 import JobGenerator, { ToolChainItem } from "../../src/host/toolchain.ts";
@@ -49,7 +48,7 @@ it("should throw error if a name used for more than 1 tools", () => {
 		executors: [inProcess],
 		include: ["./__tests__/fixtures/*"],
 		builders: [
-			{ name: "foo", use: new ViteBuilder() },
+			{ name: "foo", build: noop },
 			{ name: "foo", use: noBuild },
 		],
 	});
