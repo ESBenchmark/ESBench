@@ -1,5 +1,5 @@
 <template>
-	<main :class='$style.playground' :style='{ "--ew": editorWidth }'>
+	<main :class='$style.playground'>
 		<section :class='$style.toolbar'>
 			<h1 :class='$style.h1'>
 				<img alt='logo' src='/logo.svg'>
@@ -286,8 +286,7 @@ onMounted(async () => {
 	display: grid;
 	grid-template-areas: "toolbar toolbar" "editor console";
 	grid-template-rows: auto 1fr;
-	/* noinspection CssUnresolvedCustomProperty */
-	grid-template-columns: var(--ew) 1fr;
+	grid-template-columns: v-bind(editorWidth) 1fr;
 
 	width: 100vw;
 	height: 100vh;
