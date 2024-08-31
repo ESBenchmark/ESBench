@@ -1,9 +1,5 @@
 # Custom Profilers
 
-::: warning
-Custom Profilers is an experimental feature.
-:::
-
 ESBench only has built-in support for measuring function execution time, but the term benchmarking isn't the only one, the size of the returned value or other metrics may also be something we want to know.
 
 For that, ESBench allow to add custom profilers to suite, whose measured metrics will be displayed in the report.
@@ -54,6 +50,21 @@ export default defineSuite({
 	},
 });
 ```
+
+:::info
+The `format` property of metric metadata is a template that matches the format of `{<type>.<unit>?}<any suffix>`, the `<type>` can be one of the:
+
+- `number` scale the value using SI (1000) prefixes. available units: `["",  "K",  "M",  "G",  "T",  "P",  "E",  "Z",  "Y"]`
+- `duration` format the value to duration string, available units: `["ns", "us", "ms", "s", "m", "h", "d"]`.
+- `dataSize` format the value as data size using IEC (1024) prefixes, available units: `["B", "KiB",  "MiB",  "GiB",  "TiB",  "PiB",  "EiB",  "ZiB",  "YiB"]`
+
+If the `<unit>` is omitted, the minimum will be used.
+
+For example:
+- `{duration.s}` The value 2000 will be formatted to "33.33m".
+- `{number} ops/s` The value 2000 will be formatted to "2K ops/s".
+- `{dataSize.KiB} foobar` The value 2000 will be formatted to "1.95 MiB foobar".
+:::
 
 Run the suite and the result will contain `size` column:
 
