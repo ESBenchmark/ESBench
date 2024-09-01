@@ -57,8 +57,6 @@ export default defineSuite(scene => {
 ```
 :::
 
-
-
 Because of browser and Node have a different module resolving algorithm, imports must be resolved before sending the code to the browser, there are two ways to do this:
 
 * Add flag `--experimental-import-meta-resolve` to enable [builtin transformer](#built-in-transformer).
@@ -89,6 +87,14 @@ The results reveal the performance differences between browsers:
 |   6 |    For-index | chromium |   533.09 ns |  2.71 ns |
 |   7 |       For-of | chromium |   542.60 ns |  6.00 ns |
 |   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
+```
+
+Playwright launches its own browser by default, you can specify the path to the browser via `executablePath`, but this may fail to launch. Another way is to use [WebRemoteExecutor](#webremoteexecutor), which supports any browser.
+
+```javascript
+new PlaywrightExecutor(chromium, {
+	executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+});
 ```
 
 ESBench has some [Built-in executors](./toolchains#built-in-executors) to help you run benchmarks in a variety of environments.
@@ -519,7 +525,7 @@ When started, it will print the message on console:
 
 ```text
 ...
-[WebManuallyExecutor] Waiting for connection to: http://192.168.0.14:80
+[WebRemoteExecutor] Waiting for connection to: http://192.168.0.14:80
 ...
 ```
 

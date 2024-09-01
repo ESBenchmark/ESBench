@@ -1,12 +1,8 @@
-# JavaScript API
+# Runner API
 
-The `esbench` package exports 2 entry points:
+## Run a Suite
 
-* `esbench` contains functions to run suites, and tools to deal with the results. It uses ES6 and a few Web APIs, compatibility with browsers and most server-side runtimes.
-  
-* `esbench/host` has CLI, executors, builders, and reporters. It is only usable from Node.js and other runtimes that compatible with Node API.
-
-## Run Suites
+The `runSuite` function is provided for run a benchmark suite, and the results can be converted to a table using `SummaryTable`.
 
 ```javascript
 import { defineSuite, runSuite, SummaryTable } from "esbench";
@@ -35,7 +31,7 @@ if (summaryTable.warnings.length > 0) {
 
 ## Parse Results
 
-The return value of `runSuite` is intended to be a serialized structure, and it is recommended to use `Summary` to parse it instead of using it directly.
+Despite having `SummaryTable` to process the results, sometimes we need more primitive data structures. The return value of `runSuite` is intended to serialize, and it is recommended to use `Summary` to parse it instead of using it directly.
 
 ```javascript
 import { Summary, runSuite } from "esbench";
