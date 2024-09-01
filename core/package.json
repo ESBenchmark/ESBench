@@ -36,9 +36,9 @@
 		"fast-glob": "^3.3.2",
 		"markdown-table": "^3.0.3",
 		"serialize-error": "^11.0.3",
-		"simple-statistics": "^7.8.4",
+		"simple-statistics": "^7.8.5",
 		"string-width": "^7.1.0",
-		"ts-directly": "^2.1.0",
+		"ts-directly": "^2.1.1",
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {
@@ -48,13 +48,17 @@
 	},
 	"peerDependencies": {
 		"rollup": "^4.17.2",
-		"vite": "^5.2.11"
+		"vite": "^5.2.11",
+		"webdriverio": "*"
 	},
 	"peerDependenciesMeta": {
 		"rollup": {
 			"optional": true
 		},
 		"vite": {
+			"optional": true
+		},
+		"webdriverio": {
 			"optional": true
 		}
 	}
