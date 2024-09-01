@@ -31,3 +31,16 @@ If that's not enough, ESBench also supports extensions - it's plug-in architectu
 ### Lightweight
 
 At only 202 KB (minified, including dependencies), ESBench is a thoroughly lightweight library.
+
+## ESBench vs X
+
+### Vitest
+
+[Vitest](https://vitest.dev) was originally created for unit testing, and later added benchmark support and the ability to run in the browser, has become a more general framework. It brings a consistent, out-of-the-box development experience to the Vite ecosystem.
+
+ESBench and Vitest overlap in functionality, they both support the build process and run on multiple platforms, and ESBench also has [Validator](./validation) to do simple testing, but there are some differences.
+
+![Benchmark vs Unit Test](../assets/benchmark-vs-test.svg)
+
+* ESBench focuses on benchmarking, it doesn't have the complexity that comes with extra features and is much more powerful in its benchmarking.
+* ESBench has a lean core and can easily support various toolchains via plugins, while Vitest is tied to Vite, meaning you need to opt for the Vite ecosystem.
