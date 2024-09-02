@@ -1,10 +1,5 @@
-# Plugins
+# Builder
 
-On the host side, ESBench builds suites, calls executors, and collects the results for reporting. Each step is accomplished by plugins.
-
-**ESBench chose files as the bridge between the builder and the executor** because it is the most generalized model: all server-side runtimes are capable of running JS files, browser and remote execution are easily supported by setting up a simple file server.
-
-## Builder
 
 When ESBench starts, it first builds suites for benchmark with builders. A builder is an object contain 2 properties: `name` specifies the default name, and `build()` method generates the output.
 
@@ -115,47 +110,3 @@ class RolldownBuilder implements Builder {
 	}
 }
 ```
-
-## Executor
-
-After the build is done, we have the files to run, the next step is to execute them, ESBench delegates this work to executors.
-
-An executor has to do roughly these jobs:
-
-* Do prepare step if needed.
-* Call `index.js` of builder output, and pass the arguments.
-* Transmits messages generated during running the suite.
-
-The simplest implementation is executing the suite directly:
-
-```typescript
-import { pathToFileURL } from "node:url";
-import { join } from "node:path/posix";
-import { Executor, SuiteTask } from "esbench/host";
-
-export default <Executor>{
-
-	/**
-	 * Suggest a name will be used if no name specified from config.
-	 */
-	name: "direct",
-
-	/**
-     * Run a suite of a builder output.
-     * 
-	 * @param root Output directory of the build, can be used to resolve imports.
-	 * @param file Path (relative to cwd) of the suite file to run.
-	 * @param pattern Run benchmark with names matching the Regex pattern.
-	 * @param dispatch Executor should forward messages to this function.
-	 */
-	async execute({ root, file, pattern, dispatch }: SuiteTask) {
-		const url = pathToFileURL(join(root, "index.js"));
-		const module = await import(url.href);
-		return module.default(dispatch, file, pattern);
-	},
-};
-```
-
-
-
-## Reporter

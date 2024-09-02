@@ -4,7 +4,8 @@ import esbenchRuntime from "./esbench-runtime.js";
 
 // The site should be deployed to a platform that supports these headers.
 // https://github.com/vuejs/vitepress/issues/2195
-const customHeaders: Plugin = {
+const customHeaders: Plugin & Record<string, any> = {
+
 	name: "context-isolation-headers",
 
 	middleware(_, res, next) {
@@ -64,9 +65,10 @@ export default defineConfig({
 			api: [{
 				items: [
 					{ text: "Architecture", link: "/api/architecture" },
+					{ text: "Builder", link: "/api/builder" },
+					{ text: "Executor", link: "/api/executor" },
+					{ text: "Profiler", link: "/api/profiler" },
 					{ text: "Runner API", link: "/api/runner-api" },
-					{ text: "Plugins", link: "/api/plugins" },
-					{ text: "Custom Profilers", link: "/api/profiler" },
 				],
 			}],
 		},
