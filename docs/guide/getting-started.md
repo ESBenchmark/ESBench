@@ -2,6 +2,8 @@
 
 ## Installation
 
+To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly. **ESBench CLI requires Node >= 18.19.0, which your benchmark code does not.**
+
 ::: code-group
 ```bash [npm]
 npm install -D esbench
@@ -12,10 +14,6 @@ yarn add -D esbench
 ```bash [pnpm]
 pnpm add -D esbench
 ```
-:::
-
-:::tip
-ESBench CLI requires Node >= 18.19.0
 :::
 
 ## Writing Benchmarks
@@ -59,13 +57,6 @@ Next, in order to execute the benchmark, add the following section to your `pack
   }
 }
 ```
-
-> [!INFO]
-> To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly.
->
-> If you prefer to work with a GUI, we also provide [IDE plugin](./ide-integration).
-> 
-> For integration with ESBench in your code, see [JavaScript API](../api/runner-api).
 
 Finally, run `pnpm run benchmark` or `pnpm exec esbench` to execute the suite.
 

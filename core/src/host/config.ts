@@ -101,7 +101,7 @@ export interface ToolchainOptions {
  * A reporter allows you to export results of your benchmark in different formats.
  *
  * @param result The result of all suites.
- * @param context A number of utility functions and informational bits.
+ * @param context An object contains utility functions and informational bits.
  */
 export type Reporter = (result: ESBenchResult, context: HostContext) => Awaitable<unknown>;
 

@@ -25,7 +25,7 @@ export default defineConfig({
         htmlReporter(),
         
         // Customize
-		(result, prev) => {/* ... */},
+		(result, context) => {/* ... */},
     ],
     // Default:
 	// reporters: [textReporter()]

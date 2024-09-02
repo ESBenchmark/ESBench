@@ -34,6 +34,14 @@ At only 202 KB (minified, including dependencies), ESBench is a thoroughly light
 
 ## ESBench vs X
 
+### Other Benchmark Tools
+
+Before ESBench, there were already some benchmarking tools: [benchmark.js](https://github.com/bestiejs/benchmark.js), [tinybench](https://github.com/tinylibs/tinybench), [mitata](https://github.com/evanwashere/mitata), [isitfast](https://github.com/yamiteru/isitfast), [cronometro](https://github.com/ShogunPanda/cronometro), and more...
+
+However, these tools are limited to in-process and do not support builders and running across runtimes, which is the main problem ESBench addresses.
+
+Inspired by [BenchmarkDotNet](https://benchmarkdotnet.org/) and referencing existing tools, ESBench offers the most complete set of features.
+
 ### Vitest
 
 [Vitest](https://vitest.dev) was originally created for unit testing, and later added benchmark support and the ability to run in the browser, has become a more general framework. It brings a consistent, out-of-the-box development experience to the Vite ecosystem.

@@ -2,13 +2,36 @@
 
 ESBench only has built-in support for measuring function execution time, but the term benchmarking isn't the only one, the size of the returned value or other metrics may also be something we want to know.
 
-For that, ESBench allow to add custom profilers to suite, whose measured metrics will be displayed in the report.
+For that, ESBench allow to add custom profilers to suite, whose measured metrics will be displayed in the report. A `Profiler` is a series of hooks that are called at specific times in the run suite:
 
-[Type declaration of Profiler](https://github.com/ESBenchmark/ESBench/blob/927a02f49d8554c0c35013ef15a02e11ad80a50d/core/src/profiling.ts#L82).
+```typescript
+export interface Profiler {
+	/**
+	 * Called on each `ProfilingContext.run` (`runSuite` invokes it once).
+	 * This is the recommended hook to add descriptions of metrics.
+	 */
+	onStart?: (ctx: ProfilingContext) => Awaitable<void>;
+
+	/**
+	 * Called on each scene (after `setup` of the suite).
+	 */
+	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
+
+	/**
+	 * Called for each case. In there you can add metrics as properties to `metrics`.
+	 */
+	onCase?: (ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) => Awaitable<void>;
+
+	/**
+	 * Called at the end of `ProfilingContext.run`.
+	 */
+	onFinish?: (ctx: ProfilingContext) => Awaitable<void>;
+}
+```
 
 ## Buffer Size
 
-Measure execution time and result size of compress functions in `zlib`: 
+Let's use an example to show how to create a Profiler: measure execution time and result size of compress functions in `zlib`: 
 
 ```typescript
 import { readFileSync } from "fs";
@@ -116,7 +139,6 @@ const decompressProfiler: Profiler = {
 
 		// Reuse the options of TimeProfiler.
 		const options = ctx.suite.timing;
-
 		if (!options) {
 			return; // Measurement of time is disabled.
 		}

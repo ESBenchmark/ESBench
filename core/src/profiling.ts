@@ -90,7 +90,7 @@ export interface Profiler {
 	onStart?: (ctx: ProfilingContext) => Awaitable<void>;
 
 	/**
-	 * Called on each scene and before `setup` of the suite.
+	 * Called on each scene (after `setup` of the suite).
 	 */
 	onScene?: (ctx: ProfilingContext, scene: Scene) => Awaitable<void>;
 
