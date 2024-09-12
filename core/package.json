@@ -35,6 +35,7 @@
 		"es-module-lexer": "^1.5.4",
 		"fast-glob": "^3.3.2",
 		"markdown-table": "^3.0.3",
+		"open": "^10.1.0",
 		"serialize-error": "^11.0.3",
 		"simple-statistics": "^7.8.5",
 		"string-width": "^7.1.0",
@@ -43,13 +44,12 @@
 	},
 	"devDependencies": {
 		"@types/picomatch": "^3.0.1",
-		"@types/yargs": "^17.0.33",
-		"playwright-core": "^1.47.0"
+		"@types/yargs": "^17.0.33"
 	},
 	"peerDependencies": {
+		"playwright-core": "^1.47.0",
 		"rollup": "^4.17.2",
-		"vite": "^5.2.11",
-		"webdriverio": "*"
+		"vite": "^5.2.11"
 	},
 	"peerDependenciesMeta": {
 		"rollup": {
@@ -58,7 +58,7 @@
 		"vite": {
 			"optional": true
 		},
-		"webdriverio": {
+		"playwright-core": {
 			"optional": true
 		}
 	}

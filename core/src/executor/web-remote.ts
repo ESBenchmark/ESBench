@@ -6,12 +6,14 @@ import { once } from "node:events";
 import { createReadStream } from "node:fs";
 import { extname, join } from "node:path";
 import { AddressInfo } from "node:net";
+import open, { Options as OpenOptions } from "open";
 import { ClientMessage } from "../connect.js";
 import { createPathMapper, MapPath, transformer } from "./transform.js";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/context.js";
 
 const moduleMime: Record<string, string | undefined> = {
+	html: "text/html",
 	css: "text/css",
 	js: "text/javascript",
 	json: "application/json",
@@ -41,9 +43,10 @@ const postMessage = message => fetch("/_es-bench/message", {
 	body: JSON.stringify(message),
 });
 
+const autoClose = location.search.includes("auto-close");
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-let imported = false
+let imported = false;
 
 async function executeBenchmarks({ entry, file, pattern }) {
 	try {
@@ -72,7 +75,7 @@ for (; ;) {
 		}
 		await executeBenchmarks(await response.json());
 	} catch {
-		await sleep(5000); // ESBench quits, reduce polling frequency.
+		autoClose ? window.close() : await sleep(5000);
 	}
 }`;
 
@@ -104,6 +107,12 @@ interface WebRemoteExecutorOptions extends https.ServerOptions {
 	 * @default 14715
 	 */
 	port?: number;
+
+	/**
+	 * If set, the benchmarking page will automatically open in the browser
+	 * and closes after execution finished.
+	 */
+	open?: OpenOptions;
 
 	/**
 	 * Define a map of files that can be accessed by web pages. By default,
@@ -169,7 +178,11 @@ export default class WebRemoteExecutor implements Executor {
 		await once(this.server, "listening");
 
 		const url = resolveUrl(this.server, this.options);
-		ctx.info("[WebRemoteExecutor] Waiting for connection to: " + url);
+		if (this.options.open) {
+			return open(url + "?auto-close", this.options.open);
+		} else {
+			ctx.info("[WebRemoteExecutor] Waiting for connection to: " + url);
+		}
 	}
 
 	close() {
@@ -210,7 +223,7 @@ export default class WebRemoteExecutor implements Executor {
 				transformer.fixStack(message.e, origin, root);
 			}
 			dispatch(message);
-			if (!("level" in message)) {
+			if ("scenes" in message) {
 				this.task = undefined; // Execution finished.
 			}
 			return response.writeHead(204).end();

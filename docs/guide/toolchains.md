@@ -530,3 +530,9 @@ When started, it will print the message on console:
 ```
 
 Open a browser on a remote device, such as a mobile phone, to access the URL, and ESBench will measure performance in that environment!
+
+If you want ESBench open the page automatically, and close it after finished, you can set the `open` options.
+
+```javascript
+new WebRemoteExecutor({ open: {/* options */} })
+```
