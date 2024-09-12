@@ -31,7 +31,7 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 	let iterate: any;
 
 	if (beforeHooks.length | afterHooks.length) {
-		const call = isAsync ? "await " : "";
+		const modifier = isAsync ? "await " : "";
 
 		const template = new AsyncFunction("runFns", "before", "after", `\
 			let timeUsage = 0;
@@ -40,7 +40,7 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 			while (count--) {
 				await runFns(before);
 				timeUsage -= performance.now();
-				${call}this();
+				${modifier}this();
 				timeUsage += performance.now();
 				await runFns(after);
 			}
@@ -53,7 +53,6 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 		const [call, FunctionType, runs] = isAsync
 			? ["await this()\n", AsyncFunction, 1]
 			: ["this()\n", Function, factor];
-
 
 		const template = new FunctionType(`\
 			const start = performance.now();
@@ -125,8 +124,8 @@ export interface TimingOptions {
  * const profiler = {
  *     async onCase(ctx, case_, metrics) {
  *         const measurement = new ExecutionTimeMeasurement(ctx, case_);
- *         const samples = await measurement.run();
- *         ctx.info(`Samples: [${samples.join(", ")}]`);
+ *         await measurement.run();
+ *         ctx.info(`Samples: [${measurement.values.join(", ")}]`);
  *     },
  * }
  */
@@ -138,6 +137,24 @@ export class ExecutionTimeMeasurement {
 
 	private stage?: string;
 	private stageRuns = 0;
+
+	/**
+	 * After running, it is the number of runs needed for the benchmark case
+	 * to reach the `options.iterations` time.
+	 *
+	 * If `options.iterations` is a number, the value is equal to it.
+	 */
+	invocations = NaN;
+
+	/**
+	 * After running, it is the number of the loop is unrolled during the measurement.
+	 */
+	unrollCalls = NaN;
+
+	/**
+	 * Samples of benchmark function running time.
+	 */
+	values: number[] = [];
 
 	constructor(ctx: ProfilingContext, case_: BenchCase, options?: TimingOptions) {
 		this.ctx = ctx;
@@ -188,26 +205,35 @@ export class ExecutionTimeMeasurement {
 			iterator = createIterator(benchCase, unrollFactor, loops);
 		}
 
-		const time = await this.measure("Actual", iterator);
+		this.invocations = iterator.invocations;
+		this.unrollCalls = iterator.calls;
+		this.values = await this.measure("Actual", iterator);
+
 		if (evaluateOverhead && samples > 1) {
 			await ctx.info();
-			await this.subtractOverhead(iterator, time);
+			await this.subtractOverhead(iterator);
 		}
-		return time;
+
+		/*
+		 * Previously we were returning `values`, but now we're setting
+		 * it to properties because we want to export more information.
+		 *
+		 * Return an object is ok, but properties is one less allocation :)
+		 */
 	}
 
-	async subtractOverhead(iterator: Iterator, time: number[]) {
-		const { benchCase, ctx } = this;
+	async subtractOverhead(iterator: Iterator) {
+		const { benchCase, ctx, values } = this;
 		const overheads = await this.measureOverhead(iterator);
 
-		if (welchTest(time, overheads, "greater") < 0.05) {
+		if (welchTest(values, overheads, "greater") < 0.05) {
 			const overhead = medianSorted(overheads);
-			for (let i = 0; i < time.length; i++) {
-				time[i] -= overhead;
+			for (let i = 0; i < values.length; i++) {
+				values[i] -= overhead;
 			}
 		} else {
-			time.length = 1;
-			time[0] = 0;
+			values.length = 1;
+			values[0] = 0;
 			ctx.note("warn",
 				"The function duration is indistinguishable from the empty function duration.", benchCase);
 		}
@@ -284,7 +310,7 @@ export class ExecutionTimeMeasurement {
 		const { ctx } = this;
 		const { warmup, samples } = this.options;
 
-		const timeUsageList = new Array(samples);
+		const timeUsageList = new Array<number>(samples);
 		const n = iterator.invocations;
 
 		for (let i = 0; i < warmup; i++) {
@@ -366,8 +392,10 @@ export class TimeProfiler implements Profiler {
 
 	async onCase(ctx: ProfilingContext, case_: BenchCase, metrics: Metrics) {
 		const { throughput, config } = this;
+
 		const measurement = new ExecutionTimeMeasurement(ctx, case_, config);
-		const time = await measurement.run();
+		await measurement.run();
+		const time = measurement.values;
 
 		if (!throughput) {
 			metrics.time = time;

@@ -113,15 +113,17 @@ it("should check zero measurement", async () => {
 	});
 	mockZeroMeasurement(measurement);
 
-	const time = await measurement.run();
-	expect(time).toStrictEqual([0]);
+	await measurement.run();
+	expect(measurement.values).toStrictEqual([0]);
 	expect(ctx.notes[0].type).toBe("warn");
 	expect(ctx.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
 });
 
 it("should not set throughput for zero measurement", async () => {
 	const run = vi.spyOn(ExecutionTimeMeasurement.prototype, "run");
-	run.mockResolvedValue([0]);
+	run.mockImplementation(async function (this: ExecutionTimeMeasurement) {
+		this.values = [0];
+	});
 	const mockProfiler = new TimeProfiler({ throughput: "s" });
 
 	const result = await runProfilers([mockProfiler], {

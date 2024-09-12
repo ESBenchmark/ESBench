@@ -154,7 +154,8 @@ const decompressProfiler: Profiler = {
 		 * the execution time of a benchmark case.
 		 */
 		const measurement = new ExecutionTimeMeasurement(ctx, newCase, options);
-		metrics.decompress = await measurement.run();
+		await measurement.run();
+		metrics.decompress = measurement.values;
 	},
 };
 ```
