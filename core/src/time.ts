@@ -6,43 +6,10 @@ import { runFns } from "./utils.js";
 import { MetricAnalysis, Metrics, Profiler, ProfilingContext } from "./profiling.js";
 
 interface Iterator {
+	invocations: number;
+	loops: number;
 	calls: number;
 	iterate: () => Awaitable<number>;
-}
-
-// See examples/self/loop-unrolling.ts for the validity of unrolling.
-function createNoHooks(sync: boolean, unroll: number, count: number) {
-	const [call, FunctionType, runs] = sync
-		? ["this()\n", Function, unroll]
-		: ["await this()\n", AsyncFunction, 1];
-
-	return new FunctionType(`\
-		const start = performance.now();
-		let count = ${count};
-		while (count--) {
-			${call.repeat(runs)}
-		}
-		return performance.now() - start;
-	`);
-}
-
-function createWithHooks(count: number, case_: BenchCase) {
-	const { isAsync } = case_;
-	const call = isAsync ? "await this()\n" : "this()\n";
-
-	return new AsyncFunction("runFns", "beforeHooks", "afterHooks", `\
-		let timeUsage = 0;
-		let count = ${count};
-		
-		while (count--) {
-			await runFns(beforeHooks);
-			timeUsage -= performance.now();
-			${call}
-			timeUsage += performance.now();
-			await runFns(afterHooks);
-		}
-		return timeUsage;
-	`);
 }
 
 /*
@@ -58,20 +25,49 @@ function createWithHooks(count: number, case_: BenchCase) {
  *
  * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
  */
-function createIterator(factor: number, case_: BenchCase, n:number): Iterator {
+function createIterator(case_: BenchCase, factor: number, loops: number) {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
+	let calls = 1;
+	let iterate: any;
 
 	if (beforeHooks.length | afterHooks.length) {
-		return {
-			calls: 1,
-			iterate: createWithHooks(n * factor, case_).bind(fn, runFns, beforeHooks, afterHooks),
-		};
+		const call = isAsync ? "await " : "";
+
+		const template = new AsyncFunction("runFns", "before", "after", `\
+			let timeUsage = 0;
+			let count = ${loops * factor};
+			
+			while (count--) {
+				await runFns(before);
+				timeUsage -= performance.now();
+				${call}this();
+				timeUsage += performance.now();
+				await runFns(after);
+			}
+			return timeUsage;
+		`);
+
+		iterate = template.bind(fn, runFns, beforeHooks, afterHooks);
 	} else {
-		return {
-			calls: factor,
-			iterate: createNoHooks(!isAsync, factor, n).bind(fn),
-		};
+		// See examples/self/loop-unrolling.ts for the validity of unrolling.
+		const [call, FunctionType, runs] = isAsync
+			? ["await this()\n", AsyncFunction, 1]
+			: ["this()\n", Function, factor];
+
+
+		const template = new FunctionType(`\
+			const start = performance.now();
+			let count = ${loops};
+			while (count--) {
+				${call.repeat(runs)}
+			}
+			return performance.now() - start;
+		`);
+
+		[calls, iterate] = [runs, template.bind(fn)];
 	}
+
+	return { iterate, calls, loops, invocations: calls * loops } as Iterator;
 }
 
 export interface TimingOptions {
@@ -181,31 +177,28 @@ export class ExecutionTimeMeasurement {
 
 	async run() {
 		const { ctx, benchCase, options } = this;
-		const { samples, unrollFactor, evaluateOverhead } = options;
-
-		let { iterations } = options;
+		const { samples, iterations, unrollFactor, evaluateOverhead } = options;
 		let iterator: Iterator;
 
 		if (typeof iterations === "string") {
-			[iterations, iterator] = await this.estimate(iterations);
+			iterator = await this.estimate(iterations);
 			await ctx.info();
 		} else {
-			iterator = createIterator(unrollFactor, benchCase, iterations/unrollFactor);
+			const loops = iterations / unrollFactor;
+			iterator = createIterator(benchCase, unrollFactor, loops);
 		}
 
-		iterations = Math.round(iterations / iterator.calls);
-
-		const time = await this.measure("Actual", iterator, iterations);
+		const time = await this.measure("Actual", iterator);
 		if (evaluateOverhead && samples > 1) {
 			await ctx.info();
-			await this.subtractOverhead(iterator, iterations, time);
+			await this.subtractOverhead(iterator, time);
 		}
 		return time;
 	}
 
-	async subtractOverhead(iterator: Iterator, iterations: number, time: number[]) {
+	async subtractOverhead(iterator: Iterator, time: number[]) {
 		const { benchCase, ctx } = this;
-		const overheads = await this.measureOverhead(iterator, iterations);
+		const overheads = await this.measureOverhead(iterator);
 
 		if (welchTest(time, overheads, "greater") < 0.05) {
 			const overhead = medianSorted(overheads);
@@ -220,14 +213,14 @@ export class ExecutionTimeMeasurement {
 		}
 	}
 
-	async measureOverhead(iterator: Iterator,iterations: number) {
+	async measureOverhead(iterator: Iterator) {
 		const { benchCase } = this;
 
 		const fn = benchCase.fn.constructor === Function ? noop : asyncNoop;
 		const c = benchCase.derive(benchCase.isAsync, fn);
 
-		const iterate = createIterator(iterator.calls, c, iterations);
-		return this.measure("Overhead", iterate, iterations);
+		const iterate = createIterator(c, iterator.calls, iterator.loops);
+		return this.measure("Overhead", iterate);
 	}
 
 	/*
@@ -244,15 +237,15 @@ export class ExecutionTimeMeasurement {
 		}
 
 		// Make a rough estimate before unrolling, avoid exceeding the target.
-		let iterator = createIterator(1, benchCase, 1);
 		let unrolled = false;
 		let count = 1;
+		let calls = 1;
 		let downCount = 0;
 
 		while (count < Number.MAX_SAFE_INTEGER) {
-			const n = Math.round(count / iterator.calls);
+			const iterator = createIterator(benchCase, calls, Math.round(count));
 			const time = await iterator.iterate();
-			await this.logStageRun("Pilot", time, n * iterator.calls);
+			await this.logStageRun("Pilot", time, iterator.invocations);
 
 			if (time === 0) {
 				count *= 8;
@@ -273,38 +266,36 @@ export class ExecutionTimeMeasurement {
 			// Unroll it after enough count to keep the time stable.
 			if (!unrolled && count > unrollFactor * 100) {
 				unrolled = true;
-				iterator = createIterator(unrollFactor, benchCase, Math.round(count / unrollFactor));
-			} else {
-				iterator = createIterator(iterator.calls, benchCase, Math.round(count / iterator.calls));
+				calls = unrollFactor;
+				count = count / calls;
 			}
 
 			if (
 				Math.abs(previous - count) < iterator.calls
 				|| count < previous && ++downCount >= 3
 			) {
-				return [previous, iterator] as const;
+				return iterator;
 			}
 		}
 		throw new Error("Iteration time is too long and the fn runs too fast");
 	}
 
-	async measure(name: string, iterator: Iterator, count: number) {
+	async measure(name: string, iterator: Iterator) {
 		const { ctx } = this;
 		const { warmup, samples } = this.options;
-		const { iterate, calls } = iterator;
 
 		const timeUsageList = new Array(samples);
-		const n = count * calls;
+		const n = iterator.invocations;
 
 		for (let i = 0; i < warmup; i++) {
-			const time = await iterate();
+			const time = await iterator.iterate();
 			await this.logStageRun(`${name} Warmup`, time, n);
 		}
 
 		await ctx.info();
 
 		for (let i = 0; i < samples; i++) {
-			const time = await iterate();
+			const time = await iterator.iterate();
 			timeUsageList[i] = time / n;
 			await this.logStageRun(name, time, n);
 		}

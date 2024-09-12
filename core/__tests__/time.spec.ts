@@ -20,14 +20,14 @@ function measureTime(options: TimeProfilerOptions, suite?: PartialSuite) {
 
 // Mock heavy overhead to make the test stable and fast.
 function mockZeroMeasurement(measurement: ExecutionTimeMeasurement) {
-	measurement.measure = function (name, iterator, count) {
+	measurement.measure = function (name, iterator) {
 		if (name === "Overhead") {
 			return Promise.resolve([22, 22]);
 		}
 		if (name === "Actual") {
 			return Promise.resolve([1, 1]);
 		}
-		return ExecutionTimeMeasurement.prototype.measure.call(this, name, iterator, count);
+		return ExecutionTimeMeasurement.prototype.measure.call(this, name, iterator);
 	};
 }
 
@@ -96,11 +96,11 @@ it.each([
 	const case_ = new BenchCase(scene, "Test", () => spin(s), false);
 
 	const etm = new ExecutionTimeMeasurement(newContext(), case_);
-	const [iterations, iter] = await etm.estimate(t);
+	const iter = await etm.estimate(t);
 
 	expect(iter.calls).toBe(c);
-	expect(Math.round(iterations)).toBeLessThan(i * 1.05); // ±5%
-	expect(Math.round(iterations)).toBeGreaterThan(i * 0.95);
+	expect(Math.round(iter.invocations)).toBeLessThan(i * 1.05); // ±5%
+	expect(Math.round(iter.invocations)).toBeGreaterThan(i * 0.95);
 });
 
 it("should check zero measurement", async () => {
