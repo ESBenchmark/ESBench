@@ -27,6 +27,7 @@ export default defineSuite({
 		},
 	},
 	timing: {
+		// Reduce this if you want the result quickly.
 		iterations: 1e6,
 	},
 	baseline: {

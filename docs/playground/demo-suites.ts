@@ -41,6 +41,12 @@ import("../../example/es/setTimeout-throttling.js", {
 		description: "Find the minimum interval of setTimeout",
 	},
 });
+import("../../example/es/cpu-cache.js", {
+	with: {
+		name: "Read with CPU Cache",
+		description: "CPUs use is the L1/L2/L3 caches: those are like faster RAMs",
+	},
+});
 import("../../example/es/object-iteration.js", {
 	with: {
 		name: "Iterate object entries",

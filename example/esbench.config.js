@@ -2,20 +2,25 @@ import {
 	defineConfig,
 	inProcessExecutor,
 	PlaywrightExecutor,
+	ProcessExecutor,
+	NodeExecutor,
 	rawReporter,
 	textReporter,
 	ViteBuilder,
 	WebextExecutor,
+	WebRemoteExecutor,
 } from "esbench/host";
 import { chromium, firefox, webkit } from "playwright";
 
 const viteBuilder = new ViteBuilder();
 
-const browserExecutors = [
+const playwrightBrowsers = [
 	new PlaywrightExecutor(firefox),
 	new PlaywrightExecutor(webkit),
 	new PlaywrightExecutor(chromium),
 ];
+
+const browserExecutor = new WebRemoteExecutor();
 
 export default defineConfig({
 	reporters: [
@@ -26,10 +31,10 @@ export default defineConfig({
 		// The micromatch patterns ESBench used to glob suite files.
 		include: ["./{self,node,custom-profiler}/*.[jt]s"],
 	}, {
-		include: ["./es/*.js"],
+		include: ["./es/*.[jt]s"],
 
 		/*
-		 * To run suites with `browserExecutors`, uncomment the next line
+		 * To run suites with `playwrightBrowsers`, uncomment the next line
 		 * or add `--experimental-import-meta-resolve` to Node options.
 		 */
 		// builders: [viteBuilder],
@@ -38,8 +43,14 @@ export default defineConfig({
 			// Run suites directly in the context, it's also the default value.
 			inProcessExecutor,
 
-			// Measure performance of suites on browsers.
-			// ...browserExecutors,
+			// Run suites on your browser.
+			// new WebRemoteExecutor({ open: {} }),
+
+			// Use playwright's browsers.
+			// ...playwrightBrowsers,
+
+			// Run in Node with TurboFan compiler disabled.
+			// new NodeExecutor({ execArgv: ["--no-opt"] }),
 
 			// More JS runtimes, you need to install them.
 			// new ProcessExecutor("bun"),
@@ -47,7 +58,7 @@ export default defineConfig({
 	}, {
 		include: ["./web/*.js"],
 		builders: [viteBuilder],
-		executors: browserExecutors,
+		executors: [browserExecutor],
 	}, {
 		include: ["./webext/*.js"],
 		builders: [viteBuilder],
