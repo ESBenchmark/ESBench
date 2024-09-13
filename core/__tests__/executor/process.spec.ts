@@ -9,7 +9,7 @@ it("should transfer messages", tester.successCase());
 it("should forward errors from runAndSend()", tester.insideError());
 
 it("should forward top level errors", tester.outsideError(
-	"Execute Failed (1), Command: node .esbench-tmp/main.js",
+	"Execute Failed (1), Command: node .build-tmp/main.js",
 ));
 
 it("should suggest the filename as executor name", () => {
@@ -22,7 +22,7 @@ describe("Custom command line", () => {
 	const tester = executorTester(instance);
 
 	it("should forward top level errors", tester.outsideError(
-		'Execute Failed (1), Command: node --expose_gc .esbench-tmp/main.js "foo bar"',
+		'Execute Failed (1), Command: node --expose_gc .build-tmp/main.js "foo bar"',
 	));
 
 	it("should pass arguments and env vars", async () => {

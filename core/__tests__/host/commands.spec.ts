@@ -1,10 +1,10 @@
-import { expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/node";
+import { expect, it, vi } from "vitest";
+import JobGenerator, { Executor } from "../../src/host/toolchain.ts";
+import { HostContext } from "../../src/host/context.ts";
 import { report, start } from "../../src/host/commands.ts";
-import JobGenerator from "../../src/host/toolchain.ts";
 import { resultStub } from "../helper.ts";
 import result1And2 from "../fixtures/merged-1+2.json" with { type: " json" };
-import { HostContext } from "../../src/host/index.ts";
 
 it("should merge results", async () => {
 	const mockReporter = vi.fn();
@@ -20,7 +20,7 @@ it("should merge results", async () => {
 	expect(calls[0][0]).toStrictEqual(result1And2);
 });
 
-it("should check for no file matches",  () => {
+it("should check for no file matches", () => {
 	const promise = report({}, ["__tests__/fixtures/NOT_EXISTS.json"]);
 	return expect(promise).rejects.toThrow("No file match the glob patterns.");
 });
@@ -55,7 +55,7 @@ it("should add tools and tags to results", async () => {
 	expect(result0.executor).toStrictEqual("mock-executor");
 });
 
-it("should warning if no job to run",async () => {
+it("should warning if no job to run", async () => {
 	const report = vi.fn(noop);
 	const warn = vi.spyOn(HostContext.prototype, "warn").mockImplementation(noop);
 	vi.spyOn(JobGenerator, "generate").mockResolvedValue([]);
@@ -64,4 +64,44 @@ it("should warning if no job to run",async () => {
 
 	expect(report).not.toHaveBeenCalled();
 	expect(warn).toHaveBeenCalledWith("\nNo file match the includes, please check your config.");
+});
+
+it("should prevent memory grown of large result set", async () => {
+	let before = 0;
+	let after = 0;
+
+	const mockExecutor: Executor = {
+		name: "test-mock-executor",
+		start() {
+			before = process.memoryUsage().heapUsed;
+		},
+		execute(task) {
+			task.dispatch(resultStub);
+		},
+		close() {
+			after = process.memoryUsage().heapUsed;
+		},
+	};
+	const mockBuildArray: any = {
+		name: "mock-builder",
+		root: "root",
+		files: ["./suite.js"],
+
+		length: 100_000,
+		index: 0,
+
+		* [Symbol.iterator]() {
+			while (++this.index < this.length) yield this;
+		},
+	};
+
+	vi.spyOn(JobGenerator, "generate").mockResolvedValue([{
+		name: "foo",
+		executor: mockExecutor,
+		builds: mockBuildArray,
+	}]);
+
+	await start({ reporters: [], logLevel: "off" });
+
+	expect(after - before).toBeLessThan(5 * 1048576);
 });

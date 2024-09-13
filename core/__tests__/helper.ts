@@ -77,7 +77,7 @@ function factory<T extends any[]>(f: (...args: T) => unknown) {
 }
 
 // Use shared folder may cause tests to fail randomly with parallel execution.
-const BUILD_OUT_DIR = ".esbench-tmp";
+const BUILD_OUT_DIR = ".build-tmp";
 
 const logMessage = { level: "info", log: "log message" };
 const emptyResult = { paramDef: [], meta: {}, notes: [], scenes: [] };

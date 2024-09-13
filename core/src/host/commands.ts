@@ -1,10 +1,12 @@
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
-import { performance } from "node:perf_hooks";
+import { createWriteStream, mkdirSync, readFileSync, rmSync, WriteStream } from "node:fs";
+import { join } from "node:path";
+import { promisify } from "node:util";
+import { once } from "node:events";
 import { durationFmt } from "@kaciras/utilities/node";
 import glob from "fast-glob";
 import JobGenerator, { BuildResult, Job } from "./toolchain.js";
 import { ESBenchConfig } from "./config.js";
-import { ESBenchResult, messageResolver } from "../connect.js";
+import { ESBenchResult, messageResolver, ToolchainResult } from "../connect.js";
 import { FilterOptions, HostContext } from "./context.js";
 
 function loadResults(path: string, throwIfMissing: true): ESBenchResult;
@@ -45,12 +47,56 @@ export async function report(config: ESBenchConfig, patterns: string[]) {
 	}
 }
 
+/**
+ * When there are a large number of complex benchmarking cases,
+ * the result set can be large, causing the memory footprint to keep increasing,
+ * affecting GC and thus spoiling the results.
+ *
+ * So we write results to a file, and read back after execution phase finished.
+ */
+class JsonResultWriter {
+
+	private readonly fp: WriteStream;
+
+	private addDot = false;
+	private drained = true;
+
+	constructor(path: string) {
+		this.fp = createWriteStream(path, "utf8");
+		this.fp.write("[");
+	}
+
+	async addSuiteResult(value: ToolchainResult) {
+		// Ensure the buffer flushed.
+		if(!this.drained) {
+			await once(this.fp, "drain");
+		}
+		if (this.addDot) {
+			this.fp.write(",");
+		}
+		this.addDot = true;
+		const data = JSON.stringify(value);
+		this.drained = this.fp.write(data);
+	}
+
+	async finish() {
+		this.fp.write("]");
+		await promisify(this.fp.close.bind(this.fp))();
+		const json = readFileSync(this.fp.path, "utf8");
+
+		const grouped = Object.create(null);
+		for(const record of JSON.parse(json)) {
+			(grouped[record.name] ??= []).push(record);
+		}
+		return grouped as ESBenchResult;
+	}
+}
+
 export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const context = new HostContext(config, filter);
 	const { reporters, tempDir, diff, cleanTempDir } = context.config;
 
 	const startTime = performance.now();
-	const result: ESBenchResult = {};
 	mkdirSync(tempDir, { recursive: true });
 
 	const jobs = await JobGenerator.generate(context);
@@ -61,12 +107,14 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	context.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
 
+	const writer = new JsonResultWriter(join(tempDir, "result-buffer.json"));
 	for (const job of jobs) {
-		await runJob(context, job, result);
+		await runJob(context, job, writer);
 	}
 
 	context.info(); // Add an empty line between running & reporting phase.
 
+	const result = await writer.finish();
 	if (diff) {
 		context.previous = loadResults(diff, false) ?? {};
 	}
@@ -90,7 +138,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	context.info(`Global total time: ${durationFmt.formatMod(timeUsage, "ms")}.`);
 }
 
-async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
+async function runJob(context: HostContext, job: Job, writer: JsonResultWriter) {
 	const { executor, builds } = job;
 
 	context.info(`Running suites with executor "${job.name}"`);
@@ -115,7 +163,7 @@ async function runJob(context: HostContext, job: Job, result: ESBenchResult) {
 					resolver.promise,
 					execution,
 				]);
-				(result[record.name!] ??= []).push({
+				await writer.addSuiteResult({
 					...record,
 					executor: job.name,
 					builder: build.name,
