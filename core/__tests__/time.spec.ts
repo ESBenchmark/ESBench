@@ -103,6 +103,15 @@ it.each([
 	expect(Math.round(iter.invocations)).toBeGreaterThan(i * 0.95);
 });
 
+it("should take iteration hooks into account in estimate", async () => {
+	const scene = new Scene({});
+	scene.beforeIteration(() => spin(20));
+	const case_ = new BenchCase(scene, "Test", () => spin(20), false);
+
+	const measurement = new ExecutionTimeMeasurement(newContext(), case_);
+	expect((await measurement.estimate("100ms")).invocations).toBe(2);
+});
+
 it("should check zero measurement", async () => {
 	const ctx = newContext();
 	const scene = new Scene({});

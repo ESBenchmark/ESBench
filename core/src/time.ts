@@ -85,9 +85,10 @@ export interface TimingOptions {
 	warmup?: number;
 
 	/**
-	 * Invocation count or time in a single sample.
+	 * Number of iterations for one sample, the larger the result the more accurate and slower it is.
 	 *
-	 * If is a duration string, it used by Pilot stage to estimate the number of invocations per sample.
+	 * If is a duration string, it used by Pilot stage to estimate the number of invocations
+	 * such that the duration of a sample (including iteration hooks) is close to the given value.
 	 *
 	 * If the value is a number, it must be a multiple of `unrollFactor`, the load will call the given
 	 * number of times for each sample. It's better for benchmarks which doesn't have a steady state
@@ -270,7 +271,11 @@ export class ExecutionTimeMeasurement {
 
 		while (count < Number.MAX_SAFE_INTEGER) {
 			const iterator = createIterator(benchCase, calls, Math.round(count));
-			const time = await iterator.iterate();
+
+			// Timing the outer to include iteration hooks.
+			const start = performance.now();
+			await iterator.iterate();
+			const time = performance.now() - start;
 			await this.logStageRun("Pilot", time, iterator.invocations);
 
 			if (time === 0) {
