@@ -226,7 +226,7 @@ export default class WebRemoteExecutor implements Executor {
 				transformer.fixStack(message.e, origin, root);
 			}
 			dispatch(message);
-			if ("scenes" in message) {
+			if (!("level" in message)) {
 				this.task = undefined; // Execution finished.
 			}
 			return response.writeHead(204).end();

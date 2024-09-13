@@ -6,6 +6,10 @@ import { report, start } from "../../src/host/commands.ts";
 import { resultStub } from "../helper.ts";
 import result1And2 from "../fixtures/merged-1+2.json" with { type: " json" };
 
+it("should throw error when report a non-exists result", () => {
+	return expect(report({}, ["NOT_EXISTS.json"])).rejects.toThrow();
+});
+
 it("should merge results", async () => {
 	const mockReporter = vi.fn();
 
@@ -64,6 +68,30 @@ it("should warning if no job to run", async () => {
 
 	expect(report).not.toHaveBeenCalled();
 	expect(warn).toHaveBeenCalledWith("\nNo file match the includes, please check your config.");
+});
+
+it("should ensure `Executor.close` called after finish", async () => {
+	vi.spyOn(HostContext.prototype, "info").mockImplementation(noop);
+	const mockExecutor = {
+		name: "mock-executor",
+		start: vi.fn(),
+		close: vi.fn(),
+		execute: vi.fn(() => {throw new Error("Stub");}),
+	};
+	vi.spyOn(JobGenerator, "generate").mockResolvedValue([{
+		name: "foo",
+		executor: mockExecutor,
+		builds: [{
+			name: "mock-builder",
+			root: "root",
+			files: ["./suite.js"],
+		}],
+	}]);
+
+	await expect(start({})).rejects.toThrow();
+
+	expect(mockExecutor.close).toHaveBeenCalledOnce();
+	expect(mockExecutor.execute).toHaveBeenCalledOnce();
 });
 
 it("should prevent memory grown of large result set", async () => {

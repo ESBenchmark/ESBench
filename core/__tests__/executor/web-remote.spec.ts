@@ -5,6 +5,7 @@ import WebRemoteExecutor from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
 import { createPathMapper, transformer } from "../../src/executor/transform.ts";
 import { HostContext } from "../../src/host/index.ts";
+import { sleep } from "@kaciras/utilities/node";
 
 vi.mock("../../src/executor/transform.ts");
 
@@ -26,6 +27,8 @@ tester.execute = async (...args) => {
 		return await baseExecute(...args);
 	} finally {
 		await page.close();
+
+		await sleep(100);
 	}
 };
 
@@ -84,7 +87,7 @@ it("should transform modules with builtin transformer", async () => {
 	expect(parse).toHaveBeenCalledWith("__tests__/fixtures/MOCK_ROOT", "/index.js");
 });
 
-it("should send the file if no transform needed", async () => {
+it("should send the file if no transform needed", () => {
 	vi.spyOn(transformer, "parse").mockReturnValue("__tests__/fixtures/success-suite/index.js");
 	vi.spyOn(transformer, "load").mockResolvedValue(undefined);
 
