@@ -13,6 +13,9 @@ import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/context.js";
 
 const moduleMime: Record<string, string | undefined> = {
+	// @ts-expect-error remove prototype attributes
+	__proto__: null,
+
 	html: "text/html",
 	css: "text/css",
 	js: "text/javascript",
@@ -37,7 +40,7 @@ export const htmlEntryHeaders = {
 	"Cross-Origin-Embedder-Policy": "require-corp",
 };
 
-const loader = `\
+const loaderJS = `\
 const postMessage = message => fetch("/_es-bench/message", {
 	method: "POST",
 	body: JSON.stringify(message),
@@ -207,7 +210,7 @@ export default class WebRemoteExecutor implements Executor {
 			case "/_es-bench/loader.js":
 				return response
 					.writeHead(200, { "Content-Type": "text/javascript" })
-					.end(loader);
+					.end(loaderJS);
 		}
 
 		if (!this.task) {

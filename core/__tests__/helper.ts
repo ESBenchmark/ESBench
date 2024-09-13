@@ -135,6 +135,8 @@ export function executorTester(executor: Executor) {
 		get execute() { return execute; },
 		set execute(value) { execute = value; },
 
+		executor,
+
 		/*
 		 * Shared test cases, they should be passed for every executor.
 		 *

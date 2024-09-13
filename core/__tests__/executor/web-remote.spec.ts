@@ -33,6 +33,15 @@ it("should suggest a name", () => {
 	expect(new WebRemoteExecutor().name).toBe("web remote");
 });
 
+it("should not return object method for content-type", async () => {
+	// noinspection ES6MissingAwait
+	baseExecute("fetch");
+
+	const response = await fetch("http://localhost:14715/file.toString");
+	expect(response.status).toBe(200);
+	expect(response.headers.get("content-type")).toBe(null);
+});
+
 it("should create a path mapper", () => {
 	const assets = { foo: "bar" };
 	new WebRemoteExecutor({ assets });
