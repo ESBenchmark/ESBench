@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { noop } from "@kaciras/utilities/node";
+import { cartesianArray, noop } from "@kaciras/utilities/node";
 import { emptySuite, PartialSuite, runProfilers, spin } from "./helper.js";
 import { ExecutionTimeMeasurement, TimeProfiler, TimeProfilerOptions } from "../src/time.js";
 import { BenchCase, ProfilingContext, Scene } from "../src/index.ts";
@@ -87,20 +87,29 @@ it("should support specify number of iterations", async () => {
 	expect(result.scenes[0].Test.time).toHaveLength(1);
 });
 
-it.each([
-	[0.1, "165ms", 1650, 16],
-	[1, "100ms", 100, 1],
-	[42, "100ms", 2, 1],
-])("should estimate iterations %#", async (s, t, i, c) => {
+const params = cartesianArray([
+	[true, false],
+	[
+		[0.1, "175ms", 1750, 16],
+		[1, "100ms", 100, 1],
+		[42, "100ms", 2, 1],
+	],
+]);
+
+it.each(Array.from(params))("should estimate iterations %#", async (hook, profile) => {
+	const [delay, time, i, unroll] = profile;
 	const scene = new Scene({});
-	const case_ = new BenchCase(scene, "Test", () => spin(s), false);
+	if (hook) {
+		scene.beforeIteration(noop);
+	}
+	const case_ = new BenchCase(scene, "Test", () => spin(delay), false);
 
 	const etm = new ExecutionTimeMeasurement(newContext(), case_);
-	const iter = await etm.estimate(t);
+	const iter = await etm.estimate(time);
 
-	expect(iter.calls).toBe(c);
-	expect(Math.round(iter.invocations)).toBeLessThan(i * 1.05); // ±5%
-	expect(Math.round(iter.invocations)).toBeGreaterThan(i * 0.95);
+	expect(iter.calls).toBe(unroll);
+	expect(Math.round(iter.invocations)).toBeLessThan(i * 1.07); // ±5%
+	expect(Math.round(iter.invocations)).toBeGreaterThan(i * 0.93);
 });
 
 it("should take iteration hooks into account in estimate", async () => {

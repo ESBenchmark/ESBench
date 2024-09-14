@@ -27,8 +27,8 @@ interface Iterator {
  */
 function createIterator(case_: BenchCase, factor: number, loops: number) {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
-	let calls = 1;
-	let iterate: any;
+	let calls: number;
+	let iterate: Iterator["iterate"];
 
 	if (beforeHooks.length | afterHooks.length) {
 		const modifier = isAsync ? "await " : "";
@@ -47,6 +47,7 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 			return timeUsage;
 		`);
 
+		calls = factor;
 		iterate = template.bind(fn, runFns, beforeHooks, afterHooks);
 	} else {
 		// See examples/self/loop-unrolling.ts for the validity of unrolling.
@@ -251,6 +252,9 @@ export class ExecutionTimeMeasurement {
 	}
 
 	/*
+	 * Modified from BenchmarkDotNet's `EnginePilotStage.RunSpecific()`, the project also
+	 * has a `RunAuto()`, but it requires clock resolution, and JS has no API to get it.
+	 *
 	 * References:
 	 * https://github.com/bheisler/criterion.rs/blob/f1ea31a92ff919a455f36b13c9a45fd74559d0fe/src/routine.rs#L82
 	 * https://github.com/dotnet/BenchmarkDotNet/blob/6a7244d76082f098a19785e4e3b0e0f269fed004/src/BenchmarkDotNet/Engines/EnginePilotStage.cs#L106
