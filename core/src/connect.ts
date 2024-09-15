@@ -6,6 +6,8 @@ import { runSuite, RunSuiteOption, RunSuiteResult } from "./runner.js";
 
 /**
  * The host side will add some attributes to the result.
+ *
+ * TODO: The data structure is the simplest for implementation, but not the most efficient.
  */
 export interface ToolchainResult extends RunSuiteResult {
 	name?: string;
@@ -26,13 +28,15 @@ type LogMessage = { log?: string; level: LogType };
 
 /**
  * Some types of objects that need to be sent to the host.
- *
- * How to detect the type:
- * - "scenes" in message: it's a ToolchainResult.
- * - "e" in message: it's an ErrorMessage.
- * - "level" in message: it's a LogMessage.
  */
 export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
+
+export function getMessageType(message: ClientMessage) {
+	if ("level" in message) {
+		return "log";
+	}
+	return "e" in message ? "error" : "result";
+}
 
 /**
  * A function that load benchmark suites. Provided by builders.

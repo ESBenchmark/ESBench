@@ -59,7 +59,7 @@ import { IconX } from "@tabler/icons-vue";
 import { shallowRef, watch } from "vue";
 import SuiteReport from "../../reporter-html/src/SuiteReport.vue";
 
-interface ReportViewProps {
+export interface ReportViewProps {
 	results: BenchmarkHistory[];
 }
 

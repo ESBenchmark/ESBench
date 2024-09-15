@@ -99,31 +99,32 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	const startTime = performance.now();
 	mkdirSync(tempDir, { recursive: true });
 
+	// 1) Collect suites, invoke toolchains.
 	const jobs = await JobGenerator.generate(context);
-
 	if (jobs.length === 0) {
 		return context.warn("\nNo file match the includes, please check your config.");
 	}
 	const count = jobs.reduce((s, job) => s + job.builds.length, 0);
 	context.info(`\nBuild finished, ${count} jobs for ${jobs.length} executors.`);
 
+	// 2) Execute benchmark suites.
 	const writer = new JsonResultWriter(join(tempDir, "result-buffer.json"));
 	for (const job of jobs) {
 		await runJob(context, job, writer);
 	}
 
-	context.info(); // Add an empty line between running & reporting phase.
-
+	// 3) Export the results.
 	const result = await writer.finish();
 	if (diff) {
 		context.previous = loadResults(diff, false) ?? {};
 	}
+	context.info(/* Add an empty line */);
 	for (const reporter of reporters) {
 		await reporter(result, context);
 	}
 
 	/*
-	 * We did not put the cleanup code into finally block,
+	 * 4) Cleanup. We did not put the code into finally block,
 	 * so that user can check the build output when error occurred.
 	 */
 	if (cleanTempDir) {

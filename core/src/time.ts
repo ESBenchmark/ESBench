@@ -27,7 +27,7 @@ interface Iterator {
  */
 function createIterator(case_: BenchCase, factor: number, loops: number) {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
-	let calls: number;
+	let calls = factor;
 	let iterate: Iterator["iterate"];
 
 	if (beforeHooks.length | afterHooks.length) {
@@ -47,7 +47,6 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 			return timeUsage;
 		`);
 
-		calls = factor;
 		iterate = template.bind(fn, runFns, beforeHooks, afterHooks);
 	} else {
 		// See examples/self/loop-unrolling.ts for the validity of unrolling.
@@ -241,14 +240,13 @@ export class ExecutionTimeMeasurement {
 		}
 	}
 
-	async measureOverhead(iterator: Iterator) {
+	async measureOverhead({ calls, loops }: Iterator) {
 		const { benchCase } = this;
 
 		const fn = benchCase.fn.constructor === Function ? noop : asyncNoop;
 		const c = benchCase.derive(benchCase.isAsync, fn);
 
-		const iterate = createIterator(c, iterator.calls, iterator.loops);
-		return this.measure("Overhead", iterate);
+		return this.measure("Overhead", createIterator(c, calls, loops));
 	}
 
 	/*

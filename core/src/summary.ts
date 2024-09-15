@@ -159,7 +159,7 @@ export class Summary {
 
 		weights.length = keys.length;
 		let weight = 1;
-		for (let i = keys.length - 1; i >= 0; i--) {
+		for (let i = weights.length - 1; i >= 0; i--) {
 			const k = keys[i];
 			const values = vars.get(k);
 			if (!values) {

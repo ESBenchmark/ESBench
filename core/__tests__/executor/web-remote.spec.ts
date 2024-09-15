@@ -5,7 +5,6 @@ import WebRemoteExecutor from "../../src/executor/web-remote.ts";
 import { executorTester } from "../helper.ts";
 import { createPathMapper, transformer } from "../../src/executor/transform.ts";
 import { HostContext } from "../../src/host/index.ts";
-import { sleep } from "@kaciras/utilities/node";
 
 vi.mock("../../src/executor/transform.ts");
 
@@ -27,8 +26,6 @@ tester.execute = async (...args) => {
 		return await baseExecute(...args);
 	} finally {
 		await page.close();
-
-		await sleep(100);
 	}
 };
 

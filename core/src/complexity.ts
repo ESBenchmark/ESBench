@@ -1,111 +1,125 @@
 import { mean } from "simple-statistics";
-import { Profiler, ProfilingContext } from "./profiling.js";
+import { Metrics, Profiler, ProfilingContext } from "./profiling.js";
 import { CurveFn, minimalLeastSquare } from "./math.js";
 
-const curves: Record<string, CurveFn> = {
-	"O(1)": _ => 1,
-	"O(N)": n => n,
-	"O(logN)": n => Math.log2(n),
-	"O(NlogN)": n => n * Math.log2(n),
-	"O(N^2)": n => n * n,
-	"O(N^3)": n => n ** 3,
-};
-
-function getComplexity(input: number[], time: number[]) {
-	let bestFit = Number.MAX_VALUE;
-	let complexity = "O(1)";
-	for (const [name, fn] of Object.entries(curves)) {
-		const rms = minimalLeastSquare(input, time, fn);
-		if (rms < bestFit) {
-			bestFit = rms;
-			complexity = name;
-		}
-	}
-	return complexity;
-}
+const curves: Array<string | CurveFn> = [
+	"O(1)", _ => 1,
+	"O(N)", n => n,
+	"O(logN)", n => Math.log2(n),
+	"O(NlogN)", n => n * Math.log2(n),
+	"O(N^2)", n => n * n,
+	"O(N^3)", n => n ** 3,
+];
 
 export default class ComplexityProfiler implements Profiler {
 
 	private readonly variable: string;
 	private readonly metric: string;
 
+	private index = NaN;
+	private weights!: number[];
+
 	constructor(variable: string, metric: string) {
 		this.variable = variable;
 		this.metric = metric;
 	}
 
-	onFinish(ctx: ProfilingContext) {
-		const { variable, metric } = this;
-		const { params } = ctx.suite;
+	onStart(ctx: ProfilingContext) {
+		ctx.defineMetric({ key: "complexity" });
 
-		const weights = new Array(params.length);
-		let index = 0;
+		const { params } = ctx.suite;
+		this.weights = new Array(params.length);
 		let weight = 1;
-		for (let i = weights.length - 1; i >= 0; i--) {
+		for (let i = params.length - 1; i >= 0; i--) {
 			const [k, values] = params[i];
 			if (!values) {
 				throw new Error(`${k} is not in variables`);
 			}
-			if (k === variable) {
-				index = i;
+			if (k === this.variable) {
+				this.index = i;
 			}
-			weights[i] = weight;
+			this.weights[i] = weight;
 			weight *= values.length;
 		}
+	}
 
-		function rec(depth: number, k: number) {
+	onFinish(ctx: ProfilingContext) {
+		const { index, weights, metric } = this;
+		const params = ctx.suite.params;
+		const input = params[index][1] as number[];
+
+		arrange(0, 0);
+
+		function arrange(depth: number, k: number) {
 			if (depth === index) {
-				return rec(depth + 1, k);
+				return arrange(depth + 1, k);
 			}
 			if (depth === weights.length) {
-				return calc(k);
+				return calculate(k);
 			}
 			for (let i = 0; i < params[depth][1].length; i++) {
-				rec(depth + 1, k + weights[depth] * i);
+				arrange(depth + 1, k + weights[depth] * i);
 			}
 		}
 
-		const input = params[index][1];
-
-		function calc(k: number) {
-			const samples = Object.create(null);
-			const mmap = Object.create(null);
+		function calculate(k: number) {
+			const metricsMap = new Map<string, Metrics[]>();
+			const timeMap = new Map<string, number[]>();
 
 			for (let i = 0; i < input.length; i++) {
-				const p = k + i * weights[index];
+				const scene = ctx.scenes[k + i * weights[index]];
 
-				for (const [k, v] of Object.entries(ctx.scenes[p])) {
-					if (!samples[k]) {
-						samples[k] = new Array(input.length);
-						mmap[k] = [];
+				for (const [name, metrics] of Object.entries(scene)) {
+					let samples = timeMap.get(name);
+					let metricsList = metricsMap.get(name);
+
+					if (!samples) {
+						metricsMap.set(name, metricsList = []);
+						timeMap.set(name, samples = new Array(input.length));
 					}
-					mmap[k].push(v);
 
-					const inputF = samples[k];
-					const value = v[metric];
-					if (Array.isArray(value)) {
-						inputF[i] = mean(value);
-					} else if (typeof value === "number") {
-						inputF[i] = value;
+					metricsList!.push(metrics);
+
+					const value = metrics[metric];
+					if (typeof value === "number") {
+						samples[i] = value;
+					} else if (Array.isArray(value)) {
+						samples[i] = mean(value);
 					}
 				}
 			}
 
-			for (const [name, values] of Object.entries(samples)) {
-				const inputF = input.filter(Number.isFinite);
-				const valuesF = values.filter(Number.isFinite);
+			for (const [name, values] of timeMap) {
+				const inputF: number[] = [];
+				const valuesF: number[] = [];
 
-				if (valuesF.length < 2) {
-					continue;
+				// Filter out `undefined` from absent cases.
+				for (let i = 0; i < values.length; i++) {
+					if (Number.isFinite(values[i])) {
+						inputF.push(input[i]);
+						valuesF.push(values[i]);
+					}
 				}
 
-				const c = getComplexity(inputF, valuesF);
-				for (const metrics of mmap[name]) {
-					metrics.complexity = c;
+				if (valuesF.length < 2) {
+					continue; // Minimum require 2 points.
+				}
+
+				let bestFit = Number.MAX_VALUE;
+				let complexity = "O(1)";
+				for (let i = 0; i < curves.length; i += 2) {
+					const f = curves[i + 1] as CurveFn;
+					const rms = minimalLeastSquare(inputF, valuesF, f);
+					if (rms < bestFit) {
+						bestFit = rms;
+						complexity = curves[i] as string;
+					}
+				}
+
+				for (const metrics of metricsMap.get(name)!) {
+					metrics.complexity = complexity;
 				}
 			}
 		}
-
-		rec(0, 0);
 	}
 }

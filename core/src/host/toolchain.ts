@@ -269,6 +269,7 @@ export default class JobGenerator {
 			throw new Error("Tool name must be a non-blank string\n└─ " + loc);
 		}
 
+		// Assume the name wrapper does not have any extra property.
 		const tool = keyMethod in nameable ? nameable : (nameable as any).use;
 
 		for (const [t, e] of set) {
