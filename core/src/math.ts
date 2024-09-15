@@ -46,6 +46,31 @@ export class TukeyOutlierDetector {
 	}
 }
 
+export type CurveFn = (input: number) => number;
+
+export function minimalLeastSquare(input: number[], time: number[], fn: CurveFn) {
+	let sigma_gn_squared = 0;
+	let sigma_time = 0;
+	let sigma_time_gn = 0;
+
+	for (let i = 0; i < input.length; ++i) {
+		const y = fn(input[i]);
+		sigma_gn_squared += y * y;
+		sigma_time += time[i];
+		sigma_time_gn += time[i] * y;
+	}
+
+	const coef = sigma_time_gn / sigma_gn_squared;
+
+	let rms = 0.0;
+	for (let i = 0; i < input.length; ++i) {
+		const fit = coef * fn(input[i]);
+		rms += (time[i] - fit) ** 2;
+	}
+
+	return Math.sqrt(rms / input.length) / sigma_time * input.length;
+}
+
 type AlternativeHypothesis = "not equal" | "less" | "greater";
 
 /**
