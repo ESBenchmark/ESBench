@@ -2,6 +2,7 @@ import { Awaitable, ItemOfIterable } from "@kaciras/utilities/browser";
 import { Profiler } from "./profiling.js";
 import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
+import { ComplexityOptions } from "./complexity.js";
 import { BUILTIN_VARS, RE_ANY, runFns, toDisplayName } from "./utils.js";
 
 export type HookFn = () => Awaitable<unknown>;
@@ -235,6 +236,8 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	 * @see https://esbench.vercel.app/guide/validation
 	 */
 	validate?: ValidateOptions<SceneParams<T>>;
+
+	complexity?: ComplexityOptions;
 
 	/**
 	 * you can specify set of values. As a result, you will get results

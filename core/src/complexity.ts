@@ -11,17 +11,30 @@ const curves: Array<string | CurveFn> = [
 	"O(N^3)", n => n ** 3,
 ];
 
+export interface ComplexityOptions {
+	/**
+	 * Parameter name of the input size, the parameter must have at least 2 values,
+	 * and all values must be finite number.
+	 */
+	param: string;
+
+	/**
+	 * Metric name of the case running time, typically "time", provided by TimeProfiler.
+	 */
+	metric: string;
+}
+
 export default class ComplexityProfiler implements Profiler {
 
-	private readonly variable: string;
 	private readonly metric: string;
+	private readonly param: string;
 
 	private index = NaN;
 	private weights!: number[];
 
-	constructor(variable: string, metric: string) {
-		this.variable = variable;
-		this.metric = metric;
+	constructor(options: ComplexityOptions) {
+		this.metric = options.metric;
+		this.param = options.param;
 	}
 
 	onStart(ctx: ProfilingContext) {
@@ -32,14 +45,15 @@ export default class ComplexityProfiler implements Profiler {
 		let weight = 1;
 		for (let i = params.length - 1; i >= 0; i--) {
 			const [k, values] = params[i];
-			if (!values) {
-				throw new Error(`${k} is not in variables`);
-			}
-			if (k === this.variable) {
+			if (k === this.param) {
 				this.index = i;
 			}
 			this.weights[i] = weight;
 			weight *= values.length;
+		}
+
+		if (!params[this.index][1].every(Number.isFinite)) {
+			throw new Error(`Param ${this.param} must be finite numbers`);
 		}
 	}
 
