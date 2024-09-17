@@ -4,6 +4,7 @@ import { ExecutionValidator } from "./validate.js";
 import { TimeProfiler } from "./time.js";
 import { attrx, variablesToString } from "./utils.js";
 import { LogHandler, MetricMeta, Note, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
+import ComplexityProfiler from "./complexity.js";
 
 class DefaultEventLogger implements Profiler {
 
@@ -72,7 +73,7 @@ export interface RunSuiteOption {
 }
 
 function resolveProfilers(suite: NormalizedSuite) {
-	const { timing, validate } = suite;
+	const { timing, complexity, validate } = suite;
 
 	const resolved: any = [new DefaultEventLogger()];
 	if (validate) {
@@ -80,6 +81,9 @@ function resolveProfilers(suite: NormalizedSuite) {
 	}
 	if (timing) {
 		resolved.push(new TimeProfiler(timing));
+	}
+	if (complexity) {
+		resolved.push(new ComplexityProfiler(complexity));
 	}
 	if (suite.profilers) {
 		resolved.push(...suite.profilers);
@@ -95,7 +99,7 @@ function convertBaseline({ params, paramNames, baseline }: NormalizedSuite) {
 
 	const i = params.findIndex(e => e[0] === type);
 	if (i === -1) {
-		// Maybe a tag, we cannot known the name in the runner.
+		// Maybe a tag, we cannot know the name in the runner.
 		if (typeof value === "string") {
 			return baseline as ResultBaseline;
 		}
