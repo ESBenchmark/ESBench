@@ -58,6 +58,7 @@ export default defineConfig({
 					{ text: "Reporters", link: "/guide/reporters" },
 					{ text: "Time Profiler", link: "/guide/time-profiler" },
 					{ text: "Validation", link: "/guide/validation" },
+					{ text: "Complexity", link: "/guide/complexity" },
 					{ text: "IDE Integration", link: "/guide/ide-integration" },
 					{ text: "FAQ", link: "/guide/faq" },
 				],

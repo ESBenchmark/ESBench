@@ -29,10 +29,10 @@ import("../../example/es/import-http-module.js", {
 		description: "How to import npm packages in playground",
 	},
 });
-import("../../example/es/url-canParse.js", {
+import("../../example/es/complexity.js", {
 	with: {
-		name: "URL.canParse",
-		description: "How much faster is it than try-catch?",
+		name: "Asymptotic Complexity",
+		description: "Calculate the Big-O time complexity of functions",
 	},
 });
 import("../../example/es/setTimeout-throttling.js", {
@@ -47,10 +47,10 @@ import("../../example/es/cpu-cache.js", {
 		description: "CPUs use is the L1/L2/L3 caches: those are like faster RAMs",
 	},
 });
-import("../../example/es/object-iteration.js", {
+import("../../example/es/url-canParse.js", {
 	with: {
-		name: "Iterate object entries",
-		description: "How well the engine optimizes object literals?",
+		name: "URL.canParse",
+		description: "How much faster is it than try-catch?",
 	},
 });
 import("../../example/es/string-join.js", {
@@ -84,6 +84,13 @@ import("../../example/es/array-sum.js", {
 	with: {
 		name: "Sum using for-loop vs Array.reduce",
 		description: "Do for-of and Array.reduce() have performance overheads?",
+	},
+});
+
+import("../../example/es/object-iteration.js", {
+	with: {
+		name: "Iterate object entries",
+		description: "How well the engine optimizes object literals?",
 	},
 });
 
