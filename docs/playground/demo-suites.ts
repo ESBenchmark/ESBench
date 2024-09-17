@@ -23,7 +23,7 @@ import("../../example/es/array-sort.js", {
 		description: "Built-in sort() is slower than your quick sort",
 	},
 });
-import("../../example/es/import-http-module.js", {
+import("../../example/misc/import-http-module.js", {
 	with: {
 		name: "Cartesian Product libraries",
 		description: "How to import npm packages in playground",

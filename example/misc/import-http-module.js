@@ -12,7 +12,6 @@ function drain(generator) {
 
 const arr2 = [1, 2];
 
-// Run this suite in Node need a flag: --experimental-network-imports
 export default defineSuite({
 	baseline: { type: "Name", value: "@kaciras/utilities" },
 	params: {

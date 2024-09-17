@@ -46,8 +46,19 @@ export class TukeyOutlierDetector {
 	}
 }
 
-export type CurveFn = (input: number) => number;
+export type CurveFn = (x: number) => number;
 
+/**
+ * Find the coefficient for the high-order term in the running time, by minimizing
+ * the sum of squares of relative error, for the fitting curve given by the `fn`.
+ *
+ * Source project:
+ * https://github.com/ismaelJimenez/cpp.leastsq/blob/master/src/minimal_leastsq.cpp#L66
+ *
+ * @param input Array containing the size of the benchmark tests.
+ * @param time Array containing the times for the benchmark tests.
+ * @param fn One variable equation function.
+ */
 export function minimalLeastSquare(input: number[], time: number[], fn: CurveFn) {
 	let sigma_gn_squared = 0;
 	let sigma_time = 0;
@@ -62,7 +73,7 @@ export function minimalLeastSquare(input: number[], time: number[], fn: CurveFn)
 
 	const coef = sigma_time_gn / sigma_gn_squared;
 
-	let rms = 0.0;
+	let rms = 0;
 	for (let i = 0; i < input.length; ++i) {
 		const fit = coef * fn(input[i]);
 		rms += (time[i] - fit) ** 2;

@@ -2,8 +2,6 @@ import {
 	defineConfig,
 	inProcessExecutor,
 	PlaywrightExecutor,
-	ProcessExecutor,
-	NodeExecutor,
 	rawReporter,
 	textReporter,
 	ViteBuilder,
@@ -29,7 +27,7 @@ export default defineConfig({
 	],
 	toolchains: [{
 		// The micromatch patterns ESBench used to glob suite files.
-		include: ["./{self,node,custom-profiler}/*.[jt]s"],
+		include: ["./{self,node,profilers}/*.[jt]s"],
 	}, {
 		include: ["./es/*.[jt]s"],
 
@@ -63,6 +61,10 @@ export default defineConfig({
 		include: ["./webext/*.js"],
 		builders: [viteBuilder],
 		executors: [new WebextExecutor(chromium)],
+	}, {
+		// Node 22.6.0 drops the support of HTTP import.
+		include: ["./misc/import-http-module.js"],
+		executors: [browserExecutor],
 	}, {
 		// Build the suite with different config, see their impact on performance.
 		include: ["./misc/transpile.js"],
