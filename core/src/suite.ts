@@ -192,8 +192,9 @@ type SceneParams<T extends ParamsDef> = {
 		? ItemOfIterable<T[K]> : T[K][keyof T[K]]
 };
 
+export type ParamsAny = Record<string, any[] | Record<string, any>>;
+
 type Empty = Record<string, undefined[]>;
-type ParamsAny = Record<string, any[] | Record<string, any>>;
 
 export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	/**
@@ -237,7 +238,12 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	 */
 	validate?: ValidateOptions<SceneParams<T>>;
 
-	complexity?: ComplexityOptions;
+	/**
+	 * Calculate asymptotic complexity of benchmark cases.
+	 *
+	 * @see https://esbench.vercel.app/guide/complexity
+	 */
+	complexity?: ComplexityOptions<T>;
 
 	/**
 	 * you can specify set of values. As a result, you will get results

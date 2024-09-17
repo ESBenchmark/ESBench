@@ -1,5 +1,6 @@
 import { mean } from "simple-statistics";
 import { Metrics, Profiler, ProfilingContext } from "./profiling.js";
+import { ParamsAny, ParamsDef } from "./suite.js";
 import { CurveFn, minimalLeastSquare } from "./math.js";
 
 const defaultCurves: Record<string, CurveFn> = {
@@ -11,12 +12,12 @@ const defaultCurves: Record<string, CurveFn> = {
 	"O(N^3)": n => n ** 3,
 };
 
-export interface ComplexityOptions {
+export interface ComplexityOptions<T extends ParamsDef> {
 	/**
 	 * Parameter name of the input size, the parameter must have at least 2 values,
 	 * and all values must be finite number.
 	 */
-	param: string;
+	param: keyof T;
 
 	/**
 	 * Metric name of the case running time, typically "time", provided by TimeProfiler.
@@ -48,7 +49,7 @@ export default class ComplexityProfiler implements Profiler {
 	private index = NaN;
 	private weights!: number[];
 
-	constructor(options: ComplexityOptions) {
+	constructor(options: ComplexityOptions<ParamsAny>) {
 		this.metric = options.metric;
 		this.param = options.param;
 		this.curves = options.curves ?? defaultCurves;
@@ -97,6 +98,7 @@ export default class ComplexityProfiler implements Profiler {
 			const metricsMap = new Map<string, Metrics[]>();
 			const timeMap = new Map<string, number[]>();
 
+			// Group metric values by cases.
 			for (let i = 0; i < input.length; i++) {
 				const scene = ctx.scenes[k + i * weights[index]];
 
@@ -124,7 +126,7 @@ export default class ComplexityProfiler implements Profiler {
 				const inputF: number[] = [];
 				const valuesF: number[] = [];
 
-				// Filter out `undefined` from absent cases.
+				// Filter out `undefined` of absent cases.
 				for (let i = 0; i < values.length; i++) {
 					if (Number.isFinite(values[i])) {
 						inputF.push(input[i]);
