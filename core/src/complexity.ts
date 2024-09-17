@@ -2,14 +2,14 @@ import { mean } from "simple-statistics";
 import { Metrics, Profiler, ProfilingContext } from "./profiling.js";
 import { CurveFn, minimalLeastSquare } from "./math.js";
 
-const curves: Array<string | CurveFn> = [
-	"O(1)", _ => 1,
-	"O(N)", n => n,
-	"O(logN)", n => Math.log2(n),
-	"O(NlogN)", n => n * Math.log2(n),
-	"O(N^2)", n => n * n,
-	"O(N^3)", n => n ** 3,
-];
+const defaultCurves: Record<string, CurveFn> = {
+	"O(1)": _ => 1,
+	"O(N)": n => n,
+	"O(logN)": n => Math.log2(n),
+	"O(NlogN)": n => n * Math.log2(n),
+	"O(N^2)": n => n * n,
+	"O(N^3)": n => n ** 3,
+};
 
 export interface ComplexityOptions {
 	/**
@@ -22,12 +22,28 @@ export interface ComplexityOptions {
 	 * Metric name of the case running time, typically "time", provided by TimeProfiler.
 	 */
 	metric: string;
+
+	/**
+	 * Using customized complexity curves, and builtin curves are ignored.
+	 *
+	 * @example
+	 * new ComplexityProfiler({
+	 *     param: "length",
+	 *     metric: "time",
+	 *     curves: {
+	 *         "O(N^4)": n => n ** 4,
+	 *         "O(loglogN)": n => Math.log(Math.log(n)),
+	 *     }
+	 * })
+	 */
+	curves?: Record<string, CurveFn>;
 }
 
 export default class ComplexityProfiler implements Profiler {
 
 	private readonly metric: string;
 	private readonly param: string;
+	private readonly curves: Record<string, CurveFn>;
 
 	private index = NaN;
 	private weights!: number[];
@@ -35,6 +51,7 @@ export default class ComplexityProfiler implements Profiler {
 	constructor(options: ComplexityOptions) {
 		this.metric = options.metric;
 		this.param = options.param;
+		this.curves = options.curves ?? defaultCurves;
 	}
 
 	onStart(ctx: ProfilingContext) {
@@ -58,7 +75,7 @@ export default class ComplexityProfiler implements Profiler {
 	}
 
 	onFinish(ctx: ProfilingContext) {
-		const { index, weights, metric } = this;
+		const { index, weights, metric, curves } = this;
 		const params = ctx.suite.params;
 		const input = params[index][1] as number[];
 
@@ -121,12 +138,11 @@ export default class ComplexityProfiler implements Profiler {
 
 				let bestFit = Number.MAX_VALUE;
 				let complexity = "O(1)";
-				for (let i = 0; i < curves.length; i += 2) {
-					const f = curves[i + 1] as CurveFn;
+				for (const [type, f] of Object.entries(curves)) {
 					const rms = minimalLeastSquare(inputF, valuesF, f);
 					if (rms < bestFit) {
 						bestFit = rms;
-						complexity = curves[i] as string;
+						complexity = type;
 					}
 				}
 

@@ -161,3 +161,41 @@ it("should group metrics of each case", async () => {
 		expect(context.scenes[i + 1].test.complexity).toBe("O(N^2)");
 	}
 });
+
+it("should support custom curves", async () => {
+	let sceneIndex = -1;
+	let caseIndex = 0;
+	const mockTimeProfiler: Profiler = {
+		onScene() {
+			sceneIndex++;
+		},
+		onCase(_, __, metrics) {
+			const series = yValues[(caseIndex++) % 2 ];
+			metrics.time = series.values[sceneIndex];
+		},
+	};
+	const context = await runProfilers([
+		mockTimeProfiler,
+		new ComplexityProfiler({
+			param: "xValues",
+			metric: "time",
+			curves: {
+				typeA: n => Math.log(Math.log(n)),
+				typeB: n => n ** 1.5,
+			},
+		}),
+	], {
+		params: {
+			multipleN: [false, true],
+			xValues,
+			dataSet: [0, 1],
+		},
+		setup: scene => {
+			scene.bench("foo", noop);
+			scene.bench("bar", noop);
+		},
+	});
+
+	expect(context.scenes[0].foo.complexity).toBe("typeA");
+	expect(context.scenes[0].bar.complexity).toBe("typeB");
+});
