@@ -6,6 +6,7 @@ export default [...core, ...typescript, ...vueTs,
 	{
 		ignores: [
 			"docs/.vitepress/{cache,dist}/**",
+			"example/node/*/*.js",
 			"core/{lib,coverage}/**",
 		],
 	},

@@ -8,7 +8,7 @@ export default defineSuite(scene => {
 		for (let i = 0; i < loops; i++) {
 			try {
 				sum += i;
-			} catch (e) {
+			} catch {
 				return -1;
 			}
 		}
@@ -22,7 +22,7 @@ export default defineSuite(scene => {
 				sum += i;
 			}
 			return sum;
-		} catch (e) {
+		} catch {
 			return -1;
 		}
 	});

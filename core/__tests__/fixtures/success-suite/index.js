@@ -1,4 +1,4 @@
-export default async function (post, files, pattern) {
+export default async function (post, _, __) {
 	await post({ level: "info", log: "log message" });
 	await post({ paramDef: [], meta: {}, notes: [], scenes: [] });
 }

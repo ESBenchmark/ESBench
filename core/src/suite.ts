@@ -194,7 +194,7 @@ type SceneParams<T extends ParamsDef> = {
 
 export type ParamsAny = Record<string, any[] | Record<string, any>>;
 
-type Empty = Record<string, undefined[]>;
+type Empty = Record<string, undefined[] | Record<string, undefined>>;
 
 export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	/**
