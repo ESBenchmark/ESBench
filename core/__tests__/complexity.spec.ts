@@ -1,8 +1,9 @@
 import { expect, it } from "vitest";
 import { noop } from "@kaciras/utilities/node";
-import { Profiler } from "../src/profiling.ts";
+import { Metrics, Profiler } from "../src/profiling.ts";
 import ComplexityProfiler from "../src/complexity.ts";
 import { runProfilers } from "./helper.ts";
+import { Scene } from "../src/index.ts";
 
 const xValues = [10, 50, 200, 520, 3000, 7500, 10000];
 const yValues = [
@@ -64,6 +65,32 @@ const yValues = [
 	},
 ];
 
+type MockMeasureTime = (i: MockTimeProfiler) => Metrics[string];
+
+class MockTimeProfiler implements Profiler {
+
+	private readonly getTime: MockMeasureTime;
+
+	scene!: Scene;
+	sceneIndex = -1;
+	caseIndex = -1;
+
+	constructor(getTime: MockMeasureTime) {
+		this.getTime = getTime;
+	}
+
+	onScene(_: unknown, scene: Scene) {
+		this.scene = scene;
+		this.sceneIndex += 1;
+		this.caseIndex = -1;
+	}
+
+	onCase(_: unknown, __: unknown, metrics: Metrics) {
+		this.caseIndex += 1;
+		metrics.time = this.getTime(this);
+	}
+}
+
 it("should throw error if the variable does not exists", () => {
 	const promise = runProfilers([
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
@@ -85,15 +112,21 @@ it("should check param values is all numbers", () => {
 	return expect(promise).rejects.toThrow("Param xValues must be finite numbers");
 });
 
+it("should reject non-numeric values", () => {
+	const promise = runProfilers([
+		new ComplexityProfiler({ param: "xValues", metric: "time" }),
+		new MockTimeProfiler(() => "foobar"),
+	], {
+		params: { xValues },
+		setup: scene => scene.bench("test", noop),
+	});
+	return expect(promise).rejects
+		.toThrow('Metric "time" has string type and cannot be used to calculate complexity');
+});
+
 it.each(yValues)("should get the complexity", async data => {
-	let index = 0;
-	const mockTimeProfiler: Profiler = {
-		onCase(_, __, metrics) {
-			metrics.time = data.values[index++];
-		},
-	};
 	const context = await runProfilers([
-		mockTimeProfiler,
+		new MockTimeProfiler(i => data.values[i.sceneIndex]),
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
 		params: { xValues },
@@ -105,19 +138,13 @@ it.each(yValues)("should get the complexity", async data => {
 });
 
 it("should skip cases that does not have enough samples", async () => {
-	let index = 0;
-	const mockTimeProfiler: Profiler = {
-		onCase(_, __, metrics) {
-			metrics.time = 11;
-		},
-	};
 	const context = await runProfilers([
-		mockTimeProfiler,
+		new MockTimeProfiler(() => 11),
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
 		params: { xValues },
 		setup: scene => {
-			if (index++ === 0) {
+			if (scene.params.xValues <= 10) {
 				scene.bench("test", noop);
 			}
 		},
@@ -127,21 +154,13 @@ it("should skip cases that does not have enough samples", async () => {
 });
 
 it("should group metrics of each case", async () => {
-	let index = -1;
-	let series: number[];
-	let factor: number;
-	const mockTimeProfiler: Profiler = {
-		onScene(_, scene) {
-			index++;
-			factor = scene.params.multipleN ? scene.params.xValues : 1;
-			series = yValues[scene.params.dataSet].values as number[];
-		},
-		onCase(_, __, metrics) {
-			metrics.time = factor * series[Math.floor(index / 2 % 7)];
-		},
-	};
 	const context = await runProfilers([
-		mockTimeProfiler,
+		new MockTimeProfiler(i => {
+			const { multipleN, xValues, dataSet } = i.scene.params;
+			const factor = multipleN ? xValues : 1;
+			const series = yValues[dataSet].values as number[];
+			return factor * series[Math.floor(i.sceneIndex / 2 % 7)];
+		}),
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
 		params: {
@@ -163,19 +182,11 @@ it("should group metrics of each case", async () => {
 });
 
 it("should support custom curves", async () => {
-	let sceneIndex = -1;
-	let caseIndex = 0;
-	const mockTimeProfiler: Profiler = {
-		onScene() {
-			sceneIndex++;
-		},
-		onCase(_, __, metrics) {
-			const series = yValues[(caseIndex++) % 2 ];
-			metrics.time = series.values[sceneIndex];
-		},
-	};
 	const context = await runProfilers([
-		mockTimeProfiler,
+		new MockTimeProfiler(i => {
+			const ixValues = Math.floor(i.sceneIndex / 2) % 7;
+			return yValues[i.caseIndex & 1].values[ixValues];
+		}),
 		new ComplexityProfiler({
 			param: "xValues",
 			metric: "time",

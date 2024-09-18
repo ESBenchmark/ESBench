@@ -58,6 +58,7 @@ export default class ComplexityProfiler implements Profiler {
 	onStart(ctx: ProfilingContext) {
 		ctx.defineMetric({ key: "complexity" });
 
+		// TODO: duplicate of Summary.sort()
 		const { params } = ctx.suite;
 		this.weights = new Array(params.length);
 		let weight = 1;
@@ -118,6 +119,8 @@ export default class ComplexityProfiler implements Profiler {
 						samples[i] = value;
 					} else if (Array.isArray(value)) {
 						samples[i] = mean(value);
+					} else {
+						throw new Error(`Metric "${metric}" has ${typeof value} type and cannot be used to calculate complexity`);
 					}
 				}
 			}
