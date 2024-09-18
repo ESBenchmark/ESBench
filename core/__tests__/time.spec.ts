@@ -121,6 +121,21 @@ it("should take iteration hooks into account in estimate", async () => {
 	expect((await measurement.estimate("100ms")).invocations).toBe(2);
 });
 
+// This should not happen, unless `now()` is implemented incorrectly.
+it("should fail on too large invocation count", () => {
+	const case_ = new BenchCase(new Scene({}), "Test", noop, false);
+
+	// `performance.now()` is always called in pairs.
+	let callNumber = 0;
+	vi.spyOn(performance, "now").mockImplementation(() => {
+		return (callNumber++ & 1) === 0 ? 0 : Number.EPSILON;
+	});
+
+	const etm = new ExecutionTimeMeasurement(newContext(), case_);
+	return expect(etm.estimate("1d")).rejects
+		.toThrow("Iteration time is too long and the fn runs too fast");
+});
+
 it("should check zero measurement", async () => {
 	const ctx = newContext();
 	const scene = new Scene({});

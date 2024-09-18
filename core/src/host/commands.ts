@@ -9,15 +9,11 @@ import { ESBenchConfig } from "./config.js";
 import { ESBenchResult, messageResolver, ToolchainResult } from "../connect.js";
 import { FilterOptions, HostContext } from "./context.js";
 
-function loadResults(path: string, throwIfMissing: true): ESBenchResult;
-
-function loadResults(path: string, throwIfMissing: false): ESBenchResult | undefined;
-
-function loadResults(path: string, throwIfMissing: boolean) {
+function loadResults(path: string): ESBenchResult {
 	try {
-		return JSON.parse(readFileSync(path, "utf8")) as ESBenchResult;
+		return JSON.parse(readFileSync(path, "utf8"));
 	} catch (e) {
-		if (throwIfMissing || e.code !== "ENOENT") throw e;
+		if (e.code === "ENOENT") return {}; else throw e;
 	}
 }
 
@@ -30,17 +26,17 @@ export async function report(config: ESBenchConfig, patterns: string[]) {
 	}
 
 	const { reporters, diff } = context.config;
-	const result = loadResults(files[0], true);
+	const result = loadResults(files[0])!;
 
 	for (let i = 1; i < files.length; i++) {
-		const more = loadResults(files[i], true);
+		const more = loadResults(files[i])!;
 		for (const [name, suite] of Object.entries(more)) {
 			(result[name] ??= []).push(...suite);
 		}
 	}
 
 	if (diff) {
-		context.previous = loadResults(diff, false) ?? {};
+		context.previous = loadResults(diff);
 	}
 	for (const reporter of reporters) {
 		await reporter(result, context);
@@ -68,7 +64,7 @@ class JsonResultWriter {
 
 	async addSuiteResult(value: ToolchainResult) {
 		// Ensure the buffer flushed.
-		if(!this.drained) {
+		if (!this.drained) {
 			await once(this.fp, "drain");
 		}
 		if (this.addDot) {
@@ -85,7 +81,7 @@ class JsonResultWriter {
 		const json = readFileSync(this.fp.path, "utf8");
 
 		const grouped = Object.create(null);
-		for(const record of JSON.parse(json)) {
+		for (const record of JSON.parse(json)) {
 			(grouped[record.name] ??= []).push(record);
 		}
 		return grouped as ESBenchResult;
@@ -116,7 +112,7 @@ export async function start(config: ESBenchConfig, filter?: FilterOptions) {
 	// 3) Export the results.
 	const result = await writer.finish();
 	if (diff) {
-		context.previous = loadResults(diff, false) ?? {};
+		context.previous = loadResults(diff);
 	}
 	context.info(/* Add an empty line */);
 	for (const reporter of reporters) {

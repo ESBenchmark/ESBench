@@ -31,13 +31,6 @@ type LogMessage = { log?: string; level: LogType };
  */
 export type ClientMessage = RunSuiteResult | ErrorMessage | LogMessage;
 
-export function getMessageType(message: ClientMessage) {
-	if ("level" in message) {
-		return "log";
-	}
-	return "e" in message ? "error" : "result";
-}
-
 /**
  * A function that load benchmark suites. Provided by builders.
  */

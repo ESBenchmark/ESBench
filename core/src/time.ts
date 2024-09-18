@@ -289,8 +289,8 @@ export class ExecutionTimeMeasurement {
 			count = Math.max(1, count * targetMS / time);
 
 			/*
-			 * If the workload runs very fast, the first estimate may not be accurate,
-			 * so limit the number of count it grows to avoid overlarge value.
+			 * If the workload runs very fast, the first estimate may
+			 * not be accurate, so limit it grows to avoid overlarge value.
 			 */
 			if (previous === 1) {
 				count = Math.min(count, 10000);
