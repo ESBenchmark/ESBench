@@ -29,7 +29,7 @@ describe.each([firefox, webkit, chromium])("PlaywrightExecutor %#", type => {
 	const tester = executorTester(new PlaywrightExecutor(type));
 
 	// Browser launches slowly on CI.
-	it("should transfer messages", { timeout: 7500 }, tester.successCase());
+	it("should transfer messages", { timeout: 10_000 }, tester.successCase());
 
 	it("should forward errors from runAndSend()", tester.insideError());
 

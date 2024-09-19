@@ -1,10 +1,12 @@
-import { noop } from "@kaciras/utilities/node";
+import { exposeGC, noop } from "@kaciras/utilities/node";
 import { expect, it, vi } from "vitest";
 import JobGenerator, { Executor } from "../../src/host/toolchain.ts";
 import { HostContext } from "../../src/host/context.ts";
 import { report, start } from "../../src/host/commands.ts";
 import { resultStub } from "../helper.ts";
 import result1And2 from "../fixtures/merged-1+2.json" with { type: " json" };
+
+exposeGC();
 
 it("should throw error when report a non-exists result", () => {
 	return expect(report({}, ["NOT_EXISTS.json"])).rejects.toThrow();
@@ -107,6 +109,7 @@ it("should prevent memory grown of large result set", async () => {
 			task.dispatch(resultStub);
 		},
 		close() {
+			gc!();
 			after = process.memoryUsage().heapUsed;
 		},
 	};
