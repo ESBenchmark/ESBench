@@ -13,12 +13,17 @@ const defaultCurves: Record<string, CurveFn> = {
 };
 
 function getNumber(name: string, value: Metrics[number]) {
-	if (typeof value === "number") {
-		return value;
+	if (Number.isFinite(value)) {
+		// https://github.com/microsoft/TypeScript/issues/15048
+		return value as number;
 	} else if (Array.isArray(value)) {
 		return mean(value);
 	}
-	throw new Error(`Metric "${name}" has ${typeof value} type and cannot be used to calculate complexity`);
+	const type = typeof value;
+	if (type === "number") {
+		throw new Error("Only finite number can be used to calculate complexity");
+	}
+	throw new Error(`Metric "${name}" has ${type} type and cannot be used to calculate complexity`);
 }
 
 export interface ComplexityOptions<T extends ParamsDef> {

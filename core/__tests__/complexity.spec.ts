@@ -124,6 +124,18 @@ it("should reject non-numeric values", () => {
 		.toThrow('Metric "time" has string type and cannot be used to calculate complexity');
 });
 
+it("should reject non-finite values", () => {
+	const promise = runProfilers([
+		new ComplexityProfiler({ param: "xValues", metric: "time" }),
+		new MockTimeProfiler(() => Infinity),
+	], {
+		params: { xValues },
+		setup: scene => scene.bench("test", noop),
+	});
+	return expect(promise).rejects
+		.toThrow("Only finite number can be used to calculate complexity");
+});
+
 it.each(yValues)("should get the complexity", async data => {
 	const context = await runProfilers([
 		new MockTimeProfiler(i => data.values[i.sceneIndex]),
