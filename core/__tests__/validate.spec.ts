@@ -66,7 +66,7 @@ it("should check return values are equal", () => {
 			scene.bench("bar", () => 22);
 		},
 	});
-	return expect(promise).rejects.toThrow("\"foo\" and \"bar\" returns different value");
+	return expect(promise).rejects.toThrow('"foo" and "bar" returns different value');
 });
 
 it("should support custom equality function", () => {

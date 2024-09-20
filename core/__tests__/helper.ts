@@ -2,7 +2,7 @@ import { mkdirSync, rmSync } from "node:fs";
 import { Awaitable, CPSrcObject, firstItem, noop } from "@kaciras/utilities/browser";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 import chalk from "chalk";
-import { BenchmarkSuite, normalizeSuite } from "../src/suite.ts";
+import { BenchmarkSuite, normalizeSuite, Scene } from "../src/suite.ts";
 import { MetricAnalysis, Profiler, ProfilingContext } from "../src/profiling.ts";
 import { RunSuiteResult } from "../src/runner.ts";
 import { ClientMessage, messageResolver, ToolchainResult } from "../src/connect.ts";
@@ -62,11 +62,12 @@ export const emptySuite = {
 	paramNames: [],
 };
 
+function setupNoop1(scene: Scene) {
+	scene.bench("Test", noop);
+}
+
 export function runProfilers(profilers: Profiler[], suite?: PartialSuite) {
-	const normalized = normalizeSuite({
-		setup: scene => scene.bench("Test", noop),
-		...suite,
-	});
+	const normalized = normalizeSuite({ setup: setupNoop1, ...suite });
 	const runOptions = { log: noop };
 	const context = new ProfilingContext(normalized, profilers, runOptions);
 	return context.run().then(() => context);

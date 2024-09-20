@@ -94,9 +94,7 @@ class MockTimeProfiler implements Profiler {
 it("should throw error if the variable does not exists", () => {
 	const promise = runProfilers([
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
-	], {
-		setup: scene => scene.bench("test", noop),
-	});
+	]);
 	return expect(promise).rejects.toThrow();
 });
 
@@ -107,7 +105,6 @@ it("should check param values is all numbers", () => {
 		params: {
 			xValues: [1, false],
 		},
-		setup: scene => scene.bench("test", noop),
 	});
 	return expect(promise).rejects.toThrow("Param xValues must be finite numbers");
 });
@@ -118,7 +115,6 @@ it("should reject non-numeric values", () => {
 		new MockTimeProfiler(() => "foobar"),
 	], {
 		params: { xValues },
-		setup: scene => scene.bench("test", noop),
 	});
 	return expect(promise).rejects
 		.toThrow('Metric "time" has string type and cannot be used to calculate complexity');
@@ -130,7 +126,6 @@ it("should reject non-finite values", () => {
 		new MockTimeProfiler(() => Infinity),
 	], {
 		params: { xValues },
-		setup: scene => scene.bench("test", noop),
 	});
 	return expect(promise).rejects
 		.toThrow("Only finite number can be used to calculate complexity");
@@ -142,11 +137,9 @@ it.each(yValues)("should get the complexity", async data => {
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
 		params: { xValues },
-		setup: scene => scene.bench("test", noop),
 	});
-
 	expect(context.meta.complexity).toStrictEqual({ key: "complexity" });
-	expect(context.scenes[0].test.complexity).toBe(data.complexity);
+	expect(context.scenes[0].Test.complexity).toBe(data.complexity);
 });
 
 it("should skip cases that does not have enough samples", async () => {
@@ -157,12 +150,12 @@ it("should skip cases that does not have enough samples", async () => {
 		params: { xValues },
 		setup: scene => {
 			if (scene.params.xValues <= 10) {
-				scene.bench("test", noop);
+				scene.bench("Test", noop);
 			}
 		},
 	});
 	expect(context.meta.complexity).toStrictEqual({ key: "complexity" });
-	expect(context.scenes[0].test.complexity).toBeUndefined();
+	expect(context.scenes[0].Test.complexity).toBeUndefined();
 });
 
 it("should group metrics of each case", async () => {
@@ -176,20 +169,19 @@ it("should group metrics of each case", async () => {
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
 		params: {
-			multipleN: [false, true],
-			xValues,
 			dataSet: [0, 1],
+			xValues,
+			multipleN: [false, true],
 		},
-		setup: scene => scene.bench("test", noop),
 	});
 
 	for (let i = 0; i < 14; i += 2) {
-		expect(context.scenes[i].test.complexity).toBe("O(1)");
-		expect(context.scenes[i + 1].test.complexity).toBe("O(N)");
+		expect(context.scenes[i].Test.complexity).toBe("O(1)");
+		expect(context.scenes[i + 1].Test.complexity).toBe("O(N)");
 	}
 	for (let i = 14; i < 28; i += 2) {
-		expect(context.scenes[i].test.complexity).toBe("O(N)");
-		expect(context.scenes[i + 1].test.complexity).toBe("O(N^2)");
+		expect(context.scenes[i].Test.complexity).toBe("O(N)");
+		expect(context.scenes[i + 1].Test.complexity).toBe("O(N^2)");
 	}
 });
 

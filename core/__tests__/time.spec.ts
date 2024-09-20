@@ -137,19 +137,19 @@ it("should fail on too large invocation count", () => {
 });
 
 it("should check zero measurement", async () => {
+	const case_ = new BenchCase(new Scene({}), "Test", noop, false);
 	const ctx = newContext();
-	const scene = new Scene({});
-	scene.bench("Test", noop);
 
-	const measurement = new ExecutionTimeMeasurement(ctx, scene.cases[0], {
-		iterations: 1,
-	});
+	const measurement = new ExecutionTimeMeasurement(ctx, case_, { iterations: 1 });
 	mockZeroMeasurement(measurement);
 
 	await measurement.run();
 	expect(measurement.values).toStrictEqual([0]);
-	expect(ctx.notes[0].type).toBe("warn");
-	expect(ctx.notes[0].text).toBe("The function duration is indistinguishable from the empty function duration.");
+	expect(ctx.notes).toStrictEqual([{
+		caseId: undefined,
+		type: "warn",
+		text: "The function duration is indistinguishable from the empty function duration.",
+	}]);
 });
 
 it("should not set throughput for zero measurement", async () => {
@@ -159,14 +159,12 @@ it("should not set throughput for zero measurement", async () => {
 	});
 	const mockProfiler = new TimeProfiler({ throughput: "s" });
 
-	const result = await runProfilers([mockProfiler], {
-		setup: scene => scene.bench("Test", noop),
-	});
+	const result = await runProfilers([mockProfiler]);
 	expect(result.scenes[0].Test).toStrictEqual({});
 });
 
 it("should skip overhead stage if evaluateOverhead is false", async () => {
-	const stubFn = vi.fn(noop);
+	const stubFn = vi.fn();
 	const result = await measureTime({
 		evaluateOverhead: false,
 	}, {
@@ -206,7 +204,7 @@ it("should measure time as throughput", async () => {
 	expect(throughput).toBeGreaterThan(985);
 });
 
-it("should set small throughput value", async () => {
+it("should set throughput value in decimal", async () => {
 	const result = await measureTime({
 		throughput: "ms",
 		iterations: 10,

@@ -94,7 +94,7 @@ describe("resolveParams", () => {
 
 	it("should fail if a parameter does not have value", () => {
 		expect(() => resolveParams({ foo: [] }))
-			.toThrow("Suite parameter \"foo\" must have a value");
+			.toThrow('Suite parameter "foo" must have a value');
 	});
 
 	it("should restrict parameters to have unique display names", () => {

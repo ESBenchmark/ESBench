@@ -62,7 +62,7 @@ it("should add tools and tags to results", async () => {
 });
 
 it("should warning if no job to run", async () => {
-	const report = vi.fn(noop);
+	const report = vi.fn();
 	const warn = vi.spyOn(HostContext.prototype, "warn").mockImplementation(noop);
 	vi.spyOn(JobGenerator, "generate").mockResolvedValue([]);
 
