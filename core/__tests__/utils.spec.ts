@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByPolyfill, SharedModeFilter, toDisplayName } from "../src/utils.js";
+import { CartesianProductMap, groupByPolyfill, SharedModeFilter, toDisplayName } from "../src/utils.js";
 
 it.each([
 	["looooooooooooooooooooooooooooooooooooooooooooooong", "looooooo…ooooong"],
@@ -94,4 +94,52 @@ it("should polyfill Map.groupBy", () => {
 	expect(result.get(restock)).toStrictEqual([
 		{ name: "bananas", type: "fruit", quantity: 5 },
 	]);
+});
+
+describe("CartesianProductMap", () => {
+	it("should check the size of values equals to number of cartesian product", () => {
+		const src = [["foo", [11, 22]], ["baz", [55, 66, 77]]] as const;
+		expect(() => new CartesianProductMap(src, new Array(5)))
+			.toThrow("Values should have length = 6, but got 5");
+	});
+
+	it("should get index of the value", () => {
+		const map = new CartesianProductMap([
+			["foo", [11, 22]],
+			["bar", [33, 44]],
+			["baz", [55, 66, 77]],
+		], Array.from({ length: 12 }, (_, i) => i));
+
+		expect(map.getValue({ foo: 22, bar: 33, baz: 66 })).toBe(7);
+	});
+
+	it("should calculate src index from value index", () => {
+		const map = new CartesianProductMap([
+			["foo", [11, 22]],
+			["bar", [33, 44]],
+			["baz", [55, 66, 77]],
+		], Array.from({ length: 12 }, (_, i) => i));
+
+		expect(map.getSrcIndex(0, 7)).toBe(1);
+		expect(map.getSrcIndex(1, 7)).toBe(0);
+		expect(map.getSrcIndex(2, 7)).toBe(1);
+	});
+
+	it("should group the values", () => {
+		const map = new CartesianProductMap([
+			["foo", [11, 22]],
+			["bar", [33, 44]],
+			["baz", [55, 66, 77]],
+			["qux", [88, 99]],
+		], Array.from({ length: 24 }, (_, i) => i));
+
+		expect(map.group([1, 2])).toStrictEqual([
+			[0, 1, 12, 13],
+			[2, 3, 14, 15],
+			[4, 5, 16, 17],
+			[6, 7, 18, 19],
+			[8, 9, 20, 21],
+			[10, 11, 22, 23],
+		]);
+	});
 });

@@ -133,3 +133,93 @@ export function groupByPolyfill<K, T>(items: Iterable<T>, keySelector: (e: T) =>
 
 // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy
 export const groupBy: typeof groupByPolyfill = Map.groupBy ?? groupByPolyfill;
+
+type CPMapSrc = ReadonlyArray<readonly [string, readonly unknown[] | Set<unknown>]>;
+
+function len(list: CPMapSrc[number][1]) {
+	return (list as Set<unknown>).size ?? (list as unknown[]).length;
+}
+
+export class CartesianProductMap<T> {
+
+	private readonly source: CPMapSrc;
+	private readonly values: T[];
+	private readonly weights: number[];
+
+	constructor(source: CPMapSrc, values: T[]) {
+		this.source = source;
+		this.values = values;
+
+		this.weights = new Array(source.length + 1);
+		this.weights[source.length] = 1;
+		let weight = 1;
+		for (let i = source.length - 1; i >= 0; i--) {
+			this.weights[i] = weight;
+			weight *= len(source[i][1]);
+		}
+
+		if (values.length !== weight) {
+			throw new Error(`Values should have length = ${weight}, but got ${values.length}`);
+		}
+	}
+
+	getValue(properties: Record<string, any>) {
+		const { source, weights } = this;
+		let cpIndex = 0;
+
+		for (let i = 0; i < source.length; i++) {
+			const [k, values] = source[i];
+			const v = properties[k];
+
+			const varIndex = indexOf(values, v);
+			if (varIndex === -1) {
+				return NaN;
+			}
+			cpIndex += weights[i] * varIndex;
+		}
+		return this.values[cpIndex];
+	}
+
+	getSrcIndex(key: number, valueIndex: number) {
+		const length = len(this.source[key][1]);
+		const weight = this.weights[key];
+		return Math.floor(valueIndex / weight) % length;
+	}
+
+	group(keys: number[]) {
+		const { source, weights, values } = this;
+		const groups: T[][] = [];
+		let items: T[];
+		const innerKeys: number[] = [];
+
+		for (let i = 0; i < source.length; i++) {
+			if (!keys.includes(i)) {
+				innerKeys.push(i);
+			}
+		}
+
+		recursiveOuter(0, 0);
+		return groups;
+
+		function recursiveOuter(i: number, w: number) {
+			if (i === keys.length) {
+				groups.push(items = []);
+				return recursiveInner(0, w);
+			}
+			const k = keys[i];
+			for (let j = 0; j < len(source[k][1]); j++) {
+				recursiveOuter(i + 1, w + weights[k] * j);
+			}
+		}
+
+		function recursiveInner(i: number, w: number) {
+			if (i === innerKeys.length) {
+				return items.push(values[w]);
+			}
+			const k = innerKeys[i];
+			for (let j = 0; j < len(source[k]); j++) {
+				recursiveInner(i + 1, w + weights[k] * j);
+			}
+		}
+	}
+}
