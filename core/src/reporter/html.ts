@@ -1,6 +1,7 @@
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import openBrowser, { Options as OpenOptions } from "open";
 import { Reporter } from "../host/config.js";
 import { ESBenchResult } from "../connect.js";
 
@@ -10,9 +11,10 @@ const dist = join(fileURLToPath(import.meta.url), "../../../lib/reporter/index.h
 /**
  * Plot the results into an interactive chart.
  *
- * @param file filename of the html report, default is "reports/benchmark.html"
+ * @param file Filename of the html report, default is "reports/benchmark.html"
+ * @param open Automatically open the report in the browser.
  */
-export default function (file = "reports/benchmark.html"): Reporter {
+export default function (file = "reports/benchmark.html", open?: OpenOptions): Reporter {
 	const template = readFileSync(dist, "utf8");
 
 	function interpolate(html: string, p: string, r: ESBenchResult) {
@@ -31,6 +33,10 @@ export default function (file = "reports/benchmark.html"): Reporter {
 		writeFileSync(file, html);
 
 		const { href } = pathToFileURL(file);
+		if (open) {
+			// noinspection JSIgnoredPromiseFromCall
+			openBrowser(href, open);
+		}
 		context.info("HTML report can be found at: " + href);
 	};
 }
