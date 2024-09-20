@@ -96,9 +96,16 @@ it("should ensure `Executor.close` called after finish", async () => {
 	expect(mockExecutor.execute).toHaveBeenCalledOnce();
 });
 
+
+/*
+ * V8's gc is not guaranteed to be completely cleaned up,
+ * this test may still randomly fail.
+ */
 it("should prevent memory grown of large result set", async () => {
 	let before = 0;
 	let after = 0;
+
+	gc!();
 
 	const mockExecutor: Executor = {
 		name: "test-mock-executor",
