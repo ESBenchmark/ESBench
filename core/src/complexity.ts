@@ -1,5 +1,5 @@
 import { mean } from "simple-statistics";
-import { Metrics, Profiler, ProfilingContext } from "./profiling.js";
+import { Metrics, Profiler, ProfilingContext, SceneResult } from "./profiling.js";
 import { ParamsAny, ParamsDef } from "./suite.js";
 import { CurveFn, minimalLeastSquare } from "./math.js";
 
@@ -11,6 +11,16 @@ const defaultCurves: Record<string, CurveFn> = {
 	"O(N^2)": n => n * n,
 	"O(N^3)": n => n ** 3,
 };
+
+function getNumber(name: string, value: Metrics[number]) {
+	if (typeof value === "number") {
+		return value;
+	} else if (Array.isArray(value)) {
+		return mean(value);
+	} else {
+		throw new Error(`Metric "${name}" has ${typeof value} type and cannot be used to calculate complexity`);
+	}
+}
 
 export interface ComplexityOptions<T extends ParamsDef> {
 	/**
@@ -48,6 +58,7 @@ export default class ComplexityProfiler implements Profiler {
 
 	private index = NaN;
 	private weights!: number[];
+	private input!: number[];
 
 	constructor(options: ComplexityOptions<ParamsAny>) {
 		this.metric = options.metric;
@@ -77,84 +88,84 @@ export default class ComplexityProfiler implements Profiler {
 	}
 
 	onFinish(ctx: ProfilingContext) {
-		const { index, weights, metric, curves } = this;
 		const params = ctx.suite.params;
-		const input = params[index][1] as number[];
+		this.input = params[this.index][1] as number[];
+		this.calculateAll(ctx, 0, 0);
+	}
 
-		arrange(0, 0);
+	calculateAll(ctx: ProfilingContext, i: number, w: number): void {
+		const { index, weights } = this;
+		const params = ctx.suite.params;
 
-		function arrange(depth: number, k: number) {
-			if (depth === index) {
-				return arrange(depth + 1, k);
-			}
-			if (depth === weights.length) {
-				return calculate(k);
-			}
-			for (let i = 0; i < params[depth][1].length; i++) {
-				arrange(depth + 1, k + weights[depth] * i);
+		if (i === index) {
+			return this.calculateAll(ctx, i + 1, w);
+		}
+		if (i === weights.length) {
+			return this.handleGroup(ctx.scenes, w);
+		}
+		for (let j = 0; j < params[i][1].length; j++) {
+			this.calculateAll(ctx, i + 1, w + weights[i] * j);
+		}
+	}
+
+	handleGroup(scenes: SceneResult[], w: number) {
+		const { index, weights, metric, input } = this;
+
+		const metricsMap = new Map<string, Metrics[]>();
+		const timeMap = new Map<string, number[]>();
+
+		// Group metric values by cases.
+		for (let i = 0; i < input.length; i++) {
+			const scene = scenes[w + i * weights[index]];
+
+			for (const [name, metrics] of Object.entries(scene)) {
+				let samples = timeMap.get(name);
+				let metricsList = metricsMap.get(name);
+
+				if (!samples) {
+					samples = new Array(input.length);
+					timeMap.set(name, samples);
+					metricsMap.set(name, metricsList = []);
+				}
+
+				metricsList!.push(metrics);
+				samples[i] = getNumber(metric, metrics[metric]);
 			}
 		}
 
-		function calculate(k: number) {
-			const metricsMap = new Map<string, Metrics[]>();
-			const timeMap = new Map<string, number[]>();
+		for (const [name, values] of timeMap) {
+			this.measure(values, metricsMap.get(name)!);
+		}
+	}
 
-			// Group metric values by cases.
-			for (let i = 0; i < input.length; i++) {
-				const scene = ctx.scenes[k + i * weights[index]];
+	measure(values: number[], metricList: Metrics[]) {
+		const valuesF: number[] = [];
+		const inputF: number[] = [];
 
-				for (const [name, metrics] of Object.entries(scene)) {
-					let samples = timeMap.get(name);
-					let metricsList = metricsMap.get(name);
-
-					if (!samples) {
-						metricsMap.set(name, metricsList = []);
-						timeMap.set(name, samples = new Array(input.length));
-					}
-
-					metricsList!.push(metrics);
-
-					const value = metrics[metric];
-					if (typeof value === "number") {
-						samples[i] = value;
-					} else if (Array.isArray(value)) {
-						samples[i] = mean(value);
-					} else {
-						throw new Error(`Metric "${metric}" has ${typeof value} type and cannot be used to calculate complexity`);
-					}
-				}
+		// Filter out `undefined` of absent cases.
+		for (let i = 0; i < values.length; i++) {
+			if (Number.isFinite(values[i])) {
+				valuesF.push(values[i]);
+				inputF.push(this.input[i]);
 			}
+		}
 
-			for (const [name, values] of timeMap) {
-				const inputF: number[] = [];
-				const valuesF: number[] = [];
+		if (valuesF.length < 2) {
+			return; // Minimum require 2 points.
+		}
 
-				// Filter out `undefined` of absent cases.
-				for (let i = 0; i < values.length; i++) {
-					if (Number.isFinite(values[i])) {
-						inputF.push(input[i]);
-						valuesF.push(values[i]);
-					}
-				}
-
-				if (valuesF.length < 2) {
-					continue; // Minimum require 2 points.
-				}
-
-				let bestFit = Number.MAX_VALUE;
-				let complexity = "O(1)";
-				for (const [type, f] of Object.entries(curves)) {
-					const rms = minimalLeastSquare(inputF, valuesF, f);
-					if (rms < bestFit) {
-						bestFit = rms;
-						complexity = type;
-					}
-				}
-
-				for (const metrics of metricsMap.get(name)!) {
-					metrics.complexity = complexity;
-				}
+		let bestFit = Number.MAX_VALUE;
+		let complexity = "O(1)";
+		for (const [type, f] of Object.entries(this.curves)) {
+			const rms = minimalLeastSquare(inputF, valuesF, f);
+			if (rms < bestFit) {
+				bestFit = rms;
+				complexity = type;
 			}
+		}
+
+		for (const metrics of metricList) {
+			metrics.complexity = complexity;
 		}
 	}
 }
