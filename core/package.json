@@ -39,7 +39,7 @@
 		"serialize-error": "^11.0.3",
 		"simple-statistics": "^7.8.5",
 		"string-width": "^7.1.0",
-		"ts-directly": "^2.1.1",
+		"ts-directly": "^2.1.2",
 		"yargs": "^17.7.2"
 	},
 	"devDependencies": {

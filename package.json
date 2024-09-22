@@ -11,7 +11,7 @@
 		"@kaciras/eslint-config-vue": "^3.2.0",
 		"@types/node": "^22.5.5",
 		"@vitest/coverage-v8": "^2.1.1",
-		"eslint": "^9.10.0",
+		"eslint": "^9.11.0",
 		"typescript": "^5.6.2",
 		"vitest": "^2.1.1"
 	}
