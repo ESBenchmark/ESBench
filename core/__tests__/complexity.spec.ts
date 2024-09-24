@@ -5,15 +5,15 @@ import ComplexityProfiler from "../src/complexity.ts";
 import { runProfilers } from "./helper.ts";
 import { Scene } from "../src/index.ts";
 
-const xValues = [10, 50, 200, 520, 3000, 7500, 10000];
+const xValues = [10, 50, 200, 520, 3000, 10000];
 const yValues = [
 	{
 		complexity: "O(1)",
-		values: [66, 66, 66, 66, 66, 66, 66],
+		values: [66, 66, 66, 66, 66, 66],
 	},
 	{
 		complexity: "O(N)",
-		values: [9, 57, 221, 498, 2997, 8964, 10086],
+		values: [9, 57, 221, 498, 2997, 10086],
 	},
 	{
 		complexity: "O(logN)",
@@ -23,7 +23,6 @@ const yValues = [
 			[0.09055687409551355, 0.09055956041968201, 0.09058825976845146, 0.09062981186685955, 0.090633854920405, 0.09065067836468879, 0.09065644898697499, 0.0906588277858177, 0.09068671309696069, 0.09070804992764084],
 			[0.11846590136054311, 0.11848002763605375, 0.11850749362244896, 0.11853308886054414, 0.11854651360544172, 0.11854946853741487, 0.11856128826530518, 0.11880216836734658, 0.11881648596938688, 0.11908618197278785],
 			[0.15213708378820928, 0.15219471206331922, 0.15227888236899456, 0.15228084743449674, 0.15230127592794776, 0.15231045987991218, 0.15231539983624437, 0.15231832014192093, 0.15232291894104558, 0.15234830103711564],
-			[0.15949570411392394, 0.15950473892405137, 0.15952103639240395, 0.15954592563291126, 0.1595600553797478, 0.15958416930379712, 0.15959195411392277, 0.15959546677215167, 0.1596232990506307, 0.15963470727847956],
 			[0.17779018554687553, 0.17785520833333380, 0.17795621744791862, 0.17800900065104247, 0.17806609700520917, 0.17807825520833612, 0.17813544921875035, 0.17900862630208297, 0.17969591471354343, 0.17995411783854345],
 		],
 	},
@@ -35,7 +34,6 @@ const yValues = [
 			0.02424999511930705,
 			0.07221788006758754,
 			0.5500838882211068,
-			1.5820801162789906,
 			2.1435602428256657,
 		],
 	},
@@ -47,7 +45,6 @@ const yValues = [
 			0.06208956928343995,
 			0.35493970454548207,
 			10.945971978021912,
-			68.72572928571432,
 			126.28999250000015,
 		],
 	},
@@ -59,7 +56,6 @@ const yValues = [
 			0.01975597525934525,
 			0.8933325993259217,
 			52.74914415025435,
-			824.5106068945372,
 			1953.4639760089187,
 		],
 	},
@@ -164,7 +160,7 @@ it("should group metrics of each case", async () => {
 			const { multipleN, xValues, dataSet } = i.scene.params;
 			const factor = multipleN ? xValues : 1;
 			const series = yValues[dataSet].values as number[];
-			return factor * series[Math.floor(i.sceneIndex / 2 % 7)];
+			return factor * series[Math.floor(i.sceneIndex / 2 % 6)];
 		}),
 		new ComplexityProfiler({ param: "xValues", metric: "time" }),
 	], {
@@ -175,11 +171,11 @@ it("should group metrics of each case", async () => {
 		},
 	});
 
-	for (let i = 0; i < 14; i += 2) {
+	for (let i = 0; i < 12; i += 2) {
 		expect(context.scenes[i].Test.complexity).toBe("O(1)");
 		expect(context.scenes[i + 1].Test.complexity).toBe("O(N)");
 	}
-	for (let i = 14; i < 28; i += 2) {
+	for (let i = 12; i < 24; i += 2) {
 		expect(context.scenes[i].Test.complexity).toBe("O(N)");
 		expect(context.scenes[i + 1].Test.complexity).toBe("O(N^2)");
 	}
@@ -188,7 +184,7 @@ it("should group metrics of each case", async () => {
 it("should support custom curves", async () => {
 	const context = await runProfilers([
 		new MockTimeProfiler(i => {
-			const ixValues = Math.floor(i.sceneIndex / 2) % 7;
+			const ixValues = Math.floor(i.sceneIndex / 2) % 6;
 			return yValues[i.caseIndex & 1].values[ixValues];
 		}),
 		new ComplexityProfiler({

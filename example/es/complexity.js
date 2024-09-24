@@ -2,7 +2,7 @@ import { defineSuite } from "esbench";
 
 export default defineSuite({
 	params: {
-		length: [10, 50, 200, 520, 3000, 7500, 10_000],
+		length: [10, 50, 200, 520, 3000, 10_000],
 	},
 	complexity: {
 		param: "length",
