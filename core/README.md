@@ -2,13 +2,13 @@
 
 A modern JavaScript benchmarking tool.
 
-- **Cross-runtime**: run your benchmark on Node, Bun, browsers, and more...
+- **Cross-runtime**: run your benchmark on Node, Bun, browsers, remote devices and more...
 - **Parameterization**: provide a series of parameters and see the performance of each combination.
-- **Comparable**: support baselines and diff with previous runs.
-- **TypeScript Out-of-box**: load your `.ts` files with zero config.
-- **HTML Reporter**: plot the results into an interactive chart.
-- **Extensible**: support custom profiler, executor, and reporter.
-- **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
+- **Full-feature**: In addition to measuring time, ESBench also supports the calculate asymptotic complexity, baselines, diff with previous runs.
+- **TypeScript Out-of-box**: run your `.ts` files with zero config.
+- **Multiple Report Format**: export the result as text, CSV, and HTML.
+- **Extensible**: exposed plugin interfaces give you the ability to customize aspects of benchmarking.
+- **IDE Integration**: run suite or case with a click of the mouse, support WebStorm and VSCode.
 
 ## Getting Started
 
