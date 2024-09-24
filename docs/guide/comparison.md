@@ -1,15 +1,17 @@
 # Comparison
 
+In order to scale your results, ESBench supports compare results with a baseline or previous runs.
+
 ## Baseline
 
-In order to scale your results, you can mark a [variable](./parameterization#variables) as a baseline.
+If you want to know the effect of a [variable](./parameterization#variables) on the results, you can mark one of the values of that variable as the baseline.
 
 ```javascript
 import { defineSuite } from "esbench";
 
 export default defineSuite({
 	params: {
-		length: [0, 10, 1000],
+		length: [0, 100, 100_00],
 	},
 	baseline: {// [!code ++]
 		type: "Name",// [!code ++]
@@ -32,6 +34,7 @@ export default defineSuite({
 		});
 
 		scene.bench("Array.reduce", () => {
+			// Empty array require a init value for reducing.
 			return values.reduce((v, s) => s + v, 0);
 		});
 	},
@@ -42,15 +45,23 @@ If the baseline option is set, rows in the text report will be grouped and a new
 
 ![Text Report 1](../assets/baseline1.webp)
 
-Change the baseline to `{ type: "length", value: 10 }` and the report will be:
+Change the baseline to `{ type: "length", value: 100 }` and the report will be:
 
 ![Text Report 2](../assets/baseline2.webp)
 
 ## Previous Runs
 
-ESBench can also compare the results with previous runs, This feature is enabled by default.
+ESBench can also compare the results with the previous run, This feature is enabled by default.
 
-When execution is complete, `rawReporter` saves the raw result to a file. The next time it is run ESBench tries to read the file specified by the diff option, and if it exists passes it to reporters as the result of the previous run.
+Run a suite twice, you'll see a `*.diff` column added to the table, showing the difference between the current result and the saved result:
+
+![Text Report](../assets/diff.webp)
+
+The built-in `htmlReporter` also compares the differences, with the previous run plotted as a patterned bar:
+
+![HTML Report](../assets/diff-html.webp)
+
+This feature is accomplished by several [config](./config) items. When execution is complete, `rawReporter` saves the result to a file. The next time it is run ESBench tries to read the file specified by the diff option, and if it exists passes it to reporters as the result of the previous run.
 
 ```javascript
 import { defineConfig, rawReporter, textReporter } from "esbench/host";
@@ -65,15 +76,7 @@ export default defineConfig({
 		textReporter(),
 	],
 	// Read a results file to compare with. 
-    // Set it to null to disable comparation.
+    // Set it to null to disable this feature.
 	diff: "node_modules/.esbench/result.json",
 });
 ```
-
-Run a suite twice, you'll see a `*.diff` column added to the table, showing the difference between the current result and the saved result.
-
-![Text Report](../assets/diff.webp)
-
-The built-in `htmlReporter` also compares the differences, with the previous run plotted as a patterned bar.
-
-![HTML Report](../assets/diff-html.webp)

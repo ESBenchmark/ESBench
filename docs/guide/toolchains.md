@@ -89,7 +89,9 @@ The results reveal the performance differences between browsers:
 |   8 | Array.reduce | chromium |   367.89 ns |  0.67 ns |
 ```
 
-Playwright launches its own browser by default, you can specify the path to the browser via `executablePath`, but this may fail to launch. Another way is to use [WebRemoteExecutor](#webremoteexecutor), which supports any browser.
+Playwright launches its own browser by default, they are not equivalent to the released version. You can specify the path to the browser via `executablePath`, but this may fail to launch. 
+
+Another way is to use [WebRemoteExecutor](#webremoteexecutor), which supports any browser.
 
 ```javascript
 new PlaywrightExecutor(chromium, {
@@ -226,7 +228,7 @@ export default defineConfig({
 			include: ["./node/*.js"],
 			executors: [
 				new ProcessExecutor("bun"),
-				new ProcessExecutor("deno run --allow-net"),
+				new ProcessExecutor("deno run -A"),
 			],
 		},
 	],
@@ -484,7 +486,7 @@ esbench --file webext/storage.js
 
 ### WebRemoteExecutor
 
-`WebRemoteExecutor` is designed to run benchmark on remote device, it serves the suites on a HTTP URL, and you can access the URL to run them.
+`WebRemoteExecutor` is designed to run benchmark on any browser, it serves the suites on a HTTP URL, and you can access the URL to run them.
 
 Once the page is open, it keeps pulling suites and executing them, so that you don't need to open the URL again the next time you run `esbench`.
 

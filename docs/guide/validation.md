@@ -18,17 +18,22 @@ export default defineSuite({
 	params: {
 		length: [100, 100_000],
 	},
-	validate: {// [!code ++]
-		// Validate the retured array is sorted.// [!code ++]
-		check(v, p) {// [!code ++]
-			if (v.length !== p.length)// [!code ++]
-				throw new Error("Array length changed");// [!code ++]
-			for (let i = 1; i < v.length; i++) {// [!code ++]
-				if (v[i - 1] > v[i])// [!code ++]
-					throw new Error("Not sorted");// [!code ++]
-			}// [!code ++]
-		},// [!code ++]
-	},// [!code ++]
+	validate: { // [!code ++]
+		/** // [!code ++]
+         * Validate the retured array is sorted. // [!code ++]
+         *  // [!code ++]
+		 * @param v The return value of case. // [!code ++]
+		 * @param p is `scene.params` // [!code ++]
+		 */ // [!code ++]
+		check(v, p) { // [!code ++]
+			if (v.length !== p.length) // [!code ++]
+				throw new Error("Array length changed"); // [!code ++]
+			for (let i = 1; i < v.length; i++) { // [!code ++]
+				if (v[i - 1] > v[i]) // [!code ++]
+					throw new Error("Not sorted"); // [!code ++]
+			} // [!code ++]
+		}, // [!code ++]
+	}, // [!code ++]
 	setup(scene) {
 		const { length } = scene.params;
 		const template = Array.from({ length }, Math.random);
@@ -42,6 +47,28 @@ export default defineSuite({
 ```
 
 The `equality` function can be used to ensure the return values of all cases are equal within the same scene.
+
+```javascript
+export default defineSuite({
+	validate: {// [!code ++]
+		// Validate the returned value are equal (===).// [!code ++]
+		equality: true,// [!code ++]
+	},// [!code ++]
+	setup(scene) {
+		const values = Array.from({ length: 100 }, (_, i) => i);
+
+		scene.bench("For-of", () => {
+			let s = 0; 
+			for (const v of values) s += v; 
+			return s;
+		});
+
+		scene.bench("Array.reduce", () => {
+			return values.reduce((v, s) => s + v, 0);
+		});
+	},
+});
+```
 
 ```javascript
 export default defineSuite({

@@ -45,15 +45,15 @@ Options:
 esbench report reports/benchmark-*.json
 ```
 
-## Use Cases
+## Advanced Usage
 
 ### Cross OS Benchmark
 
-Although ESBench has a built-in toolchains and parameters as variables, this is not all factors in the performance of a function. For external environments, we provide `--tag` CLI argument to add additional variables.
+Although ESBench has a built-in toolchains and parameters as variables, this is not all factors in the performance of a function. External environments (such as OS and hardware) are not controlled by ESBench, but you can tag them with the `--tag` argument.
 
-The GitHub Actions example to show how to run benchmarks on different OS and merge the results into the single table:
+The GitHub Actions shows how to run benchmarks on different OS and merge the results into a single table:
 
-[Full repository on GitHub](https://github.com/ESBenchmark/ci-examples/tree/master)
+[Repository on GitHub](https://github.com/ESBenchmark/ci-examples/tree/master)
 
 ::: code-group
 ```yaml [.github/workflows/cross-os.yml]

@@ -6,13 +6,13 @@ Benchmarking, which is testing the performance of code under a certain scenario,
 
 For the first problem, ESBench uses a multi-level nested execution flow:
 
-1. ESBench supports run multiple times with different tags, the results can be merged into single report.
-2. In each run, ESBench uses builders to generate outputs for a suite.
-3. Then use executors to execute each build output in different platform.
-4. In suite, we can define a series of parameters, each combination create a scene and call the `setup` function.
-5. In the `setup`, we can add benchmark cases that we want to measure performance of.
+1. ESBench supports run multiple times with [different tags](../guide/cli#cross-os-benchmark), the results can be merged into single report.
+2. In each run, ESBench uses [builders](../guide/toolchains#builder) to generate outputs for a suite.
+3. Then use [executors](../guide/toolchains) to execute each build output in different platform.
+4. In suite, we can define a series of [parameters](../guide/parameterization), each combination create a scene and call the `setup` function.
+5. In the `setup`, we can add [benchmark cases](../guide/suites#define-suite) that we want to measure performance of.
 
-They can all affect the performance of the use case, and to keep track of them, **ESBench is able to add each step as a variable, e.g., cases built with `ViteBuilder` all have variable `builder: "Vite"`, each scenario can be represented as a combination of variables.**
+They can all affect the performance of the use case, and to keep track of them, **ESBench is able to add each step as a variable, e.g., cases built with `ViteBuilder` have variable `builder: "Vite"`, each scenario can be represented as a combination of variables.**
 
 The design emulates the real-world building process as closely as possible and allows users to write benchmark cases in the easiest way. Step 3 crosses the process boundary, so ESBench needs to be divided into two parts:
 

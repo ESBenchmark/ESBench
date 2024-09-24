@@ -69,7 +69,7 @@ ESBench identifies each benchmark case using a set of properties called variable
 * Properties defined in suite's `params` option.
 * Custom tags from config and CLI arguments.
 
-In the above example, the variables with their possible values is:
+For more details see [Architecture](../api/architecture#scenarios). In the above example, the variables with their possible values is:
 
 ```json
 {

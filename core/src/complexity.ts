@@ -35,6 +35,7 @@ export interface ComplexityOptions<T extends ParamsDef> {
 
 	/**
 	 * Metric name of the case running time, typically "time", provided by TimeProfiler.
+	 * Type of the metric value must be number or number[].
 	 */
 	metric: string;
 
@@ -119,7 +120,7 @@ export default class ComplexityProfiler implements Profiler {
 		const metricsMap = new Map<string, Metrics[]>();
 		const valueMap = new Map<string, number[]>();
 
-		// Group metric and the specific value by cases.
+		// Group metrics and the metric value by case name.
 		for (let i = 0; i < length; i++) {
 			const scene = scenes[w + i * weights[index]];
 

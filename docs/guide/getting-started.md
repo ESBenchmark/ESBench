@@ -2,7 +2,9 @@
 
 ## Installation
 
-To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly. **ESBench CLI requires Node >= 18.19.0, which your benchmark code does not.**
+To support execution in different runtimes, ESBench needs to use the CLI instead of running the suite file directly. 
+
+ESBench CLI requires Node >= 18.19.0, while the benchmark code has no restrictions (depending on the runtime).
 
 ::: code-group
 ```bash [npm]

@@ -11,7 +11,7 @@ ESBench uses [ts-directly](https://github.com/Kaciras/ts-directly) to transform 
 - [sucrase](https://github.com/alangpierce/sucrase).
 - [TypeScript](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 
-These are listed in the peerDependencies and marked as optional, so compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used. In the vast majority of cases where projects using TypeScript have compiler installed, this feature comes out-of-box.
+These are listed in the peerDependencies and marked as optional, so compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used. **In the vast majority of cases where projects using TypeScript have compiler installed, this feature comes out-of-box.**
 
 If no supported compiler found, the import fails.
 
@@ -21,9 +21,9 @@ ESBench only transforms TS files and does not process other types of imports.
 
 ::: code-group
 ```typescript [esbench.config.ts]
-// TypeScript config file is also supported.
 import { ESBenchConfig, Executor, ProcessExecutor } from "esbench/host";
 
+// TypeScript config file is also supported.
 const executors: Executor[] = [new ProcessExecutor("node")];
 
 export default { toolchains: [{ executors }] } satisfies ESBenchConfig;

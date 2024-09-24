@@ -1,6 +1,8 @@
 # Suites
 
+ESBench uses files to organize the benchmarking code, an entity or code implementing the same functionality should be placed in a file called a suite.
 
+Each suite should be able to be run separately and shown as a separate page in the report.
 
 ## Define Suite
 
@@ -46,13 +48,14 @@ Options:
 * `baseline`: Scale your results, see [Baselines](./comparison).
 * `profilers`: Add more profilers for the suite. see [Custom Profilers](../api/profiler).
 * `timing`: Configure execution time mensuration, see [Time Profiler](./time-profiler).
+* `complexity`: Calculate asymptotic complexity for cases, see [Complexity Profiler](./complexity).
 * `validate`: Perform checks for cases before they are executed, see [Validation](./validation)
 * `beforeAll`: Runs a function before running the suite, see [Lifecycle Hooks](./suites#lifecycle-hooks).
 * `afterAll`: Runs a function after the suite has finished running, see [Lifecycle Hooks](./suites#lifecycle-hooks).
 
 ## Conditional
 
-The `setup` function can be asynchronous, in addition `scene.bench` can be called within a conditional block, so you can add benchmark cases based on the context.
+The `setup` function can be asynchronous, and `scene.bench` can be called within a conditional block, so you can add benchmark cases based on the context.
 
 ```javascript
 // Deep clone an object with serialization and deserialization.
@@ -60,6 +63,7 @@ export default defineSuite(async scene => {
 	const data = {/* ... */};
 	scene.bench("JSON", () => JSON.parse(JSON.stringify(data)));
 	
+	// Only benchmark if it's available.
 	if (globalThis.structuredClone) {
 		scene.bench("structuredClone", () => structuredClone(data));
     }
@@ -115,9 +119,14 @@ export default defineSuite({
 		scene.beforeIteration(() => {
 			// Run before each benchmark invocation...
 		});
+		
 		scene.afterIteration(() => {
 			// Run after each benchmark invocation...
 		});
+		
+		scene.bench("case", () => {
+			// Benchmark code...
+        });
 
 		scene.teardown(() => {
 			// Cleanup on all cases of the scene executed...

@@ -133,12 +133,11 @@ import { csvReporter, defineConfig } from "esbench/host";
 
 export default defineConfig({
 	reporters: [
-		// Save CSV files in reports/
+		// Save as CSV files in reports/
 		csvReporter(),
-        
-		htmlReporter({
+
+		csvReporter({
             directory: "/folder/to/save/files",
-            
             // ...SummaryTableOptions (see Text Reporter)
         }),
 	],

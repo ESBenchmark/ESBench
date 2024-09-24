@@ -6,7 +6,7 @@ import { defineSuite } from "esbench";
 export default defineSuite({
 	baseline: { type: "Name", value: "For-index" },
 	params: {
-		length: [1, 10_000],
+		length: [0, 100, 10_000],
 	},
 	setup(scene) {
 		const { length } = scene.params;
@@ -25,7 +25,8 @@ export default defineSuite({
 		});
 
 		scene.bench("Array.reduce", () => {
-			return values.reduce((v, s) => s + v);
+			// Empty array require a init value for reducing.
+			return values.reduce((v, s) => s + v, 0);
 		});
 	},
 });

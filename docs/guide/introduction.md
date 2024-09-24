@@ -4,11 +4,11 @@ ESBench is a modern JavaScript benchmarking tool.
 
 - **Cross-runtime**: run your benchmark on Node, Bun, browsers, remote devices and more...
 - **Parameterization**: provide a series of parameters and see the performance of each combination.
-- **Comparison**: support baselines and diff with previous runs.
+- **Full-feature**: In addition to measuring time, ESBench also supports the calculate asymptotic complexity, baselines, diff with previous runs, and more...
 - **TypeScript Out-of-box**: run your `.ts` files with zero config.
 - **HTML Reporter**: plot the results into an interactive chart.
-- **Extensible**: support custom profiler, executor, and reporter.
-- **IDE Integration**: run specific suite or case with a click of the mouse, support WebStorm and VSCode.
+- **Extensible**: exposed plugin interfaces give you the ability to customize aspects of benchmarking.
+- **IDE Integration**: run suite or case with a click of the mouse, support WebStorm and VSCode.
 
 ## Why ESBench
 
@@ -16,7 +16,7 @@ ESBench is a modern JavaScript benchmarking tool.
 
 ![Runtimes](../assets/runtimes.webp)
 
-One difference between JavaScript and other languages is that it has no official interpreter. Browsers, Node, the new Deno, and bun are all possible target platforms, all of them use performance as a selling point and provide some examples of benchmarking. But real-world situations won't be the same as the examples, to find out how they perform on your own project, you'll always need to test them yourself.
+One difference between JavaScript and other languages is that it has no official interpreter. Browsers, Node, Deno, and the new Bun are all possible target platforms, all of them use performance as a selling point and provide some examples of benchmarking. But real-world situations won't be the same as the examples, to find out how they perform on your own project, you'll always need to test them yourself.
 
 **ESBench aims to run your benchmarks on various platforms** and let you know comprehensive and reliable results. help you choose the best environment for scaling your application.
 
@@ -30,7 +30,7 @@ If that's not enough, ESBench also supports extensions - it's plug-in architectu
 
 ### Lightweight
 
-At only 202 KB (minified, including dependencies), ESBench is a thoroughly lightweight library.
+At only 217 KB (minified, including dependencies), ESBench is a thoroughly lightweight library.
 
 ## ESBench vs X
 

@@ -74,7 +74,7 @@ The `iterations` can be a string in format `number`+`unit`, available units are 
 
 For more reliable results, you should avoid doing other operations while running benchmarks. If a process occupies system resources while running a case, the running time for that use case may increase.
 
-`TimeProfiler` uses a lot of calls to avoid noise, this will take longer, you can adjust some options to speed it up, **but be aware that this may reduce the precision of the results.**
+`TimeProfiler` uses a lot of calls to minimize variance, this will take longer, you can adjust some options to speed it up, **but be aware that this may reduce the precision of the results.**
 
 * Smaller `iterations`: `100ms` is about 10x faster than `1s`, and use a number can skip the pilot stage.
 * Turning down `sample` and `warnup` can also reduce the number of times a function is called.
