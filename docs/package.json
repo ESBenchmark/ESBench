@@ -13,7 +13,7 @@
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.52.0",
 		"notivue": "^2.4.5",
-		"vue": "^3.5.10"
+		"vue": "^3.5.11"
 	},
 	"devDependencies": {
 		"@types/estraverse": "^5.1.7",
