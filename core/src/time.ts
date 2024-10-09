@@ -1,5 +1,5 @@
 import { medianSorted } from "simple-statistics";
-import { AsyncFunction, asyncNoop, Awaitable, durationFmt, noop } from "@kaciras/utilities/browser";
+import { AsyncFunction, asyncNoop, Awaitable, durationFmt, noop, uniqueId } from "@kaciras/utilities/browser";
 import { welchTest } from "./math.js";
 import { BenchCase } from "./suite.js";
 import { runFns } from "./utils.js";
@@ -27,6 +27,7 @@ interface Iterator {
  */
 function createIterator(case_: BenchCase, factor: number, loops: number) {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
+	const cacheBusting = uniqueId();
 	let calls = factor;
 	let iterate: Iterator["iterate"];
 
@@ -34,9 +35,8 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 		const modifier = isAsync ? "await " : "";
 
 		const template = new AsyncFunction("runFns", "before", "after", `\
-			let timeUsage = 0;
 			let count = ${loops * factor};
-			
+			let timeUsage = ${cacheBusting};
 			while (count--) {
 				await runFns(before);
 				timeUsage -= performance.now();
@@ -44,7 +44,7 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 				timeUsage += performance.now();
 				await runFns(after);
 			}
-			return timeUsage;
+			return timeUsage - ${cacheBusting};
 		`);
 
 		iterate = template.bind(fn, runFns, beforeHooks, afterHooks);
@@ -55,12 +55,12 @@ function createIterator(case_: BenchCase, factor: number, loops: number) {
 			: ["this()\n", Function, factor];
 
 		const template = new FunctionType(`\
-			const start = performance.now();
+			const start = performance.now() + ${cacheBusting};
 			let count = ${loops};
 			while (count--) {
 				${call.repeat(runs)}
 			}
-			return performance.now() - start;
+			return performance.now() - start + ${cacheBusting};
 		`);
 
 		[calls, iterate] = [runs, template.bind(fn)];
