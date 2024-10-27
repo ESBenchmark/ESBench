@@ -7,17 +7,17 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"@tabler/icons-vue": "^3.19.0",
+		"@tabler/icons-vue": "^3.20.0",
 		"@vueuse/core": "^11.1.0",
 		"chart.js": "^4.4.5",
-		"chartjs-chart-error-bars": "^4.4.2",
+		"chartjs-chart-error-bars": "^4.4.3",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.7",
 		"vue": "^3.5.12"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^5.1.4",
-		"vite": "^5.4.9",
+		"vite": "^5.4.10",
 		"vite-plugin-singlefile": "^2.0.2"
 	}
 }
