@@ -7,9 +7,9 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"@tabler/icons-vue": "^3.20.0",
-		"@vueuse/core": "^11.1.0",
-		"chart.js": "^4.4.5",
+		"@tabler/icons-vue": "^3.21.0",
+		"@vueuse/core": "^11.2.0",
+		"chart.js": "^4.4.6",
 		"chartjs-chart-error-bars": "^4.4.3",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.7",
