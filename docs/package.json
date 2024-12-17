@@ -8,7 +8,7 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"@tabler/icons-vue": "^3.24.0",
+		"@tabler/icons-vue": "^3.26.0",
 		"@vueuse/core": "^12.0.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.52.2",
