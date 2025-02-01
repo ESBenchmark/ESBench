@@ -89,20 +89,22 @@ it("should write logs to logHandler", () => {
 	const log = vi.fn();
 	const context = new ProfilingContext(emptySuite, [], { log });
 
+	context.debug("A debug message");
 	context.info("A info message");
 	context.warn("A warning message");
 
 	expect(context.notes).toHaveLength(0);
-	expect(log).toHaveBeenCalledTimes(2);
-	expect(log).toHaveBeenNthCalledWith(1, "A info message", "info");
-	expect(log).toHaveBeenNthCalledWith(2, "A warning message", "warn");
+	expect(log).toHaveBeenCalledTimes(3);
+	expect(log).toHaveBeenNthCalledWith(1, "A debug message", "debug");
+	expect(log).toHaveBeenNthCalledWith(2, "A info message", "info");
+	expect(log).toHaveBeenNthCalledWith(3, "A warning message", "warn");
 });
 
 it("should save and log notes", () => {
-	const case_ = new BenchCase(new Scene({}), "test", noop, false);
-	case_.id = 8964;
 	const log = vi.fn();
 	const context = new ProfilingContext(emptySuite, [], { log });
+	const case_ = new BenchCase(new Scene({}, context), "test", noop, false);
+	case_.id = 8964;
 
 	context.note("info", "A info message");
 	context.note("warn", "A warning message", case_);

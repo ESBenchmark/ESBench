@@ -127,8 +127,13 @@ export async function runSuite(userSuite: UserSuite, options: RunSuiteOption = {
 	const profilers = resolveProfilers(suite);
 
 	const context = new ProfilingContext(suite, profilers, options);
-	await beforeAll?.();
-	await context.run().finally(afterAll);
+
+	await beforeAll?.(context);
+	try {
+		await context.run();
+	} finally {
+		await afterAll?.(context);
+	}
 
 	const { scenes, notes, meta } = context;
 	return { notes, meta, baseline, paramDef, scenes } as RunSuiteResult;

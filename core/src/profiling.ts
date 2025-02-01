@@ -105,7 +105,37 @@ export interface Profiler {
 	onFinish?: (ctx: ProfilingContext) => Awaitable<void>;
 }
 
-export class ProfilingContext {
+export interface SuiteContext {
+	/**
+	 * Using this method will generate warnings, which are logs with log level "warn".
+	 */
+	warn(message?: string): Awaitable<unknown>;
+
+	/**
+	 * Generate an "info" log. As these logs are displayed by default, use them for information
+	 * that is not a warning but makes sense to display to all users.
+	 */
+	info(message?: string): Awaitable<unknown>;
+
+	/**
+	 * Generate a "debug" log.
+	 */
+	debug(message?: string): Awaitable<unknown>;
+
+	/**
+	 * Add a note to result, it will print a log and displayed in the report.
+	 *
+	 * The different between notes and logs is that
+	 * notes are only relevant to the result, while logs can record anything.
+	 *
+	 * @param type Type of the note, "info" or "warn".
+	 * @param text The message of this note.
+	 * @param case_ The case associated with this note.
+	 */
+	note(type: "info" | "warn", text: string, case_?: BenchCase): Awaitable<unknown>;
+}
+
+export class ProfilingContext implements SuiteContext {
 	/**
 	 * Result for each case in each scene.
 	 */
@@ -152,31 +182,18 @@ export class ProfilingContext {
 		this.meta[description.key] = description;
 	}
 
-	/**
-	 * Using this method will generate warnings, which are logs with log level "warn".
-	 */
 	warn(message?: string) {
 		return this.logHandler(message, "warn");
 	}
 
-	/**
-	 * Generate an "info" log. As these logs are displayed by default, use them for information
-	 * that is not a warning but makes sense to display to all users.
-	 */
 	info(message?: string) {
 		return this.logHandler(message, "info");
 	}
 
-	/**
-	 * Add a note to result, it will print a log and displayed in the report.
-	 *
-	 * The different between notes and logs is that
-	 * notes are only relevant to the result, while logs can record anything.
-	 *
-	 * @param type Type of the note, "info" or "warn".
-	 * @param text The message of this note.
-	 * @param case_ The case associated with this note.
-	 */
+	debug(message?: string) {
+		return this.logHandler(message, "debug");
+	}
+
 	note(type: "info" | "warn", text: string, case_?: BenchCase) {
 		this.notes.push({ type, text, caseId: case_?.id });
 		return this.logHandler(text, type);
@@ -211,7 +228,7 @@ export class ProfilingContext {
 	}
 
 	private async runScene(params: object) {
-		const scene = new Scene(params, this.pattern);
+		const scene = new Scene(params, this);
 		await this.suite.setup(scene);
 		try {
 			await this.runHooks("onScene", scene);

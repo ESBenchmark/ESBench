@@ -1,9 +1,9 @@
 import { Awaitable, ItemOfIterable } from "@kaciras/utilities/browser";
-import { Profiler } from "./profiling.js";
+import { Profiler, ProfilingContext, SuiteContext } from "./profiling.js";
 import { TimeProfilerOptions } from "./time.js";
 import { ValidateOptions } from "./validate.js";
 import { ComplexityOptions } from "./complexity.js";
-import { BUILTIN_VARS, RE_ANY, runFns, toDisplayName } from "./utils.js";
+import { BUILTIN_VARS, runFns, toDisplayName } from "./utils.js";
 
 export type HookFn = () => Awaitable<unknown>;
 
@@ -81,7 +81,7 @@ export class BenchCase {
 	}
 }
 
-export class Scene<P = any> {
+export class Scene<P = any> implements SuiteContext {
 
 	readonly teardownHooks: HookFn[] = [];
 	readonly beforeIterHooks: HookFn[] = [];
@@ -90,11 +90,11 @@ export class Scene<P = any> {
 
 	readonly params: P;
 
-	private readonly include: RegExp;
+	private readonly profiling: ProfilingContext;
 
-	constructor(params: P, include = RE_ANY) {
+	constructor(params: P, profiling: ProfilingContext) {
 		this.params = params;
-		this.include = include;
+		this.profiling = profiling;
 	}
 
 	/**
@@ -165,9 +165,25 @@ export class Scene<P = any> {
 		if (this.cases.some(c => c.name === name)) {
 			throw new Error(`Case "${name}" already exists.`);
 		}
-		if (this.include.test(name)) {
+		if (this.profiling.pattern.test(name)) {
 			this.cases.push(new BenchCase(this, name, fn, isAsync));
 		}
+	}
+
+	warn(message?: string) {
+		return this.profiling.warn(message);
+	}
+
+	info(message?: string) {
+		return this.profiling.info(message);
+	}
+
+	debug(message?: string) {
+		return this.profiling.debug(message);
+	}
+
+	note(type: "info" | "warn", text: string, case_?: BenchCase) {
+		return this.profiling.note(type, text, case_);
 	}
 }
 
@@ -205,12 +221,12 @@ export interface BenchmarkSuite<T extends ParamsDef = ParamsAny> {
 	/**
 	 * Runs a function before running the suite.
 	 */
-	beforeAll?: HookFn;
+	beforeAll?: (context: SuiteContext) => Awaitable<unknown>;
 
 	/**
 	 * Runs a function after the suite has finished running.
 	 */
-	afterAll?: HookFn;
+	afterAll?: (context: SuiteContext) => Awaitable<unknown>;
 
 	/**
 	 * Add more profilers for the suite, falsy values are ignored.

@@ -1,10 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { noop } from "@kaciras/utilities/node";
+import { emptySuite } from "./helper.ts";
+import { ProfilingContext } from "../src/profiling.ts";
 import { BenchCase, normalizeSuite, resolveParams, Scene } from "../src/suite.ts";
+
+function newScene(params = {}, pattern?: RegExp) {
+	const options = { pattern, log: vi.fn(() => 2233) };
+	const context = new ProfilingContext(emptySuite, [], options);
+	return [new Scene(params, context), context] as const;
+}
 
 describe("Scene", () => {
 	it("should reject duplicated case name", () => {
-		const scene = new Scene(null);
+		const [scene] = newScene();
 		scene.bench("Foo", noop);
 		expect(() => scene.bench("Foo", noop)).toThrow();
 	});
@@ -16,12 +24,12 @@ describe("Scene", () => {
 		" baz ",
 		"",
 	])("should reject invalid case name %s", name => {
-		const scene = new Scene(null);
+		const [scene] = newScene();
 		expect(() => scene.bench(name, noop)).toThrow();
 	});
 
 	it("should add cases", () => {
-		const scene = new Scene(null);
+		const [scene] = newScene();
 		scene.bench("foo", noop);
 		scene.benchAsync("bar", noop);
 
@@ -30,10 +38,37 @@ describe("Scene", () => {
 		expect(scene.cases[1].isAsync).toBe(true);
 		expect(scene.cases[1].fn).toBe(noop);
 	});
+
+	it("should log messages", () => {
+		const [scene, ctx] = newScene();
+
+		expect(scene.debug("Debug Message")).toBe(2233);
+		expect(scene.info("Info Message")).toBe(2233);
+		expect(scene.warn("Warning Message")).toBe(2233);
+
+		const { mock } = vi.mocked(ctx.logHandler);
+		expect(mock.calls).toStrictEqual([
+			["Debug Message", "debug"],
+			["Info Message", "info"],
+			["Warning Message", "warn"],
+		]);
+	});
+
+	it("should add notes to the result", () => {
+		const [scene, ctx] = newScene();
+
+		scene.note("info", "This is a tip");
+		scene.note("warn", "This is a warning");
+
+		expect(ctx.notes).toStrictEqual([
+			{ type: "info", text: "This is a tip", caseId: undefined },
+			{ type: "warn", text: "This is a warning", caseId: undefined },
+		]);
+	});
 });
 
 describe("BenchCase", () => {
-	const scene = new Scene(null);
+	const [scene] = newScene();
 	const before = vi.fn();
 	const after = vi.fn();
 	scene.beforeIteration(before);
