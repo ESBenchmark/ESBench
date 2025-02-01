@@ -85,7 +85,7 @@ Here's a [complete example](/playground?demo=es/complexity.js) with more functio
 
 ## Options
 
-`TimeProfiler` performs simple regression analysis on a variable and a metric, find the best fitting curve. The variable must be defined in `params`, and the metric should be provided by another profiler, in the above example, it uses the time provided by [TimeProfiler](./time-profiler).
+`ComplexityProfiler` performs simple regression analysis on a variable and a metric, find the best fitting curve. The variable must be defined in `params`, and the metric should be provided by another profiler, in the above example, it uses the time provided by [TimeProfiler](./time-profiler).
 
 - `param` Parameter name of the input size, the parameter must have at least 2 values, and all values must be finite number.
 

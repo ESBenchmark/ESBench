@@ -130,7 +130,7 @@ describe("transformer", () => {
 		["node:fs", "node:fs"],
 	])("should replace import specifier %#", (resolved, specifier) => {
 		mockAdapter.resolve.mockReturnValue(resolved);
-		const code = `import x from "dummy.js"`;
+		const code = 'import x from "dummy.js"';
 
 		const output = instance.transformImports(code, "module.js");
 

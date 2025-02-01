@@ -7,7 +7,8 @@ import fastCP from "https://www.unpkg.com/fast-cartesian-product@2.0.1/dist/inde
 import PowerCP from "https://www.unpkg.com/power-cartesian-product@0.0.6/dist/index.mjs";
 
 function drain(generator) {
-	for (const _ of generator) /* No-op */;
+	// noinspection StatementWithEmptyBodyJS
+	for (const _ of generator) ;
 }
 
 const arr2 = [1, 2];
@@ -25,7 +26,7 @@ export default defineSuite({
 		scene.bench("power-cartesian-product", () => drain(new PowerCP(src)));
 		scene.bench("cxproduct", () => drain(new CXProduct(src).asGenerator()));
 
-		// These return array faster than return generator, but cost more RAM.
+		// These return an array faster than return a generator, but cost more RAM.
 		scene.bench("fast-cartesian", () => fastCartesian(src));
 		scene.bench("fast-cartesian-product", () => fastCP(src));
 	},

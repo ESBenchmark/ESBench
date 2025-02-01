@@ -1,7 +1,11 @@
+// noinspection ES6UnusedImports
+
 import {
 	defineConfig,
 	inProcessExecutor,
+	NodeExecutor,
 	PlaywrightExecutor,
+	ProcessExecutor,
 	rawReporter,
 	textReporter,
 	ViteBuilder,
