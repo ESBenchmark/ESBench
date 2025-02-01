@@ -217,8 +217,9 @@ export class WebextExecutor extends PlaywrightExecutor {
 		writeFileSync(join(dataDir, "index.html"), blankPageResponse.body);
 
 		this.context = await this.type.launchPersistentContext(dataDir, {
-			headless: false,
+			channel: "chromium",
 			args: [
+				// No longer needed since Playwright 1.49
 				"--headless=new",
 				`--load-extension=${dataDir}`,
 				`--disable-extensions-except=${dataDir}`,
@@ -240,7 +241,8 @@ export class WebextExecutor extends PlaywrightExecutor {
 			const extensions = await page.$$("extensions-item");
 			for (const extension of extensions) {
 				const nameEl = await extension.$("#name");
-				if (await nameEl?.textContent() === name) {
+				const text = await nameEl?.textContent();
+				if (text?.trim() === name) {
 					return await extension.getAttribute("id");
 				}
 			}
