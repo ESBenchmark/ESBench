@@ -200,12 +200,12 @@ export class ProfilingContext implements SuiteContext {
 	}
 
 	/**
-	 * Create a new ProfilingContext for the same suite.
-	 *
-	 * Profilers & options are not inherited.
+	 * Create a new ProfilingContext for the same suite, profilers are not inherited.
 	 */
 	newWorkflow(profilers: Profiler[], options: RunSuiteOption = {}) {
-		return new ProfilingContext(this.suite, profilers, options);
+		const { suite, pattern, logHandler } = this;
+		options = { pattern, log: logHandler, ...options };
+		return new ProfilingContext(suite, profilers, options);
 	}
 
 	/**

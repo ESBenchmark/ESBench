@@ -1,7 +1,9 @@
 import { expect, it, vi } from "vitest";
-import { Profiler } from "../src/index.js";
+import { noop } from "@kaciras/utilities/browser";
+import { Profiler, ProfilingContext } from "../src/index.js";
 import { PartialSuite, runProfilers } from "./helper.js";
 import { ExecutionValidator, ValidateOptions } from "../src/validate.js";
+import { normalizeSuite } from "../src/suite.ts";
 
 function runWithValidator(options: ValidateOptions<any>, suite: PartialSuite) {
 	return runProfilers([new ExecutionValidator(options)], suite);
@@ -94,4 +96,27 @@ it("should check equality in scene scope", () => {
 		},
 	});
 	return expect(promise).resolves.toBeTruthy();
+});
+
+it("should inherit run suite options", async () => {
+	const profiler = new ExecutionValidator({});
+	const suite = normalizeSuite({
+		setup(scene) {
+			scene.debug("Debug message should be logged twice");
+			scene.bench("A", noop);
+
+			// Filtered out, so the running should success.
+			scene.bench("B", () => { throw new Error(); });
+		},
+	});
+	const options = { pattern: /A/, log: vi.fn() };
+	const context = new ProfilingContext(suite, [profiler], options);
+
+	await context.run();
+
+	expect(options.log.mock.calls).toStrictEqual([
+		["Validating benchmarks [Execution]...", "info"],
+		["Debug message should be logged twice", "debug"],
+		["Debug message should be logged twice", "debug"],
+	]);
 });
