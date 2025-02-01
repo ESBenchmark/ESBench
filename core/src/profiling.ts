@@ -108,6 +108,26 @@ export interface Profiler {
 export interface SuiteContext {
 	/**
 	 * Using this method will generate warnings, which are logs with log level "warn".
+	 *
+	 * There is no "error" level, just throw an Error object if you get a condition
+	 * where you can't continue to run.
+	 *
+	 * Because the suite may be running in a different process, it is recommended to
+	 * use `await` to ensure that log messages are sent to the host immediately.
+	 *
+	 * @example
+	 * export default defineSuite({
+	 *    async beforeAll(ctx) {
+	 *        await ctx.debug("debug log");
+	 *    },
+	 *    async setup(scene) {
+	 *        await scene.info("info log");
+	 *        scene.bench("...", () => {});
+	 *    },
+	 *    async afterAll(ctx) {
+	 *        await ctx.warn("warning log");
+	 *    },
+	 * });
 	 */
 	warn(message?: string): Awaitable<unknown>;
 
@@ -118,15 +138,16 @@ export interface SuiteContext {
 	info(message?: string): Awaitable<unknown>;
 
 	/**
-	 * Generate a "debug" log.
+	 * Generate a "debug" log. These logs are only processed if the `logLevel` option is
+	 * explicitly set to "debug", otherwise it does nothing.
 	 */
 	debug(message?: string): Awaitable<unknown>;
 
 	/**
 	 * Add a note to result, it will print a log and displayed in the report.
 	 *
-	 * The different between notes and logs is that
-	 * notes are only relevant to the result, while logs can record anything.
+	 * Different between notes and logs is that notes will be displayed in the report,
+	 * while logs are only printed in console.
 	 *
 	 * @param type Type of the note, "info" or "warn".
 	 * @param text The message of this note.

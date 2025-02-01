@@ -33,6 +33,7 @@ export default defineSuite(async scene => {
 		const { serialize, deserialize } = await import("v8");
 		scene.bench("v8 serialize", () => deserialize(serialize(data)));
 	} catch {
-		// Not executed in Node, skip this case.
+		// Print a log, use await to make sure it is displayed immediately.
+		await scene.warn("Not executed in Node, skip V8 serializers");
 	}
 });

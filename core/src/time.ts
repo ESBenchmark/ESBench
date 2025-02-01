@@ -12,19 +12,6 @@ interface Iterator {
 	iterate: () => Awaitable<number>;
 }
 
-/*
- * Another idea is treat iteration hooks as overhead, run them with an empty benchmark,
- * then subtract the time from result.
- * but this cannot handle some cases. for example, consider the code:
- *
- * let data = null;
- * scene.bench("foo", () => data = create());
- * scene.afterIteration(() => {
- *     if (data) heavyCleanup(data);
- * });
- *
- * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
- */
 function createIterator(case_: BenchCase, factor: number, loops: number) {
 	const { fn, isAsync, beforeHooks, afterHooks } = case_;
 	const cacheBusting = uniqueId();
@@ -240,6 +227,20 @@ export class ExecutionTimeMeasurement {
 		}
 	}
 
+	/*
+	 * For suite with iteration hooks, an idea is treat iteration hooks as overhead,
+	 * run them with an empty benchmark, then subtract the time from result.
+	 *
+	 * but this cannot handle some cases. for example, consider the code:
+	 *
+	 * let data = null;
+	 * scene.bench("foo", () => data = create());
+	 * scene.afterIteration(() => {
+	 *     if (data) heavyCleanup(data);
+	 * });
+	 *
+	 * If we replace the benchmark function with `noop`, `heavyCleanup` will not be called.
+	 */
 	async measureOverhead({ calls, loops }: Iterator) {
 		const { benchCase } = this;
 
