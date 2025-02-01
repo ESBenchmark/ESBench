@@ -1,13 +1,13 @@
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { join } from "node:path";
-import { ChildProcess, fork, ForkOptions } from "node:child_process";
+import { ChildProcess, fork, ForkOptions, StdioOptions } from "node:child_process";
 import { Executor, SuiteTask } from "../host/toolchain.js";
 import { highestPriority } from "./process.js";
 
 // Resolve the filename to generated JS for test.
 const __filename = join(fileURLToPath(import.meta.url), "../../../lib/executor/node.js");
 
-type NodeExecutorOptions = Pick<ForkOptions, "execPath" | "execArgv" | "env">;
+type NodeExecutorOptions = Pick<ForkOptions, "execPath" | "execArgv" | "env" | "stdio">;
 
 interface WorkerTask {
 	root: string;
@@ -25,6 +25,7 @@ export default class NodeExecutor implements Executor {
 	private readonly executable?: string;
 	private readonly env?: NodeJS.ProcessEnv;
 	private readonly args: string[];
+	private readonly stdio: StdioOptions;
 
 	private process?: ChildProcess;
 
@@ -32,6 +33,7 @@ export default class NodeExecutor implements Executor {
 		this.executable = options.execPath;
 		this.env = options.env;
 		this.args = options.execArgv ?? [];
+		this.stdio = options.stdio ?? "ignore";
 	}
 
 	get name() {
@@ -49,7 +51,7 @@ export default class NodeExecutor implements Executor {
 
 		this.process = fork(__filename, {
 			execArgv: this.args,
-			stdio: "ignore",
+			stdio: this.stdio,
 			execPath: this.executable,
 			env: {
 				...process.env,

@@ -376,8 +376,11 @@ export default defineConfig({
             // Pass arguments after the entry.
 			new ProcessExecutor(file => `node ${file} --foo`),
 
-            // Set environment variables at the 2nd parameter.
-			new ProcessExecutor("node", { NODE_ENV: "production" }),
+            // Set spawn options at the 2nd parameter.
+			new ProcessExecutor("node", {
+				stdio: "inherit",
+				env: { NODE_ENV: "production" },
+            }),
 		],
 	}],
 });

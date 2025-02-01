@@ -18,7 +18,9 @@ it("should suggest the filename as executor name", () => {
 });
 
 describe("Custom command line", () => {
-	const instance = new ProcessExecutor(f => `node --expose_gc ${f} "foo bar"`, { BAZ: "qux" });
+	const instance = new ProcessExecutor(f => `node --expose_gc ${f} "foo bar"`, {
+		env: { BAZ: "qux" },
+	});
 	const tester = executorTester(instance);
 
 	it("should forward top level errors", tester.outsideError(

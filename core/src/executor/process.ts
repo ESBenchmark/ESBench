@@ -1,4 +1,4 @@
-import { ChildProcess, execFile } from "node:child_process";
+import { ChildProcess, spawn, SpawnOptions } from "node:child_process";
 import { once } from "node:events";
 import { createServer, Server } from "node:http";
 import { json } from "node:stream/consumers";
@@ -12,6 +12,8 @@ import { Executor, SuiteTask } from "../host/toolchain.js";
 import { HostContext } from "../host/context.js";
 
 type GetCommand = (file: string) => string;
+
+export type ProcessExecutorOptions = Pick<SpawnOptions, "stdio" | "env" | "shell">
 
 const template = `\
 import runAndSend from "./__ENTRY__";
@@ -36,7 +38,7 @@ export function highestPriority(pid: number) {
  */
 export default class ProcessExecutor implements Executor {
 
-	protected readonly env?: NodeJS.ProcessEnv;
+	protected readonly options: ProcessExecutorOptions;
 	protected readonly getCommand: GetCommand;
 
 	protected process!: ChildProcess;
@@ -57,8 +59,8 @@ export default class ProcessExecutor implements Executor {
 	 * // Will execute command: `bun .esbench-tmp/main.js --foo=bar`
 	 * new ProcessExecutor(file => `bun ${file} --foo=bar`);
 	 */
-	constructor(command: string | GetCommand, env?: NodeJS.ProcessEnv) {
-		this.env = env;
+	constructor(command: string | GetCommand, options?: ProcessExecutorOptions) {
+		this.options = { stdio: "ignore", ...options  };
 		this.getCommand = typeof command === "function"
 			? command
 			: (file) => `${command} ${file}`;
@@ -96,8 +98,10 @@ export default class ProcessExecutor implements Executor {
 
 		const command = this.getCommand(entry);
 		const [file, ...args] = splitCLI(command);
-		this.process = execFile(file, args, {
-			env: { ...process.env, ...this.env },
+		this.process = spawn(file, args, {
+			stdio: this.options.stdio,
+			shell: this.options.shell,
+			env: { ...process.env, ...this.options.env },
 		});
 
 		return this.postprocess(task);
