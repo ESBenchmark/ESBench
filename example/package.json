@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"chrome-remote-interface": "^0.33.2",
+		"chrome-remote-interface": "^0.33.3",
 		"esbench": "workspace:*",
 		"playwright": "^1.50.0"
 	},

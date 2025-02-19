@@ -8,8 +8,8 @@
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
 		"@tabler/icons-vue": "^3.30.0",
-		"@vueuse/core": "^12.5.0",
-		"chart.js": "^4.4.7",
+		"@vueuse/core": "^12.7.0",
+		"chart.js": "^4.4.8",
 		"chartjs-chart-error-bars": "^4.4.4",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.7",
@@ -17,7 +17,7 @@
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^5.2.1",
-		"vite": "^6.1.0",
+		"vite": "^6.1.1",
 		"vite-plugin-singlefile": "^2.1.0"
 	}
 }
