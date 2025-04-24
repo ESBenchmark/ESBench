@@ -32,7 +32,7 @@
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
 		"chalk": "^5.4.1",
-		"es-module-lexer": "^1.6.0",
+		"es-module-lexer": "^1.7.0",
 		"fast-glob": "^3.3.3",
 		"markdown-table": "^3.0.4",
 		"open": "^10.1.1",
