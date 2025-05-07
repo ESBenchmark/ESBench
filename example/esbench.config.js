@@ -2,6 +2,7 @@
 
 import {
 	defineConfig,
+	htmlReporter,
 	inProcessExecutor,
 	NodeExecutor,
 	PlaywrightExecutor,
@@ -28,6 +29,7 @@ export default defineConfig({
 	reporters: [
 		textReporter(),
 		rawReporter(),
+		htmlReporter(),
 	],
 	toolchains: [{
 		// The micromatch patterns ESBench used to glob suite files.
@@ -55,7 +57,7 @@ export default defineConfig({
 			// new NodeExecutor({ execArgv: ["--no-opt"] }),
 
 			// More JS runtimes, you need to install them.
-			// new ProcessExecutor("bun"),
+			// new ProcessExecutor("bun run --bun"),
 		],
 	}, {
 		include: ["./web/*.js"],
