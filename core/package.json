@@ -35,7 +35,7 @@
 		"es-module-lexer": "^1.7.0",
 		"fast-glob": "^3.3.3",
 		"markdown-table": "^3.0.4",
-		"open": "^10.1.1",
+		"open": "^10.1.2",
 		"serialize-error": "^12.0.0",
 		"simple-statistics": "^7.8.8",
 		"string-width": "^7.1.0",
