@@ -8,12 +8,12 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"@tabler/icons-vue": "^3.31.0",
-		"@vueuse/core": "^13.1.0",
+		"@tabler/icons-vue": "^3.33.0",
+		"@vueuse/core": "^13.2.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.52.2",
 		"notivue": "^2.4.5",
-		"vue": "^3.5.13"
+		"vue": "^3.5.14"
 	},
 	"devDependencies": {
 		"@types/estraverse": "^5.1.7",
