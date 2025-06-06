@@ -40,7 +40,7 @@
 		"simple-statistics": "^7.8.8",
 		"string-width": "^7.1.0",
 		"ts-directly": "^2.1.2",
-		"yargs": "^17.7.2"
+		"yargs": "^18.0.0"
 	},
 	"devDependencies": {
 		"@types/picomatch": "^4.0.0",
