@@ -31,7 +31,7 @@
 	},
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
-		"chalk": "^5.4.1",
+		"chalk": "^5.5.0",
 		"es-module-lexer": "^1.7.0",
 		"fast-glob": "^3.3.3",
 		"markdown-table": "^3.0.4",
@@ -43,7 +43,7 @@
 		"yargs": "^18.0.0"
 	},
 	"devDependencies": {
-		"@types/picomatch": "^4.0.1",
+		"@types/picomatch": "^4.0.2",
 		"@types/yargs": "^17.0.33"
 	},
 	"peerDependencies": {

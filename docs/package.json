@@ -9,7 +9,7 @@
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.4",
 		"@tabler/icons-vue": "^3.34.1",
-		"@vueuse/core": "^13.5.0",
+		"@vueuse/core": "^13.6.0",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.52.2",
 		"notivue": "^2.4.5",
