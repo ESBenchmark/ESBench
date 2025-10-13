@@ -6,13 +6,13 @@
 		"build": "pnpm --filter=./core build && pnpm --filter=./reporter-html build"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^3.3.0",
-		"@kaciras/eslint-config-typescript": "^3.3.0",
-		"@kaciras/eslint-config-vue": "^3.3.0",
-		"@types/node": "^24.5.2",
+		"@kaciras/eslint-config-core": "^3.4.0",
+		"@kaciras/eslint-config-typescript": "^3.4.0",
+		"@kaciras/eslint-config-vue": "^3.4.0",
+		"@types/node": "^24.7.2",
 		"@vitest/coverage-v8": "^3.2.4",
-		"eslint": "^9.36.0",
-		"typescript": "^5.9.2",
+		"eslint": "^9.37.0",
+		"typescript": "^5.9.3",
 		"vitest": "^3.2.4"
 	}
 }
