@@ -28,5 +28,11 @@ export default defineSuite({
 
 		scene.benchAsync("fetch", () =>
 			fetch("data:x/x;base64," + base64).then(r => r.arrayBuffer()));
+
+		if ("fromBase64" in Uint8Array) {
+			scene.benchAsync("fromBase64", () => Uint8Array.fromBase64(base64).buffer);
+		} else {
+			scene.warn("Uint8Array.fromBase64 is not supported in this environment");
+		}
 	},
 });
