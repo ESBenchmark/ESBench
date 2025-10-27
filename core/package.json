@@ -30,7 +30,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@kaciras/utilities": "^1.0.4",
+		"@kaciras/utilities": "^1.0.5",
 		"chalk": "^5.6.2",
 		"es-module-lexer": "^1.7.0",
 		"fast-glob": "^3.3.3",
@@ -44,7 +44,7 @@
 	},
 	"devDependencies": {
 		"@types/picomatch": "^4.0.2",
-		"@types/yargs": "^17.0.33"
+		"@types/yargs": "^17.0.34"
 	},
 	"peerDependencies": {
 		"playwright-core": ">=1.49",
