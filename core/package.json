@@ -35,7 +35,7 @@
 		"es-module-lexer": "^1.7.0",
 		"fast-glob": "^3.3.3",
 		"markdown-table": "^3.0.4",
-		"open": "^10.2.0",
+		"open": "^11.0.0",
 		"serialize-error": "^12.0.0",
 		"simple-statistics": "^7.8.8",
 		"string-width": "^8.1.0",
@@ -44,7 +44,7 @@
 	},
 	"devDependencies": {
 		"@types/picomatch": "^4.0.2",
-		"@types/yargs": "^17.0.34"
+		"@types/yargs": "^17.0.35"
 	},
 	"peerDependencies": {
 		"playwright-core": ">=1.49",
