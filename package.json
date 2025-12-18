@@ -9,10 +9,10 @@
 		"@kaciras/eslint-config-core": "^3.4.1",
 		"@kaciras/eslint-config-typescript": "^3.4.1",
 		"@kaciras/eslint-config-vue": "^3.4.1",
-		"@types/node": "^24.10.2",
-		"@vitest/coverage-v8": "^4.0.15",
-		"eslint": "^9.39.1",
+		"@types/node": "^25.0.3",
+		"@vitest/coverage-v8": "^4.0.16",
+		"eslint": "^9.39.2",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.15"
+		"vitest": "^4.0.16"
 	}
 }
