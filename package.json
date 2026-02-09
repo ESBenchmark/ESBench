@@ -6,12 +6,12 @@
 		"build": "pnpm --filter=./core build && pnpm --filter=./reporter-html build"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^3.4.1",
-		"@kaciras/eslint-config-typescript": "^3.4.1",
-		"@kaciras/eslint-config-vue": "^3.4.1",
-		"@types/node": "^25.1.0",
+		"@kaciras/eslint-config-core": "^3.4.2",
+		"@kaciras/eslint-config-typescript": "^3.4.2",
+		"@kaciras/eslint-config-vue": "^3.4.2",
+		"@types/node": "^25.2.2",
 		"@vitest/coverage-v8": "^4.0.18",
-		"eslint": "^9.39.2",
+		"eslint": "^10.0.0",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.18"
 	}
