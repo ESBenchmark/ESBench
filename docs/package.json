@@ -9,11 +9,11 @@
 	"dependencies": {
 		"@kaciras/utilities": "^1.0.5",
 		"@tabler/icons-vue": "^3.36.1",
-		"@vueuse/core": "^14.2.0",
+		"@vueuse/core": "^14.2.1",
 		"esbench": "workspace:^",
 		"monaco-editor": "^0.55.1",
 		"notivue": "^2.4.5",
-		"vue": "^3.5.27"
+		"vue": "^3.5.28"
 	},
 	"devDependencies": {
 		"@types/estraverse": "^5.1.7",
