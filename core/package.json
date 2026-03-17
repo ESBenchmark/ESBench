@@ -37,7 +37,7 @@
 		"markdown-table": "^3.0.4",
 		"open": "^11.0.0",
 		"serialize-error": "^13.0.1",
-		"simple-statistics": "^7.8.8",
+		"simple-statistics": "^7.8.9",
 		"string-width": "^8.2.0",
 		"ts-directly": "^2.1.2",
 		"yargs": "^18.0.0"

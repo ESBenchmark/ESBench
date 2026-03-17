@@ -12,12 +12,12 @@
 		"chart.js": "^4.5.1",
 		"chartjs-chart-error-bars": "^4.4.5",
 		"esbench": "workspace:^",
-		"simple-statistics": "^7.8.8",
+		"simple-statistics": "^7.8.9",
 		"vue": "^3.5.30"
 	},
 	"devDependencies": {
-		"@vitejs/plugin-vue": "^6.0.4",
-		"vite": "^7.3.1",
-		"vite-plugin-singlefile": "^2.3.0"
+		"@vitejs/plugin-vue": "^6.0.5",
+		"vite": "^8.0.0",
+		"vite-plugin-singlefile": "^2.3.2"
 	}
 }
