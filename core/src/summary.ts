@@ -17,7 +17,7 @@ export type FlattedResult = Record<string, string> & {
 
 	// You can add custom properties with symbol keys.
 	[customKeys: symbol]: any;
-}
+};
 
 export interface ResolvedNote {
 	type: "info" | "warn";

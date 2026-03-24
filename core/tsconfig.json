@@ -1,13 +1,11 @@
 {
 	"include": ["./src/**/*.ts"],
 	"compilerOptions": {
-		"target": "ESNext",
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"lib": ["ESNext"],
 		"rootDir": "src",
 		"outDir": "lib",
-		"strict": true,
 		"resolveJsonModule": true,
 		"declaration": true,
 		"sourceMap": true,
