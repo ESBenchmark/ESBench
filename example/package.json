@@ -9,7 +9,7 @@
 		"@kaciras/utilities": "^1.0.5",
 		"chrome-remote-interface": "^0.34.0",
 		"esbench": "workspace:*",
-		"playwright": "^1.58.2"
+		"playwright": "^1.59.1"
 	},
 	"devDependencies": {
 		"@types/firefox-webext-browser": "^143.0.0"

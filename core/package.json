@@ -43,7 +43,7 @@
 		"yargs": "^18.0.0"
 	},
 	"devDependencies": {
-		"@types/picomatch": "^4.0.2",
+		"@types/picomatch": "^4.0.3",
 		"@types/yargs": "^17.0.35"
 	},
 	"peerDependencies": {
