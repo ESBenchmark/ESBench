@@ -13,11 +13,11 @@
 		"chartjs-chart-error-bars": "^4.4.5",
 		"esbench": "workspace:^",
 		"simple-statistics": "^7.8.9",
-		"vue": "^3.5.32"
+		"vue": "^3.5.33"
 	},
 	"devDependencies": {
-		"@vitejs/plugin-vue": "^6.0.5",
-		"vite": "^8.0.8",
-		"vite-plugin-singlefile": "^2.3.2"
+		"@vitejs/plugin-vue": "^6.0.6",
+		"vite": "^8.0.10",
+		"vite-plugin-singlefile": "^2.3.3"
 	}
 }
